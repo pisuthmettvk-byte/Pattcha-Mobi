@@ -12,10 +12,11 @@ window.onload = function() {
   }
 };
 
-async function submitLogin() {
+function submitLogin() {
   const code = document.getElementById('branchCodeInput').value.trim().toUpperCase();
   const btn = document.getElementById('btnSubmitLogin');
   if(!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
+  
   btn.innerText = "⏳ LOADING...";
   btn.disabled = true;
 
@@ -27,18 +28,39 @@ async function submitLogin() {
       localStorage.setItem('pattcha_branch', code);
       localProductDatabase = res.products;
       currentBranch = res.branch;
-      document.getElementById('loginView').classList.add('hide');
-      document.getElementById('mainMenuView').classList.remove('hide');
-      document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
+      
+      const loginView = document.getElementById('loginView');
+      const mainMenuView = document.getElementById('mainMenuView');
+      
+      // 1. ใส่คลาสเพื่อเริ่มเล่นแอนิเมชันขาออก
+      loginView.classList.add('login-fade-out');
+      
+      // 2. หน่วงเวลา 380 มิลลิวินาที ให้แอนิเมชันเล่นจนจบ แล้วค่อยสลับหน้า
+      setTimeout(() => {
+        loginView.classList.add('hide');
+        loginView.classList.remove('login-fade-out'); // เคลียร์ค่าเผื่อตอน Logout
+        
+        // 3. โชว์หน้า Main Menu พร้อมใส่คลาสแอนิเมชันขาเข้า
+        document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
+        mainMenuView.classList.remove('hide');
+        mainMenuView.classList.add('menu-fade-in');
+        
+      }, 380);
+
     } else {
       alert("❌ " + res.message);
+      btn.innerText = "SUBMIT";
+      btn.disabled = false;
     }
   } catch (err) {
     alert("❌ ระบบขัดข้อง: ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้");
+    btn.innerText = "SUBMIT";
+    btn.disabled = false;
   }
-  btn.innerText = "SUBMIT";
-  btn.disabled = false;
 }
+
+
+
 
 function logoutBranch() {
   if(confirm("ต้องการออกจากระบบสาขาใช่หรือไม่?")) {
