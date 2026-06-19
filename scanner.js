@@ -1,4 +1,3 @@
-
 let html5QrCode = null; 
 let isScannerMode = false; 
 
@@ -27,11 +26,14 @@ function toggleScanner() {
       isScannerMode = false;
       searchContainer.style.display = 'block';
       readerContainer.style.display = 'none';
-      alert("❌ เปิดกล้องไม่ได้");
+      console.error("Camera Error:", err);
+      alert("❌ เปิดกล้องไม่ได้: กรุณากด 'อนุญาต' (Allow) กล้องในเบราว์เซอร์");
     });
   } else {
     searchContainer.style.display = 'block';
     readerContainer.style.display = 'none';
-    if (html5QrCode) html5QrCode.stop().then(() => html5QrCode.clear()).catch(err => console.log(err));
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => html5QrCode.clear()).catch(err => console.log(err));
+    }
   }
 }
