@@ -27,3 +27,76 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 .detail-stat-box { background: #f9fafb; padding: 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #eee; text-align: left; }
 .detail-stat-box .lbl { font-size: 11px; color: #888; }
 .detail-stat-box .val { font-size: 15px; font-weight: bold; color: #333; }
+
+```css
+/* ==================================================
+   SMOOTH TRANSITION ANIMATIONS (Login -> Main Menu)
+================================================== */
+
+/* 1. อนิเมชันขาออกของหน้า Login */
+.login-fade-out {
+    animation: viewFadeOut 0.4s forwards ease-in;
+}
+.login-fade-out > img {
+    animation: logoSlideUp 0.4s forwards cubic-bezier(0.4, 0, 0.2, 1);
+}
+.login-fade-out > div, .login-fade-out > button {
+    animation: formShrink 0.35s forwards cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes viewFadeOut {
+    to { opacity: 0; }
+}
+@keyframes logoSlideUp {
+    to { transform: translateY(-70px) scale(0.85); opacity: 0; }
+}
+@keyframes formShrink {
+    to { transform: scale(0.5) translateY(30px); opacity: 0; }
+}
+
+/* 2. อนิเมชันขาเข้าของหน้า Main Menu */
+.menu-fade-in {
+    animation: viewFadeIn 0.1s forwards;
+}
+
+/* อนิเมชันส่วน Header (โลโก้และข้อความ) */
+.menu-fade-in > div:first-child {
+    animation: headerFadeIn 0.6s forwards cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+    opacity: 0;
+}
+
+/* อนิเมชันปุ่มทั้ง 7 เด้งแยกร่างออกมาจากตรงกลาง */
+.menu-fade-in .menu-card {
+    animation: cardFanOut 0.6s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0;
+    transform-origin: center top;
+}
+
+@keyframes viewFadeIn {
+    to { opacity: 1; }
+}
+@keyframes headerFadeIn {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardFanOut {
+    from { opacity: 0; transform: translateY(-50px) scale(0.7); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ตั้งเวลา Delay ให้ปุ่มเด้งเรียงคิวกัน (Staggered effect) */
+.menu-fade-in .menu-card:nth-child(1) { animation-delay: 0.10s; }
+.menu-fade-in .menu-card:nth-child(2) { animation-delay: 0.15s; }
+.menu-fade-in .menu-card:nth-child(3) { animation-delay: 0.20s; }
+.menu-fade-in .menu-card:nth-child(4) { animation-delay: 0.25s; }
+.menu-fade-in .menu-card:nth-child(5) { animation-delay: 0.30s; }
+.menu-fade-in .menu-card:nth-child(6) { animation-delay: 0.35s; }
+.menu-fade-in .menu-card:nth-child(7) { animation-delay: 0.40s; }
+
+/* เผื่อกรณีไม่ได้เล่นอนิเมชัน ให้ปุ่มมองเห็นได้ปกติ */
+#mainMenuView:not(.menu-fade-in) .menu-card,
+#mainMenuView:not(.menu-fade-in) > div:first-child {
+    opacity: 1;
+    transform: none;
+}
+
