@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pattcha Inventory</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; color: #333; overflow-x: hidden; touch-action: manipulation; }
+    .view-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; width: 100vw; }
+    .hide { display: none !important; }
+
+    /* Login Styles */
+    .login-btn { background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); background-size: 200% auto; color: white; border: none; transition: all 0.4s ease; width: 80%; max-width: 320px; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(219, 133, 145, 0.4); }
+    .login-btn:active { transform: scale(0.98); background-position: right center; }
+    .login-input { width: 100%; padding: 15px; border-radius: 30px; border: 1px solid #e7a08c; background: #ffffff; color: #333; text-align: center; font-size: 16px !important; box-sizing: border-box; outline: none; transition: 0.3s; }
+    .login-input:focus { border-color: #db8591; box-shadow: 0 0 8px rgba(219, 133, 145, 0.3); }
+
+    /* Main Menu Styles */
+    .menu-card { display: flex; align-items: center; background: #ffffff; border: 1px solid rgba(231, 160, 140, 0.25); border-radius: 20px; padding: 14px 18px; cursor: pointer; transition: all 0.2s ease; width: 100%; box-shadow: 0 6px 16px rgba(219, 133, 145, 0.25); box-sizing: border-box; margin-bottom: 10px;}
+    .menu-card:active { transform: scale(0.98); background: #fffafa; border-color: #db8591; }
+    .menu-icon { width: 38px; display: flex; justify-content: center; color: #d4af37; font-size: 22px; margin-right: 15px; filter: drop-shadow(0px 2px 4px rgba(212, 175, 55, 0.3)); }
+    .menu-text { flex-grow: 1; color: #333333; font-size: 14px; font-weight: bold; }
+    .menu-arrow { color: #fab919; font-size: 11px; font-weight: bold; }
+
+    /* Stock In House Styles */
+    .category-row { padding: 22px 20px; margin: 15px 20px 10px 20px; border-radius: 16px; font-size: 15px; font-weight: bold; display: flex; align-items: center; background: #ffffff; cursor: pointer; gap: 15px; border: 1px solid rgba(231, 160, 140, 0.2); box-shadow: 0 8px 20px rgba(219, 133, 145, 0.2); }
+    .category-row:active { transform: translateY(4px); background: #fffafa; }
+    .cat-icon-box { width: 42px; height: 42px; background: rgba(231, 160, 140, 0.15); color: #db8591; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0; }
+    .product-row { display: flex; padding: 15px 20px; border-bottom: 1px solid rgba(231, 160, 140, 0.15); background: #ffffff; cursor: pointer; gap: 15px; align-items: center; }
+    .prod-img { width: 65px; height: 85px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; }
+    .prod-info-wrapper { flex-grow: 1; display: flex; justify-content: space-between; align-items: stretch; }
+    .prod-text { display: flex; flex-direction: column; justify-content: center; max-width: 55%; }
+    .prod-sku { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .prod-name { font-size: 13px; font-weight: bold; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .prod-numbers { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
+    .prod-price { font-size: 18px; font-weight: bold; color: #db8591; }
+    .prod-stats-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: 12px; font-weight: bold; }
+    .detail-stat-box { background: #f9fafb; padding: 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #eee; text-align: left; }
+    .detail-stat-box .lbl { font-size: 11px; color: #888; }
+    .detail-stat-box .val { font-size: 15px; font-weight: bold; color: #333; }
+  </style>
+</head>
+<body>
+
+  <div id="loginView" class="view-screen">
+    <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" style="width: 75%; max-width: 280px; margin-bottom: 40px; filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1));">
+    <div style="width: 80%; max-width: 320px; margin-bottom: 20px;">
+      <input type="text" id="branchCodeInput" class="login-input" placeholder="กรุณากรอกรหัสสาขา">
+    </div>
+    <button id="btnSubmitLogin" class="login-btn" onclick="submitLogin()">SUBMIT</button>
+  </div>
+
+  <div id="mainMenuView" class="view-screen hide" style="justify-content: flex-start; padding-top: 55px; background-color: #f3f4f6; box-sizing: border-box;">
+    <div style="text-align: center; margin-bottom: 25px; width: 100%;">
+      <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" style="width: 65%; max-width: 240px; margin-bottom: 0px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: -10px;">
+        <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
+        <h2 style="color: #db8591; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 4px;">MAIN MENU</h2>
+        <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
+      </div>
+      <p id="branchLabel" style="color: #e7a08c; font-size: 11px; margin-top: 8px; font-weight: bold;"></p>
+    </div>
+
+    <div class="menu-container" style="width: 85%; max-width: 340px;">
+      <button class="menu-card" onclick="openStockInHouse()"><div class="menu-icon"><i class="fas fa-warehouse"></i></div><div class="menu-text">STOCK IN HOUSE</div><div class="menu-arrow">❯</div></button>
+      <button class="menu-card" onclick="alert('กำลังพัฒนา')"><div class="menu-icon"><i class="fas fa-random"></i></div><div class="menu-text">TRANSFER PRODUCT</div><div class="menu-arrow">❯</div></button>
+    </div>
+
+    <div style="margin-top: 25px; margin-bottom: 25px;">
+      <button onclick="logoutBranch()" style="background: transparent; border: none; color: #db8591; font-size: 12px; font-weight: bold; text-decoration: underline; cursor: pointer; padding: 10px;">LOGOUT SYSTEM</button>
+    </div>
+  </div>
+
+  <div id="stockInHouseView" class="view-screen hide" style="justify-content: flex-start; background-color: #f9fafb; display: flex; flex-direction: column;">
+    <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); background-size: 200% auto; flex-shrink: 0; box-shadow: 0 6px 15px rgba(219, 133, 145, 0.3); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; padding-bottom: 20px; z-index: 10;">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 10px 20px; box-sizing: border-box;">
+        <button onclick="handleStockBack()" style="background: #ffffff; border: none; color: #db8591; font-size: 13px; font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);">
+          <i class="fas fa-chevron-left"></i> BACK
+        </button>
+        <h3 id="stockHeaderTitle" style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; text-align: center; flex: 1;">STOCK IN HOUSE</h3>
+        <div style="width: 80px;"></div> 
+      </div>
+
+      <div id="unifiedInputArea" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
+        <div id="searchContainer" style="position: relative;">
+          <i class="fas fa-search" style="position: absolute; left: 20px; top: 16px; color: #db8591;"></i>
+          <input type="text" id="searchStockInput" oninput="handleMagicSearch()" placeholder="ค้นหาสินค้า (SKU, หมวดหมู่...)" style="width: 100%; padding: 15px 45px 15px 50px; border-radius: 30px; border: none; outline: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+          <div id="clearSearchBtn" onclick="clearSearch()" style="position: absolute; right: 15px; top: 13px; width: 24px; height: 24px; border-radius: 50%; background: #db8591; color: white; display: none; justify-content: center; align-items: center; cursor: pointer;"><i class="fas fa-times" style="font-size: 12px;"></i></div>
+        </div>
+
+        <div id="readerContainer" style="display:none; position: relative; width: 100%; margin-top: 10px;">
+          <div id="reader" style="width: 100%; border: 2px solid #ffffff; border-radius: 12px; overflow: hidden; background: #000;"></div>
+          <button onclick="toggleScanner()" style="position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 100;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="stockScrollArea" style="flex: 1; overflow-y: auto; width: 100%; padding-bottom: 20px;">
+      <div id="categoryListContainer" style="width: 100%; display: flex; flex-direction: column;"></div>
+      <div id="productListContainer" class="hide" style="width: 100%; display: flex; flex-direction: column;"></div>
+    </div>
+
+    <div style="width: 100%; padding: 15px; background: #ffffff; border-top: 1px solid rgba(231, 160, 140, 0.2); box-sizing: border-box; z-index: 10;">
+      <button onclick="toggleScanner()" style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); color: white; border: none; border-radius: 12px; padding: 15px; font-size: 20px; box-shadow: 0 6px 15px rgba(219,133,145,0.3); display: flex; justify-content: center; cursor: pointer;">
+        <i class="fas fa-camera"></i>
+      </button>
+    </div>
+  </div>
+
+  <div id="productDetailModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #ffffff; z-index: 999; display: flex; flex-direction: column;">
+    <button onclick="closeProductDetail()" style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; z-index: 1000;"><i class="fas fa-times"></i></button>
+    <div style="height: 45vh; width: 100%; background: #f9fafb; border-bottom: 1px solid #eee;"><img id="detailImage" src="" style="width: 100%; height: 100%; object-fit: contain; padding: 20px; box-sizing: border-box;"></div>
+    <div style="flex: 1; padding: 25px; overflow-y: auto; background: #ffffff;">
+      <div id="detailCategory" style="font-size: 12px; color: #db8591; font-weight: bold;"></div>
+      <div id="detailSku" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+      <div id="detailName" style="font-size: 14px; color: #666; margin-bottom: 15px;"></div>
+      <div id="detailPrice" style="font-size: 20px; font-weight: bold; color: #fab919; margin-bottom: 25px;"></div>
+      <h4 style="margin: 0 0 15px 0; color: #333; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 10px;">INVENTORY STATUS</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="detail-stat-box"><span class="lbl">Current Stock:</span><span class="val" id="detailCurrent"></span></div>
+        <div class="detail-stat-box"><span class="lbl">Available Stock:</span><span class="val" id="detailAvail" style="color:#10b981;"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 🔴🔴🔴 จุดสำคัญ: ใส่ URL API ของเจเลอร์ (ที่เพิ่ง Deploy มาใหม่) ตรงนี้ 🔴🔴🔴
+    const API_URL = "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec";
+
+    let localProductDatabase = []; 
+    let currentBranch = "";
+    let currentStockView = 'category'; 
+    let html5QrCode = null; 
+    let isScannerMode = false; 
+
+    // เช็ก Auto-Login
+    window.onload = function() {
+      const savedBranch = localStorage.getItem('pattcha_branch');
+      if (savedBranch) {
+        document.getElementById('branchCodeInput').value = savedBranch;
+        submitLogin(); 
+      }
+    };
+
+    // 🚀 ระบบ Login แบบใหม่ (ใช้ fetch คุยกับ API แทน google.script.run)
+    async function submitLogin() {
+      const code = document.getElementById('branchCodeInput').value.trim().toUpperCase();
+      const btn = document.getElementById('btnSubmitLogin');
+      if(!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
+      btn.innerText = "⏳ LOADING...";
+      btn.disabled = true;
+
+      try {
+        // ยิง API ไปขอดึงข้อมูล
+        const response = await fetch(API_URL + "?action=login&branch=" + code);
+        const res = await response.json();
+
+        if(res.success) {
+          localStorage.setItem('pattcha_branch', code);
+          localProductDatabase = res.products;
+          currentBranch = res.branch;
+          document.getElementById('loginView').classList.add('hide');
+          document.getElementById('mainMenuView').classList.remove('hide');
+          document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
+        } else {
+          alert("❌ " + res.message);
+        }
+      } catch (err) {
+        alert("❌ ระบบขัดข้อง: ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้");
+      }
+      btn.innerText = "SUBMIT";
+      btn.disabled = false;
+    }
+
+    function logoutBranch() {
+      if(confirm("ต้องการออกจากระบบสาขาใช่หรือไม่?")) {
+        localStorage.removeItem('pattcha_branch');
+        location.reload();
+      }
+    }
+
+    // --- ระบบแปลงรูปภาพ ---
+    function parseDriveImage(url) {
+      if (!url || url === 'CellImage') return 'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';
+      let match = url.match(/id=([a-zA-Z0-9_-]+)/) || url.match(/d\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w500';
+      return url;
+    }
+    function getCategoryIcon(catName) {
+      const name = catName.toLowerCase();
+      if (name.includes('bag')) return 'fa-shopping-bag';
+      if (name.includes('shoe')) return 'fa-shoe-prints';
+      if (name.includes('watch')) return 'fa-clock';
+      return 'fa-box-open';
+    }
+
+    // --- ควบคุมหน้าต่าง ---
+    function openStockInHouse() {
+      document.getElementById('mainMenuView').classList.add('hide');
+      document.getElementById('stockInHouseView').classList.remove('hide');
+      renderCategories();
+    }
+    function handleStockBack() {
+      if (isScannerMode) toggleScanner();
+      if (currentStockView === 'product') {
+        clearSearch();
+      } else {
+        document.getElementById('stockInHouseView').classList.add('hide');
+        document.getElementById('mainMenuView').classList.remove('hide');
+      }
+    }
+
+    // --- เรนเดอร์ข้อมูล ---
+    function renderCategories() {
+      currentStockView = 'category';
+      document.getElementById('stockHeaderTitle').innerText = "STOCK IN HOUSE"; 
+      document.getElementById('categoryListContainer').classList.remove('hide');
+      document.getElementById('productListContainer').classList.add('hide');
+      
+      const container = document.getElementById('categoryListContainer');
+      container.innerHTML = "";
+      const categoriesMap = new Map();
+      localProductDatabase.forEach(item => {
+        const catName = item.category || "Uncategorized";
+        if(!categoriesMap.has(catName)) categoriesMap.set(catName, catName);
+      });
+
+      Array.from(categoriesMap.values()).sort().forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'category-row';
+        div.innerHTML = `<div class="cat-icon-box"><i class="fas ${getCategoryIcon(cat)}"></i></div><span style="flex-grow: 1;">${cat}</span>`;
+        div.onclick = () => filterByCategory(cat);
+        container.appendChild(div);
+      });
+    }
+
+    function filterByCategory(catName) {
+      currentStockView = 'product';
+      document.getElementById('stockHeaderTitle').innerText = catName; 
+      document.getElementById('categoryListContainer').classList.add('hide');
+      document.getElementById('productListContainer').classList.remove('hide');
+      renderProducts(localProductDatabase.filter(item => (item.category || "Uncategorized") === catName));
+    }
+
+    function handleMagicSearch() {
+      const query = document.getElementById('searchStockInput').value.trim().toLowerCase();
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (!query) { clearBtn.style.display = 'none'; renderCategories(); return; }
+      
+      clearBtn.style.display = 'flex';
+      currentStockView = 'product';
+      document.getElementById('stockHeaderTitle').innerText = "SEARCH RESULTS";
+      document.getElementById('categoryListContainer').classList.add('hide');
+      document.getElementById('productListContainer').classList.remove('hide');
+      
+      renderProducts(localProductDatabase.filter(item => Object.values(item).some(val => val && val.toString().toLowerCase().includes(query))));
+    }
+
+    function clearSearch() { document.getElementById('searchStockInput').value = ""; document.getElementById('clearSearchBtn').style.display = 'none'; handleMagicSearch(); }
+
+    function renderProducts(products) {
+      const container = document.getElementById('productListContainer');
+      container.innerHTML = "";
+      products.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'product-row';
+        div.onclick = () => openProductDetail(item.sku);
+        div.innerHTML = `<img class="prod-img" src="${parseDriveImage(item.imageUrl)}"><div class="prod-info-wrapper"><div class="prod-text"><div class="prod-sku">${item.sku}</div><div class="prod-name">${item.name}</div></div><div class="prod-numbers"><div class="prod-price">฿${Number(item.price).toLocaleString()}</div><div class="prod-stats-row"><span style="color: #10b981;">${item.availableStock}</span></div></div></div>`;
+        container.appendChild(div);
+      });
+    }
+
+    function openProductDetail(sku) {
+      const item = localProductDatabase.find(p => p.sku === sku);
+      document.getElementById('detailImage').src = parseDriveImage(item.imageUrl);
+      document.getElementById('detailSku').innerText = item.sku;
+      document.getElementById('detailName').innerText = item.name;
+      document.getElementById('detailPrice').innerText = '฿' + Number(item.price).toLocaleString();
+      document.getElementById('detailCurrent').innerText = item.currentStock;
+      document.getElementById('detailAvail').innerText = item.availableStock;
+      document.getElementById('productDetailModal').classList.remove('hide');
+    }
+    function closeProductDetail() { document.getElementById('productDetailModal').classList.add('hide'); }
+
+    // 🚀 ระบบสแกน Live Camera ตัวจริง (ทำงาน 100% บน GitHub)
+    function toggleScanner() {
+      const searchContainer = document.getElementById('searchContainer');
+      const readerContainer = document.getElementById('readerContainer');
+      const searchInput = document.getElementById('searchStockInput');
+      
+      isScannerMode = !isScannerMode;
+
+      if (isScannerMode) {
+        searchContainer.style.display = 'none';
+        readerContainer.style.display = 'block';
+
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+
+        html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            searchInput.value = decodedText;
+            toggleScanner(); 
+            handleMagicSearch(); 
+          },
+          () => {} // ไม่ต้อง log error ระหว่างหาสัญญาณภาพ
+        ).catch(err => {
+          isScannerMode = false;
+          searchContainer.style.display = 'block';
+          readerContainer.style.display = 'none';
+          alert("❌ เปิดกล้องไม่ได้: กรุณากด 'อนุญาต' (Allow) กล้องในเบราว์เซอร์");
+        });
+      } else {
+        searchContainer.style.display = 'block';
+        readerContainer.style.display = 'none';
+        if (html5QrCode) {
+          html5QrCode.stop().then(() => html5QrCode.clear()).catch(err => console.log(err));
+        }
+      }
+    }
+  </script>
+</body>
+</html>
