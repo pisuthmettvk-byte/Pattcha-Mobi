@@ -86,27 +86,40 @@ function renderCategories() {
   
   const container = document.getElementById('categoryListContainer');
   container.innerHTML = "";
+  
+  // เก็บข้อมูลหมวดหมู่ โดยรวมรหัส Main+Sub เข้ากับชื่อหมวดหมู่
   const categoriesMap = new Map();
   localProductDatabase.forEach(item => {
+    const mainCat = (item.mainCategoryCode && item.mainCategoryCode !== '-') ? item.mainCategoryCode : '';
+    const subCat = (item.subCategoryCode && item.subCategoryCode !== '-') ? item.subCategoryCode : '';
+    const prefixCode = (mainCat + subCat).trim();
     const catName = item.category || "Uncategorized";
-    if(!categoriesMap.has(catName)) categoriesMap.set(catName, catName);
+    
+    // สร้างรูปแบบ: "05G0BG - กระเป๋า"
+    const displayCatName = prefixCode ? `${prefixCode} - ${catName}` : catName;
+    
+    if(!categoriesMap.has(displayCatName)) {
+      categoriesMap.set(displayCatName, { displayName: displayCatName, originalName: catName });
+    }
   });
 
-  Array.from(categoriesMap.values()).sort().forEach(cat => {
+  Array.from(categoriesMap.values()).sort((a,b) => a.displayName.localeCompare(b.displayName)).forEach(catObj => {
     const div = document.createElement('div');
     div.className = 'category-row';
-    div.innerHTML = `<div class="cat-icon-box"><i class="fas ${getCategoryIcon(cat)}"></i></div><span style="flex-grow: 1;">${cat}</span>`;
-    div.onclick = () => filterByCategory(cat);
+    div.innerHTML = `<div class="cat-icon-box"><i class="fas ${getCategoryIcon(catObj.originalName)}"></i></div><span style="flex-grow: 1;">${catObj.displayName}</span>`;
+    
+    // ส่งทั้งชื่อเดิมสำหรับกรอง และชื่อเต็มสำหรับขึ้น Header
+    div.onclick = () => filterByCategory(catObj.originalName, catObj.displayName);
     container.appendChild(div);
   });
 }
-
-function filterByCategory(catName) {
+function filterByCategory(originalCatName, fullDisplayName) {
   currentStockView = 'product';
-  document.getElementById('stockHeaderTitle').innerText = catName; 
+  // เปลี่ยน Header ให้เป็นชื่อเต็มเหมือนในลิสต์
+  document.getElementById('stockHeaderTitle').innerText = fullDisplayName; 
   document.getElementById('categoryListContainer').classList.add('hide');
   document.getElementById('productListContainer').classList.remove('hide');
-  renderProducts(localProductDatabase.filter(item => (item.category || "Uncategorized") === catName));
+  renderProducts(localProductDatabase.filter(item => (item.category || "Uncategorized") === originalCatName));
 }
 
 function handleMagicSearch() {
@@ -132,15 +145,37 @@ function clearSearch() {
 function renderProducts(products) {
   const container = document.getElementById('productListContainer');
   container.innerHTML = "";
+  
+  if (products.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:#999; padding: 40px 20px;">❌ ไม่พบข้อมูลสินค้าในสาขานี้</div>';
+    return;
+  }
+
   products.forEach(item => {
     const div = document.createElement('div');
     div.className = 'product-row';
     div.onclick = () => openProductDetail(item.sku);
-    div.innerHTML = `<img class="prod-img" src="${parseDriveImage(item.imageUrl)}"><div class="prod-info-wrapper"><div class="prod-text"><div class="prod-sku">${item.sku}</div><div class="prod-name">${item.name}</div></div><div class="prod-numbers"><div class="prod-price">⧉${Number(item.price).toLocaleString()}</div><div class="prod-stats-row"><span style="color: #10b981;">${item.availableStock}</span></div></div></div>`;
+    
+    // ดึงค่าตัวเลขมาแสดงพร้อมไอคอนตามที่เจเลอร์ระบุ
+    div.innerHTML = `
+      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';">
+      <div class="prod-info-wrapper">
+        <div class="prod-text">
+          <div class="prod-sku">${item.sku}</div>
+          <div class="prod-name">${item.name}</div>
+        </div>
+        <div class="prod-numbers">
+          <div class="prod-price">฿${Number(item.price).toLocaleString()}</div>
+          <div class="prod-stats-row">
+            <span style="color: #10b981;" title="พร้อมขาย"><i class="fas fa-thumbs-up"></i> ${item.availableStock || 0}</span>
+            <span style="color: #fab919;" title="Hold"><i class="fas fa-exclamation-triangle"></i> ${item.holdQty || 0}</span>
+            <span style="color: #ef4444;" title="เสียหาย"><i class="fas fa-times-circle"></i> ${item.defectiveQty || 0}</span>
+          </div>
+        </div>
+      </div>`;
     container.appendChild(div);
   });
 }
-
 function openProductDetail(sku) {
   const item = localProductDatabase.find(p => p.sku === sku);
   document.getElementById('detailImage').src = parseDriveImage(item.imageUrl);
