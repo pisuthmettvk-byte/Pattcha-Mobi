@@ -24,3 +24,6 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 .prod-numbers { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
 .prod-price { font-size: 18px; font-weight: bold; color: #db8591; }
 .prod-stats-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: 12px; font-weight: bold; }
+.detail-stat-box { background: #f9fafb; padding: 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #eee; text-align: left; }
+.detail-stat-box .lbl { font-size: 11px; color: #888; }
+.detail-stat-box .val { font-size: 15px; font-weight: bold; color: #333; }
