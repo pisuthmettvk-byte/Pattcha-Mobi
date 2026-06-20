@@ -55,5 +55,18 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 .menu-fade-in .menu-card:nth-child(6) { animation-delay: 0.35s; }
 .menu-fade-in .menu-card:nth-child(7) { animation-delay: 0.40s; }
 
-#mainMenuView:not(.menu-fade-in) .menu-card,
-#mainMenuView:not(.menu-fade-in) > div:first-child { opacity: 1; transform: none; }
+#mainMenuView {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* ดึงให้อยู่กึ่งกลางในแนวตั้ง */
+  align-items: center;     /* ดึงให้อยู่กึ่งกลางในแนวนอน */
+  height: 100vh;           /* ล็อกความสูงให้พอดีจอมือถือ */
+  width: 100vw;
+  box-sizing: border-box;
+  overflow: hidden;        /* ปิดการเลื่อนหน้าจอ */
+}
+
+/* ส่วนนี้เก็บค่าเดิมไว้เพื่อให้ Animation ทำงานต่อเนื่องได้ตามปกติ */
+#mainMenuView > div:first-child { 
+  margin-bottom: 20px; 
+}
