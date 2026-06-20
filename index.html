@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
     <head>
@@ -10,7 +11,8 @@
     <body>
         <!-- ==================== VIEW 1: LOGIN ==================== -->
         <div id="loginView" class="view-screen">
-            <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" style="width: 90%; max-width: 350px; margin-bottom: 40px; filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1));">
+            <!-- ใช้คลาส main-logo ควบคุมขนาดให้เท่ากัน -->
+            <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" class="main-logo" style="margin-bottom: 40px;">
             <div style="width: 80%; max-width: 320px; margin-bottom: 20px;">
                 <input type="text" id="branchCodeInput" class="login-input" placeholder="กรุณากรอกรหัสสาขา">
             </div>
@@ -20,7 +22,8 @@
         <!-- ==================== VIEW 2: MAIN MENU ==================== -->
         <div id="mainMenuView" class="view-screen hide">
             <div style="text-align: center; width: 100%;">
-                <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" style="width: 85%; max-width: 350px; margin-top: -40px; margin-bottom: -50px;">
+                <!-- ใช้คลาส main-logo เหมือนกัน -->
+                <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" class="main-logo" style="margin-top: 5px; margin-bottom: 5px;">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: -5px;">
                     <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
                     <h2 style="color: #db8591; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 4px;">MAIN MENU</h2>
@@ -35,12 +38,22 @@
                     <div class="menu-text">STOCK IN HOUSE</div>
                     <div class="menu-arrow">❯</div>
                 </button>
-                <button class="menu-card" onclick="alert('PRODUCT MOVEMENT - กำลังพัฒนา')">
+                <button class="menu-card" onclick="alert('TRANSFER PRODUCT - กำลังพัฒนา')">
                     <div class="menu-icon"><i class="fas fa-random"></i></div>
                     <div class="menu-text">TRANSFER PRODUCT</div>
                     <div class="menu-arrow">❯</div>
                 </button>
-                  <button class="menu-card" onclick="alert('STOCK TAKE - กำลังพัฒนา')">
+                <button class="menu-card" onclick="alert('HOLD PRODUCT - กำลังพัฒนา')">
+                    <div class="menu-icon"><i class="fas fa-lock"></i></div>
+                    <div class="menu-text">HOLD PRODUCT</div>
+                    <div class="menu-arrow">❯</div>
+                </button>
+                <button class="menu-card" onclick="alert('DEFECTIVE - กำลังพัฒนา')">
+                    <div class="menu-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="menu-text">DEFECTIVE</div>
+                    <div class="menu-arrow">❯</div>
+                </button>
+                <button class="menu-card" onclick="alert('STOCK TAKE - กำลังพัฒนา')">
                     <div class="menu-icon"><i class="fas fa-chart-bar"></i></div>
                     <div class="menu-text">STOCK TAKE</div>
                     <div class="menu-arrow">❯</div>
@@ -131,3 +144,6 @@
         <script src="scanner.js"></script>
     </body>
 </html>
+
+
+
