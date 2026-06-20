@@ -61,19 +61,20 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 /* ====================================
    SMOOTH TRANSITIONS (แบบหน่วงเวลาช้าๆ)
 ==================================== */
-/* ไม่ลบหน้าเก่าทิ้งทันที เพื่อให้โลโก้สไลด์ได้สุด */
+/* --- เลื่อนโลโก้แบบนุ่มนวลและเบรกสนิทพอดี --- */
 .login-fade-out > img { 
-    /* ยืดเวลาโลโก้สไลด์ขึ้นเป็น 0.8 วิ และไม่เฟดจาง */
-    animation: logoSlideUp 0.8s forwards cubic-bezier(0.45, 0, 0.15, 1); 
+    /* ใช้ ease-out เพื่อให้ความเร็วค่อยๆ ลดลงจนหยุดนิ่งสนิท */
+    animation: logoSlideUp 0.8s forwards ease-out; 
 }
+
 .login-fade-out > div, .login-fade-out > button { 
     /* กล่องและปุ่มจางหายไปก่อนใน 0.5 วิ */
     animation: formShrink 0.5s forwards cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
 @keyframes logoSlideUp { 
-    /* เลื่อนขึ้นด้านบนแบบไม่จางหาย (opacity 1) */
-    to { transform: translateY(-28vh); opacity: 1; } 
+    /* ลดระยะการเลื่อนจาก -28vh เป็น -22vh เพื่อไม่ให้ทะลุเลยตำแหน่งปลายทาง */
+    to { transform: translateY(-22vh); opacity: 1; } 
 }
 @keyframes formShrink { 
     to { transform: scale(0.5) translateY(30px); opacity: 0; } 
