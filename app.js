@@ -1,4 +1,5 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec";
+
 let localProductDatabase = []; 
 let currentBranch = "";
 let currentStockView = 'category'; 
@@ -33,6 +34,7 @@ async function submitLogin() {
       
       loginView.classList.add('login-fade-out');
       
+      // หน่วงเวลาเพิ่มเป็น 800ms เพื่อรอให้โลโก้ค่อยๆ สไลด์ขึ้นจนสุด
       setTimeout(() => {
         loginView.classList.add('hide');
         loginView.classList.remove('login-fade-out');
@@ -40,7 +42,7 @@ async function submitLogin() {
         document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
         mainMenuView.classList.remove('hide');
         mainMenuView.classList.add('menu-fade-in');
-      }, 380);
+      }, 800);
 
     } else {
       alert("❌ " + res.message);
@@ -62,9 +64,9 @@ function logoutBranch() {
 }
 
 function parseDriveImage(url) {
-  if (!url || url === 'CellImage') return '[https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg](https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg)';
+  if (!url || url === 'CellImage') return 'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';
   let match = url.match(/id=([a-zA-Z0-9_-]+)/) || url.match(/d\/([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) return '[https://drive.google.com/thumbnail?id=](https://drive.google.com/thumbnail?id=)' + match[1] + '&sz=w500';
+  if (match && match[1]) return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w500';
   return url;
 }
 
@@ -168,7 +170,7 @@ function renderProducts(products) {
     div.onclick = () => openProductDetail(item.sku);
     
     div.innerHTML = `
-      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onerror="this.onerror=null; this.src='[https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg](https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg)';">
+      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';">
       <div class="prod-info-wrapper">
         <div class="prod-text">
           <div class="prod-sku">${item.sku}</div>
@@ -201,3 +203,5 @@ function openProductDetail(sku) {
 function closeProductDetail() { 
     document.getElementById('productDetailModal').classList.add('hide'); 
 }
+
+
