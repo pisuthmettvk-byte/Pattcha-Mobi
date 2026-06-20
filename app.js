@@ -189,23 +189,32 @@ function renderProducts(products) {
 
 function openProductDetail(sku) {
   const item = localProductDatabase.find(p => p.sku === sku);
-  
+  if (!item) return;
+
+  // 1. นำรูปภาพมาแสดง
   document.getElementById('detailImage').src = parseDriveImage(item.imageUrl);
+  
+  // 2. สร้างภาพบาร์โค้ดของจริง
+  JsBarcode("#detailBarcode", item.sku, {
+    format: "CODE128",
+    lineColor: "#333",
+    width: 2,
+    height: 40,
+    displayValue: false // ซ่อนตัวเลขไว้เนื่องจากมีแสดงอยู่ด้านล่างแล้ว
+  });
+
+  // 3. ใส่ข้อมูลและรายละเอียดสินค้า
+  document.getElementById('detailCategory').innerText = item.category || 'NO CATEGORY';
   document.getElementById('detailSku').innerText = item.sku;
-  document.getElementById('detailName').innerText = item.name || "-";
-  document.getElementById('detailPrice').innerText = '฿' + Number(item.price).toLocaleString(); 
-
-  document.getElementById('detailMainCat').innerText = item.mainCategoryCode || "-";
-  document.getElementById('detailSubCat').innerText = item.subCategoryCode || "-";
-  document.getElementById('detailMatCode').innerText = item.materialCode || "-";
-  document.getElementById('detailStyleCode').innerText = item.styleCode || "-";
-  document.getElementById('detailProdCode').innerText = item.productCode || item.sku || "-";
-
+  document.getElementById('detailName').innerText = item.name;
+  document.getElementById('detailPrice').innerText = '฿' + Number(item.price || 0).toLocaleString();
+  
+  // 4. ใส่ประเภทจำนวนสินค้า
   document.getElementById('detailCurrent').innerText = item.currentStock || 0;
   document.getElementById('detailAvail').innerText = item.availableStock || 0;
   document.getElementById('detailHold').innerText = item.holdQty || 0;
   document.getElementById('detailDefect').innerText = item.defectiveQty || 0;
-  document.getElementById('detailSale').innerText = item.soldQty || item.saleQty || 0;
+  document.getElementById('detailSold').innerText = item.saleStock || 0;
 
   document.getElementById('productDetailModal').classList.remove('hide');
 }
