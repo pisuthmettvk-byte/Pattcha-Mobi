@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
     <head>
@@ -8,6 +9,7 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
+        <!-- ==================== VIEW 1: LOGIN ==================== -->
         <div id="loginView" class="view-screen">
             <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" class="main-logo" style="margin-bottom: 40px;">
             <div style="width: 80%; max-width: 320px; margin-bottom: 20px;">
@@ -16,6 +18,7 @@
             <button id="btnSubmitLogin" class="login-btn" onclick="submitLogin()">SUBMIT</button>
         </div>
 
+        <!-- ==================== VIEW 2: MAIN MENU ==================== -->
         <div id="mainMenuView" class="view-screen hide">
             <div style="text-align: center; width: 100%;">
                 <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" class="main-logo logo-style">
@@ -70,6 +73,7 @@
             </div>
         </div>
 
+        <!-- ==================== VIEW 3: STOCK IN HOUSE ==================== -->
         <div id="stockInHouseView" class="view-screen hide" style="justify-content: flex-start; background-color: #f9fafb; height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column;">
             <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); background-size: 200% auto; flex-shrink: 0; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); padding-bottom: 20px; z-index: 50; position: relative;">
                 <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 10px 20px; box-sizing: border-box;">
@@ -102,44 +106,72 @@
             </div>
         </div>
         
+        <!-- ==================== PRODUCT MODAL ==================== -->
         <div id="productDetailModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #e5e7eb; z-index: 999; display: flex; flex-direction: column;">
             
             <button onclick="closeProductDetail()" style="position: absolute; top: 20px; right: 20px; background: #ef4444; border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; z-index: 1000; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);">
                 <i class="fas fa-times"></i>
             </button>
             
-            <div style="height: 40vh; width: 100%; background: #e5e7eb; display: flex; justify-content: center; align-items: center; padding: 30px; box-sizing: border-box;">
+            <!-- ปรับความสูงและ Padding ให้รูปภาพไม่โดนบัง -->
+            <div style="height: 35vh; width: 100%; background: #e5e7eb; display: flex; justify-content: center; align-items: center; padding: 20px; padding-bottom: 40px; box-sizing: border-box;">
                 <img id="detailImage" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0px 12px 24px rgba(0,0,0,0.25));">
             </div>
             
+            <!-- พื้นที่ข้อมูล -->
             <div style="flex: 1; padding: 25px; overflow-y: auto; background: #f3f4f6; border-radius: 28px 28px 0 0; margin-top: -30px; z-index: 2; box-shadow: 0 -12px 30px rgba(0,0,0,0.12);">
-                <div id="detailSku" style="font-size: 20px; font-weight: bold; color: #333;"></div>
-                <div id="detailName" style="font-size: 14px; color: #666; margin-bottom: 10px;"></div>
-                <div id="detailPrice" style="font-size: 24px; font-weight: bold; color: #db8591; margin-bottom: 25px;"></div>
                 
-                <div style="width: 100%; height: 80px; background: #ffffff; border: 2px dashed #db8591; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px; opacity: 0.7;">
+                <!-- Layout ใหม่: ฝั่งซ้าย (รหัส/ชื่อ/ราคา) | ฝั่งขวา (Item Details) -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <div style="flex: 1; padding-right: 15px;">
+                        <div id="detailSku" style="font-size: 20px; font-weight: bold; color: #333;"></div>
+                        <div id="detailName" style="font-size: 13px; color: #666; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"></div>
+                        <div id="detailPrice" style="font-size: 24px; font-weight: bold; color: #db8591;"></div>
+                    </div>
+                    
+                    <!-- กรอบ Item Details ฝั่งขวา (กะทัดรัด) -->
+                    <div style="width: 110px; background: #ffffff; padding: 10px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 4px 10px rgba(0,0,0,0.03); flex-shrink: 0;">
+                        <div style="font-size: 9px; color: #db8591; font-weight: bold; margin-bottom: 6px; text-align: center; letter-spacing: 1px;">ITEM DETAILS</div>
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;"><span style="color:#888;">M.CAT</span><span id="detailMainCat" style="font-weight:bold; color:#333;">-</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;"><span style="color:#888;">S.CAT</span><span id="detailSubCat" style="font-weight:bold; color:#333;">-</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;"><span style="color:#888;">MAT</span><span id="detailMatCode" style="font-weight:bold; color:#333;">-</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;"><span style="color:#888;">STYLE</span><span id="detailStyleCode" style="font-weight:bold; color:#333;">-</span></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 10px;"><span style="color:#888;">PROD</span><span id="detailProdCode" style="font-weight:bold; color:#333;">-</span></div>
+                    </div>
+                </div>
+
+                <!-- ข้อมูลสต็อก (มีไอคอนลูกศรชี้ลง รองรับการกดดูสาขาอื่นในอนาคต) -->
+                <h4 style="margin: 0 0 10px 0; color: #444; font-size: 13px; border-bottom: 1px solid #ddd; padding-bottom: 8px;">INVENTORY STATUS</h4>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 25px;">
+                    <div class="detail-stat-box status-dropdown" onclick="alert('แสดงสาขาอื่น (กำลังพัฒนา)')">
+                        <span class="lbl">Current <i class="fas fa-caret-down"></i></span>
+                        <span class="val" id="detailCurrent" style="color:#3b82f6;"></span>
+                    </div>
+                    <div class="detail-stat-box status-dropdown" onclick="alert('แสดงสาขาอื่น (กำลังพัฒนา)')">
+                        <span class="lbl">Avail <i class="fas fa-caret-down"></i></span>
+                        <span class="val" id="detailAvail" style="color:#10b981;"></span>
+                    </div>
+                    <div class="detail-stat-box status-dropdown" onclick="alert('แสดงสาขาอื่น (กำลังพัฒนา)')">
+                        <span class="lbl">Hold <i class="fas fa-caret-down"></i></span>
+                        <span class="val" id="detailHold" style="color:#f59e0b;"></span>
+                    </div>
+                    <div class="detail-stat-box status-dropdown" onclick="alert('แสดงสาขาอื่น (กำลังพัฒนา)')">
+                        <span class="lbl">Defect <i class="fas fa-caret-down"></i></span>
+                        <span class="val" id="detailDefect" style="color:#ef4444;"></span>
+                    </div>
+                    <div class="detail-stat-box status-dropdown" onclick="alert('แสดงสาขาอื่น (กำลังพัฒนา)')">
+                        <span class="lbl">Sale <i class="fas fa-caret-down"></i></span>
+                        <span class="val" id="detailSale" style="color:#8b5cf6;"></span>
+                    </div>
+                </div>
+
+                <!-- กล่องใส่บาร์โค้ด (เลื่อนมาไว้ตรงนี้) -->
+                <div style="width: 100%; height: 80px; background: #ffffff; border: 2px dashed #db8591; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; opacity: 0.7;">
                     <div id="barcodeContainer" style="color: #db8591; font-size: 13px; font-weight: bold;">
                         <i class="fas fa-barcode" style="font-size: 24px; margin-right: 10px;"></i> [ พื้นที่สำหรับสร้าง BARCODE ]
                     </div>
                 </div>
 
-                <h4 style="margin: 0 0 10px 0; color: #444; font-size: 13px; border-bottom: 1px solid #ddd; padding-bottom: 8px;">ITEM DETAILS</h4>
-                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 25px;">
-                    <div class="detail-stat-box"><span class="lbl">M.CAT</span><span class="val" id="detailMainCat"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">S.CAT</span><span class="val" id="detailSubCat"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">MAT</span><span class="val" id="detailMatCode"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">STYLE</span><span class="val" id="detailStyleCode"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">PROD</span><span class="val" id="detailProdCode"></span></div>
-                </div>
-
-                <h4 style="margin: 0 0 10px 0; color: #444; font-size: 13px; border-bottom: 1px solid #ddd; padding-bottom: 8px;">INVENTORY STATUS</h4>
-                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 20px;">
-                    <div class="detail-stat-box"><span class="lbl">Current</span><span class="val" id="detailCurrent" style="color:#3b82f6;"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">Avail</span><span class="val" id="detailAvail" style="color:#10b981;"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">Hold</span><span class="val" id="detailHold" style="color:#f59e0b;"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">Defect</span><span class="val" id="detailDefect" style="color:#ef4444;"></span></div>
-                    <div class="detail-stat-box"><span class="lbl">Sale</span><span class="val" id="detailSale" style="color:#8b5cf6;"></span></div>
-                </div>
             </div>
         </div>
 
@@ -148,3 +180,5 @@
         <script src="scanner.js"></script>
     </body>
 </html>
+
+
