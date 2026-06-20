@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec";
+const API_URL = "[https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec](https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec)";
 
 let localProductDatabase = []; 
 let currentBranch = "";
@@ -32,19 +32,15 @@ async function submitLogin() {
       const loginView = document.getElementById('loginView');
       const mainMenuView = document.getElementById('mainMenuView');
       
-      // 1. ใส่คลาสเพื่อเริ่มเล่นแอนิเมชันขาออก
       loginView.classList.add('login-fade-out');
       
-      // 2. หน่วงเวลา 380 มิลลิวินาที ให้แอนิเมชันเล่นจนจบ แล้วค่อยสลับหน้า
       setTimeout(() => {
         loginView.classList.add('hide');
-        loginView.classList.remove('login-fade-out'); // เคลียร์ค่าเผื่อตอน Logout
+        loginView.classList.remove('login-fade-out');
         
-        // 3. โชว์หน้า Main Menu พร้อมใส่คลาสแอนิเมชันขาเข้า
         document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
         mainMenuView.classList.remove('hide');
         mainMenuView.classList.add('menu-fade-in');
-        
       }, 380);
 
     } else {
@@ -59,9 +55,6 @@ async function submitLogin() {
   }
 }
 
-
-
-
 function logoutBranch() {
   if(confirm("ต้องการออกจากระบบสาขาใช่หรือไม่?")) {
     localStorage.removeItem('pattcha_branch');
@@ -70,9 +63,9 @@ function logoutBranch() {
 }
 
 function parseDriveImage(url) {
-  if (!url || url === 'CellImage') return 'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';
+  if (!url || url === 'CellImage') return '[https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg](https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg)';
   let match = url.match(/id=([a-zA-Z0-9_-]+)/) || url.match(/d\/([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w500';
+  if (match && match[1]) return '[https://drive.google.com/thumbnail?id=](https://drive.google.com/thumbnail?id=)' + match[1] + '&sz=w500';
   return url;
 }
 
@@ -109,7 +102,6 @@ function renderCategories() {
   const container = document.getElementById('categoryListContainer');
   container.innerHTML = "";
   
-  // เก็บข้อมูลหมวดหมู่ โดยรวมรหัส Main+Sub เข้ากับชื่อหมวดหมู่
   const categoriesMap = new Map();
   localProductDatabase.forEach(item => {
     const mainCat = (item.mainCategoryCode && item.mainCategoryCode !== '-') ? item.mainCategoryCode : '';
@@ -117,7 +109,6 @@ function renderCategories() {
     const prefixCode = (mainCat + subCat).trim();
     const catName = item.category || "Uncategorized";
     
-    // สร้างรูปแบบ: "05G0BG - กระเป๋า"
     const displayCatName = prefixCode ? `${prefixCode} - ${catName}` : catName;
     
     if(!categoriesMap.has(displayCatName)) {
@@ -130,14 +121,13 @@ function renderCategories() {
     div.className = 'category-row';
     div.innerHTML = `<div class="cat-icon-box"><i class="fas ${getCategoryIcon(catObj.originalName)}"></i></div><span style="flex-grow: 1;">${catObj.displayName}</span>`;
     
-    // ส่งทั้งชื่อเดิมสำหรับกรอง และชื่อเต็มสำหรับขึ้น Header
     div.onclick = () => filterByCategory(catObj.originalName, catObj.displayName);
     container.appendChild(div);
   });
 }
+
 function filterByCategory(originalCatName, fullDisplayName) {
   currentStockView = 'product';
-  // เปลี่ยน Header ให้เป็นชื่อเต็มเหมือนในลิสต์
   document.getElementById('stockHeaderTitle').innerText = fullDisplayName; 
   document.getElementById('categoryListContainer').classList.add('hide');
   document.getElementById('productListContainer').classList.remove('hide');
@@ -178,16 +168,15 @@ function renderProducts(products) {
     div.className = 'product-row';
     div.onclick = () => openProductDetail(item.sku);
     
-    // ดึงค่าตัวเลขมาแสดงพร้อมไอคอนตามที่เจเลอร์ระบุ
     div.innerHTML = `
-      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg';">
+      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onerror="this.onerror=null; this.src='[https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg](https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg)';">
       <div class="prod-info-wrapper">
         <div class="prod-text">
           <div class="prod-sku">${item.sku}</div>
           <div class="prod-name">${item.name}</div>
         </div>
         <div class="prod-numbers">
-          <div class="prod-price">฿${Number(item.price).toLocaleString()}</div>
+          <div class="prod-price">⧉ ฿${Number(item.price).toLocaleString()}</div>
           <div class="prod-stats-row">
             <span style="color: #10b981;" title="พร้อมขาย"><i class="fas fa-thumbs-up"></i> ${item.availableStock || 0}</span>
             <span style="color: #fab919;" title="Hold"><i class="fas fa-exclamation-triangle"></i> ${item.holdQty || 0}</span>
@@ -198,12 +187,13 @@ function renderProducts(products) {
     container.appendChild(div);
   });
 }
+
 function openProductDetail(sku) {
   const item = localProductDatabase.find(p => p.sku === sku);
   document.getElementById('detailImage').src = parseDriveImage(item.imageUrl);
   document.getElementById('detailSku').innerText = item.sku;
   document.getElementById('detailName').innerText = item.name;
-  document.getElementById('detailPrice').innerText = '⧉' + Number(item.price).toLocaleString();
+  document.getElementById('detailPrice').innerText = '⧉ ฿' + Number(item.price).toLocaleString();
   document.getElementById('detailCurrent').innerText = item.currentStock;
   document.getElementById('detailAvail').innerText = item.availableStock;
   document.getElementById('productDetailModal').classList.remove('hide');
