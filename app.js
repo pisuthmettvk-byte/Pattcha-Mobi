@@ -34,11 +34,9 @@ async function submitLogin() {
       
       loginView.classList.add('login-fade-out');
       
-      // หน่วงเวลาเพิ่มเป็น 800ms เพื่อรอให้โลโก้ค่อยๆ สไลด์ขึ้นจนสุด
       setTimeout(() => {
         loginView.classList.add('hide');
         loginView.classList.remove('login-fade-out');
-        
         document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
         mainMenuView.classList.remove('hide');
         mainMenuView.classList.add('menu-fade-in');
@@ -177,7 +175,7 @@ function renderProducts(products) {
           <div class="prod-name">${item.name}</div>
         </div>
         <div class="prod-numbers">
-          <div class="prod-price">⧉ ฿${Number(item.price).toLocaleString()}</div>
+          <div class="prod-price">฿${Number(item.price).toLocaleString()}</div>
           <div class="prod-stats-row">
             <span style="color: #10b981;" title="พร้อมขาย"><i class="fas fa-thumbs-up"></i> ${item.availableStock || 0}</span>
             <span style="color: #fab919;" title="Hold"><i class="fas fa-exclamation-triangle"></i> ${item.holdQty || 0}</span>
@@ -191,17 +189,29 @@ function renderProducts(products) {
 
 function openProductDetail(sku) {
   const item = localProductDatabase.find(p => p.sku === sku);
+  
   document.getElementById('detailImage').src = parseDriveImage(item.imageUrl);
   document.getElementById('detailSku').innerText = item.sku;
-  document.getElementById('detailName').innerText = item.name;
-  document.getElementById('detailPrice').innerText = '⧉ ฿' + Number(item.price).toLocaleString();
-  document.getElementById('detailCurrent').innerText = item.currentStock;
-  document.getElementById('detailAvail').innerText = item.availableStock;
+  document.getElementById('detailName').innerText = item.name || "-";
+  document.getElementById('detailPrice').innerText = '฿' + Number(item.price).toLocaleString(); // ถอด ⧉ ออก
+
+  // ดึงข้อมูล 5 รายการ Material
+  document.getElementById('detailMainCat').innerText = item.mainCategoryCode || "-";
+  document.getElementById('detailSubCat').innerText = item.subCategoryCode || "-";
+  document.getElementById('detailMatCode').innerText = item.materialCode || "-";
+  document.getElementById('detailStyleCode').innerText = item.styleCode || "-";
+  document.getElementById('detailProdCode').innerText = item.productCode || item.sku || "-";
+
+  // ดึงข้อมูล 5 รายการ สต็อก
+  document.getElementById('detailCurrent').innerText = item.currentStock || 0;
+  document.getElementById('detailAvail').innerText = item.availableStock || 0;
+  document.getElementById('detailHold').innerText = item.holdQty || 0;
+  document.getElementById('detailDefect').innerText = item.defectiveQty || 0;
+  document.getElementById('detailSale').innerText = item.soldQty || item.saleQty || 0;
+
   document.getElementById('productDetailModal').classList.remove('hide');
 }
 
 function closeProductDetail() { 
     document.getElementById('productDetailModal').classList.add('hide'); 
 }
-
-
