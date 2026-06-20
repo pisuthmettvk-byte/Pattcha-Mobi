@@ -1,4 +1,3 @@
-
 const API_URL = "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec";
 
 let localProductDatabase = []; 
@@ -176,7 +175,7 @@ function renderProducts(products) {
           <div class="prod-name">${item.name}</div>
         </div>
         <div class="prod-numbers">
-          <div class="prod-price">⧉ ฿${Number(item.price).toLocaleString()}</div>
+          <div class="prod-price">฿${Number(item.price).toLocaleString()}</div>
           <div class="prod-stats-row">
             <span style="color: #10b981;" title="พร้อมขาย"><i class="fas fa-thumbs-up"></i> ${item.availableStock || 0}</span>
             <span style="color: #fab919;" title="Hold"><i class="fas fa-exclamation-triangle"></i> ${item.holdQty || 0}</span>
@@ -194,7 +193,7 @@ function openProductDetail(sku) {
   document.getElementById('detailImage').src = parseDriveImage(item.imageUrl);
   document.getElementById('detailSku').innerText = item.sku;
   document.getElementById('detailName').innerText = item.name || "-";
-  document.getElementById('detailPrice').innerText = '⧉ ฿' + Number(item.price).toLocaleString(); 
+  document.getElementById('detailPrice').innerText = '฿' + Number(item.price).toLocaleString(); 
 
   document.getElementById('detailMainCat').innerText = item.mainCategoryCode || "-";
   document.getElementById('detailSubCat').innerText = item.subCategoryCode || "-";
@@ -214,6 +213,3 @@ function openProductDetail(sku) {
 function closeProductDetail() { 
     document.getElementById('productDetailModal').classList.add('hide'); 
 }
-
-
-
