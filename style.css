@@ -43,7 +43,7 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 .menu-card:active { transform: scale(0.98); background: #fffafa; border-color: #db8591; }
 .menu-icon { width: 38px; display: flex; justify-content: center; color: #d4af37; font-size: 22px; }
 .menu-text { text-align: center; flex-grow: 1; color: #333333; font-size: 14px; font-weight: bold; }
-.menu-arrow { color: #fab919; margin-left: 35px; font-weight: bold; }
+.menu-arrow { color: #fab919; margin-left: 31px; font-size: large; }
 
 .category-row { padding: 22px 20px; margin: 15px 20px 10px 20px; border-radius: 16px; font-size: 17px; font-weight: bold; display: flex; align-items: center; background: #ffffff; cursor: pointer; gap: 15px; border: 1px solid rgba(231, 160, 140, 0.2); box-shadow: 0 8px 20px rgba(219, 133, 145, 0.2); }
 .product-row { display: flex; padding: 15px 20px; border-bottom: 1px solid rgba(231, 160, 140, 0.15); background: #ffffff; cursor: pointer; gap: 15px; align-items: center; }
