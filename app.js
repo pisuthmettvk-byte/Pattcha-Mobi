@@ -12,7 +12,7 @@ window.onload = function() {
   }
 };
 
-function submitLogin() {
+async function submitLogin() {
   const code = document.getElementById('branchCodeInput').value.trim().toUpperCase();
   const btn = document.getElementById('btnSubmitLogin');
   if(!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
