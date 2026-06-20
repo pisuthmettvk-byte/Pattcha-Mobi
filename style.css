@@ -1,14 +1,11 @@
-
 body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; color: #333; overflow-x: hidden; touch-action: manipulation; }
 .view-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; width: 100vw; }
 .hide { display: none !important; }
 
-/* จัดการโลโก้ให้ไม่มี margin ติดลบเพื่อแก้ปัญหาเลื่อนกระตุก */
 .main-logo { width: 85%; max-width: 320px; filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); }
-.logo-style { width: 85%; max-width: 320px; margin-top: 0px; margin-bottom: 5px; }
+.logo-style { width: 85%; max-width: 320px; margin-top: -40px; margin-bottom: -50px; }
 
-/* ดันเนื้อหาเมนูลงมาให้สัมพันธ์กับระยะโลโก้ที่แก้ใหม่ */
-#mainMenuView { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; height: 100vh; width: 100vw; padding-top: 6vh; box-sizing: border-box; }
+#mainMenuView { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; height: 100vh; width: 100vw; padding-top: 1vh; box-sizing: border-box; }
 #mainMenuView > div:first-child { margin-bottom: 5px; } 
 
 .login-btn { background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); background-size: 200% auto; color: white; border: none; transition: all 0.4s ease; width: 80%; max-width: 320px; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(219, 133, 145, 0.4); }
@@ -38,14 +35,14 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 .detail-stat-box .lbl { font-size: 9px; color: #888; margin-bottom: 4px; text-transform: uppercase; }
 .detail-stat-box .val { font-size: 13px; font-weight: bold; color: #333; text-align: center; word-break: break-all;}
 
+/* แอนิเมชันสำหรับปุ่มสถานะสต็อกแบบ Dropdown */
 .status-dropdown { cursor: pointer; transition: 0.2s ease; border: 1px solid transparent; }
 .status-dropdown:active { transform: scale(0.92); background: #f9fafb; border-color: #db8591; }
 .status-dropdown .lbl i { margin-left: 3px; font-size: 10px; color: #db8591; }
 
-/* ใช้ ease-out และปรับระยะให้หยุดพอดีเป๊ะๆ ไม่มีเด้งกลับ */
 .login-fade-out > img { animation: logoSlideUp 0.8s forwards ease-out; }
 .login-fade-out > div, .login-fade-out > button { animation: formShrink 0.5s forwards cubic-bezier(0.4, 0, 0.2, 1); }
-@keyframes logoSlideUp { to { transform: translateY(-28vh); opacity: 1; } }
+@keyframes logoSlideUp { to { transform: translateY(-22vh); opacity: 1; } }
 @keyframes formShrink { to { transform: scale(0.5) translateY(30px); opacity: 0; } }
 
 .menu-fade-in { animation: viewFadeIn 0.1s forwards; }
@@ -64,7 +61,3 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 .menu-fade-in .menu-card:nth-child(6) { animation-delay: 0.65s; }
 .menu-fade-in .menu-card:nth-child(7) { animation-delay: 0.75s; }
 #mainMenuView:not(.menu-fade-in) .menu-card, #mainMenuView:not(.menu-fade-in) > div:first-child > div, #mainMenuView:not(.menu-fade-in) > div:first-child > p { opacity: 1; transform: none; }
-
-
-
-
