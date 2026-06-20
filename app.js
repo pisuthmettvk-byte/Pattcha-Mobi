@@ -191,32 +191,49 @@ function openProductDetail(sku) {
   const item = localProductDatabase.find(p => p.sku === sku);
   if (!item) return;
 
-  // 1. นำรูปภาพมาแสดง
-  document.getElementById('detailImage').src = parseDriveImage(item.imageUrl);
+  // 1. นำรูปภาพมาแสดง (ป้องกันกรณีโหลดรูปไม่ได้)
+  const detailImg = document.getElementById('detailImage');
+  if (detailImg) detailImg.src = parseDriveImage(item.imageUrl);
   
-  // 2. สร้างภาพบาร์โค้ดของจริง
-  JsBarcode("#detailBarcode", item.sku, {
-    format: "CODE128",
-    lineColor: "#333",
-    width: 2,
-    height: 40,
-    displayValue: false // ซ่อนตัวเลขไว้เนื่องจากมีแสดงอยู่ด้านล่างแล้ว
-  });
+  // 2. สร้างภาพบาร์โค้ดของจริง (พร้อมระบบดัก Error ป้องกันแอปค้าง)
+  const barcodeElement = document.getElementById('detailBarcode');
+  if (barcodeElement && item.sku) {
+    try {
+      JsBarcode("#detailBarcode", item.sku, {
+        format: "CODE128",
+        lineColor: "#333",
+        width: 2,
+        height: 40,
+        displayValue: false
+      });
+      barcodeElement.style.display = 'block';
+    } catch (e) {
+      console.warn("❌ ข้ามการสร้างบาร์โค้ด (รหัส SKU อาจไม่รองรับ):", e);
+      barcodeElement.style.display = 'none'; // ซ่อนบาร์โค้ดถ้ารหัสพัง
+    }
+  }
+
+  // ฟังก์ชันตัวช่วย: เช็กว่ามี ID HTML นั้นอยู่จริงก่อนใส่ข้อความ (ป้องกัน Error Null)
+  const safeSetText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
+  };
 
   // 3. ใส่ข้อมูลและรายละเอียดสินค้า
-  document.getElementById('detailCategory').innerText = item.category || 'NO CATEGORY';
-  document.getElementById('detailSku').innerText = item.sku;
-  document.getElementById('detailName').innerText = item.name;
-  document.getElementById('detailPrice').innerText = '฿' + Number(item.price || 0).toLocaleString();
+  safeSetText('detailCategory', item.category || 'NO CATEGORY');
+  safeSetText('detailSku', item.sku);
+  safeSetText('detailName', item.name);
+  safeSetText('detailPrice', '฿' + Number(item.price || 0).toLocaleString());
   
   // 4. ใส่ประเภทจำนวนสินค้า
-  document.getElementById('detailCurrent').innerText = item.currentStock || 0;
-  document.getElementById('detailAvail').innerText = item.availableStock || 0;
-  document.getElementById('detailHold').innerText = item.holdQty || 0;
-  document.getElementById('detailDefect').innerText = item.defectiveQty || 0;
-  document.getElementById('detailSold').innerText = item.saleStock || 0;
+  safeSetText('detailCurrent', item.currentStock || 0);
+  safeSetText('detailAvail', item.availableStock || 0);
+  safeSetText('detailHold', item.holdQty || 0);
+  safeSetText('detailDefect', item.defectiveQty || 0);
+  safeSetText('detailSold', item.saleStock || 0);
 
-  document.getElementById('productDetailModal').classList.remove('hide');
+  const modal = document.getElementById('productDetailModal');
+  if (modal) modal.classList.remove('hide');
 }
 
 function closeProductDetail() { 
