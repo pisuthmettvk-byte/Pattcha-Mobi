@@ -30,7 +30,7 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
   cursor: pointer; 
   transition: all 0.2s ease; 
   width: 90%; 
-  max-width: 320px; 
+  max-width: 350px; 
   box-shadow: 0 6px 16px rgba(219, 133, 145, 0.25); 
   box-sizing: border-box; 
   margin-bottom: 10px; /* คืนค่าระยะห่าง 10px เหมือนเดิม */
