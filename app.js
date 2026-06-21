@@ -359,9 +359,9 @@ function renderProducts(products) {
       <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
         
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-          <div class="prod-text">
-            <div class="prod-sku" style="margin-top: 0;">${safeSku}</div>
-            <div class="prod-name">${safeName}</div>
+          <div class="prod-text">sku
+            <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+            <div class="prod-sku">${safeSku}</div>
           </div>
           <div class="prod-price" style="margin-top: 0 !important;">฿${priceStr}</div>
         </div>
