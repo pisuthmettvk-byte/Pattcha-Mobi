@@ -16,7 +16,7 @@ body {
   display: flex; flex-direction: column; align-items: center; 
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
   z-index: 50; 
-  /* ลบคำสั่ง pointer-events: none ทิ้งไปเลยครับ เพราะมันจะไม่ซ้อนกันแล้ว! */
+  pointer-events: none; 
 }
 
 .header-center { 
