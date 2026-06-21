@@ -114,7 +114,7 @@ async function submitLogin() {
     const response = await fetch(CONFIG.API_URL + "?action=login&branch=" + code);
     const res = await response.json();
     
-    if (res.success) {
+ if (res.success) {
       localStorage.setItem('pattcha_branch', code);
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
@@ -122,24 +122,26 @@ async function submitLogin() {
       const sharedHeader = document.getElementById('sharedHeader');
       const loginView = document.getElementById('loginView');
       const mainMenuView = document.getElementById('mainMenuView');
-      const mainMenuTitleGroup = document.getElementById('mainMenuTitleGroup');
 
+      // 1. สั่งให้ช่องกรอกรหัสจางหายไป
       loginView.classList.add('fade-out');
+      
+      // 2. สั่งให้โลโก้แชร์เฮดเดอร์พุ่งขึ้นไปข้างบนสุด
       sharedHeader.classList.remove('header-center');
       sharedHeader.classList.add('header-top');
 
-      // อนิเมชั่นแม่นยำ 100% ด้วย transitionend
+      // 3. รออนิเมชั่นเฟดเสร็จเป๊ะๆ แล้วเปิดหน้าเมนูหลัก
       loginView.addEventListener('transitionend', function onEnd(e) {
         if (e.propertyName !== 'opacity') return;
         loginView.removeEventListener('transitionend', onEnd); 
 
         loginView.classList.add('hide');
         mainMenuView.classList.remove('hide');
+        mainMenuView.classList.add('fade-in');
         
         document.getElementById('branchLabel').innerText = "LOCATION : " + escapeHTML(currentBranch);
-        mainMenuTitleGroup.classList.remove('hide');
-        mainMenuTitleGroup.classList.add('fade-in-text'); 
       });
+    }
 
     } else {
       alert("❌ " + escapeHTML(res.message));
