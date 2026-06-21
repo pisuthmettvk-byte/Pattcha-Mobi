@@ -245,8 +245,9 @@ async function submitLogin() {
   }
 }
 
-function logoutBranch() {
-  if (confirm("ต้องการออกจากระบบสาขาใช่หรือไม่?")) {
+async function logoutBranch() {
+  const isConfirm = await customConfirm("ต้องการออกจากระบบสาขาใช่หรือไม่?", "LOGOUT");
+  if (isConfirm) {
     localStorage.removeItem('pattcha_branch');
     location.reload();
   }
