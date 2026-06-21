@@ -128,3 +128,34 @@ body {
   margin-top: 0 !important; 
   margin-bottom: 25px; /* เว้นระยะห่างก่อนถึงปุ่มแรก */
 }
+
+
+
+/* =========================================
+   CUSTOM ALERT MODAL (หน้าต่างแจ้งเตือน)
+   ========================================= */
+.custom-alert-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.6); z-index: 9999; /* ทับทุกอย่างในแอป */
+  display: flex; justify-content: center; align-items: center;
+}
+
+.custom-alert-box {
+  background: white; width: 80%; max-width: 320px; 
+  border-radius: 16px; padding: 25px 20px; text-align: center; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.custom-alert-box h3 { margin: 0 0 10px 0; color: #db8591; font-size: 16px; font-weight: bold; letter-spacing: 1px; }
+.custom-alert-box p { margin: 0 0 20px 0; color: #555; font-size: 13px; line-height: 1.5; }
+
+.custom-alert-buttons { display: flex; gap: 10px; justify-content: center; }
+
+.btn-alert-cancel { 
+  flex: 1; padding: 12px; border: 1px solid #db8591; background: transparent; 
+  color: #db8591; border-radius: 8px; font-weight: bold; cursor: pointer;
+}
+.btn-alert-ok { 
+  flex: 1; padding: 12px; background: linear-gradient(135deg, #db8591 0%, #e7a08c 100%); 
+  color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+}
