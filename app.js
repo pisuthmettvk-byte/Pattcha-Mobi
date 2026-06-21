@@ -13,6 +13,55 @@ const ICON_MAP = {
   'watch': 'fa-clock'
 };
 
+
+// ==========================================
+// CUSTOM ALERT HELPER FUNCTIONS
+// ==========================================
+function customAlert(message, title = "NOTICE") {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('customAlertOverlay');
+    document.getElementById('customAlertTitle').innerText = title;
+    document.getElementById('customAlertMessage').innerText = message;
+    
+    const btnOk = document.getElementById('customAlertOk');
+    const btnCancel = document.getElementById('customAlertCancel');
+    
+    btnCancel.classList.add('hide'); // ซ่อนปุ่ม Cancel (มีแค่ OK)
+    overlay.classList.remove('hide');
+    
+    btnOk.onclick = () => {
+      overlay.classList.add('hide');
+      resolve(true);
+    };
+  });
+}
+
+function customConfirm(message, title = "CONFIRM") {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('customAlertOverlay');
+    document.getElementById('customAlertTitle').innerText = title;
+    document.getElementById('customAlertMessage').innerText = message;
+    
+    const btnOk = document.getElementById('customAlertOk');
+    const btnCancel = document.getElementById('customAlertCancel');
+    
+    btnCancel.classList.remove('hide'); // แสดงปุ่ม Cancel ให้เลือก
+    overlay.classList.remove('hide');
+    
+    btnOk.onclick = () => {
+      overlay.classList.add('hide');
+      resolve(true);
+    };
+    btnCancel.onclick = () => {
+      overlay.classList.add('hide');
+      resolve(false);
+    };
+  });
+}
+
+
+
+
 // ==========================================
 // GLOBAL STATE
 // ==========================================
