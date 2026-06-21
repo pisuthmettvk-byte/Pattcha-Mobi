@@ -11,8 +11,6 @@ window.onload = function() {
   }
 };
 
-
-
 async function submitLogin() {
   const code = document.getElementById('branchCodeInput').value.trim().toUpperCase();
   const btn = document.getElementById('btnSubmitLogin');
@@ -29,36 +27,28 @@ async function submitLogin() {
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
 
-      // 🌟 ==================== Smooth Animation Logic ==================== 🌟
+      // 🌟 โลจิกสไลด์โลโก้แบบใหม่ (One Logo Animation) 🌟
+      const sharedHeader = document.getElementById('sharedHeader');
       const loginView = document.getElementById('loginView');
       const mainMenuView = document.getElementById('mainMenuView');
+      const mainMenuTitleGroup = document.getElementById('mainMenuTitleGroup');
 
-      // 1. ใส่คลาส fade-out ให้หน้า Login ค่อยๆ ย่อและหายไป
+      // 1. ซ่อนช่องกรอกรหัสไปก่อน
       loginView.classList.add('fade-out');
 
-      // 2. ใช้ setTimeout เพื่อรอให้อนิเมชั่น (0.5 วินาทีตาม CSS) ทำงานเสร็จก่อน
+      // 2. สั่งให้โลโก้ตรงกลาง "สไลด์พุ่งขึ้นไปข้างบน"
+      sharedHeader.classList.remove('header-center');
+      sharedHeader.classList.add('header-top');
+
+      // 3. รอจังหวะโลโก้สไลด์เสร็จ (400ms) แล้วแสดงปุ่ม Main Menu พร้อมข้อความ
       setTimeout(() => {
-        // 3. หลังจาก 0.5 วินาที: ซ่อนหน้า Login จริงๆ (เพิ่มคลาส .hide)
         loginView.classList.add('hide');
-
-        // 4. แสดงหน้า Main Menu (เริ่มต้นจะยังไม่เห็น เพราะอนิเมชั่น CSS กำหนดให้ opacity เริ่มที่ 0)
         mainMenuView.classList.remove('hide');
-
-        // 5. อัปเดตข้อมูล Main Menu (เช่น ชื่อสาขา)
-        document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
-
-        // 6. ใส่คลาส fade-in ให้หน้า Main Menu ค่อยๆ ปรากฏและขยายตัวขึ้นมา
-        mainMenuView.classList.add('fade-in');
         
-        // 7. เคลียร์คลาสเพื่อเตรียมพร้อมสำหรับการล็อกเอาต์หรืออนิเมชั่นครั้งต่อไป
-        setTimeout(() => {
-            loginView.classList.remove('fade-out'); // เอา fade-out ออกจากหน้า login ที่ซ่อนอยู่
-            mainMenuView.classList.remove('fade-in'); // เอา fade-in ออกจากหน้า main menu ที่แสดงผลเต็มตัวแล้ว
-        }, 500); // รออีก 0.5 วินาทีเพื่อให้ fade-in ทำงานเสร็จ
-
-      }, 500); // รอ 0.5 วินาทีหลังจากสั่ง fade-out
-
-      // 🌟 ================================================================ 🌟
+        document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
+        mainMenuTitleGroup.classList.remove('hide');
+        mainMenuTitleGroup.classList.add('fade-in-text'); 
+      }, 400);
 
     } else {
       alert("❌ " + res.message);
@@ -71,7 +61,6 @@ async function submitLogin() {
   btn.innerText = "SUBMIT";
   btn.disabled = false;
 }
-
 
 function logoutBranch() {
   if (confirm("ต้องการออกจากระบบสาขาใช่หรือไม่?")) {
@@ -96,6 +85,7 @@ function getCategoryIcon(catName) {
 }
 
 function openStockInHouse() {
+  document.getElementById('sharedHeader').classList.add('hide'); // ซ่อนโลโก้เวลาเข้าหน้าสต๊อก
   document.getElementById('mainMenuView').classList.add('hide');
   document.getElementById('stockInHouseView').classList.remove('hide');
   renderCategories();
@@ -109,6 +99,7 @@ function handleStockBack() {
     clearSearch();
   } else {
     document.getElementById('stockInHouseView').classList.add('hide');
+    document.getElementById('sharedHeader').classList.remove('hide'); // เอาโลโก้กลับมาเวลาถอยกลับมา Main Menu
     document.getElementById('mainMenuView').classList.remove('hide');
   }
 }
