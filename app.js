@@ -17,16 +17,19 @@ function initEventListeners() {
   // หน้า Login
   document.getElementById('btnSubmitLogin').addEventListener('click', submitLogin);
   
-  // หน้า Main Menu
+  // 🌟 หน้า Main Menu (อัปเดตใหม่ 5 ปุ่ม) 🌟
   document.getElementById('btnMenuStock').addEventListener('click', openStockInHouse);
-  document.getElementById('btnMenuTransfer').addEventListener('click', () => alert('TRANSFER PRODUCT - กำลังพัฒนา'));
-  document.getElementById('btnMenuHold').addEventListener('click', () => alert('HOLD PRODUCT - กำลังพัฒนา'));
-  document.getElementById('btnMenuDefect').addEventListener('click', () => alert('DEFECTIVE - กำลังพัฒนา'));
+  
+  // แจ้งเตือนว่าปุ่มนี้มีเมนูย่อยซ่อนอยู่ด้านใน
+  document.getElementById('btnMenuMovement').addEventListener('click', () => alert('PRODUCT MOVEMENT: Transfer In/Out, Hold, Defective (กำลังพัฒนา)'));
+  
   document.getElementById('btnMenuTake').addEventListener('click', () => alert('STOCK TAKE - กำลังพัฒนา'));
   document.getElementById('btnMenuAdjust').addEventListener('click', () => alert('ADJUST STOCK - กำลังพัฒนา'));
   document.getElementById('btnMenuLocation').addEventListener('click', () => alert('LOCATION - กำลังพัฒนา'));
   document.getElementById('btnLogout').addEventListener('click', logoutBranch);
 
+  // หน้า Stock
+  // ... (โค้ดด้านล่างปล่อยไว้เหมือนเดิมครับ) ...
   // หน้า Stock
   document.getElementById('btnStockBack').addEventListener('click', handleStockBack);
   document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
