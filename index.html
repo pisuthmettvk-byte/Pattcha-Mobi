@@ -18,16 +18,8 @@
 </head>
 <body>
 
-  <div id="sharedHeader" class="shared-header header-center">
+ <div id="sharedHeader" class="shared-header header-center">
     <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Logo" class="app-logo">
-    <div id="mainMenuTitleGroup" class="hide" style="width: 100%; text-align: center;">
-      <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px;">
-        <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
-        <h2 style="color: #db8591; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 4px;">MAIN MENU</h2>
-        <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
-      </div>
-      <p id="branchLabel" style="color: #e7a08c; font-size: 11px; margin-top: 8px; font-weight: bold;"></p>
-    </div>
   </div>
 
   <div id="loginView" class="view-screen">
@@ -37,26 +29,30 @@
     </div>
   </div>
 
-<div id="mainMenuView" class="view-screen hide" style="justify-content: flex-start;">
+  <div id="mainMenuView" class="view-screen hide" style="justify-content: flex-start; padding-top: 140px; box-sizing: border-box;">
     
-    <div class="menu-container" style="width: 85%; max-width: 340px; display: flex; flex-direction: column; gap: 10px; margin-top: 32vh;">
-      
+    <div id="mainMenuTitleGroup" class="hide" style="width: 100%; text-align: center; margin-bottom: 25px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
+        <h2 style="color: #db8591; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 4px;">MAIN MENU</h2>
+        <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
+      </div>
+      <p id="branchLabel" style="color: #e7a08c; font-size: 11px; margin-top: 8px; font-weight: bold;"></p>
+    </div>
+
+    <div class="menu-container" style="width: 85%; max-width: 340px; display: flex; flex-direction: column; gap: 10px;">
       <button id="btnMenuStock" class="menu-card"><div class="menu-icon"><i class="fas fa-warehouse"></i></div><div class="menu-text">STOCK IN HOUSE</div><div class="menu-arrow">❯</div></button>
-      
       <button id="btnMenuMovement" class="menu-card"><div class="menu-icon"><i class="fas fa-exchange-alt"></i></div><div class="menu-text">PRODUCT MOVEMENT</div><div class="menu-arrow">❯</div></button>
-      
       <button id="btnMenuTake" class="menu-card"><div class="menu-icon"><i class="fas fa-chart-bar"></i></div><div class="menu-text">STOCK TAKE</div><div class="menu-arrow">❯</div></button>
-      
       <button id="btnMenuAdjust" class="menu-card"><div class="menu-icon"><i class="fas fa-tools"></i></div><div class="menu-text">ADJUST STOCK</div><div class="menu-arrow">❯</div></button>
-      
       <button id="btnMenuLocation" class="menu-card"><div class="menu-icon"><i class="fas fa-map-marker-alt"></i></div><div class="menu-text">LOCATION</div><div class="menu-arrow">❯</div></button>
-      
     </div>
     
     <div style="margin-top: 25px; margin-bottom: 25px;">
       <button id="btnLogout" style="background: transparent; border: none; color: #db8591; font-size: 12px; font-weight: bold; text-decoration: underline; cursor: pointer; padding: 10px;">LOGOUT SYSTEM</button>
     </div>
   </div>
+  
   <div id="stockInHouseView" class="view-screen hide" style="justify-content: flex-start; background-color: #f9fafb; display: flex; flex-direction: column;">
     <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); flex-shrink: 0; box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4); padding-bottom: 20px; z-index: 10;">
       <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px; box-sizing: border-box;">
