@@ -24,10 +24,11 @@ body {
   transform: translateY(-50%); 
 }
 
+/* 🌟 1. ปรับเฮดเดอร์ให้กว้างขึ้น เพื่อรองรับโลโก้ขนาดใหญ่ 🌟 */
 .header-top { 
   top: 0; 
   transform: translateY(0); 
-  height: 90px !important; /* จำกัดความสูงพื้นที่โลโก้ไว้แค่ 90px */
+  height: 140px !important; /* เพิ่มความสูงเฮดเดอร์ */
   background: transparent;
 }
 
@@ -40,11 +41,12 @@ body {
   padding: 20px 0;
 }
 
-/* ล็อกความสูงรูปภาพโลโก้ ไม่ให้ยืดตามขนาดจอจนทับเมนู */
+/* 🌟 2. คืนขนาดโลโก้ ให้ใหญ่เกือบเท่าตอนอยู่หน้ากรอกรหัส 🌟 */
 .header-top .app-logo { 
-  width: auto !important; 
-  height: 55px !important; /* บังคับรูปสูงเท่านี้พอดีในกรอบ 90px */
-  padding: 15px 0 0 0;
+  width: 70% !important; /* กลับมาใช้เปอเซนต์ที่กว้างขึ้น */
+  max-width: 250px !important; 
+  height: auto !important; 
+  padding: 25px 0 0 0;
 }
 
 /* เลย์เอาต์หน้าจอหลัก */
@@ -108,14 +110,15 @@ body {
 .detail-stat-box .val { font-size: 15px; font-weight: bold; color: #333; }
 
 
-/* ปลดล็อกแรงดึงดูดตรงกลางจอ ป้องกันเมนูดิ่งขึ้นไปซ้อน */
+/* 🌟 3. ดันบล็อกเมนูทั้งหมดลงไปช่วงล่างของหน้าจอ 🌟 */
 #mainMenuView {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding-top: 110px !important; /* เริ่มเนื้อหาที่พิกเซล 110 (พ้นขอบเฮดเดอร์ 90px + เว้นระยะปลอดภัย 20px) */
-  justify-content: flex-start !important; /* บังคับให้เรียงจากบนลงล่าง ห้ามดีดกลับไปตรงกลางจอ */
+  /* ใช้ 30vh คือการดันลงมา 30% ของความสูงหน้าจอ ทำให้เมนูไปกองอยู่ครึ่งล่างพอดี */
+  padding-top: 30vh !important; 
+  justify-content: flex-start !important;
   box-sizing: border-box;
 }
 
