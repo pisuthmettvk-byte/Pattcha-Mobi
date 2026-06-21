@@ -19,24 +19,17 @@ function toggleScanner() {
     html5QrCode.start(
       { facingMode: "environment" },
       { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.QR_CODE
-        ]
+        fps: 30, // 🌟 อัปเกรดความเร็ว: เร่งการจับภาพเป็น 30 เฟรม/วินาที (สแกนไวขึ้น 3 เท่า)
+        qrbox: { width: 280, height: 120 }, // 🌟 อัปเกรดกรอบสแกน: เป็นสี่เหลี่ยมผืนผ้าแนวนอน เข้ากับบาร์โค้ดสินค้า
+        disableFlip: false // 🌟 ช่วยให้อ่านบาร์โค้ดที่กลับหัวได้
       },
       (decodedText) => {
         searchInput.value = decodedText;
         toggleScanner(); // สแกนเสร็จ ปิดกล้องทันที
         handleMagicSearch(); // ดึงข้อมูลทันที
       },
-      () => { /* ไม่ต้อง Log ระหว่างหาสัญญาณภาพ */ }
-    ).catch(err => {
+      (errorMessage) => { /* ซ่อน Error จุกจิกเวลากล้องกำลังโฟกัส */ }
+    ).catch((err) => {
       console.error(err);
       isScannerMode = false;
       searchContainer.style.display = 'block';
@@ -46,10 +39,11 @@ function toggleScanner() {
   } else {
     searchContainer.style.display = 'block';
     readerContainer.style.display = 'none';
+    
     if (html5QrCode) {
       html5QrCode.stop().then(() => {
         html5QrCode.clear();
-        html5QrCode = null;
+        html5QrCode = null; // 🌟 คืนพื้นที่ Memory ให้ iPhone ป้องกันแอปค้าง
       }).catch(err => console.log("Error stopping camera: ", err));
     }
   }
