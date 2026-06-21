@@ -27,9 +27,8 @@ body {
 .header-top { 
   top: 0; 
   transform: translateY(0); 
-  height: 70px; /* 🌟 บีบความสูงของกล่องรวมให้แคบลงเหลือแค่ 70px */
-  background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  height: 90px !important; /* จำกัดความสูงพื้นที่โลโก้ไว้แค่ 90px */
+  background: transparent;
 }
 
 
@@ -41,10 +40,11 @@ body {
   padding: 20px 0;
 }
 
+/* ล็อกความสูงรูปภาพโลโก้ ไม่ให้ยืดตามขนาดจอจนทับเมนู */
 .header-top .app-logo { 
-  width: 55%; 
-  max-width: 200px; 
-  padding: 0; /* 🌟 ลบพื้นที่ว่างบนล่างออก ให้ขอบกล่องแนบชิดตัวโลโก้มากที่สุด โดยที่รูปขนาดเท่าเดิม */
+  width: auto !important; 
+  height: 55px !important; /* บังคับรูปสูงเท่านี้พอดีในกรอบ 90px */
+  padding: 15px 0 0 0;
 }
 
 /* เลย์เอาต์หน้าจอหลัก */
@@ -108,19 +108,20 @@ body {
 .detail-stat-box .val { font-size: 15px; font-weight: bold; color: #333; }
 
 
+/* ปลดล็อกแรงดึงดูดตรงกลางจอ ป้องกันเมนูดิ่งขึ้นไปซ้อน */
 #mainMenuView {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding-top: 95px !important; /* 🌟 ขยับเมนูขึ้นมาเริ่มที่ 95px (พ้นรัศมีกล่อง 70px + ระยะกันชน 25px) */
+  padding-top: 110px !important; /* เริ่มเนื้อหาที่พิกเซล 110 (พ้นขอบเฮดเดอร์ 90px + เว้นระยะปลอดภัย 20px) */
+  justify-content: flex-start !important; /* บังคับให้เรียงจากบนลงล่าง ห้ามดีดกลับไปตรงกลางจอ */
   box-sizing: border-box;
 }
 
-/* ลบ margin-top ที่ Title Group ออกได้เลย ปล่อยให้มันชิดขอบบนของกล่อง mainMenuView ที่เว้นระยะไว้แล้ว */
 #mainMenuTitleGroup {
   width: 100%;
   text-align: center;
-  margin-bottom: 20px; /* เว้นระยะห่างจากปุ่มเมนูด้านล่าง 20px */
-  margin-top: 0 !important; /* 🌟 ล้างค่าการผลักจากด้านบนทิ้งไปเลย เพื่อไม่ให้เปลืองพื้นที่จอ */
+  margin-top: 0 !important; 
+  margin-bottom: 25px; /* เว้นระยะห่างก่อนถึงปุ่มแรก */
 }
