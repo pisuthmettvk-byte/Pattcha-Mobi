@@ -343,32 +343,48 @@ function renderProducts(products) {
   
   products.forEach(item => {
     const div = document.createElement('div');
-    div.className = 'product-row';
+    div.className = 'product-row'; // คงคลาสเดิมไว้ เพื่อรักษากรอบและการคลิก
     div.addEventListener('click', () => openProductDetail(item.sku));
     
+    // ดึงข้อมูลพื้นฐาน (คงของเดิมไว้ 100%)
     const safeSku = escapeHTML(item.sku || '-');
     const safeName = escapeHTML(item.name || '-');
     const priceStr = Number(item.price || 0).toLocaleString();
     const stockAvail = escapeHTML(item.availableStock || 0);
+    
+    // 🌟 ดึงข้อมูลดึงสต็อก Hold และ Defect เพิ่มเติมตามที่สั่ง
+    const stockHold = escapeHTML(item.holdQty || 0);
+    const stockDefect = escapeHTML(item.defectiveQty || 0);
 
     div.innerHTML = `
       <img class="prod-img" src="${parseDriveImage(item.imageUrl)}">
-      <div class="prod-info-wrapper">
-        <div class="prod-text">
-          <div class="prod-sku">${safeSku}</div>
-          <div class="prod-name">${safeName}</div>
-        </div>
-        <div class="prod-numbers">
+      
+      <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; min-height: 75px;">
+        
+        <div class="product-item-top">
+          <div class="product-info-left">
+            <div class="prod-sku">${safeSku}</div>
+            <div class="prod-name">${safeName}</div>
+          </div>
           <div class="prod-price">฿${priceStr}</div>
-          <div class="prod-stats-row">
-            <span style="color: #10b981;"><i class="fas fa-thumbs-up"></i> ${stockAvail}</span>
+        </div>
+
+        <div class="product-item-bottom">
+          <div class="stock-badge stock-avail">
+            <span>${stockAvail}</span>
+          </div>
+          <div class="stock-badge stock-hold">
+            <i class="fas fa-exclamation-triangle"></i> <span>${stockHold}</span>
+          </div>
+          <div class="stock-badge stock-defect">
+            <i class="fas fa-times-circle"></i> <span>${stockDefect}</span>
           </div>
         </div>
+        
       </div>`;
     container.appendChild(div);
   });
 }
-
 function openProductDetail(sku) {
   const item = localProductDatabase.find(p => p.sku === sku);
   if (!item) return;
