@@ -150,16 +150,16 @@ async function submitLogin() {
       const loginView = document.getElementById('loginView');
       const mainMenuView = document.getElementById('mainMenuView');
 
-      // 1. สั่งให้ช่องกรอกรหัสจางหายไป
+      // เฟดหน้าจอ Login ออก
       loginView.classList.add('fade-out');
       
-      // 2. สั่งให้โลโก้แชร์เฮดเดอร์พุ่งขึ้นไปข้างบนสุด
+      // สั่งแชร์เฮดเดอร์สไลด์ขึ้นไปจอดด้านบน
       if (sharedHeader) {
         sharedHeader.classList.remove('header-center');
         sharedHeader.classList.add('header-top');
       }
 
-      // 3. รออนิเมชั่นเฟดเสร็จเป๊ะๆ แล้วเปิดหน้าเมนูหลัก
+     // เปิดหน้าเมนูอย่างนุ่มนวลตามลำดับบล็อก Flow
       loginView.addEventListener('transitionend', function onEnd(e) {
         if (e.propertyName !== 'opacity') return;
         loginView.removeEventListener('transitionend', onEnd); 
