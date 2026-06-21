@@ -120,5 +120,6 @@ body {
 #mainMenuTitleGroup {
   width: 100%;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 20px; /* เว้นระยะห่างจากปุ่มเมนูด้านล่าง 20px */
+  margin-top: 0 !important; /* 🌟 ล้างค่าการผลักจากด้านบนทิ้งไปเลย เพื่อไม่ให้เปลืองพื้นที่จอ */
 }
