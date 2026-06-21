@@ -1,10 +1,29 @@
 body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; color: #333; overflow-x: hidden; touch-action: manipulation; }
 
 /* 🌟 อนิเมชั่นโลโก้ตัวเดียว (Smooth Glide Up) 🌟 */
-.shared-header { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50; pointer-events: none; }
-.header-center { top: 40%; transform: translateY(-50%); }
-.header-top { top: 55px; transform: translateY(0); }
+.shared-header { 
+  position: fixed; /* ✅ เปลี่ยนเป็น fixed ตามคำแนะนำ */
+  left: 0; 
+  right: 0; 
+  width: 100%; /* ✅ เพิ่ม width 100% เพื่อให้อยู่กึ่งกลางเป๊ะ */
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
+  z-index: 50; 
+  pointer-events: none; 
+}
 
+.header-center { 
+  top: 40%; 
+  transform: translateY(-50%); 
+}
+
+.header-top { 
+  top: 0; /* ✅ เปลี่ยนจาก 55px เป็น 0 เพื่อให้ชิดขอบบนสุด */
+  transform: translateY(0); 
+  pointer-events: auto; /* ✅ อนุญาตให้กดได้เมื่ออยู่ด้านบน */
+}
 .app-logo { width: 75%; max-width: 280px; filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
 .header-top .app-logo { width: 65%; max-width: 240px; margin-bottom: 0; }
 
