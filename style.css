@@ -1,73 +1,57 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-  background-color: #f3f4f6;
-  color: #333;
-  overflow-x: hidden;
-  touch-action: manipulation;
-}
+body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; color: #333; overflow-x: hidden; touch-action: manipulation; }
 
-/* ==================== Smooth Transition CSS ==================== */
-.view-screen {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  width: 100vw;
-  
-  /* 🌟 ตัวควบคุมอนิเมชั่น: กำหนดเวลา 0.5 วินาที ให้กับ opacity และ transform */
-  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-  opacity: 1; /* สถานะปกติคือแสดง */
-  transform: scale(1); /* ขนาดปกติ */
-}
+/* 🌟 อนิเมชั่นโลโก้ตัวเดียว (Smooth Glide Up) 🌟 */
+.shared-header { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50; pointer-events: none; }
+.header-center { top: 40%; transform: translateY(-50%); }
+.header-top { top: 55px; transform: translateY(0); }
 
-/* คลาสที่ใช้ซ่อนหน้าจอ: จะยังไม่ซ่อนทันที แต่จะลด opacity ลงก่อน */
-.view-screen.hide {
-  display: none !important; /* บังคับซ่อน */
-}
+.app-logo { width: 75%; max-width: 280px; filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+.header-top .app-logo { width: 65%; max-width: 240px; margin-bottom: 0; }
 
-/* คลาสที่ใช้สำหรับการ Fade-Out (ค่อยๆ หายไป) */
-.view-screen.fade-out {
-  opacity: 0; /* ค่อยๆ โปร่งใสจนหายไป */
-  transform: scale(0.95); /* ย่อขนาดลงเล็กน้อย */
-  pointer-events: none; /* ห้ามกดอะไรระหว่างอนิเมชั่น */
-}
+.fade-in-text { animation: fadeInText 0.5s forwards 0.4s; }
+@keyframes fadeInText { to { opacity: 1; } }
 
-/* คลาสที่ใช้สำหรับการ Fade-In (ค่อยๆ ปรากฏขึ้นมา) */
-.view-screen.fade-in {
-  opacity: 1; /* ค่อยๆ ปรากฏตัว */
-  transform: scale(1); /* กลับสู่ขนาดปกติ */
-}
-
+/* เลย์เอาต์และ Transition หลัก */
+.view-screen { display: flex; flex-direction: column; align-items: center; min-height: 100vh; width: 100vw; transition: opacity 0.4s ease; opacity: 1; }
+.hide { display: none !important; }
+.fade-out { opacity: 0; pointer-events: none; }
+.fade-in { opacity: 1; }
 
 /* Login Styles */
-.login-btn { background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); background-size: 200% auto; color: white; border: none; transition: all 0.4s ease; width: 80%; max-width: 320px; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(219, 133, 145, 0.4); }
-.login-btn:active { transform: scale(0.98); background-position: right center; }
-.login-input { width: 100%; padding: 15px; border-radius: 30px; border: 1px solid #e7a08c; background: #ffffff; color: #333; text-align: center; font-size: 16px !important; box-sizing: border-box; outline: none; transition: 0.3s; }
+.login-input-area { width: 100%; display: flex; flex-direction: column; align-items: center; margin-top: 55vh; transition: opacity 0.4s ease; }
+.login-btn { background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); color: white; border: none; width: 80%; max-width: 320px; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(219, 133, 145, 0.4); margin-top: 20px;}
+.login-btn:active { transform: scale(0.98); }
+.login-input { width: 80%; max-width: 320px; padding: 15px; border-radius: 30px; border: 1px solid #e7a08c; background: #ffffff; color: #333; text-align: center; font-size: 16px !important; box-sizing: border-box; outline: none; }
 .login-input:focus { border-color: #db8591; box-shadow: 0 0 8px rgba(219, 133, 145, 0.3); }
 
-/* Menu Styles */
-.menu-card { display: flex; align-items: center; background: #ffffff; border: 1px solid rgba(231, 160, 140, 0.25); border-radius: 20px; padding: 14px 18px; cursor: pointer; transition: all 0.2s ease; width: 100%; box-shadow: 0 6px 16px rgba(219, 133, 145, 0.25); box-sizing: border-box; }
+/* 🌟 อนิเมชั่นปุ่มเมนูกระจายตัว (Pop Up) 🌟 */
+.menu-card { display: flex; align-items: center; background: #ffffff; border: 1px solid rgba(231, 160, 140, 0.25); border-radius: 20px; padding: 14px 18px; cursor: pointer; width: 100%; box-shadow: 0 6px 16px rgba(219, 133, 145, 0.25); box-sizing: border-box; opacity: 0; transform: translateY(20px); }
 .menu-card:active { transform: scale(0.98); background: #fffafa; border-color: #db8591; }
-.menu-icon { width: 38px; display: flex; justify-content: center; color: #d4af37; font-size: 22px; margin-right: 15px; filter: drop-shadow(0px 2px 4px rgba(212, 175, 55, 0.3)); }
+.view-screen:not(.hide) .menu-card { animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.view-screen:not(.hide) .menu-card:nth-child(1) { animation-delay: 0.10s; }
+.view-screen:not(.hide) .menu-card:nth-child(2) { animation-delay: 0.15s; }
+.view-screen:not(.hide) .menu-card:nth-child(3) { animation-delay: 0.20s; }
+.view-screen:not(.hide) .menu-card:nth-child(4) { animation-delay: 0.25s; }
+.view-screen:not(.hide) .menu-card:nth-child(5) { animation-delay: 0.30s; }
+.view-screen:not(.hide) .menu-card:nth-child(6) { animation-delay: 0.35s; }
+.view-screen:not(.hide) .menu-card:nth-child(7) { animation-delay: 0.40s; }
+@keyframes popUp { to { opacity: 1; transform: translateY(0); } }
+
+.menu-icon { width: 38px; display: flex; justify-content: center; color: #d4af37; font-size: 22px; margin-right: 15px; }
 .menu-text { flex-grow: 1; color: #333333; font-size: 14px; font-weight: bold; text-align: left; }
 .menu-arrow { color: #fab919; font-size: 11px; font-weight: bold; }
 
 /* Stock In House Styles */
-.category-row { padding: 22px 20px; margin: 15px 20px 10px 20px; border-radius: 16px; font-size: 15px; font-weight: bold; color: #333; display: flex; align-items: center; background: #ffffff; cursor: pointer; gap: 15px; border: 1px solid rgba(231, 160, 140, 0.2); box-shadow: 0 8px 20px rgba(219, 133, 145, 0.2), 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s ease; }
-.category-row:active { transform: translateY(4px); box-shadow: 0 2px 6px rgba(219, 133, 145, 0.15); background: #fffafa; }
+.category-row { padding: 22px 20px; margin: 15px 20px 10px 20px; border-radius: 16px; font-size: 15px; font-weight: bold; color: #333; display: flex; align-items: center; background: #ffffff; cursor: pointer; gap: 15px; border: 1px solid rgba(231, 160, 140, 0.2); box-shadow: 0 8px 20px rgba(219, 133, 145, 0.2); }
 .cat-icon-box { width: 42px; height: 42px; background: rgba(231, 160, 140, 0.15); color: #db8591; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 18px; flex-shrink: 0; }
 
 .product-row { display: flex; padding: 15px 20px; border-bottom: 1px solid rgba(231, 160, 140, 0.15); background: #ffffff; cursor: pointer; gap: 15px; align-items: center; }
-.product-row:active { background: #fffafa; }
-.prod-img { width: 65px; height: 85px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; }
-.prod-info-wrapper { flex-grow: 1; display: flex; justify-content: space-between; align-items: stretch; }
+.prod-img { width: 65px; min-width: 65px; height: 85px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; background-color: #f9fafb; }
+.prod-info-wrapper { flex-grow: 1; display: flex; justify-content: space-between; align-items: stretch; overflow: hidden; }
 .prod-text { display: flex; flex-direction: column; justify-content: center; max-width: 55%; }
 .prod-sku { font-size: 11px; color: #888; margin-bottom: 2px; }
 .prod-name { font-size: 13px; font-weight: bold; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.prod-numbers { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
+.prod-numbers { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; flex-shrink: 0; }
 .prod-price { font-size: 18px; font-weight: bold; color: #db8591; }
 .prod-stats-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: 12px; font-weight: bold; color: #444; }
 
