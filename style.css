@@ -4,12 +4,12 @@ body {
   font-family: 'Helvetica Neue', Arial, sans-serif; 
   background-color: #f3f4f6; 
   color: #333; 
-  overflow: hidden; /* 🌟 ล็อกตาย! ห้ามหน้าจอเด้งหรือเลื่อนเด็ดขาด */
+  overflow: hidden; /* ล็อกตายตัว! ห้ามหน้าจอแม่ขยับหรือเลื่อนขึ้นลงเด็ดขาด */
   touch-action: manipulation; 
   scroll-behavior: smooth; 
 }
 
-/* 🌟 อนิเมชั่นโลโก้ตัวเดียว */
+/* 🌟 ระบบแชร์เฮดเดอร์ลอยตัว (One Logo Architecture) */
 .shared-header { 
   position: fixed; 
   left: 0; 
@@ -20,7 +20,7 @@ body {
   align-items: center; 
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
   z-index: 50; 
-  pointer-events: none; /* 🌟 ยอมให้จิ้มทะลุได้ตลอดเวลา */
+  pointer-events: none; /* 🌟 สำคัญมาก: ปล่อยให้จิ้มทะลุโลโก้ได้ตลอดเวลา จะไม่มีอะไรมาบังปุ่มด้านล่างครับ */
 }
 
 .header-center { 
@@ -31,7 +31,6 @@ body {
 .header-top { 
   top: 0; 
   transform: translateY(0); 
-  /* ❌ ลบ pointer-events: auto; ทิ้งไปเลยครับ เพื่อไม่ให้มันบล็อกปุ่ม! */
 }
 
 .app-logo { 
@@ -40,27 +39,26 @@ body {
   -webkit-filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); 
   filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); 
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
+  padding: 20px 0;
 }
 
 .header-top .app-logo { 
   width: 65%; 
   max-width: 240px; 
-  margin-bottom: 0; 
+  padding: 15px 0;
 }
 
-.fade-in-text { animation: fadeInText 0.5s forwards 0.4s; }
-@keyframes fadeInText { to { opacity: 1; } }
-
-/* เลย์เอาต์และ Transition หลัก */
+/* เลย์เอาต์หน้าจอหลัก */
 .view-screen { 
   display: flex; 
   flex-direction: column; 
   align-items: center; 
-  height: 100dvh; /* 🌟 บังคับสูงเท่าหน้าจอเป๊ะๆ */
+  height: 100vh; 
+  height: 100dvh; /* บังคับหน้าจอสูงเท่าอุปกรณ์จริง ป้องกันแถบ Safari ทำจอกระตุก */
   width: 100vw; 
   transition: opacity 0.4s ease; 
   opacity: 1; 
-  overflow: hidden; /* 🌟 ล็อกไม่ให้ View-screen ไหนเลื่อนได้เลย */
+  overflow: hidden; /* ห้ามเลื่อนหน้าจอเด็ดขาด */
 }
 
 .hide { display: none !important; }
