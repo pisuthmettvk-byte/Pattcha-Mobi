@@ -1,11 +1,20 @@
-body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; color: #333; overflow-x: hidden; touch-action: manipulation; }
+body { 
+  margin: 0; 
+  padding: 0; 
+  font-family: 'Helvetica Neue', Arial, sans-serif; 
+  background-color: #f3f4f6; 
+  color: #333; 
+  overflow-x: hidden; 
+  touch-action: manipulation; 
+  scroll-behavior: smooth; /* ✅ เพิ่มความนุ่มนวลเวลาเลื่อนหน้าจอ */
+}
 
 /* 🌟 อนิเมชั่นโลโก้ตัวเดียว (Smooth Glide Up) 🌟 */
 .shared-header { 
-  position: fixed; /* ✅ เปลี่ยนเป็น fixed ตามคำแนะนำ */
+  position: fixed; 
   left: 0; 
   right: 0; 
-  width: 100%; /* ✅ เพิ่ม width 100% เพื่อให้อยู่กึ่งกลางเป๊ะ */
+  width: 100%; 
   display: flex; 
   flex-direction: column; 
   align-items: center; 
@@ -20,18 +29,40 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; 
 }
 
 .header-top { 
-  top: 0; /* ✅ เปลี่ยนจาก 55px เป็น 0 เพื่อให้ชิดขอบบนสุด */
+  top: 0; 
   transform: translateY(0); 
-  pointer-events: auto; /* ✅ อนุญาตให้กดได้เมื่ออยู่ด้านบน */
+  pointer-events: auto; 
 }
-.app-logo { width: 75%; max-width: 280px; filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
-.header-top .app-logo { width: 65%; max-width: 240px; margin-bottom: 0; }
+
+.app-logo { 
+  width: 75%; 
+  max-width: 280px; 
+  -webkit-filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); /* ✅ รองรับ iPhone รุ่นเก่า */
+  filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); 
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+
+.header-top .app-logo { 
+  width: 65%; 
+  max-width: 240px; 
+  margin-bottom: 0; 
+}
 
 .fade-in-text { animation: fadeInText 0.5s forwards 0.4s; }
 @keyframes fadeInText { to { opacity: 1; } }
 
 /* เลย์เอาต์และ Transition หลัก */
-.view-screen { display: flex; flex-direction: column; align-items: center; min-height: 100vh; width: 100vw; transition: opacity 0.4s ease; opacity: 1; }
+.view-screen { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  min-height: 100vh; /* เผื่อไว้สำหรับเบราว์เซอร์เก่า */
+  min-height: 100dvh; /* ✅ ล็อกสัดส่วน ป้องกันหน้าจอกระตุกจากแถบ Safari บน iPhone */
+  width: 100vw; 
+  transition: opacity 0.4s ease; 
+  opacity: 1; 
+}
+
 .hide { display: none !important; }
 .fade-out { opacity: 0; pointer-events: none; }
 .fade-in { opacity: 1; }
