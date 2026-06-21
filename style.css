@@ -4,12 +4,12 @@ body {
   font-family: 'Helvetica Neue', Arial, sans-serif; 
   background-color: #f3f4f6; 
   color: #333; 
-  overflow-x: hidden; 
+  overflow: hidden; /* 🌟 ล็อกตาย! ห้ามหน้าจอเด้งหรือเลื่อนเด็ดขาด */
   touch-action: manipulation; 
-  scroll-behavior: smooth; /* ✅ เพิ่มความนุ่มนวลเวลาเลื่อนหน้าจอ */
+  scroll-behavior: smooth; 
 }
 
-/* 🌟 อนิเมชั่นโลโก้ตัวเดียว (Smooth Glide Up) 🌟 */
+/* 🌟 อนิเมชั่นโลโก้ตัวเดียว */
 .shared-header { 
   position: fixed; 
   left: 0; 
@@ -20,7 +20,7 @@ body {
   align-items: center; 
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
   z-index: 50; 
-  pointer-events: none; 
+  pointer-events: none; /* 🌟 ยอมให้จิ้มทะลุได้ตลอดเวลา */
 }
 
 .header-center { 
@@ -31,13 +31,13 @@ body {
 .header-top { 
   top: 0; 
   transform: translateY(0); 
-  pointer-events: auto; 
+  /* ❌ ลบ pointer-events: auto; ทิ้งไปเลยครับ เพื่อไม่ให้มันบล็อกปุ่ม! */
 }
 
 .app-logo { 
   width: 75%; 
   max-width: 280px; 
-  -webkit-filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); /* ✅ รองรับ iPhone รุ่นเก่า */
+  -webkit-filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); 
   filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1)); 
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); 
 }
@@ -56,11 +56,11 @@ body {
   display: flex; 
   flex-direction: column; 
   align-items: center; 
-  min-height: 100vh; /* เผื่อไว้สำหรับเบราว์เซอร์เก่า */
-  min-height: 100dvh; /* ✅ ล็อกสัดส่วน ป้องกันหน้าจอกระตุกจากแถบ Safari บน iPhone */
+  height: 100dvh; /* 🌟 บังคับสูงเท่าหน้าจอเป๊ะๆ */
   width: 100vw; 
   transition: opacity 0.4s ease; 
   opacity: 1; 
+  overflow: hidden; /* 🌟 ล็อกไม่ให้ View-screen ไหนเลื่อนได้เลย */
 }
 
 .hide { display: none !important; }
