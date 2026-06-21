@@ -19,13 +19,11 @@ const ICON_MAP = {
 let localProductDatabase = [];
 let currentBranch = "";
 let currentStockView = 'category';
-let searchTimeout = null; // ตัวแปรเก็บเวลาสำหรับล้าง Debounce
+let searchTimeout = null;
 
 // ==========================================
 // UTILITY FUNCTIONS (Security & Core Logic)
 // ==========================================
-
-// 🌟 1. ระบบทำความสะอาดข้อมูล (ป้องกัน XSS Attack ตามที่ Copilot แนะนำ)
 function escapeHTML(str) {
   if (str == null) return '';
   return str.toString().replace(/[&<>'"]/g, tag => ({
@@ -33,7 +31,6 @@ function escapeHTML(str) {
   }[tag] || tag));
 }
 
-// 🌟 2. ระบบหน่วงเวลา (Debounce) แบบล้างค่าได้
 function debounceSearch(func, wait) {
   return function(...args) {
     clearTimeout(searchTimeout);
@@ -48,13 +45,12 @@ function parseDriveImage(url) {
   return url;
 }
 
-// 🌟 3. จัดระเบียบการหาไอคอนหมวดหมู่ (Clean Code)
 function getCategoryIcon(catName) {
   const name = (catName || "").toLowerCase();
   for (const [key, icon] of Object.entries(ICON_MAP)) {
     if (name.includes(key)) return icon;
   }
-  return 'fa-box-open'; // ค่าเริ่มต้น
+  return 'fa-box-open';
 }
 
 // ==========================================
@@ -62,38 +58,66 @@ function getCategoryIcon(catName) {
 // ==========================================
 function initEventListeners() {
   // หน้า Login
-  document.getElementById('btnSubmitLogin').addEventListener('click', submitLogin);
+  const btnSubmit = document.getElementById('btnSubmitLogin');
+  if (btnSubmit) btnSubmit.addEventListener('click', submitLogin);
   
-  // 🌟 หน้า Main Menu (อัปเดตใหม่ 5 ปุ่ม) 🌟
-  document.getElementById('btnMenuStock').addEventListener('click', openStockInHouse);
-  document.getElementById('btnMenuMovement').addEventListener('click', () => alert('PRODUCT MOVEMENT: Transfer In/Out, Hold, Defective (กำลังพัฒนา)'));
-  document.getElementById('btnMenuTake').addEventListener('click', () => alert('STOCK TAKE - กำลังพัฒนา'));
-  document.getElementById('btnMenuAdjust').addEventListener('click', () => alert('ADJUST STOCK - กำลังพัฒนา'));
-  document.getElementById('btnMenuLocation').addEventListener('click', () => alert('LOCATION - กำลังพัฒนา'));
-  document.getElementById('btnLogout').addEventListener('click', logoutBranch);
+  // กด Enter เพื่อล็อกอินได้เลย
+  const inputLogin = document.getElementById('branchCodeInput');
+  if (inputLogin) {
+    inputLogin.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') submitLogin();
+    });
+  }
+  
+  // หน้า Main Menu (5 ปุ่มใหม่)
+  const btnStock = document.getElementById('btnMenuStock');
+  if (btnStock) btnStock.addEventListener('click', openStockInHouse);
+  
+  const btnMovement = document.getElementById('btnMenuMovement');
+  if (btnMovement) btnMovement.addEventListener('click', () => alert('PRODUCT MOVEMENT: Transfer In/Out, Hold, Defective (กำลังพัฒนา)'));
+  
+  const btnTake = document.getElementById('btnMenuTake');
+  if (btnTake) btnTake.addEventListener('click', () => alert('STOCK TAKE - กำลังพัฒนา'));
+  
+  const btnAdjust = document.getElementById('btnMenuAdjust');
+  if (btnAdjust) btnAdjust.addEventListener('click', () => alert('ADJUST STOCK - กำลังพัฒนา'));
+  
+  const btnLocation = document.getElementById('btnMenuLocation');
+  if (btnLocation) btnLocation.addEventListener('click', () => alert('LOCATION - กำลังพัฒนา'));
+  
+  const btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) btnLogout.addEventListener('click', logoutBranch);
 
   // หน้า Stock
-  document.getElementById('btnStockBack').addEventListener('click', handleStockBack);
-  document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
+  const btnBack = document.getElementById('btnStockBack');
+  if (btnBack) btnBack.addEventListener('click', handleStockBack);
+  
+  const btnClear = document.getElementById('clearSearchBtn');
+  if (btnClear) btnClear.addEventListener('click', clearSearch);
   
   // กล้องสแกน
   const toggleCam = () => { if (typeof toggleScanner === 'function') toggleScanner(); };
-  document.getElementById('btnScannerOpen').addEventListener('click', toggleCam);
-  document.getElementById('btnScannerClose').addEventListener('click', toggleCam);
+  const btnCamOpen = document.getElementById('btnScannerOpen');
+  if (btnCamOpen) btnCamOpen.addEventListener('click', toggleCam);
+  
+  const btnCamClose = document.getElementById('btnScannerClose');
+  if (btnCamClose) btnCamClose.addEventListener('click', toggleCam);
 
-  // ช่องค้นหาพร้อม Debounce
+  // ช่องค้นหา
   const searchInput = document.getElementById('searchStockInput');
-  searchInput.addEventListener('input', debounceSearch(handleMagicSearch, CONFIG.SEARCH_DELAY));
+  if (searchInput) searchInput.addEventListener('input', debounceSearch(handleMagicSearch, CONFIG.SEARCH_DELAY));
 
   // หน้า Modal Detail
-  document.getElementById('btnCloseModal').addEventListener('click', closeProductDetail);
+  const btnCloseMod = document.getElementById('btnCloseModal');
+  if (btnCloseMod) btnCloseMod.addEventListener('click', closeProductDetail);
 }
 
 window.onload = function() {
   initEventListeners();
   const savedBranch = localStorage.getItem('pattcha_branch');
   if (savedBranch) {
-    document.getElementById('branchCodeInput').value = savedBranch;
+    const inputLogin = document.getElementById('branchCodeInput');
+    if(inputLogin) inputLogin.value = savedBranch;
     submitLogin();
   }
 };
@@ -103,8 +127,11 @@ window.onload = function() {
 // ==========================================
 
 async function submitLogin() {
-  const code = document.getElementById('branchCodeInput').value.trim().toUpperCase();
+  const inputLogin = document.getElementById('branchCodeInput');
+  if (!inputLogin) return;
+  const code = inputLogin.value.trim().toUpperCase();
   const btn = document.getElementById('btnSubmitLogin');
+  
   if (!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
   
   btn.innerText = "⏳ LOADING...";
@@ -114,7 +141,7 @@ async function submitLogin() {
     const response = await fetch(CONFIG.API_URL + "?action=login&branch=" + code);
     const res = await response.json();
     
- if (res.success) {
+    if (res.success) {
       localStorage.setItem('pattcha_branch', code);
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
@@ -127,8 +154,10 @@ async function submitLogin() {
       loginView.classList.add('fade-out');
       
       // 2. สั่งให้โลโก้แชร์เฮดเดอร์พุ่งขึ้นไปข้างบนสุด
-      sharedHeader.classList.remove('header-center');
-      sharedHeader.classList.add('header-top');
+      if (sharedHeader) {
+        sharedHeader.classList.remove('header-center');
+        sharedHeader.classList.add('header-top');
+      }
 
       // 3. รออนิเมชั่นเฟดเสร็จเป๊ะๆ แล้วเปิดหน้าเมนูหลัก
       loginView.addEventListener('transitionend', function onEnd(e) {
@@ -141,7 +170,6 @@ async function submitLogin() {
         
         document.getElementById('branchLabel').innerText = "LOCATION : " + escapeHTML(currentBranch);
       });
-    }
 
     } else {
       alert("❌ " + escapeHTML(res.message));
@@ -170,9 +198,7 @@ function openStockInHouse() {
 }
 
 function handleStockBack() {
-  // 🌟 ยกเลิกการค้นหาที่ค้างอยู่ (Cancel Pending Debounce)
   clearTimeout(searchTimeout); 
-  
   if (typeof isScannerMode !== 'undefined' && isScannerMode) {
     toggleScanner();
   }
@@ -203,7 +229,6 @@ function renderCategories() {
   Array.from(categoriesMap.values()).sort().forEach(cat => {
     const div = document.createElement('div');
     div.className = 'category-row';
-    // ใช้ escapeHTML ป้องกันข้อมูล
     div.innerHTML = `<div class="cat-icon-box"><i class="fas ${getCategoryIcon(cat)}"></i></div><span style="flex-grow: 1;">${escapeHTML(cat)}</span><i class="fas fa-chevron-right" style="color:#e7a08c; font-size:12px;"></i>`;
     div.addEventListener('click', () => filterByCategory(cat));
     container.appendChild(div);
@@ -234,7 +259,6 @@ function handleMagicSearch() {
   document.getElementById('productListContainer').classList.remove('hide');
   
   renderProducts(localProductDatabase.filter(item => {
-    // 🌟 Null Check: ป้องกันแอปค้างถ้า Sheet มีข้อมูลแหว่ง
     return Object.values(item).some(val => val != null && val.toString().toLowerCase().includes(query));
   }));
 }
@@ -259,7 +283,6 @@ function renderProducts(products) {
     div.className = 'product-row';
     div.addEventListener('click', () => openProductDetail(item.sku));
     
-    // 🌟 นำข้อมูลมากรอง (Escape) ก่อนพิมพ์ลงหน้าเว็บ
     const safeSku = escapeHTML(item.sku || '-');
     const safeName = escapeHTML(item.name || '-');
     const priceStr = Number(item.price || 0).toLocaleString();
