@@ -3,7 +3,50 @@ let localProductDatabase = [];
 let currentBranch = "";
 let currentStockView = 'category';
 
+// 🌟 1. ฟังก์ชันหน่วงเวลา (Debounce) ป้องกันแอปกระตุก 🌟
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+// 🌟 2. ศูนย์รวม Event Listeners (ย้ายมาจาก HTML) 🌟
+function initEventListeners() {
+  // หน้า Login
+  document.getElementById('btnSubmitLogin').addEventListener('click', submitLogin);
+  
+  // หน้า Main Menu
+  document.getElementById('btnMenuStock').addEventListener('click', openStockInHouse);
+  document.getElementById('btnMenuTransfer').addEventListener('click', () => alert('TRANSFER PRODUCT - กำลังพัฒนา'));
+  document.getElementById('btnMenuHold').addEventListener('click', () => alert('HOLD PRODUCT - กำลังพัฒนา'));
+  document.getElementById('btnMenuDefect').addEventListener('click', () => alert('DEFECTIVE - กำลังพัฒนา'));
+  document.getElementById('btnMenuTake').addEventListener('click', () => alert('STOCK TAKE - กำลังพัฒนา'));
+  document.getElementById('btnMenuAdjust').addEventListener('click', () => alert('ADJUST STOCK - กำลังพัฒนา'));
+  document.getElementById('btnMenuLocation').addEventListener('click', () => alert('LOCATION - กำลังพัฒนา'));
+  document.getElementById('btnLogout').addEventListener('click', logoutBranch);
+
+  // หน้า Stock
+  document.getElementById('btnStockBack').addEventListener('click', handleStockBack);
+  document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
+  
+  // กล้องสแกน
+  const toggleCam = () => { if (typeof toggleScanner === 'function') toggleScanner(); };
+  document.getElementById('btnScannerOpen').addEventListener('click', toggleCam);
+  document.getElementById('btnScannerClose').addEventListener('click', toggleCam);
+
+  // ช่องค้นหาพร้อม Debounce (200ms)
+  const searchInput = document.getElementById('searchStockInput');
+  searchInput.addEventListener('input', debounce(handleMagicSearch, 200));
+
+  // หน้า Modal Detail
+  document.getElementById('btnCloseModal').addEventListener('click', closeProductDetail);
+}
+
 window.onload = function() {
+  initEventListeners(); // เรียกใช้งานการเชื่อมต่อปุ่มกดทั้งหมด
+  
   const savedBranch = localStorage.getItem('pattcha_branch');
   if (savedBranch) {
     document.getElementById('branchCodeInput').value = savedBranch;
@@ -27,28 +70,27 @@ async function submitLogin() {
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
 
-      // 🌟 โลจิกสไลด์โลโก้แบบใหม่ (One Logo Animation) 🌟
       const sharedHeader = document.getElementById('sharedHeader');
       const loginView = document.getElementById('loginView');
       const mainMenuView = document.getElementById('mainMenuView');
       const mainMenuTitleGroup = document.getElementById('mainMenuTitleGroup');
 
-      // 1. ซ่อนช่องกรอกรหัสไปก่อน
       loginView.classList.add('fade-out');
-
-      // 2. สั่งให้โลโก้ตรงกลาง "สไลด์พุ่งขึ้นไปข้างบน"
       sharedHeader.classList.remove('header-center');
       sharedHeader.classList.add('header-top');
 
-      // 3. รอจังหวะโลโก้สไลด์เสร็จ (400ms) แล้วแสดงปุ่ม Main Menu พร้อมข้อความ
-      setTimeout(() => {
+      // 🌟 3. อนิเมชั่นแม่นยำ 100% ด้วย transitionend 🌟
+      loginView.addEventListener('transitionend', function onEnd(e) {
+        if (e.propertyName !== 'opacity') return; // ดักรอให้เฟดเสร็จเท่านั้น
+        loginView.removeEventListener('transitionend', onEnd); // ล้างทิ้งกันซ้ำซ้อน
+
         loginView.classList.add('hide');
         mainMenuView.classList.remove('hide');
         
         document.getElementById('branchLabel').innerText = "LOCATION : " + currentBranch;
         mainMenuTitleGroup.classList.remove('hide');
         mainMenuTitleGroup.classList.add('fade-in-text'); 
-      }, 400);
+      });
 
     } else {
       alert("❌ " + res.message);
@@ -85,7 +127,7 @@ function getCategoryIcon(catName) {
 }
 
 function openStockInHouse() {
-  document.getElementById('sharedHeader').classList.add('hide'); // ซ่อนโลโก้เวลาเข้าหน้าสต๊อก
+  document.getElementById('sharedHeader').classList.add('hide'); 
   document.getElementById('mainMenuView').classList.add('hide');
   document.getElementById('stockInHouseView').classList.remove('hide');
   renderCategories();
@@ -99,7 +141,7 @@ function handleStockBack() {
     clearSearch();
   } else {
     document.getElementById('stockInHouseView').classList.add('hide');
-    document.getElementById('sharedHeader').classList.remove('hide'); // เอาโลโก้กลับมาเวลาถอยกลับมา Main Menu
+    document.getElementById('sharedHeader').classList.remove('hide'); 
     document.getElementById('mainMenuView').classList.remove('hide');
   }
 }
@@ -123,7 +165,7 @@ function renderCategories() {
     const div = document.createElement('div');
     div.className = 'category-row';
     div.innerHTML = `<div class="cat-icon-box"><i class="fas ${getCategoryIcon(cat)}"></i></div><span style="flex-grow: 1;">${cat}</span><i class="fas fa-chevron-right" style="color:#e7a08c; font-size:12px;"></i>`;
-    div.onclick = () => filterByCategory(cat);
+    div.addEventListener('click', () => filterByCategory(cat));
     container.appendChild(div);
   });
 }
@@ -174,7 +216,7 @@ function renderProducts(products) {
   products.forEach(item => {
     const div = document.createElement('div');
     div.className = 'product-row';
-    div.onclick = () => openProductDetail(item.sku);
+    div.addEventListener('click', () => openProductDetail(item.sku));
     div.innerHTML = `
       <img class="prod-img" src="${parseDriveImage(item.imageUrl)}">
       <div class="prod-info-wrapper">
