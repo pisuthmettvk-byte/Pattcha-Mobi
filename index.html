@@ -25,29 +25,29 @@
   <div id="loginView" class="view-screen">
     <div class="login-input-area">
       <input type="text" id="branchCodeInput" class="login-input" placeholder="กรุณากรอกรหัสสาขา">
-      <button id="btnSubmitLogin" class="login-btn" onclick="submitLogin()">SUBMIT</button>
+      <button id="btnSubmitLogin" class="login-btn">SUBMIT</button>
     </div>
   </div>
 
   <div id="mainMenuView" class="view-screen hide" style="justify-content: flex-start;">
     <div class="menu-container" style="width: 85%; max-width: 340px; display: flex; flex-direction: column; gap: 10px; margin-top: 200px;">
-      <button class="menu-card" onclick="openStockInHouse()"><div class="menu-icon"><i class="fas fa-warehouse"></i></div><div class="menu-text">STOCK IN HOUSE</div><div class="menu-arrow">❯</div></button>
-      <button class="menu-card" onclick="alert('TRANSFER PRODUCT - กำลังพัฒนา')"><div class="menu-icon"><i class="fas fa-random"></i></div><div class="menu-text">TRANSFER PRODUCT</div><div class="menu-arrow">❯</div></button>
-      <button class="menu-card" onclick="alert('HOLD PRODUCT - กำลังพัฒนา')"><div class="menu-icon"><i class="fas fa-lock"></i></div><div class="menu-text">HOLD PRODUCT</div><div class="menu-arrow">❯</div></button>
-      <button class="menu-card" onclick="alert('DEFECTIVE - กำลังพัฒนา')"><div class="menu-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="menu-text">DEFECTIVE</div><div class="menu-arrow">❯</div></button>
-      <button class="menu-card" onclick="alert('STOCK TAKE - กำลังพัฒนา')"><div class="menu-icon"><i class="fas fa-chart-bar"></i></div><div class="menu-text">STOCK TAKE</div><div class="menu-arrow">❯</div></button>
-      <button class="menu-card" onclick="alert('ADJUST STOCK - กำลังพัฒนา')"><div class="menu-icon"><i class="fas fa-tools"></i></div><div class="menu-text">ADJUST STOCK</div><div class="menu-arrow">❯</div></button>
-      <button class="menu-card" onclick="alert('LOCATION - กำลังพัฒนา')"><div class="menu-icon"><i class="fas fa-map-marker-alt"></i></div><div class="menu-text">LOCATION</div><div class="menu-arrow">❯</div></button>
+      <button id="btnMenuStock" class="menu-card"><div class="menu-icon"><i class="fas fa-warehouse"></i></div><div class="menu-text">STOCK IN HOUSE</div><div class="menu-arrow">❯</div></button>
+      <button id="btnMenuTransfer" class="menu-card"><div class="menu-icon"><i class="fas fa-random"></i></div><div class="menu-text">TRANSFER PRODUCT</div><div class="menu-arrow">❯</div></button>
+      <button id="btnMenuHold" class="menu-card"><div class="menu-icon"><i class="fas fa-lock"></i></div><div class="menu-text">HOLD PRODUCT</div><div class="menu-arrow">❯</div></button>
+      <button id="btnMenuDefect" class="menu-card"><div class="menu-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="menu-text">DEFECTIVE</div><div class="menu-arrow">❯</div></button>
+      <button id="btnMenuTake" class="menu-card"><div class="menu-icon"><i class="fas fa-chart-bar"></i></div><div class="menu-text">STOCK TAKE</div><div class="menu-arrow">❯</div></button>
+      <button id="btnMenuAdjust" class="menu-card"><div class="menu-icon"><i class="fas fa-tools"></i></div><div class="menu-text">ADJUST STOCK</div><div class="menu-arrow">❯</div></button>
+      <button id="btnMenuLocation" class="menu-card"><div class="menu-icon"><i class="fas fa-map-marker-alt"></i></div><div class="menu-text">LOCATION</div><div class="menu-arrow">❯</div></button>
     </div>
     <div style="margin-top: 25px; margin-bottom: 25px;">
-      <button onclick="logoutBranch()" style="background: transparent; border: none; color: #db8591; font-size: 12px; font-weight: bold; text-decoration: underline; cursor: pointer; padding: 10px;">LOGOUT SYSTEM</button>
+      <button id="btnLogout" style="background: transparent; border: none; color: #db8591; font-size: 12px; font-weight: bold; text-decoration: underline; cursor: pointer; padding: 10px;">LOGOUT SYSTEM</button>
     </div>
   </div>
 
   <div id="stockInHouseView" class="view-screen hide" style="justify-content: flex-start; background-color: #f9fafb; display: flex; flex-direction: column;">
     <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); flex-shrink: 0; box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4); padding-bottom: 20px; z-index: 10;">
       <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px; box-sizing: border-box;">
-        <button onclick="handleStockBack()" style="background: #ffffff; border: none; color: #db8591; font-size: 13px; font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);">
+        <button id="btnStockBack" style="background: #ffffff; border: none; color: #db8591; font-size: 13px; font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);">
           <i class="fas fa-chevron-left"></i> BACK
         </button>
         <h3 id="stockHeaderTitle" style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; text-align: center; flex: 1;">STOCK IN HOUSE</h3>
@@ -56,14 +56,14 @@
       <div id="unifiedInputArea" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
         <div id="searchContainer" style="position: relative;">
           <i class="fas fa-search" style="position: absolute; left: 20px; top: 16px; color: #db8591;"></i>
-          <input type="text" id="searchStockInput" oninput="handleMagicSearch()" placeholder="ค้นหาสินค้า (SKU, หมวดหมู่...)" style="width: 100%; padding: 15px 45px 15px 50px; border-radius: 30px; border: none; outline: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-          <div id="clearSearchBtn" onclick="clearSearch()" style="position: absolute; right: 15px; top: 13px; width: 24px; height: 24px; border-radius: 50%; background: #db8591; color: white; display: none; justify-content: center; align-items: center; cursor: pointer;">
+          <input type="text" id="searchStockInput" placeholder="ค้นหาสินค้า (SKU, หมวดหมู่...)" style="width: 100%; padding: 15px 45px 15px 50px; border-radius: 30px; border: none; outline: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+          <div id="clearSearchBtn" style="position: absolute; right: 15px; top: 13px; width: 24px; height: 24px; border-radius: 50%; background: #db8591; color: white; display: none; justify-content: center; align-items: center; cursor: pointer;">
             <i class="fas fa-times" style="font-size: 12px;"></i>
           </div>
         </div>
         <div id="readerContainer" style="display:none; position: relative; width: 100%; margin-top: 10px;">
           <div id="reader" style="width: 100%; border: 2px solid #ffffff; border-radius: 12px; overflow: hidden; background: #000;"></div>
-          <button onclick="toggleScanner()" style="position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 100;">
+          <button id="btnScannerClose" style="position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; z-index: 100;">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -74,14 +74,14 @@
       <div id="productListContainer" class="hide" style="width: 100%; display: flex; flex-direction: column;"></div>
     </div>
     <div style="width: 100%; padding: 15px; background: #ffffff; border-top: 1px solid rgba(231, 160, 140, 0.2); box-sizing: border-box; z-index: 10;">
-      <button onclick="toggleScanner()" style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); color: white; border: none; border-radius: 12px; padding: 15px; font-size: 20px; box-shadow: 0 6px 15px rgba(219,133,145,0.3); display: flex; justify-content: center; align-items: center; cursor: pointer;">
+      <button id="btnScannerOpen" style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); color: white; border: none; border-radius: 12px; padding: 15px; font-size: 20px; box-shadow: 0 6px 15px rgba(219,133,145,0.3); display: flex; justify-content: center; align-items: center; cursor: pointer;">
         <i class="fas fa-camera"></i>
       </button>
     </div>
   </div>
 
   <div id="productDetailModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #ffffff; z-index: 999; display: flex; flex-direction: column;">
-    <button onclick="closeProductDetail()" style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; z-index: 1000;"><i class="fas fa-times"></i></button>
+    <button id="btnCloseModal" style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; z-index: 1000;"><i class="fas fa-times"></i></button>
     
     <div style="flex: 0 0 35vh; width: 100%; background: #f9fafb; border-bottom: 1px solid #eee; display: flex; justify-content: center; align-items: center; overflow: hidden;">
       <img id="detailImage" src="" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg'" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 20px; box-sizing: border-box;">
