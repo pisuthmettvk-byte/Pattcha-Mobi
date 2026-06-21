@@ -1,6 +1,51 @@
-body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; color: #333; overflow-x: hidden; touch-action: manipulation; }
-.view-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; width: 100vw; }
-.hide { display: none !important; }
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f3f4f6;
+  color: #333;
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
+/* ==================== Smooth Transition CSS ==================== */
+.view-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100vw;
+  
+  /* 🌟 ตัวควบคุมอนิเมชั่น: กำหนดเวลา 0.5 วินาที ให้กับ opacity และ transform */
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+  opacity: 1; /* สถานะปกติคือแสดง */
+  transform: scale(1); /* ขนาดปกติ */
+}
+
+/* คลาสที่ใช้ซ่อนหน้าจอ: จะยังไม่ซ่อนทันที แต่จะลด opacity ลงก่อน */
+.view-screen.hide {
+  display: none !important; /* บังคับซ่อน */
+}
+
+/* คลาสที่ใช้สำหรับการ Fade-Out (ค่อยๆ หายไป) */
+.view-screen.fade-out {
+  opacity: 0; /* ค่อยๆ โปร่งใสจนหายไป */
+  transform: scale(0.95); /* ย่อขนาดลงเล็กน้อย */
+  pointer-events: none; /* ห้ามกดอะไรระหว่างอนิเมชั่น */
+}
+
+/* คลาสที่ใช้สำหรับการ Fade-In (ค่อยๆ ปรากฏขึ้นมา) */
+.view-screen.fade-in {
+  opacity: 1; /* ค่อยๆ ปรากฏตัว */
+  transform: scale(1); /* กลับสู่ขนาดปกติ */
+}
+/* ==================== Rest of Styles... ==================== */
+/* (ก๊อปปี้สไตล์อื่นๆ ของเดิมตามมาได้เลยครับ Taylor เอาแค่ส่วนหัวมาให้ดู) */
+
+/* Login Styles */
+.login-btn { /* ... */ }
+/* ... */
 
 /* Login Styles */
 .login-btn { background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); background-size: 200% auto; color: white; border: none; transition: all 0.4s ease; width: 80%; max-width: 320px; padding: 15px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(219, 133, 145, 0.4); }
