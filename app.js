@@ -343,48 +343,50 @@ function renderProducts(products) {
   
   products.forEach(item => {
     const div = document.createElement('div');
-    div.className = 'product-row'; // คงคลาสเดิมไว้ เพื่อรักษากรอบและการคลิก
+    div.className = 'product-row';
     div.addEventListener('click', () => openProductDetail(item.sku));
     
-    // ดึงข้อมูลพื้นฐาน (คงของเดิมไว้ 100%)
+    // ดึงและคัดกรองความปลอดภัยของข้อมูลสถานะสต็อกทั้งหมด
     const safeSku = escapeHTML(item.sku || '-');
     const safeName = escapeHTML(item.name || '-');
     const priceStr = Number(item.price || 0).toLocaleString();
     const stockAvail = escapeHTML(item.availableStock || 0);
-    
-    // 🌟 ดึงข้อมูลดึงสต็อก Hold และ Defect เพิ่มเติมตามที่สั่ง
     const stockHold = escapeHTML(item.holdQty || 0);
     const stockDefect = escapeHTML(item.defectiveQty || 0);
 
     div.innerHTML = `
       <img class="prod-img" src="${parseDriveImage(item.imageUrl)}">
-      
-      <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; flex: 1; min-height: 75px;">
+      <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
         
-        <div class="product-item-top">
-          <div class="product-info-left">
-            <div class="prod-sku">${safeSku}</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
+          <div class="prod-text">
+            <div class="prod-sku" style="margin-top: 0;">${safeSku}</div>
             <div class="prod-name">${safeName}</div>
           </div>
-          <div class="prod-price">฿${priceStr}</div>
-        </div>
-
-        <div class="product-item-bottom">
-          <div class="stock-badge stock-avail">
-            <span>${stockAvail}</span>
-          </div>
-          <div class="stock-badge stock-hold">
-            <i class="fas fa-exclamation-triangle"></i> <span>${stockHold}</span>
-          </div>
-          <div class="stock-badge stock-defect">
-            <i class="fas fa-times-circle"></i> <span>${stockDefect}</span>
-          </div>
+          <div class="prod-price" style="margin-top: 0 !important;">฿${priceStr}</div>
         </div>
         
+        <div style="display: flex; justify-content: flex-start; align-items: center; gap: 15px; width: 100%; margin-top: auto !important; padding-top: 5px;">
+          
+          <span style="color: #10b981; font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+            <i class="fas fa-thumbs-up"></i> ${stockAvail}
+          </span>
+          
+          <span style="color: #fab919; font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+            <i class="fas fa-exclamation-triangle"></i> ${stockHold}
+          </span>
+          
+          <span style="color: #ef4444; font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+            <i class="fas fa-times-circle"></i> ${stockDefect}
+          </span>
+          
+        </div>
       </div>`;
     container.appendChild(div);
   });
 }
+
+
 function openProductDetail(sku) {
   const item = localProductDatabase.find(p => p.sku === sku);
   if (!item) return;
