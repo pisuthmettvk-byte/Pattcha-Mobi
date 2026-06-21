@@ -25,9 +25,9 @@
     </div>
   </div>
 
-<div id="mainMenuView" class="view-screen hide" style="justify-content: flex-start; padding-top: 140px; box-sizing: border-box;">
+<div id="mainMenuView" class="view-screen hide">
     
-    <div id="mainMenuTitleGroup" style="width: 100%; text-align: center; margin-bottom: 20px;">
+    <div id="mainMenuTitleGroup">
       <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
         <div style="height: 1px; width: 35px; background: #e7a08c;"></div>
         <h2 style="color: #db8591; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 4px;">MAIN MENU</h2>
@@ -48,14 +48,9 @@
       </div>
     </div>
     
-  </div> ```
+  </div>
 
-### สิ่งที่ผมแก้ไขให้:
-* **ซ่อมแท็ก HTML:** ผมย้ายปุ่มเมนูทั้งหมดเข้าไปอยู่ใน `div` ของ `mainMenuView` และปิด `</div>` ให้ถูกต้อง (คราวนี้ปุ่มจะไม่หลุดไปกองนอกจอครับ)
-* **การจัดระเบียบ:** ผมใส่ `padding-top: 140px` เข้าไปที่ตัว `mainMenuView` โดยตรง เพื่อให้มันเว้นระยะห่างจากโลโก้ด้านบน (Header) ให้พอดี ไม่ให้วิ่งไปซ้อนทับกันครับ
-* **ความสมบูรณ์:** ส่วนอื่นๆ ของ `index.html` (ตั้งแต่ส่วน `stockInHouseView` ลงไป) ผมไม่ได้แตะต้องเลยครับ เพราะส่วนนั้นดีแล้วและทำงานได้ปกติครับ
 
-เจเลอร์ลองนำโค้ดเฉพาะช่วง `mainMenuView` นี้ไปวางทับของเก่าดูครับ แล้วทุกอย่างจะเรียงตัวสวยงามตามที่ต้องการทันทีครับ! 🫡
 
   <div id="stockInHouseView" class="view-screen hide" style="justify-content: flex-start; background-color: #f9fafb; display: flex; flex-direction: column;">
     <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); flex-shrink: 0; box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4); padding-bottom: 20px; z-index: 10;">
