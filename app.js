@@ -359,14 +359,14 @@ function renderProducts(products) {
       <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
         
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-          <div class="prod-text">sku
+          <div class="prod-text">
             <div class="prod-name" style="margin-top: 0;">${safeName}</div>
             <div class="prod-sku">${safeSku}</div>
           </div>
           <div class="prod-price" style="margin-top: 0 !important;">฿${priceStr}</div>
         </div>
         
-        <div style="display: flex; justify-content: flex-start; align-items: center; gap: 15px; width: 100%; margin-top: auto !important; padding-top: 5px;">
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; width: 100%; margin-top: auto !important; padding-top: 5px;">
           
           <span style="color: #10b981; font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
             <i class="fas fa-thumbs-up"></i> ${stockAvail}
