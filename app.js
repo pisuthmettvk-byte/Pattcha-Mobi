@@ -69,6 +69,53 @@ let localProductDatabase = [];
 let currentBranch = "";
 let currentStockView = 'category';
 let searchTimeout = null;
+// ==========================================
+// GLOBAL STATE (อัปเดตเพิ่มเติม)
+// ==========================================
+let idleTimeout = null;
+const IDLE_TIME_LIMIT = 5 * 60 * 1000; // ตั้งเวลา 5 นาที (หน่วยเป็นมิลลิวินาที)
+
+// ==========================================
+// IDLE TIMEOUT FUNCTIONS (ระบบจับเวลาแสตนด์บาย)
+// ==========================================
+function resetIdleTimer() {
+  clearTimeout(idleTimeout);
+  
+  // เช็กว่าถ้าเปิดหน้า Stock In House อยู่ ถึงจะเริ่มจับเวลา
+  const stockView = document.getElementById('stockInHouseView');
+  if (stockView && !stockView.classList.contains('hide')) {
+    idleTimeout = setTimeout(returnToMainMenuOnIdle, IDLE_TIME_LIMIT);
+  }
+}
+
+function returnToMainMenuOnIdle() {
+  // 1. ปิดหน้าต่างลอยทั้งหมดที่อาจจะเปิดค้างไว้ลึกๆ
+  const detailModal = document.getElementById('productDetailModal');
+  const crossModal = document.getElementById('crossBranchModal');
+  if (detailModal) detailModal.classList.add('hide');
+  if (crossModal) crossModal.classList.add('hide-modal');
+  
+  // 2. เคลียร์ช่องค้นหา
+  clearSearch();
+
+  // 3. ปิดหน้า Stock แล้วเด้งกลับ Main Menu
+  const stockView = document.getElementById('stockInHouseView');
+  if (stockView) stockView.classList.add('hide');
+  
+  const sharedHeader = document.getElementById('sharedHeader');
+  const mainMenuView = document.getElementById('mainMenuView');
+  if (sharedHeader) sharedHeader.classList.remove('hide');
+  if (mainMenuView) mainMenuView.classList.remove('hide');
+}
+
+// 🌟 สั่งให้ระบบดักจับการเคลื่อนไหวทุกชนิดบนหน้าจอ (สัมผัส, เลื่อน, พิมพ์)
+['touchstart', 'mousemove', 'scroll', 'keypress', 'click'].forEach(evt => {
+  document.addEventListener(evt, resetIdleTimer);
+});
+
+
+
+
 
 // ==========================================
 // UTILITY FUNCTIONS (Security & Core Logic)
@@ -253,25 +300,35 @@ async function logoutBranch() {
   }
 }
 
-function openStockInHouse() {
+async function openStockInHouse() {
+  const btnStock = document.getElementById('btnMenuStock');
+  const originalText = btnStock.innerHTML;
+  
+  // 1. เปลี่ยนข้อความปุ่มให้รู้ว่ากำลังโหลดข้อมูลสด
+  btnStock.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> UPDATING...';
+  btnStock.disabled = true;
+
+  try {
+    // 2. แอบวิ่งไปดึงสต็อกสาขาตัวเองแบบ Real-time มาทับของเดิม
+    const response = await fetch(CONFIG.API_URL + "?action=login&branch=" + currentBranch);
+    const res = await response.json();
+    if (res.success && res.products) {
+      localProductDatabase = res.products; // อัปเดตข้อมูลในความจำเครื่อง
+    }
+  } catch (err) {
+    console.warn("Failed to update stock:", err);
+  }
+
+  // 3. คืนค่าปุ่มและเปิดหน้า Stock
+  btnStock.innerHTML = originalText;
+  btnStock.disabled = false;
+
   document.getElementById('sharedHeader').classList.add('hide'); 
   document.getElementById('mainMenuView').classList.add('hide');
   document.getElementById('stockInHouseView').classList.remove('hide');
+  
   renderCategories();
-}
-
-function handleStockBack() {
-  clearTimeout(searchTimeout); 
-  if (typeof isScannerMode !== 'undefined' && isScannerMode) {
-    toggleScanner();
-  }
-  if (currentStockView === 'product') {
-    clearSearch();
-  } else {
-    document.getElementById('stockInHouseView').classList.add('hide');
-    document.getElementById('sharedHeader').classList.remove('hide'); 
-    document.getElementById('mainMenuView').classList.remove('hide');
-  }
+  resetIdleTimer(); // 🌟 เริ่มนับถอยหลัง 5 นาทีทันทีที่เข้าหน้านี้
 }
 
 function renderCategories() {
