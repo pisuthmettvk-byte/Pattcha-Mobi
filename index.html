@@ -92,32 +92,58 @@
     </div>
   </div>
 
-  <div id="productDetailModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #ffffff; z-index: 999; display: flex; flex-direction: column;">
-    <button id="btnCloseModal" style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; z-index: 1000;"><i class="fas fa-times"></i></button>
+ <div id="productDetailModal" class="hide">
     
-    <div style="flex: 0 0 35vh; width: 100%; background: #f9fafb; border-bottom: 1px solid #eee; display: flex; justify-content: center; align-items: center; overflow: hidden;">
-      <img id="detailImage" src="" loading="lazy" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg'" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 20px; box-sizing: border-box;">
+    <div class="detail-image-section">
+      <button id="btnCloseModal" class="btn-close-modal"><i class="fas fa-times"></i></button>
+      <img id="detailImage" src="" loading="lazy" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg'">
     </div>
     
-    <div style="flex: 1; padding: 20px; overflow-y: auto; background: #ffffff;">
-      <div style="text-align: center; margin-bottom: 20px; background: #ffffff; padding: 10px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-        <svg id="detailBarcode"></svg>
+    <div class="detail-content-section">
+      
+      <div class="barcode-box">
+        <svg id="detailBarcode" style="max-height: 45px; max-width: 100%;"></svg>
       </div>
-      <h4 style="margin: 0 0 10px 0; color: #db8591; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; text-transform: uppercase;">Product Details</h4>
-      <div style="margin-bottom: 20px;">
-        <div id="detailCategory" style="font-size: 12px; color: #db8591; font-weight: bold; margin-bottom: 5px;"></div>
-        <div id="detailSku" style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 5px;"></div>
-        <div id="detailName" style="font-size: 14px; color: #666; margin-bottom: 10px;"></div>
-        <div id="detailPrice" style="font-size: 22px; font-weight: bold; color: #fab919;"></div>
+      
+      <div class="product-header-row">
+        <div class="product-info-left">
+          <div id="detailCategory" class="lbl-category"></div>
+          <div id="detailSku" class="lbl-sku"></div>
+          <div id="detailName" class="lbl-name"></div>
+        </div>
+        <div class="product-info-right">
+          <div id="detailPrice" class="lbl-price"></div>
+        </div>
       </div>
-      <h4 style="margin: 0 0 10px 0; color: #db8591; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; text-transform: uppercase;">Inventory Status</h4>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: 20px;">
-        <div class="detail-stat-box"><span class="lbl">Current Stock</span><span class="val" id="detailCurrent"></span></div>
-        <div class="detail-stat-box"><span class="lbl">Available Stock</span><span class="val" id="detailAvail" style="color:#10b981;"></span></div>
-        <div class="detail-stat-box"><span class="lbl">Hold Qty</span><span class="val" id="detailHold" style="color:#fab919;"></span></div>
-        <div class="detail-stat-box"><span class="lbl">Defective Qty</span><span class="val" id="detailDefect" style="color:#ef4444;"></span></div>
-        <div class="detail-stat-box" style="grid-column: span 2;"><span class="lbl">Sale Stock</span><span class="val" id="detailSold" style="color:#db8591;"></span></div>
+      
+      <div class="section-title"><i class="fas fa-box-open"></i> INVENTORY STATUS</div>
+      <div class="stock-grid">
+        
+        <div class="stat-card main-card">
+          <div class="stat-lbl">Available Stock</div>
+          <div class="stat-val"><i class="fas fa-check-circle"></i> <span id="detailAvail">0</span></div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-lbl">Current Stock</div>
+          <div class="stat-val val-current" id="detailCurrent">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">Hold Qty</div>
+          <div class="stat-val val-hold" id="detailHold">0</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-lbl">Defective Qty</div>
+          <div class="stat-val val-defect" id="detailDefect">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">Sale Stock</div>
+          <div class="stat-val val-sold" id="detailSold">0</div>
+        </div>
+        
       </div>
+
     </div>
   </div>
 
