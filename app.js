@@ -363,24 +363,21 @@ function filterByCategory(catName) {
   renderProducts(localProductDatabase.filter(item => (item.category || "Uncategorized") === catName));
 }
 
-function handleMagicSearch() {
-  const query = document.getElementById('searchStockInput').value.trim().toLowerCase();
-  const clearBtn = document.getElementById('clearSearchBtn');
-  if (!query) { 
-    clearBtn.style.display = 'none'; 
-    renderCategories(); 
-    return; 
+function handleStockBack() {
+  clearTimeout(searchTimeout); 
+  if (typeof isScannerMode !== 'undefined' && isScannerMode) {
+    toggleScanner();
   }
-  
-  clearBtn.style.display = 'flex';
-  currentStockView = 'product';
-  document.getElementById('stockHeaderTitle').innerText = "SEARCH RESULTS";
-  document.getElementById('categoryListContainer').classList.add('hide');
-  document.getElementById('productListContainer').classList.remove('hide');
-  
-  renderProducts(localProductDatabase.filter(item => {
-    return Object.values(item).some(val => val != null && val.toString().toLowerCase().includes(query));
-  }));
+  if (currentStockView === 'product') {
+    clearSearch();
+  } else {
+    document.getElementById('stockInHouseView').classList.add('hide');
+    document.getElementById('sharedHeader').classList.remove('hide'); 
+    document.getElementById('mainMenuView').classList.remove('hide');
+    
+    // 🌟 หยุดระบบจับเวลาเมื่อพนักงานตั้งใจกดถอยหลังกลับมาที่ Main Menu เอง
+    clearTimeout(idleTimeout); 
+  }
 }
 
 function clearSearch() { 
