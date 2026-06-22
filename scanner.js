@@ -1,3 +1,71 @@
+// ==========================================
+// SCANNER CONFIGURATION & STATE
+// ==========================================
+let currentScanMode = 'BARCODE'; // เริ่มต้นที่ Barcode
+let isTorchOn = false;
+let mediaStream = null; // เก็บสายไฟกล้องเพื่อไว้สั่งเปิดแฟลช
+
+// 🌟 ตั้งค่ากล้องแบบ Hybrid (พยายามขอ 720p และ Auto-focus ก่อน)
+const hybridCameraConstraints = {
+  video: {
+    facingMode: "environment",
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    advanced: [{ focusMode: "continuous" }]
+  }
+};
+
+// ==========================================
+// CAMERA CONTROLS (โหมด & แฟลช)
+// ==========================================
+function toggleScanMode() {
+  const modeText = document.getElementById('scanModeText');
+  const modeIcon = document.getElementById('scanModeIcon');
+  
+  if (currentScanMode === 'BARCODE') {
+    currentScanMode = 'QR';
+    modeText.innerText = 'QR CODE';
+    modeIcon.className = 'fas fa-qrcode';
+  } else {
+    currentScanMode = 'BARCODE';
+    modeText.innerText = 'BARCODE';
+    modeIcon.className = 'fas fa-barcode';
+  }
+  
+  // 💡 หมายเหตุ: ตัวแปร currentScanMode นี้ จะถูกนำไปครอบเงื่อนไข (If-else) 
+  // ในจุดที่โค้ดประมวลผลการอ่านค่า เพื่อบังคับให้มันสนใจเฉพาะรหัสที่เราเลือกครับ
+}
+
+async function toggleFlash() {
+  if (!mediaStream) return;
+  const track = mediaStream.getVideoTracks()[0];
+  
+  // เช็กว่ามือถือเครื่องนี้รองรับไฟแฟลชหรือไม่
+  const hasTorch = track.getCapabilities().torch;
+  if (!hasTorch) {
+    alert("อุปกรณ์นี้ไม่รองรับการเปิดไฟแฟลชในแอปครับ");
+    return;
+  }
+  
+  isTorchOn = !isTorchOn;
+  try {
+    await track.applyConstraints({
+      advanced: [{ torch: isTorchOn }]
+    });
+    
+    // เปลี่ยนสีปุ่มให้รู้ว่าเปิดไฟอยู่
+    const flashBtn = document.getElementById('btnToggleFlash');
+    flashBtn.style.color = isTorchOn ? "#fbbf24" : "#fff";
+    flashBtn.style.borderColor = isTorchOn ? "#fbbf24" : "#fff";
+  } catch (err) {
+    console.warn("ไม่สามารถควบคุมไฟแฟลชได้:", err);
+  }
+}
+
+
+
+
+
 // 🌟 1. ดึงตัวแปรหน้าจอมาเก็บไว้ครั้งเดียว (Cache DOM) เพื่อความรวดเร็ว
 const searchContainer = document.getElementById('searchContainer');
 const readerContainer = document.getElementById('readerContainer');
