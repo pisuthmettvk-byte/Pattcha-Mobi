@@ -32,18 +32,23 @@ function toggleScanMode() {
     modeIcon.className = 'fas fa-barcode';
   }
   
-  // 💡 หมายเหตุ: ตัวแปร currentScanMode นี้ จะถูกนำไปครอบเงื่อนไข (If-else) 
-  // ในจุดที่โค้ดประมวลผลการอ่านค่า เพื่อบังคับให้มันสนใจเฉพาะรหัสที่เราเลือกครับ
-}
-
+ // ==========================================
+// CAMERA CONTROLS (เวอร์ชันอัปเกรดความปลอดภัยสูงสุด)
+// ==========================================
 async function toggleFlash() {
-  if (!mediaStream) return;
+  // 🟢 แก้ไขจุดที่ 2: ดึงสตรีมตรงจากแท็ก video ที่กำลังทำงานอยู่บนจอ ป้องกันค่า null 
+  const videoElem = document.querySelector('#scannerContainer video');
+  if (!videoElem || !videoElem.srcObject) {
+    alert("⚠️ กรุณาเปิดกล้องสแกนเนอร์ก่อนเปิดไฟแฟลชครับ");
+    return;
+  }
+  
+  mediaStream = videoElem.srcObject;
   const track = mediaStream.getVideoTracks()[0];
   
-  // เช็กว่ามือถือเครื่องนี้รองรับไฟแฟลชหรือไม่
-  const hasTorch = track.getCapabilities().torch;
-  if (!hasTorch) {
-    alert("อุปกรณ์นี้ไม่รองรับการเปิดไฟแฟลชในแอปครับ");
+  // 🟢 แก้ไขจุดที่ 1: ดักจับความปลอดภัย ป้องกันแอปแครชบน iPhone/iOS
+  if (!track.getCapabilities || !track.getCapabilities().torch) {
+    alert("⚠️ อุปกรณ์หรือเบราว์เซอร์นี้ ไม่รองรับการเปิดไฟแฟลชผ่านระบบเว็บแอปพลิเคชันครับ");
     return;
   }
   
@@ -53,12 +58,14 @@ async function toggleFlash() {
       advanced: [{ torch: isTorchOn }]
     });
     
-    // เปลี่ยนสีปุ่มให้รู้ว่าเปิดไฟอยู่
+    // อัปเดตสีปุ่มไฮไลต์ตามสถานะไฟจริง
     const flashBtn = document.getElementById('btnToggleFlash');
-    flashBtn.style.color = isTorchOn ? "#fbbf24" : "#fff";
-    flashBtn.style.borderColor = isTorchOn ? "#fbbf24" : "#fff";
+    if (flashBtn) {
+      flashBtn.style.color = isTorchOn ? "#fbbf24" : "#fff";
+      flashBtn.style.borderColor = isTorchOn ? "#fbbf24" : "#fff";
+    }
   } catch (err) {
-    console.warn("ไม่สามารถควบคุมไฟแฟลชได้:", err);
+    console.warn("ไม่สามารถปรับแต่งสถานะไฟแฟลชได้:", err);
   }
 }
 
