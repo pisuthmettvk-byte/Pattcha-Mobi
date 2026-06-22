@@ -586,14 +586,31 @@ function renderCrossBranchModal(branchData) {
   modal.classList.remove('hide-modal');
 }
 
-// 🌟 ผูกเหตุการณ์กดปิดหน้าต่างลอยข้ามสาขา (รันคำสั่งครั้งแรกเมื่อแอปโหลด)
+// ==========================================
+// 🌟 ENGINE STARTER (สวิตช์สตาร์ทเครื่องยนต์หลัก)
+// ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  const btnClose = document.getElementById('btnCloseCrossBranch');
-  const modal = document.getElementById('crossBranchModal');
-  
-  if (btnClose && modal) {
-    btnClose.addEventListener('click', () => {
-      modal.classList.add('hide-modal'); // สั่งซ่อนหน้าต่างลอยเมื่อกดกากบาท
+  // 1. สตาร์ทสายไฟปุ่มกดทั้งหมดในแอป (รวมถึงปุ่ม SUBMIT และกล้อง)
+  if (typeof initEventListeners === 'function') {
+    initEventListeners();
+  }
+
+  // 2. ระบบ Auto-Login (ดึงรหัสสาขาเดิมที่เคยพิมพ์ไว้มาแสดง)
+  const savedBranch = localStorage.getItem('pattcha_branch');
+  if (savedBranch) {
+    const inputLogin = document.getElementById('branchCodeInput');
+    if (inputLogin) {
+      inputLogin.value = savedBranch;
+      if (typeof submitLogin === 'function') submitLogin();
+    }
+  }
+
+  // 3. ผูกคำสั่งปุ่มปิดหน้าต่างเช็กสต็อกต่างสาขา (เคลียร์บั๊กที่ Copilot แจ้งเตือน)
+  const btnCloseCross = document.getElementById('btnCloseCrossBranch');
+  const crossModal = document.getElementById('crossBranchModal');
+  if (btnCloseCross && crossModal) {
+    btnCloseCross.addEventListener('click', () => {
+      crossModal.classList.add('hide-modal');
     });
   }
 });
