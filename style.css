@@ -235,18 +235,24 @@ body {
   flex-direction: column;
 }
 
-/* 1. รูปภาพ (ล็อกสัดส่วนที่ 35% ไม่ฝืนความสูง) */
+/* 🌟 1. กล่องรูปภาพ: ปลดล็อกการบังคับความสูง ให้กลับไปเป็นธรรมชาติแบบดั้งเดิม */
 .detail-image-section {
-  flex: 0 0 35%; /* กินพื้นที่ 35% เสมอ ไม่ว่าจอจะสั้นหรือยาว */
+  flex: none !important; /* 🌟 ปลดล็อก! ห้ามยืด ห้ามหด ให้กล่องกางออกตามรูปภาพจริงแบบของเดิม */
+  width: 100%;
   background: #f9fafb;
   display: flex; justify-content: center; align-items: center;
+  padding: 20px 0; /* เว้นระยะบนล่างให้รูปหายใจแบบดั้งเดิม */
   position: relative;
   z-index: 10;
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  padding: 15px;
 }
-.detail-image-section img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
+/* 🌟 2. ตัวรูปภาพ: ตั้งเพดานความสูงไว้ เพื่อไม่ให้รูปแนวตั้งทะลักล้นจอ */
+.detail-image-section img { 
+  max-width: 80%; 
+  max-height: 280px; /* 🌟 นี่คือสัดส่วนดั้งเดิม: รูปจะใหญ่สุดได้เท่านี้ ถ้าจอคอมก็ไม่หดเล็ก ถ้ามือถือก็ไม่ล้นจอ */
+  object-fit: contain; 
+}
 .btn-close-modal {
   position: absolute; top: 15px; right: 15px;
   background: rgba(0,0,0,0.5); color: white; border: none;
