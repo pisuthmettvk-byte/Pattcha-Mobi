@@ -3,16 +3,16 @@
 // ==========================================
 let html5QrCode = null;
 let isScannerRunning = false;
-let isTransitioning = false; 
-let currentScanMode = "BARCODE"; 
+let isTransitioning = false;
+let currentScanMode = "BARCODE";
 let isFlashOn = false;
 
 // ==========================================
-// 1. ฟังก์ชันเปิดกล้อง (Start Scanner)
+// 1. ฟังก์ชันหลักเปิดกล้อง (Core Start)
 // ==========================================
 async function startScanner() {
   if (isTransitioning || isScannerRunning) return;
-  isTransitioning = true; 
+  isTransitioning = true;
 
   try {
     const readerContainer = document.getElementById("readerContainer");
@@ -24,41 +24,51 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    const formats = currentScanMode === "BARCODE"
-      ? [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A]
-      : [Html5QrcodeSupportedFormats.QR_CODE];
+    // รองรับทั้งคู่พร้อมกันเพื่อความเสถียรตอนสลับกรอบเล็ง
+    const allFormats = [
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.QR_CODE,
+    ];
 
     await html5QrCode.start(
       { facingMode: "environment" },
       {
-        fps: 10,
-        qrbox: { width: 250, height: currentScanMode === "BARCODE" ? 120 : 250 },
-        formatsToSupport: formats,
-        aspectRatio: 1.0
+        fps: 12,
+        qrbox: { width: 250, height: 250 },
+        formatsToSupport: allFormats,
+        aspectRatio: 1.0,
       },
       (decodedText) => {
         stopScanner();
         const searchInput = document.getElementById("searchStockInput");
         if (searchInput) {
           searchInput.value = decodedText;
-          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          searchInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
       },
-      (errorMessage) => { /* ข้าม Error ระหว่างเล็งภาพ */ }
+      (errorMessage) => {
+        /* ข้าม Error ยิบย่อย */
+      },
     );
 
     isScannerRunning = true;
 
+    // อัปเดตขนาดกรอบให้ตรงกับโหมดปัจจุบันหลังเปิดกล้องเสร็จ
+    setTimeout(() => {
+      updateScanRegionUI();
+    }, 100);
   } catch (err) {
     console.error("Camera start failed:", err);
-    alert("ไม่สามารถเปิดกล้องได้ โปรดตรวจสอบสิทธิ์ครับ");
   } finally {
-    isTransitioning = false; 
+    isTransitioning = false;
   }
 }
 
 // ==========================================
-// 2. ฟังก์ชันปิดกล้อง (Stop Scanner)
+// 2. ฟังก์ชันหลักปิดกล้อง (Core Stop)
 // ==========================================
 async function stopScanner() {
   if (isTransitioning || !isScannerRunning) return;
@@ -67,8 +77,8 @@ async function stopScanner() {
   try {
     await html5QrCode.stop();
     isScannerRunning = false;
-    isFlashOn = false; 
-    
+    isFlashOn = false;
+
     const btnFlash = document.getElementById("btnToggleFlash");
     if (btnFlash) {
       btnFlash.style.color = "#fff";
@@ -79,7 +89,6 @@ async function stopScanner() {
     const stockScrollArea = document.getElementById("stockScrollArea");
     if (readerContainer) readerContainer.style.display = "none";
     if (stockScrollArea) stockScrollArea.classList.remove("hide");
-
   } catch (err) {
     console.error("Camera stop failed:", err);
   } finally {
@@ -88,132 +97,87 @@ async function stopScanner() {
 }
 
 // ==========================================
-// 3. ผูกคำสั่งควบคุมกับปุ่มหน้างาน
+// 🌟 3. ฟังก์ชันสากลชื่อเดิม (รักษาสิทธิ์ชื่อเดิมไว้ 100%)
 // ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-  
-  // 🔘 ปุ่มหลักเปิด/ปิดกล้องด้านล่าง
-  document.getElementById("btnScannerOpen")?.addEventListener("click", () => {
-    if (isScannerRunning) { stopScanner(); } else { startScanner(); }
-  });
 
-  // 🔘 ปุ่มสลับโหมด BARCODE / QR CODE
-  document.getElementById("btnToggleScanMode")?.addEventListener("click", async () => {
-    if (isTransitioning) return;
-
-    currentScanMode = currentScanMode === "BARCODE" ? "QR" : "BARCODE";
-
-    const textEl = document.getElementById("scanModeText");
-    const iconEl = document.getElementById("scanModeIcon");
-    if (textEl) textEl.innerText = currentScanMode;
-    if (iconEl) iconEl.className = currentScanMode === "BARCODE" ? "fas fa-barcode" : "fas fa-qrcode";
-
-    if (isScannerRunning) {
-      await stopScanner();
-      await startScanner();
-    }
-  });
-
-  // 🔘 ปุ่มควบคุมไฟแฟลช
-  document.getElementById("btnToggleFlash")?.addEventListener("click", async () => {
-    if (!isScannerRunning || isTransitioning) return;
-
-    try {
-      isFlashOn = !isFlashOn;
-      await html5QrCode.applyVideoConstraints({ torch: isFlashOn });
-
-      const btnFlash = document.getElementById("btnToggleFlash");
-      if (btnFlash) {
-        btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
-        btnFlash.style.borderColor = isFlashOn ? "#fab919" : "#fff";
-      }
-    } catch (err) {
-      console.warn("อุปกรณ์ไม่รองรับไฟแฟลช:", err);
-      isFlashOn = false;
-    }
-  });
-});
-
-// 🌟 ฟังก์ชันเปิด/ปิดกล้องแบบ Hybrid Fallback
-async function toggleScanner() {
-  if (!('mediaDevices' in navigator)) {
-    alert("❌ เบราว์เซอร์หรืออุปกรณ์นี้ไม่รองรับการใช้งานกล้องครับ");
-    return;
-  }
-
-  isScannerMode = !isScannerMode;
-
-  if (isScannerMode) {
-    if (searchContainer) searchContainer.style.display = 'none';
-    if (readerContainer) readerContainer.style.display = 'block';
-
-    if (!html5QrCode) {
-      html5QrCode = new Html5Qrcode("reader");
-    }
-
-    const targetQrBox = currentScanMode === 'BARCODE' 
-      ? { width: 280, height: 120 } 
-      : { width: 220, height: 220 };
-
-    html5QrCode.start(
-      hybridCameraConstraints, 
-      { 
-        fps: 30, 
-        qrbox: targetQrBox, 
-        disableFlip: false 
-      },
-      async (decodedText) => {
-        if (searchInput) {
-          searchInput.value = decodedText;
-          searchInput.disabled = true; 
-        }
-
-        await stopScanner(); 
-        
-        if (searchContainer) searchContainer.style.display = 'block';
-        if (readerContainer) readerContainer.style.display = 'none';
-        isScannerMode = false;
-
-        try {
-          if (typeof handleMagicSearch === 'function') {
-            handleMagicSearch(); 
-          }
-        } catch (err) {
-          console.error("Search failed:", err);
-          alert("❌ ค้นหาล้มเหลว กรุณาลองใหม่ครับ");
-        } finally {
-          if (searchInput) searchInput.disabled = false; 
-        }
-      },
-      (errorMessage) => {
-        // ซ่อนข้อความ Error การหาโฟกัส
-      }
-    ).catch((err) => {
-      console.warn("Retrying with standard camera setup...", err);
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 30, qrbox: targetQrBox, disableFlip: false },
-        async (decodedText) => {
-          if (searchInput) { searchInput.value = decodedText; searchInput.disabled = true; }
-          await stopScanner();
-          if (searchContainer) searchContainer.style.display = 'block';
-          if (readerContainer) readerContainer.style.display = 'none';
-          isScannerMode = false;
-          if (typeof handleMagicSearch === 'function') handleMagicSearch();
-          if (searchInput) searchInput.disabled = false;
-        },
-        () => {} // Ignored errors
-      ).catch((finalErr) => {
-        console.error("Critical camera failure:", finalErr);
-        isScannerMode = false;
-        if (searchContainer) searchContainer.style.display = 'block';
-        if (readerContainer) readerContainer.style.display = 'none';
-        alert("❌ เปิดกล้องไม่ได้: กรุณากด 'อนุญาต' (Allow) กล้องในเบราว์เซอร์");
-      });
-    });
+// ชื่อฟังก์ชันเดิมสำหรับเปิด/ปิดกล้อง
+function toggleScanner() {
+  if (isScannerRunning) {
+    stopScanner();
   } else {
-    if (searchContainer) searchContainer.style.display = 'block';
-    if (readerContainer) readerContainer.style.display = 'none';
-    await stopScanner(); 
+    startScanner();
   }
 }
+
+// ชื่อฟังก์ชันเดิมสำหรับสลับเปิด/ปิดไฟแฟลช
+async function toggleFlash() {
+  if (!isScannerRunning || isTransitioning) return;
+
+  try {
+    isFlashOn = !isFlashOn;
+    await html5QrCode.applyVideoConstraints({ torch: isFlashOn });
+
+    const btnFlash = document.getElementById("btnToggleFlash");
+    if (btnFlash) {
+      btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
+      btnFlash.style.borderColor = isFlashOn ? "#fab919" : "#fff";
+    }
+  } catch (err) {
+    console.warn("อุปกรณ์ไม่รองรับไฟแฟลช:", err);
+    isFlashOn = false;
+  }
+}
+
+// ฟังก์ชันสลับโหมดและปรับความสูงกรอบเล็งแบบสมูท
+function toggleScanMode() {
+  if (isTransitioning) return;
+
+  currentScanMode = currentScanMode === "BARCODE" ? "QR" : "BARCODE";
+
+  const textEl = document.getElementById("scanModeText");
+  const iconEl = document.getElementById("scanModeIcon");
+  if (textEl) textEl.innerText = currentScanMode;
+  if (iconEl)
+    iconEl.className =
+      currentScanMode === "BARCODE" ? "fas fa-barcode" : "fas fa-qrcode";
+
+  if (isScannerRunning) {
+    updateScanRegionUI();
+  }
+}
+
+// ฟังก์ชันจัดการขยับมิติกรอบเล็งโหมดกล้องโดยไม่กระพริบ
+function updateScanRegionUI() {
+  const scanRegion = document.querySelector("#reader__scan_region");
+  if (scanRegion) {
+    scanRegion.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+    if (currentScanMode === "BARCODE") {
+      scanRegion.style.height = "120px";
+    } else {
+      scanRegion.style.height = "250px";
+    }
+  }
+}
+
+// ==========================================
+// 4. จุดเช็กและผูกระบบตรวจจับเหตุการณ์ (Event Listeners)
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+  // ปุ่ม QUICK SCAN บนเมนูหลัก สั่งหน่วงเวลาสลับหน้าแล้วเปิดกล้องทันที
+  document.getElementById("btnMenuQuickScan")?.addEventListener("click", () => {
+    setTimeout(() => {
+      startScanner();
+    }, 300);
+  });
+
+  // ผูกปุ่มภายในหน้า Stock (รองรับทั้งเคสกดผ่านแอปและดักฟัง ID)
+  document
+    .getElementById("btnScannerOpen")
+    ?.addEventListener("click", toggleScanner);
+  document
+    .getElementById("btnToggleScanMode")
+    ?.addEventListener("click", toggleScanMode);
+  document
+    .getElementById("btnToggleFlash")
+    ?.addEventListener("click", toggleFlash);
+});
