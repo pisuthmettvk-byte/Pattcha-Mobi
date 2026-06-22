@@ -297,7 +297,7 @@ body {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 
-.stat-card.main-card {
+.stat-card .main-card {
   grid-column: span 2; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border: 1px solid #86efac; padding: 15px;
 }
