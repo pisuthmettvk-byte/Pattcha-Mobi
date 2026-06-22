@@ -401,7 +401,7 @@ function openProductDetail(sku) {
         format: "CODE128",
         lineColor: "#333",
         width: 2,
-        height: 45, // 💡 ปรับความสูงบาร์โค้ดลงมาเป็น 45 ตามแผนดีไซน์ Compact ไม่ล้นจอ
+        height: 35, // 💡 ปรับความสูงลงมาจาก 45 เหลือ 35 ครับ
         displayValue: false
       });
       barcodeElement.style.display = 'block';
