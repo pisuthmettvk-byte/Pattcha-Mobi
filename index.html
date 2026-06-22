@@ -119,10 +119,15 @@
       <div class="section-title"><i class="fas fa-box-open"></i> INVENTORY STATUS</div>
       <div class="stock-grid">
         
-        <div class="stat-card main-card">
-          <div class="stat-lbl">Available Stock</div>
-          <div class="stat-val"><i class="fas fa-check-circle"></i> <span id="detailAvail">0</span></div>
-        </div>
+       <div class="stat-card main-card" style="position: relative;">
+  <div class="stat-lbl">Available Stock</div>
+  <div class="stat-val">
+    <i class="fas fa-check-circle"></i> <span id="detailAvail">0</span>
+  </div>
+  <div id="btnCrossBranch" class="btn-cross-branch hide">
+    <i class="fas fa-store-alt"></i>
+  </div>
+</div>
         
         <div class="stat-card">
           <div class="stat-lbl">Current Stock</div>
@@ -157,6 +162,18 @@
       </div>
     </div>
   </div>
+
+<div id="crossBranchModal" class="hide-modal">
+  <div class="cross-branch-content">
+    <div class="cross-branch-header">
+      <span><i class="fas fa-search-location"></i> สต็อกสาขาอื่น</span>
+      <button id="btnCloseCrossBranch" class="btn-close-sub"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="crossBranchList" class="cross-branch-list">
+      </div>
+  </div>
+</div>
+  
 
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js" defer></script>
   <script src="app.js" defer></script>
