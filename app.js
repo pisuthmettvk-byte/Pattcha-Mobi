@@ -183,15 +183,20 @@ function initEventListeners() {
   const btnLocation = document.getElementById('btnMenuLocation');
   if (btnLocation) btnLocation.addEventListener('click', () => alert('LOCATION - กำลังพัฒนา'));
 
+  // ค้นหาตำแหน่งปุ่มนี้ในฟังก์ชัน initEventListeners ของไฟล์ app.js
   const btnQuickScan = document.getElementById('btnMenuQuickScan');
   if (btnQuickScan) {
-    btnQuickScan.addEventListener('click', () => {
-      // 1. สั่งให้พาเข้าไปหน้า Stock In House ทันที
-      openStockInHouse();
+    btnQuickScan.addEventListener('click', async () => { // 🌟 เติม async ตรงนี้เพื่อควบคุมจังหวะเวลา
+      
+      // 1. สั่งเปิดหน้าและรอให้คำสั่งโหลดสต็อกสดจาก Google Sheets ทำงานเสร็จสิ้นก่อน 100%
+      await openStockInHouse();
 
-      // 2. สั่งเรียกฟังก์ชันเปิดกล้องสแกนบาร์โค้ดขึ้นมาอัตโนมัติ
+      // 2. เมื่อหน้าจอปรากฏตัวและพร้อมแสดงผลเรียบร้อยแล้ว ค่อยสั่งเปิดกล้องทำงานทันที
       if (typeof toggleScanner === 'function') {
-        setTimeout(() => toggleScanner(), 300); // หน่วงเวลา 0.3 วิให้หน้าจอเฟดเสร็จก่อน ค่อยดึงกล้องขึ้นมาให้สมูทๆ
+        // เช็กสถานะหากกล้องยังไม่เปิด ให้สั่งเปิดทำงานทันทีอย่างแม่นยำ
+        if (typeof isScannerMode !== 'undefined' && !isScannerMode) {
+          toggleScanner();
+        }
       }
     });
   }
