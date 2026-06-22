@@ -2,7 +2,7 @@
 // CONFIGURATION & CONSTANTS
 // ==========================================
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbzPJweCC9wgdKzqnWV5kuPWMiUbM9uNgjaO3rfCRaXtTW80nLflLORQIizxay9LbTkbHg/exec", // 🌟 อัปเดตลิงก์หลักตรงนี้ที่เดียวจบครับ
   SEARCH_DELAY: 250 // หน่วงเวลา 250ms เพื่อลดการกระตุกเวลาพิมพ์
 };
 
@@ -431,22 +431,19 @@ function openProductDetail(sku) {
   document.getElementById('productDetailModal').classList.remove('hide');
 
 // ==========================================================
-  // 🌟 [เพิ่มใหม่] คำสั่งยิงเช็กสต็อกต่างสาขาอัตโนมัติเมื่อเปิดดูรายละเอียดสินค้า
+  // 🌟 [ปรับปรุง] คำสั่งยิงเช็กสต็อกต่างสาขาอัตโนมัติผ่านตัวแปร CONFIG กลาง
   // ==========================================================
   const btnCrossBranch = document.getElementById('btnCrossBranch');
   if (btnCrossBranch) {
     btnCrossBranch.classList.add('hide'); // สั่งซ่อนไอคอนบ้านซ้อนไว้ก่อนทุกครั้งเป็นค่าเริ่มต้น
     
-    // ดึง URL ตัวหลังบ้านของเจเลอร์ (แนะนำให้ใช้ URL ตัวแปรหลักของระบบ หรือใส่ลิงก์นี้ได้เลยครับ)
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbwHxRAUGZbbFyjHcAYL_444G-IGiAnefrR99SAw03R1/exec"; 
-    
-    // ยิงไปถามหลังบ้านแบบเบื้องหลัง (Async) พนักงานไม่ต้องนั่งรอโหลดหน้าจอ
-    fetch(`${scriptUrl}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
+    // 🟢 เรียกใช้งานผ่าน CONFIG.API_URL เพื่อเชื่อมโยงกระแสไฟเข้าหาเครือข่ายเดียวกัน
+    fetch(`${CONFIG.API_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
       .then(res => res.json())
       .then(response => {
         if (response.status === "success" && response.data && response.data.length > 0) {
           
-          // 🟢 เงื่อนไขตรงตามโจทย์: ถ้าสาขาอื่นมีของ ให้แสดงไอคอนบ้านซ้อนทันที
+          // เงื่อนไขตรงตามโจทย์: ถ้าสาขาอื่นมีของ ให้แสดงไอคอนบ้านซ้อนทันที
           btnCrossBranch.classList.remove('hide');
           
           // ผูกข้อมูลสต็อกต่างสาขาเก็บไว้ในตัวไอคอนชั่วคราว เพื่อเอาไปวาดต่อตอนกดคลิก
