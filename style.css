@@ -309,3 +309,56 @@ body {
 .main-card .stat-val { font-size: 24px; color: #16a34a; }
 
 .val-current { color: #333; } .val-hold { color: #fab919; } .val-defect { color: #ef4444; } .val-sold { color: #db8591; }
+
+
+
+/* =========================================
+   CROSS BRANCH STOCK UI (ฉบับ Compact สวยงาม)
+   ========================================= */
+/* ปุ่มบ้านซ้อนที่มุมขวาล่างของการ์ดเขียว */
+.btn-cross-branch {
+  position: absolute;
+  bottom: 6px;
+  right: 12px;
+  font-size: 15px;
+  color: #16a34a;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.2s;
+}
+.btn-cross-branch:active {
+  transform: scale(0.9);
+}
+
+/* หน้าต่างลอยแสดงผลข้ามสาขา (Mini Popup ซ้อนด้านบน) */
+#crossBranchModal {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.4); z-index: 1000;
+  display: flex; justify-content: center; align-items: center;
+}
+.hide-modal { display: none !important; }
+
+.cross-branch-content {
+  width: 80%; max-width: 280px; background: #ffffff;
+  border-radius: 12px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+.cross-branch-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; font-weight: bold; color: #db8591;
+  border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px;
+}
+.btn-close-sub {
+  background: none; border: none; color: #999; font-size: 14px; cursor: pointer;
+}
+
+/* รายการสาขาเรียงลงมา */
+.cross-branch-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; background: #f9fafb; border-radius: 6px; margin-bottom: 6px;
+  font-size: 12px; font-weight: bold; color: #333;
+}
+.cross-branch-item .branch-stock-badge {
+  background: #e1f5fe; color: #0288d1; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+}
+
+
