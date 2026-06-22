@@ -64,7 +64,7 @@ async function toggleScanner() {
       (errorMessage) => {
         // 🌟 6. ซ่อนเฉพาะแจ้งเตือนหาโฟกัสภาพ แต่โชว์ Error หลัก
         if (!errorMessage.includes('NotFoundError')) {
-          console.warn("QR warning:", errorMessage);
+         // console.warn("QR warning:", errorMessage);
         }
       }
     ).catch((err) => {
