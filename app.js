@@ -380,6 +380,29 @@ function handleStockBack() {
   }
 }
 
+// ==========================================================
+// 🌟 [นำกลับมาคืนระบบ] ฟังก์ชันสำหรับจัดการระบบค้นหาเวทมนตร์ (Magic Search)
+// ==========================================================
+function handleMagicSearch() {
+  const query = document.getElementById('searchStockInput').value.trim().toLowerCase();
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (!query) { 
+    if (clearBtn) clearBtn.style.display = 'none'; 
+    renderCategories(); 
+    return; 
+  }
+  
+  if (clearBtn) clearBtn.style.display = 'flex';
+  currentStockView = 'product';
+  document.getElementById('stockHeaderTitle').innerText = "SEARCH RESULTS";
+  document.getElementById('categoryListContainer').classList.add('hide');
+  document.getElementById('productListContainer').classList.remove('hide');
+  
+  renderProducts(localProductDatabase.filter(item => {
+    return Object.values(item).some(val => val != null && val.toString().toLowerCase().includes(query));
+  }));
+}
+
 function clearSearch() { 
   document.getElementById('searchStockInput').value = ""; 
   document.getElementById('clearSearchBtn').style.display = 'none'; 
