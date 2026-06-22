@@ -431,25 +431,28 @@ function openProductDetail(sku) {
   document.getElementById('productDetailModal').classList.remove('hide');
 
 // ==========================================================
-  // 🌟 [ปรับปรุง] คำสั่งยิงเช็กสต็อกต่างสาขาอัตโนมัติผ่านตัวแปร CONFIG กลาง
+  // 🌟 [ปรับปรุงล่าสุด] คำสั่งเช็กสต็อกต่างสาขา (กรองสาขาตัวเองออก 100%)
   // ==========================================================
   const btnCrossBranch = document.getElementById('btnCrossBranch');
   if (btnCrossBranch) {
-    btnCrossBranch.classList.add('hide'); // สั่งซ่อนไอคอนบ้านซ้อนไว้ก่อนทุกครั้งเป็นค่าเริ่มต้น
+    btnCrossBranch.classList.add('hide'); // ซ่อนไอคอนไว้ก่อนทุกครั้ง
     
-    // 🟢 เรียกใช้งานผ่าน CONFIG.API_URL เพื่อเชื่อมโยงกระแสไฟเข้าหาเครือข่ายเดียวกัน
     fetch(`${CONFIG.API_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
       .then(res => res.json())
       .then(response => {
-        if (response.status === "success" && response.data && response.data.length > 0) {
+        if (response.status === "success" && response.data) {
           
-          // เงื่อนไขตรงตามโจทย์: ถ้าสาขาอื่นมีของ ให้แสดงไอคอนบ้านซ้อนทันที
-          btnCrossBranch.classList.remove('hide');
+          // 🌟 กรองเอาสาขาที่ล็อกอินปัจจุบันออกไปจากรายการผลลัพธ์
+          const otherBranches = response.data.filter(b => b.branch !== currentBranch);
           
-          // ผูกข้อมูลสต็อกต่างสาขาเก็บไว้ในตัวไอคอนชั่วคราว เพื่อเอาไปวาดต่อตอนกดคลิก
-          btnCrossBranch.onclick = () => {
-            renderCrossBranchModal(response.data);
-          };
+          // 🟢 เงื่อนไขตรงโจทย์: จะแสดงไอคอนก็ต่อเมื่อสาขา "อื่น" มีสินค้าจริงๆ เท่านั้น
+          if (otherBranches.length > 0) {
+            btnCrossBranch.classList.remove('hide');
+            
+            btnCrossBranch.onclick = () => {
+              renderCrossBranchModal(otherBranches); // ส่งเฉพาะสาขาอื่นไปวาดบนหน้าต่างลอย
+            };
+          }
         }
       })
       .catch(err => console.warn("Cross branch fetch failed:", err));
