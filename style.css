@@ -228,7 +228,7 @@ body {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0; /* 🌟 ยึดขอบ 4 ด้าน แทนการใช้ 100vw (แก้ปัญหาจออ้วน) */
   margin: 0 auto; /* 🌟 จัดกึ่งกลางบนจอคอมพิวเตอร์ */
-  max-width: 500px; /* 🌟 ล็อกความกว้างให้เท่ากับหน้าแอปหลัก */
+  max-width: 100%; /* 🌟 ล็อกความกว้างให้เท่ากับหน้าแอปหลัก */
   background: #ffffff;
   z-index: 999;
   display: flex;
