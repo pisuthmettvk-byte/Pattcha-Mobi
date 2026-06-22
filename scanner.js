@@ -88,6 +88,14 @@ function stopScanner() {
     .then(() => {
       html5QrCode.clear();
       html5QrCode = null;
+
+      // 🟢 [เพิ่มใหม่] รีเซ็ตสถานะปุ่มไฟแฟลชให้กลับเป็นค่าเริ่มต้นทุกครั้งเมื่อปิดกล้องสำเร็จ
+      isTorchOn = false;
+      const flashBtn = document.getElementById('btnToggleFlash');
+      if (flashBtn) {
+        flashBtn.style.color = "#fff";
+        flashBtn.style.borderColor = "#fff";
+      }
     })
     .catch(err => console.error("Error stopping camera:", err));
 }
@@ -121,7 +129,7 @@ async function toggleScanner() {
         searchInput.value = decodedText;
         searchInput.disabled = true; // 🌟 4. ล็อกช่องค้นหากันกดเบิ้ล
 
-        await stopScanner(); // 🌟 5. สั่งปิดกล้องให้สนิทก่อน
+        await stopScanner(); // 🌟 5. สั่งปิดกล้องให้สนิทก่อน (จะรีเซ็ตแฟลชออโต้ในนี้)
         
         searchContainer.style.display = 'block';
         readerContainer.style.display = 'none';
@@ -152,6 +160,6 @@ async function toggleScanner() {
   } else {
     searchContainer.style.display = 'block';
     readerContainer.style.display = 'none';
-    await stopScanner(); // สั่งปิดกล้องแบบล้าง Memory ทันที
+    await stopScanner(); // สั่งปิดกล้องแบบล้าง Memory และรีเซ็ตแฟลชทันที
   }
 }
