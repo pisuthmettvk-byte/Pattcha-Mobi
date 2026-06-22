@@ -401,7 +401,7 @@ function openProductDetail(sku) {
         format: "CODE128",
         lineColor: "#333",
         width: 2,
-        height: 40,
+        height: 45, // 💡 ปรับความสูงบาร์โค้ดลงมาเป็น 45 ตามแผนดีไซน์ Compact ไม่ล้นจอ
         displayValue: false
       });
       barcodeElement.style.display = 'block';
@@ -416,6 +416,7 @@ function openProductDetail(sku) {
     if (el) el.innerText = text;
   };
   
+  // 🌟 ส่งข้อมูลเข้าเลย์เอาต์ใหม่ ซ้าย-ขวา และ Card UI ได้ทันที
   safeSetText('detailCategory', item.category || 'NO CATEGORY');
   safeSetText('detailSku', item.sku || '-');
   safeSetText('detailName', item.name || '-');
