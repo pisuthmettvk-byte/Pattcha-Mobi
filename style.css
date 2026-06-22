@@ -218,3 +218,79 @@ body {
 .stock-hold { color: #fab919; }  /* เหลือง */
 .stock-defect { color: #ef4444; } /* แดง */
 
+
+
+
+/* =========================================
+   PRODUCT DETAIL MODAL (ฉบับจบใน 1 หน้าจอ ไม่ต้อง Scroll)
+   ========================================= */
+#productDetailModal {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: #ffffff; z-index: 999; display: flex; flex-direction: column;
+}
+
+/* 1. รูปภาพ (ย่อให้เหลือ 30% ของจอ และมีเงา) */
+.detail-image-section {
+  flex: 0 0 30vh; 
+  background: #f9fafb; display: flex; justify-content: center; align-items: center;
+  position: relative; z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 💡 เงาขอบล่าง */
+}
+.detail-image-section img { max-width: 80%; max-height: 80%; object-fit: contain; }
+
+.btn-close-modal {
+  position: absolute; top: 15px; right: 15px;
+  background: rgba(0,0,0,0.5); color: white; border: none;
+  width: 30px; height: 30px; border-radius: 50%; font-size: 14px; cursor: pointer;
+}
+
+/* 2. โซนข้อมูล (ลด Padding ยัดให้พอดีจอ) */
+.detail-content-section {
+  flex: 1; padding: 15px; background: #ffffff;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  /* 💡 ซ่อน Scrollbar เพราะเราจัดให้มันพอดีจอแล้ว */
+  overflow: hidden; 
+}
+
+/* 3. บาร์โค้ดเส้นประ (ย่อความสูงและระยะห่าง) */
+.barcode-box {
+  text-align: center; margin-bottom: 15px; padding: 10px;
+  border-radius: 10px; border: 2px dashed #e7a08c; background: #fffafa;
+}
+
+/* 4. รายละเอียด และ ราคา (กระชับ) */
+.product-header-row {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;
+}
+.product-info-left { flex: 1; padding-right: 10px; }
+.product-info-right { text-align: right; }
+
+.lbl-category { font-size: 10px; color: #db8591; font-weight: bold; text-transform: uppercase; margin-bottom: 3px; }
+.lbl-sku { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 2px; line-height: 1.1; }
+.lbl-name { font-size: 12px; color: #777; line-height: 1.2; }
+.lbl-price { font-size: 20px; font-weight: bold; color: #fab919; }
+
+/* 5. CARD UI สต็อก (บีบระยะห่างช่องไฟ) */
+.section-title { font-size: 12px; color: #db8591; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+
+.stock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.stat-card {
+  background: #ffffff; border-radius: 8px; padding: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04); border: 1px solid #f0f0f0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+
+.stat-card.main-card {
+  grid-column: span 2; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac; padding: 12px;
+}
+
+.stat-lbl { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 2px; font-weight: bold; }
+.stat-val { font-size: 16px; font-weight: bold; }
+
+.main-card .stat-lbl { color: #15803d; }
+.main-card .stat-val { font-size: 22px; color: #16a34a; }
+
+.val-current { color: #333; } .val-hold { color: #fab919; } .val-defect { color: #ef4444; } .val-sold { color: #db8591; }
