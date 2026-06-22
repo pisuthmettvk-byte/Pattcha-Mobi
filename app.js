@@ -2,8 +2,9 @@
 // CONFIGURATION & CONSTANTS
 // ==========================================
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbzPJweCC9wgdKzqnWV5kuPWMiUbM9uNgjaO3rfCRaXtTW80nLflLORQIizxay9LbTkbHg/exec", // 🌟 อัปเดตลิงก์หลักตรงนี้ที่เดียวจบครับ
-  SEARCH_DELAY: 250 // หน่วงเวลา 250ms เพื่อลดการกระตุกเวลาพิมพ์
+  API_URL: "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec", // 🌟 คืนค่าลิงก์หลักดั้งเดิมสำหรับ Login และดึงข้อมูลสต็อกสาขาตัวเอง
+  CROSS_BRANCH_URL: "https://script.google.com/macros/s/AKfycbzPJweCC9wgdKzqnWV5kuPWMiUbM9uNgjaO3rfCRaXtTW80nLflLORQIizxay9LbTkbHg/exec", // 🌟 ใช้ลิงก์ใหม่ตัวนี้สำหรับการยิงเช็กสต็อกต่างสาขาโดยเฉพาะ
+  SEARCH_DELAY: 250 
 };
 
 const ICON_MAP = {
@@ -152,7 +153,7 @@ function getCategoryIcon(catName) {
 }
 
 // ==========================================
-// INITIALIZATION & EVENT LISTENERS
+// INITIALIZATION & EVENT LISTENERS (เวอร์ชันแก้เลเยอร์กล้องซ้อนทับ)
 // ==========================================
 function initEventListeners() {
   // หน้า Login
@@ -183,18 +184,22 @@ function initEventListeners() {
   const btnLocation = document.getElementById('btnMenuLocation');
   if (btnLocation) btnLocation.addEventListener('click', () => alert('LOCATION - กำลังพัฒนา'));
 
-  // ค้นหาตำแหน่งปุ่มนี้ในฟังก์ชัน initEventListeners ของไฟล์ app.js
+  // ปุ่ม Quick Scan หน้า Main Menu
   const btnQuickScan = document.getElementById('btnMenuQuickScan');
   if (btnQuickScan) {
-    btnQuickScan.addEventListener('click', async () => { // 🌟 เติม async ตรงนี้เพื่อควบคุมจังหวะเวลา
-      
+    btnQuickScan.addEventListener('click', async () => { 
       // 1. สั่งเปิดหน้าและรอให้คำสั่งโหลดสต็อกสดจาก Google Sheets ทำงานเสร็จสิ้นก่อน 100%
       await openStockInHouse();
 
       // 2. เมื่อหน้าจอปรากฏตัวและพร้อมแสดงผลเรียบร้อยแล้ว ค่อยสั่งเปิดกล้องทำงานทันที
       if (typeof toggleScanner === 'function') {
-        // เช็กสถานะหากกล้องยังไม่เปิด ให้สั่งเปิดทำงานทันทีอย่างแม่นยำ
         if (typeof isScannerMode !== 'undefined' && !isScannerMode) {
+          // 🌟 บังคับจัดระเบียบชั้นเลเยอร์ให้ปุ่ม Quick Scan เปิดกล้องมาแล้วอยู่บนสุด
+          const scanView = document.getElementById('scannerView');
+          if (scanView) {
+            scanView.style.position = "fixed";
+            scanView.style.zIndex = "9999";
+          }
           toggleScanner();
         }
       }
@@ -211,8 +216,18 @@ function initEventListeners() {
   const btnClear = document.getElementById('clearSearchBtn');
   if (btnClear) btnClear.addEventListener('click', clearSearch);
   
-  // กล้องสแกน
-  const toggleCam = () => { if (typeof toggleScanner === 'function') toggleScanner(); };
+  // กล้องสแกนหลักด้านใน
+  const toggleCam = () => { 
+    if (typeof toggleScanner === 'function') {
+      // 🌟 บังคับให้หน้าต่างกล้องลอยมาอยู่ชั้นบนสุดเหนือคอลัมน์หมวดหมู่เสมอ
+      const scanView = document.getElementById('scannerView');
+      if (scanView) {
+        scanView.style.position = "fixed";
+        scanView.style.zIndex = "9999";
+      }
+      toggleScanner(); 
+    }
+  };
   const btnCamOpen = document.getElementById('btnScannerOpen');
   if (btnCamOpen) btnCamOpen.addEventListener('click', toggleCam);
   
@@ -234,16 +249,6 @@ function initEventListeners() {
   const btnCloseMod = document.getElementById('btnCloseModal');
   if (btnCloseMod) btnCloseMod.addEventListener('click', closeProductDetail);
 }
-
-window.onload = function() {
-  initEventListeners();
-  const savedBranch = localStorage.getItem('pattcha_branch');
-  if (savedBranch) {
-    const inputLogin = document.getElementById('branchCodeInput');
-    if(inputLogin) inputLogin.value = savedBranch;
-    submitLogin();
-  }
-};
 
 // ==========================================
 // MAIN FUNCTIONALITIES
@@ -528,7 +533,8 @@ function openProductDetail(sku) {
   if (btnCrossBranch) {
     btnCrossBranch.classList.add('hide'); // ซ่อนไอคอนไว้ก่อนทุกครั้ง
     
-    fetch(`${CONFIG.API_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
+   // 🌟 เปลี่ยนมาเรียกใช้งานผ่าน CONFIG.CROSS_BRANCH_URL เส้นใหม่
+    fetch(`${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
       .then(res => res.json())
       .then(response => {
         if (response.status === "success" && response.data) {
