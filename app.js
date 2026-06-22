@@ -219,6 +219,13 @@ function initEventListeners() {
   const btnCamClose = document.getElementById('btnScannerClose');
   if (btnCamClose) btnCamClose.addEventListener('click', toggleCam);
 
+  // ปุ่มควบคุมกล้อง (โหมด & แฟลช)
+  const btnScanMode = document.getElementById('btnToggleScanMode');
+  if (btnScanMode) btnScanMode.addEventListener('click', () => { if (typeof toggleScanMode === 'function') toggleScanMode(); });
+  
+  const btnFlash = document.getElementById('btnToggleFlash');
+  if (btnFlash) btnFlash.addEventListener('click', () => { if (typeof toggleFlash === 'function') toggleFlash(); });
+
   // ช่องค้นหา
   const searchInput = document.getElementById('searchStockInput');
   if (searchInput) searchInput.addEventListener('input', debounceSearch(handleMagicSearch, CONFIG.SEARCH_DELAY));
