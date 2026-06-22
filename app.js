@@ -587,15 +587,24 @@ function renderCrossBranchModal(branchData) {
 }
 
 // ==========================================
-// 🌟 ENGINE STARTER (สวิตช์สตาร์ทเครื่องยนต์หลัก)
+// 🌟 ENGINE STARTER (สวิตช์สตาร์ทเครื่องยนต์หลักรวมศูนย์)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. สตาร์ทสายไฟปุ่มกดทั้งหมดในแอป (รวมถึงปุ่ม SUBMIT และกล้อง)
+  // 1. สตาร์ทสายไฟผูกปุ่มกดทั้งหมดในระบบ (แก้บั๊กปุ่ม Submit นิ่งสนิท)
   if (typeof initEventListeners === 'function') {
     initEventListeners();
   }
 
-  // 2. ระบบ Auto-Login (ดึงรหัสสาขาเดิมที่เคยพิมพ์ไว้มาแสดง)
+  // 2. ผูกเหตุการณ์กดปิดหน้าต่างลอยข้ามสาขา (คงไว้ตามลอจิกล่าสุด)
+  const btnCloseCross = document.getElementById('btnCloseCrossBranch');
+  const crossModal = document.getElementById('crossBranchModal');
+  if (btnCloseCross && crossModal) {
+    btnCloseCross.addEventListener('click', () => {
+      crossModal.classList.add('hide-modal');
+    });
+  }
+
+  // 3. ระบบจดจำและล็อกอินอัตโนมัติเมื่อพนักงานเปิดแอปใหม่
   const savedBranch = localStorage.getItem('pattcha_branch');
   if (savedBranch) {
     const inputLogin = document.getElementById('branchCodeInput');
@@ -603,14 +612,5 @@ document.addEventListener("DOMContentLoaded", () => {
       inputLogin.value = savedBranch;
       if (typeof submitLogin === 'function') submitLogin();
     }
-  }
-
-  // 3. ผูกคำสั่งปุ่มปิดหน้าต่างเช็กสต็อกต่างสาขา (เคลียร์บั๊กที่ Copilot แจ้งเตือน)
-  const btnCloseCross = document.getElementById('btnCloseCrossBranch');
-  const crossModal = document.getElementById('crossBranchModal');
-  if (btnCloseCross && crossModal) {
-    btnCloseCross.addEventListener('click', () => {
-      crossModal.classList.add('hide-modal');
-    });
   }
 });
