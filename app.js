@@ -397,11 +397,12 @@ function openProductDetail(sku) {
   const barcodeElement = document.getElementById('detailBarcode');
   if (barcodeElement && item.sku) {
     try {
+      // ในฟังก์ชัน openProductDetail แก้ความสูงบาร์โค้ดกลับมาที่ 45 ครับ
       JsBarcode("#detailBarcode", item.sku, {
         format: "CODE128",
         lineColor: "#333",
         width: 2,
-        height: 35, // 💡 ปรับความสูงลงมาจาก 45 เหลือ 35 ครับ
+        height: 45, // 🌟 คืนความสูงที่พอดีต่อการสแกน
         displayValue: false
       });
       barcodeElement.style.display = 'block';
