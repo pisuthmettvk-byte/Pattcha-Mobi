@@ -1,9 +1,9 @@
 // ==========================================
 // SCANNER CONFIGURATION & STATE
 // ==========================================
-let currentScanMode = 'BARCODE'; // เริ่มต้นที่ Barcode
+let currentScanMode = 'BARCODE'; 
 let isTorchOn = false;
-let mediaStream = null; // เก็บสายไฟกล้องเพื่อไว้สั่งเปิดแฟลช
+let mediaStream = null; 
 
 // 🌟 ตั้งค่ากล้องแบบ Hybrid (พยายามขอความละเอียดสูงก่อน)
 const hybridCameraConstraints = {
@@ -29,20 +29,19 @@ function toggleScanMode() {
     if (modeText) modeText.innerText = 'BARCODE';
     if (modeIcon) modeIcon.className = 'fas fa-barcode';
   }
-} // 🟢 แก้ไขเสร็จสิ้น: เติมปีกกาปิดฟังก์ชันป้องกัน SyntaxError ดักปุ่ม Submit พัง
+}
 
 async function toggleFlash() {
-  // ดึงสตรีมตรงจากแท็ก video ที่กำลังทำงานอยู่บนจอ ป้องกันค่า null 
-  const videoElem = document.querySelector('#scannerContainer video');
+  // 🟢 ค้นหาแท็กวิดีโอแบบสากล (Universal Selector) ป้องกันสัดส่วน Layout คลาดเคลื่อน
+  const videoElem = document.querySelector('video');
   if (!videoElem || !videoElem.srcObject) {
-    alert("⚠️ กรุณาเปิดกล้องสแกนเนอร์ก่อนเปิดไฟแฟลชครับ");
+    alert("⚠️ กรุณารอให้ภาพจากกล้องแสดงขึ้นมาก่อนเปิดไฟแฟลชครับ");
     return;
   }
   
   mediaStream = videoElem.srcObject;
   const track = mediaStream.getVideoTracks()[0];
   
-  // ดักจับความปลอดภัย ป้องกันแอปแครชบน iPhone/iOS
   if (!track.getCapabilities || !track.getCapabilities().torch) {
     alert("⚠️ อุปกรณ์หรือเบราว์เซอร์นี้ ไม่รองรับการเปิดไฟแฟลชผ่านระบบเว็บแอปพลิเคชันครับ");
     return;
@@ -54,7 +53,6 @@ async function toggleFlash() {
       advanced: [{ torch: isTorchOn }]
     });
     
-    // อัปเดตสีปุ่มไฮไลต์ตามสถานะไฟจริง
     const flashBtn = document.getElementById('btnToggleFlash');
     if (flashBtn) {
       flashBtn.style.color = isTorchOn ? "#fbbf24" : "#fff";
@@ -65,34 +63,44 @@ async function toggleFlash() {
   }
 }
 
-// 🌟 คงไว้ตามระบบเดิม: ดึงตัวแปรหน้าจอมาเก็บไว้ครั้งเดียวเพื่อความรวดเร็ว
+// 🌟 ตัวแปรหน้าจอ
 const searchContainer = document.getElementById('searchContainer');
-const readerContainer = document.getElementById('readerContainer'); // 🟢 แก้ไขกลับมาใช้ ID เดิมป้องกัน Layout พัง
+const readerContainer = document.getElementById('readerContainer'); 
 const searchInput = document.getElementById('searchStockInput');
 
 let html5QrCode = null;
 let isScannerMode = false;
 
-// 🌟 ฟังก์ชันปิดกล้องและล้าง Memory ทิ้ง 100% พร้อมรีเซ็ตแฟลช
+// 🌟 ฟังก์ชันปิดกล้องและล้าง Memory (อัปเกรดระบบเบรกแบบปลอดภัยสูงสุดป้องกันการแครช)
 function stopScanner() {
   if (!html5QrCode) return Promise.resolve();
-  return html5QrCode.stop()
-    .then(() => {
+  
+  // รีเซ็ตสถานะปุ่มไฟแฟลชให้กลับเป็นค่าเริ่มต้นเสมอ
+  isTorchOn = false;
+  const flashBtn = document.getElementById('btnToggleFlash');
+  if (flashBtn) {
+    flashBtn.style.color = "#fff";
+    flashBtn.style.borderColor = "#fff";
+  }
+
+  try {
+    return html5QrCode.stop().then(() => {
       html5QrCode.clear();
       html5QrCode = null;
-
-      // รีเซ็ตสถานะปุ่มไฟแฟลชให้กลับเป็นค่าเริ่มต้นทุกครั้งเมื่อปิดกล้องสำเร็จ
-      isTorchOn = false;
-      const flashBtn = document.getElementById('btnToggleFlash');
-      if (flashBtn) {
-        flashBtn.style.color = "#fff";
-        flashBtn.style.borderColor = "#fff";
-      }
-    })
-    .catch(err => console.error("Error stopping camera:", err));
+    }).catch(err => {
+      // 🟢 หากเกิด Error ระหว่างปิด (เช่นกล้องเพิ่งเริ่มทำงาน) ให้เคลียร์ค่าทิ้งอย่างปลอดภัย
+      console.warn("Soft reset applied:", err);
+      html5QrCode.clear();
+      html5QrCode = null;
+    });
+  } catch(e) {
+    html5QrCode.clear();
+    html5QrCode = null;
+    return Promise.resolve();
+  }
 }
 
-// 🌟 ฟังก์ชันเปิด/ปิดกล้องทำงานสอดประสานกันแบบ Async
+// 🌟 ฟังก์ชันเปิด/ปิดกล้องแบบ Hybrid Fallback
 async function toggleScanner() {
   if (!('mediaDevices' in navigator)) {
     alert("❌ เบราว์เซอร์หรืออุปกรณ์นี้ไม่รองรับการใช้งานกล้องครับ");
@@ -109,12 +117,10 @@ async function toggleScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // ปรับขนาดกล่องเล็งอัตโนมัติตามโหมดเพื่อให้เหมาะกับประเภทโค้ดและสแกนไวขึ้น
     const targetQrBox = currentScanMode === 'BARCODE' 
       ? { width: 280, height: 120 } 
       : { width: 220, height: 220 };
 
-    // 🟢 ระบบ True Hybrid สตาร์ทกล้อง: ลองออปชันแรงก่อน ถ้าเครื่องไม่ไหวให้ถอยกลับไปแบบมาตรฐานอัตโนมัติ
     html5QrCode.start(
       hybridCameraConstraints, 
       { 
@@ -125,10 +131,10 @@ async function toggleScanner() {
       async (decodedText) => {
         if (searchInput) {
           searchInput.value = decodedText;
-          searchInput.disabled = true; // ล็อกช่องค้นหากันกดเบิ้ล
+          searchInput.disabled = true; 
         }
 
-        await stopScanner(); // สั่งปิดกล้องให้สนิทล้างหน่วยความจำ
+        await stopScanner(); 
         
         if (searchContainer) searchContainer.style.display = 'block';
         if (readerContainer) readerContainer.style.display = 'none';
@@ -136,20 +142,19 @@ async function toggleScanner() {
 
         try {
           if (typeof handleMagicSearch === 'function') {
-            handleMagicSearch(); // ค้นหาสินค้าอัตโนมัติ
+            handleMagicSearch(); 
           }
         } catch (err) {
           console.error("Search failed:", err);
           alert("❌ ค้นหาล้มเหลว กรุณาลองใหม่ครับ");
         } finally {
-          if (searchInput) searchInput.disabled = false; // ปลดล็อกช่องค้นหา
+          if (searchInput) searchInput.disabled = false; 
         }
       },
       (errorMessage) => {
-        // ซ่อนข้อความเตือนโฟกัสเฟรมภาพเพื่อให้ Console สะอาดลื่นไหล
+        // ซ่อนข้อความ Error การหาโฟกัส
       }
     ).catch((err) => {
-      // 🟢 แผนสำรองระดับ Hybrid: หาก constraints ชั้นสูงทำเครื่องแครช ให้รันกล้องโหมดธรรมดาทันที
       console.warn("Retrying with standard camera setup...", err);
       html5QrCode.start(
         { facingMode: "environment" },
@@ -163,7 +168,7 @@ async function toggleScanner() {
           if (typeof handleMagicSearch === 'function') handleMagicSearch();
           if (searchInput) searchInput.disabled = false;
         },
-        () => {}
+        () => {} // Ignored errors
       ).catch((finalErr) => {
         console.error("Critical camera failure:", finalErr);
         isScannerMode = false;
@@ -175,6 +180,6 @@ async function toggleScanner() {
   } else {
     if (searchContainer) searchContainer.style.display = 'block';
     if (readerContainer) readerContainer.style.display = 'none';
-    await stopScanner(); // ล้างระบบปิดกล้องคืนพลังงานทันที
+    await stopScanner(); 
   }
 }
