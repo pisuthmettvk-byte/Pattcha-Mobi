@@ -463,3 +463,40 @@ function openProductDetail(sku) {
 function closeProductDetail() { 
   document.getElementById('productDetailModal').classList.add('hide'); 
 }
+
+// ==========================================================
+// 🌟 [เพิ่มใหม่] ฟังก์ชันสำหรับวาดรายชื่อสาขาที่มีสต็อกลงในหน้าต่างลอย
+// ==========================================================
+function renderCrossBranchModal(branchData) {
+  const listContainer = document.getElementById('crossBranchList');
+  const modal = document.getElementById('crossBranchModal');
+  if (!listContainer || !modal) return;
+
+  listContainer.innerHTML = ""; // ล้างข้อมูลเก่าออกก่อน
+
+  // วนลูปวาดรายชื่อสาขาที่มีของเฉพาะที่มีแต้มมากกว่า 0 ตามที่เรากรองมาจากหลังบ้าน
+  branchData.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'cross-branch-item';
+    div.innerHTML = `
+      <span><i class="fas fa-store"></i> สาขา ${escapeHTML(item.branch)}</span>
+      <span class="branch-stock-badge">${escapeHTML(item.stock)} ชิ้น</span>
+    `;
+    listContainer.appendChild(div);
+  });
+
+  // เปิดแสดงหน้าต่างลอยข้ามสาขา
+  modal.classList.remove('hide-modal');
+}
+
+// 🌟 ผูกเหตุการณ์กดปิดหน้าต่างลอยข้ามสาขา (รันคำสั่งครั้งแรกเมื่อแอปโหลด)
+document.addEventListener("DOMContentLoaded", () => {
+  const btnClose = document.getElementById('btnCloseCrossBranch');
+  const modal = document.getElementById('crossBranchModal');
+  
+  if (btnClose && modal) {
+    btnClose.addEventListener('click', () => {
+      modal.classList.add('hide-modal'); // สั่งซ่อนหน้าต่างลอยเมื่อกดกากบาท
+    });
+  }
+});
