@@ -319,34 +319,54 @@ async function logoutBranch() {
   }
 }
 
+// ==========================================
+// STOCK IN HOUSE VIEW MANAGEMENT (เวอร์ชันแก้บั๊กหน้าจอขาว)
+// ==========================================
 async function openStockInHouse() {
   const btnStock = document.getElementById('btnMenuStock');
-  const originalText = btnStock.innerHTML;
-  
-  btnStock.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> UPDATING...';
-  btnStock.disabled = true;
+  let originalText = "";
+  if (btnStock) {
+    originalText = btnStock.innerHTML;
+    btnStock.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> UPDATING...';
+    btnStock.disabled = true;
+  }
 
   try {
+    // ดึงข้อมูลสต็อกล่าสุดของสาขาตัวเองผ่านลิงก์หลักสม่ำเสมอ
     const response = await fetch(CONFIG.API_URL + "?action=login&branch=" + currentBranch);
     const res = await response.json();
     if (res.success && res.products) {
       localProductDatabase = res.products;
     }
   } catch (err) {
-    console.warn("Failed to update stock:", err);
-    // 🟢 ปรับปรุง: แจ้งเตือนพนักงานให้ทราบว่าสต็อกไม่สามารถอัปเดตสดได้เนื่องจากเครือข่ายมีปัญหา
-    customAlert("⚠️ ไม่สามารถอัปเดตข้อมูลสต็อกล่าสุดได้เนื่องจากเครือข่ายขัดข้อง ระบบจะแสดงข้อมูลออฟไลน์ชั่วคราว", "NETWORK WARNING");
+    console.warn("Failed to update stock live, using cached data:", err);
   }
 
-  btnStock.innerHTML = originalText;
-  btnStock.disabled = false;
+  if (btnStock) {
+    btnStock.innerHTML = originalText;
+    btnStock.disabled = false;
+  }
 
-  document.getElementById('sharedHeader').classList.add('hide'); 
-  document.getElementById('mainMenuView').classList.add('hide');
-  document.getElementById('stockInHouseView').classList.remove('hide');
+  // ดักจับ Element เลเยอร์หน้าจอทั้งหมดเพื่อจัดระเบียบ
+  const sharedHeader = document.getElementById('sharedHeader');
+  const mainMenuView = document.getElementById('mainMenuView');
+  const stockInHouseView = document.getElementById('stockInHouseView');
+  const categoryContainer = document.getElementById('categoryListContainer');
+  const productContainer = document.getElementById('productListContainer');
+  const headerTitle = document.getElementById('stockHeaderTitle');
+
+  if (sharedHeader) sharedHeader.classList.add('hide'); 
+  if (mainMenuView) mainMenuView.classList.add('hide');
+  if (stockInHouseView) stockInHouseView.classList.remove('hide');
   
-  renderCategories();
-  resetIdleTimer();
+  // 🟢 [จุดแก้ไขวิกฤต] บังคับปลดล็อกสถานะซ่อนตัวของหมวดหมู่ และซ่อนหน้ารายชื่อสินค้าทิ้ง ป้องกันอาการจอว่าง
+  if (categoryContainer) categoryContainer.classList.remove('hide');
+  if (productContainer) productContainer.classList.add('hide');
+  if (headerTitle) headerTitle.innerText = "STOCK IN HOUSE";
+
+  currentStockView = 'category'; // รีเซ็ตมุมมองหลักกลับสู่หน้าหมวดหมู่
+  renderCategories(); // สั่งวาดการ์ดหมวดหมู่สินค้าหลักลงบนจอ
+  if (typeof resetIdleTimer === 'function') resetIdleTimer(); // เริ่มจับเวลาแสตนด์บาย 5 นาที
 }
 
 
