@@ -73,10 +73,10 @@ async function startScanner() {
         },
         videoConstraints: {
           facingMode: { exact: "environment" }, // บังคับให้เป็นกล้องหลังแบบ 100%
-          focusMode: "continuous"              // โฟกัสต่อเนื่อง
+          focusMode: "continuous", // โฟกัสต่อเนื่อง
         },
       },
-      
+
       (decodedText) => {
         stopScanner();
         const searchInput = document.getElementById("searchStockInput");
