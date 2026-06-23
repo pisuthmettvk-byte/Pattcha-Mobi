@@ -20,6 +20,7 @@ function preventDoubleTrigger() {
 // 1. ฟังก์ชันเปิดกล้อง (Start Scanner)
 // ==========================================
 async function startScanner() {
+  if (preventDoubleTrigger()) return;
   if (isScannerRunning || isTransitioning) return;
   isTransitioning = true;
   const searchInput = document.getElementById("searchStockInput");
