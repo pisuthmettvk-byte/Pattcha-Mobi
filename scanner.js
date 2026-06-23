@@ -3,6 +3,7 @@
 // ==========================================
 let html5QrCode = null;
 let isScannerRunning = false;
+let isTransitioning = false; // ระบบล็อกป้องกันกล้องสำลักคำสั่ง (Transition Lock)
 let currentScanMode = "BARCODE";
 let isFlashOn = false;
 
@@ -10,7 +11,18 @@ let isFlashOn = false;
 // 1. ฟังก์ชันเปิดกล้อง (Start Scanner)
 // ==========================================
 async function startScanner() {
-  if (isScannerRunning) return;
+  // ดักจับ Error: Cannot transition... อย่างเด็ดขาด
+  if (isTransitioning) return;
+  if (
+    html5QrCode &&
+    typeof html5QrCode.getState === "function" &&
+    html5QrCode.getState() === 2
+  ) {
+    isScannerRunning = true;
+    return;
+  }
+
+  isTransitioning = true;
 
   try {
     const readerContainer = document.getElementById("readerContainer");
@@ -22,7 +34,7 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // เปิดโหมดอ่านพร้อมกันทัังหมดเพื่อความเร็วและตัดปัญหากล้องรีสตาร์ทตอนสลับโหมด
+    // โหลดฟอร์แมตรองรับทั้ง 2 โหมดพร้อมกัน เพื่อความลื่นไหลที่สุด
     const allFormats = [
       Html5QrcodeSupportedFormats.CODE_128,
       Html5QrcodeSupportedFormats.EAN_13,
@@ -31,11 +43,11 @@ async function startScanner() {
       Html5QrcodeSupportedFormats.QR_CODE,
     ];
 
+    // 🌟 สั่งเปิดกล้องแบบ "เต็มเฟรม" (ถอดคำสั่ง qrbox ออก) เพื่อให้ภาพสมูทที่สุด
     await html5QrCode.start(
       { facingMode: "environment" },
       {
         fps: 15,
-        qrbox: { width: 260, height: 260 }, // จองพื้นที่เล็งสูงสุดของสตรีมกล้องไว้
         formatsToSupport: allFormats,
         aspectRatio: 1.0,
       },
@@ -48,58 +60,74 @@ async function startScanner() {
         }
       },
       (errorMessage) => {
-        /* ข้ามข้อความตรวจสอบระหว่างเล็งเฟรม */
+        /* ซ่อนข้อความ Error ยิบย่อยระหว่างเล็งภาพ */
       },
     );
 
     isScannerRunning = true;
 
-    // ดัดรูปทรงกรอบเล็งให้ตรงกับโหมดปัจจุบันหลังกล้องเริ่มทำงานสำเร็จ
-    setTimeout(() => {
-      updateScanRegionUI();
-    }, 150);
+    // เรียกสร้างกรอบโฟกัสอัจฉริยะ (Custom Overlay) ทันทีหลังกล้องพร้อม
+    updateScanRegionUI();
   } catch (err) {
     console.error("Camera start failed:", err);
     isScannerRunning = false;
+  } finally {
+    isTransitioning = false;
   }
 }
 
 // ==========================================
-// 2. ฟังก์ชันปิดกล้อง (Stop Scanner - คืนค่าระบบสมบูรณ์ 100%)
+// 2. ฟังก์ชันปิดกล้อง (Stop Scanner - คืนค่า 100%)
 // ==========================================
 async function stopScanner() {
+  if (isTransitioning) return;
+
+  // หากสถานะไม่ได้สแกนอยู่ บังคับเคลียร์หน้าจอได้เลยทันที
+  if (
+    !html5QrCode ||
+    typeof html5QrCode.getState !== "function" ||
+    html5QrCode.getState() !== 2
+  ) {
+    forceResetUI();
+    return;
+  }
+
+  isTransitioning = true;
+
   try {
-    if (html5QrCode) {
-      await html5QrCode.stop();
-    }
+    await html5QrCode.stop();
   } catch (err) {
     console.warn(
-      "ไลบรารีกล้องปิดตัวแบบติดขัด ระบบกำลังบังคับเคลียร์ UI ให้ทันทีครับ:",
+      "ไลบรารีปิดขัดข้อง ระบบสั่งล้างค่า UI นิรภัยให้ทันทีครับ:",
       err,
     );
   } finally {
-    // 🌟 ระบบสวิตช์นิรภัย: การันตีหน้าต่างกล้องปิดตัวและคืนหน้างานปกติแน่นอนต่อให้ระบบภายในเออเร่อ
-    isScannerRunning = false;
-    isFlashOn = false;
-
-    const btnFlash = document.getElementById("btnToggleFlash");
-    if (btnFlash) {
-      btnFlash.style.color = "#fff";
-      btnFlash.style.borderColor = "#fff";
-    }
-
-    const readerContainer = document.getElementById("readerContainer");
-    const stockScrollArea = document.getElementById("stockScrollArea");
-    if (readerContainer) readerContainer.style.display = "none";
-    if (stockScrollArea) stockScrollArea.classList.remove("hide");
+    forceResetUI();
+    isTransitioning = false;
   }
 }
 
+// ระบบจัดระเบียบหน้าจอและเคลียร์ไฟแฟลชให้กลับสู่สภาวะปกติ
+function forceResetUI() {
+  isScannerRunning = false;
+  isFlashOn = false;
+
+  const btnFlash = document.getElementById("btnToggleFlash");
+  if (btnFlash) {
+    btnFlash.style.color = "#fff";
+    btnFlash.style.borderColor = "#fff";
+  }
+
+  const readerContainer = document.getElementById("readerContainer");
+  const stockScrollArea = document.getElementById("stockScrollArea");
+  if (readerContainer) readerContainer.style.display = "none";
+  if (stockScrollArea) stockScrollArea.classList.remove("hide");
+}
+
 // ==========================================
-// 3. ฟังก์ชันสากลเพื่อรักษาสิทธิ์ระบบดั้งเดิม (ชื่อเดิม หน้าที่เดิม 100%)
+// 3. ฟังก์ชันควบคุมสากล (ชื่อและหน้าที่เดิม 100%)
 // ==========================================
 
-// ปุ่มกดเปิด/ปิดสลับกันภายในหน้างาน Stock In House
 function toggleScanner() {
   if (isScannerRunning) {
     stopScanner();
@@ -108,7 +136,6 @@ function toggleScanner() {
   }
 }
 
-// ปุ่มควบคุมดวงไฟแฟลชอัปเกรด (เจาะตรงเข้าหาฮาร์ดแวร์แทร็กก่อนเพื่อความนิ่งสนิท ไม่กระพริบดับ)
 async function toggleFlash() {
   if (!isScannerRunning) return;
 
@@ -119,12 +146,11 @@ async function toggleFlash() {
       if (videoTrack) {
         isFlashOn = !isFlashOn;
 
-        // สั่งเปิดไฟฉายบนแทร็กฮาร์ดแวร์โดยตรง ไม่ทำให้กล้องรีสตาร์ทกระพริบวูบแน่นอน
+        // 🌟 สั่งเปิด/ปิดแฟลชที่ตัวฮาร์ดแวร์โดยตรง ภาพวิดีโอจะไม่กระพริบ ไม่ดับวูบ!
         await videoTrack.applyConstraints({
           advanced: [{ torch: isFlashOn }],
         });
 
-        // เปลี่ยนสีปุ่มแจ้งเตือนหน้าร้าน (สีเหลืองทองเวลาเปิด)
         const btnFlash = document.getElementById("btnToggleFlash");
         if (btnFlash) {
           btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
@@ -133,30 +159,11 @@ async function toggleFlash() {
       }
     }
   } catch (err) {
-    console.warn(
-      "ระบบควบคุมตรงติดขัด กำลังลองใช้คำสั่งสำรองผ่านไลบรารีครับ:",
-      err,
-    );
-    try {
-      if (html5QrCode) {
-        await html5QrCode.applyVideoConstraints({ torch: isFlashOn });
-        const btnFlash = document.getElementById("btnToggleFlash");
-        if (btnFlash) {
-          btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
-          btnFlash.style.borderColor = isFlashOn ? "#fab919" : "#fff";
-        }
-      }
-    } catch (libErr) {
-      console.error(
-        "อุปกรณ์นี้ไม่รองรับระบบเปิดไฟแฟลชผ่านเว็บเบราว์เซอร์:",
-        libErr,
-      );
-      isFlashOn = false;
-    }
+    console.warn("อุปกรณ์นี้ไม่รองรับระบบคุมแฟลช:", err);
+    isFlashOn = false;
   }
 }
 
-// ฟังก์ชันสลับโหมดการทำงาน
 function toggleScanMode() {
   currentScanMode = currentScanMode === "BARCODE" ? "QR" : "BARCODE";
 
@@ -172,38 +179,61 @@ function toggleScanMode() {
   }
 }
 
-// ฟังก์ชันดัดมิติเฉพาะกรอบโฟกัสสีขาวด้วย CSS แบบ Smooth ไร้รอยต่อ
+// 🌟 สร้างเวทมนตร์กรอบเล็งแบบ Custom UI ยืด-หดได้ดั่งใจ
 function updateScanRegionUI() {
-  const scanRegion = document.getElementById("reader__scan_region");
-  if (scanRegion) {
-    // ใส่อนิเมชันการยืดหดกรอบให้สมูท สบายตากรรมการ
-    scanRegion.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+  let customOverlay = document.getElementById("custom-scanner-overlay");
 
+  // สร้างกล่องเล็งจำลองขึ้นมาครอบกล้องหลัก (ถ้ายังไม่มี)
+  if (!customOverlay) {
+    const reader = document.getElementById("reader");
+    if (reader) {
+      reader.style.position = "relative";
+      reader.style.overflow = "hidden"; // ตัดส่วนที่แรเงาเกินขอบทิ้ง
+
+      customOverlay = document.createElement("div");
+      customOverlay.id = "custom-scanner-overlay";
+      customOverlay.style.position = "absolute";
+      customOverlay.style.top = "50%";
+      customOverlay.style.left = "50%";
+      customOverlay.style.transform = "translate(-50%, -50%)";
+      customOverlay.style.border = "3px solid rgba(255, 255, 255, 0.9)"; // เส้นขอบสีขาวสว่าง
+      customOverlay.style.borderRadius = "12px";
+      // ทริกขั้นเทพ: สร้างกรอบเงาดำมืดทึบขนาด 4000px ครอบล้อมรอบรูตรงกลางไว้
+      customOverlay.style.boxShadow = "0 0 0 4000px rgba(0, 0, 0, 0.55)";
+      customOverlay.style.transition = "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)";
+      customOverlay.style.pointerEvents = "none"; // สั่งให้ทัชสกรีนทะลุผ่านได้
+      customOverlay.style.zIndex = "10";
+
+      reader.appendChild(customOverlay);
+    }
+  }
+
+  // ปรับเปลี่ยนมิติกรอบอย่างนุ่มนวลตามโหมดที่เจเลอร์สั่ง
+  if (customOverlay) {
     if (currentScanMode === "BARCODE") {
-      scanRegion.style.width = "260px";
-      scanRegion.style.height = "120px"; // ทรงสี่เหลี่ยมผืนผ้าแนวนอน สำหรับสแกนแท็กบาร์โค้ดสินค้า
+      customOverlay.style.width = "85%";
+      customOverlay.style.height = "120px"; // ทรงสี่เหลี่ยมผืนผ้า รับบาร์โค้ดสินค้า
     } else {
-      scanRegion.style.width = "220px";
-      scanRegion.style.height = "220px"; // ทรงสี่เหลี่ยมจัตุรัส สำหรับสแกน QR Code
+      customOverlay.style.width = "220px";
+      customOverlay.style.height = "220px"; // ทรงสี่เหลี่ยมจัตุรัส รับแผ่นคิวอาร์
     }
   }
 }
 
 // ==========================================
-// 4. ผูกเหตุการณ์กับปุ่มต่างๆ (Event Listeners)
+// 4. ผูกเหตุการณ์กับปุ่มทำงาน (Event Listeners)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  // ปุ่ม Quick Scan เมนูหลัก: กดปุ๊บ สลับหน้าจอเสร็จแล้วสั่งสตาร์ทกล้องขึ้นทันทีอัตโนมัติ
+  // 🔘 เมนู Quick Scan หน้าแรก (ป้องกันการเรียกทับซ้อน)
   document.getElementById("btnMenuQuickScan")?.addEventListener("click", () => {
-    setTimeout(async () => {
-      if (isScannerRunning) {
-        await stopScanner();
+    setTimeout(() => {
+      if (!isScannerRunning && !isTransitioning) {
+        startScanner();
       }
-      startScanner();
     }, 320);
   });
 
-  // ผูกการทำงานปุ่มคำสั่งควบคุมภายในหน้าร้านตามไอดีดั้งเดิมในระบบ
+  // 🔘 ปุ่มกดภายในหน้าจอ Stock In House
   document
     .getElementById("btnScannerOpen")
     ?.addEventListener("click", toggleScanner);
@@ -213,4 +243,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("btnToggleFlash")
     ?.addEventListener("click", toggleFlash);
+
+  // 🌟 ดักปุ่ม BACK ของหน้าสต็อก: ปิดกล้องให้ทันทีก่อนสลับจอเสมอ
+  document.getElementById("btnStockBack")?.addEventListener("click", () => {
+    if (isScannerRunning) {
+      stopScanner();
+    }
+  });
 });
