@@ -1,6 +1,5 @@
 // ==========================================
-// 🌟 ENHANCED SCANNER v2.0
-// Speed: 60 FPS | Accuracy: Auto-focus + exposure
+// 🌟 SCANNER MASTER CONFIGURATION & STATE
 // ==========================================
 let html5QrCode = null;
 let isScannerRunning = false;
@@ -8,28 +7,34 @@ let isTransitioning = false;
 let currentScanMode = "BARCODE";
 let isFlashOn = false;
 let lastExecutionTime = 0;
-let lastSuccessfulScan = 0;
 
-// 🌟 ระบบป้องกันคำสั่งเบิ้ลซ้อนกันข้ามไฟล์ (Debounce Guard)
+// 🌟 ระบบป้องกันคำสั่งเบิ้ลซ้อนกันข้ามไฟล์ (Debounce Guard สำหรับ onclick + addEventListener)
 function preventDoubleTrigger() {
   const now = Date.now();
-  if (now - lastExecutionTime < 350) return true;
+  if (now - lastExecutionTime < 350) return true; // หากกดซ้อนกันใน 350ms ให้บล็อกคำสั่งที่สองทันที
   lastExecutionTime = now;
   return false;
 }
 
 // ==========================================
-// 1. ฟังก์ชันเปิดกล้อง (Start Scanner) - ENHANCED
+// 1. ฟังก์ชันเปิดกล้อง (Start Scanner)
 // ==========================================
 async function startScanner() {
+  if (preventDoubleTrigger()) return;
   if (isScannerRunning || isTransitioning) return;
   isTransitioning = true;
+  const searchInput = document.getElementById("searchStockInput");
+  if (searchInput) {
+    searchInput.value = ""; // ล้างค่าตัวอักษรให้เป็นช่องว่าง
+    searchInput.dispatchEvent(new Event("input", { bubbles: true })); // แจ้งเตือนระบบให้รีเฟรชปุ่มกากบาทสีชมพูออกไปด้วย
+  }
 
   try {
     const readerContainer = document.getElementById("readerContainer");
     const stockScrollArea = document.getElementById("stockScrollArea");
     const readerElement = document.getElementById("reader");
 
+    // 🌟 ดัดเลย์เอาต์ดึงสัดส่วนพื้นที่ตรงกลางให้เต็มผืนพอดีระหว่าง Header และปุ่มด้านล่าง
     if (readerContainer) {
       readerContainer.style.display = "flex";
       readerContainer.style.flexDirection = "column";
@@ -47,73 +52,56 @@ async function startScanner() {
       readerElement.style.backgroundColor = "#000";
     }
 
+    // ฉีด CSS ด่วนซ่อนกรอบเล็งแข็งๆ ของเก่าทิ้ง เพื่อเปิดทางให้กรอบแบบยืดหดสมูททำงานแทน
     injectScannerCSS();
 
     if (!html5QrCode) {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // 🌟 ENHANCED: Support all barcode formats
+    // โหลดสิทธิ์ให้อ่านได้ทั้งสองระบบตั้งแต่แรก เพื่อความเร็วสูงสุดและกล้องไม่กระตุก
     const allFormats = [
       Html5QrcodeSupportedFormats.CODE_128,
       Html5QrcodeSupportedFormats.EAN_13,
       Html5QrcodeSupportedFormats.EAN_8,
       Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E, // ✅ Added
-      Html5QrcodeSupportedFormats.CODE_39, // ✅ Added
-      Html5QrcodeSupportedFormats.CODABAR, // ✅ Added
       Html5QrcodeSupportedFormats.QR_CODE,
     ];
 
     await html5QrCode.start(
-      { facingMode: "environment" }, // 💡 ถ้าเทสต์บนคอมพิวเตอร์ ลองเปลี่ยนคำว่า "environment" เป็น "user" ดูครับ กล้องจะติดทันที
+      { facingMode: "environment" },
       {
-        fps: 30, // 🌟 ENHANCED: 60 FPS for faster detection (was 30)
-        qrbox:
-          currentScanMode === "BARCODE"
-            ? { width: 280, height: 140 } // Wider for barcodes
-            : { width: 250, height: 250 }, // Square for QR
+        fps: 30,
         formatsToSupport: allFormats,
         aspectRatio: 1.77,
         experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true,
+          useBarCodeDetectorIfSupported: true, // ใช้ตัวอ่านระดับฮาร์ดแวร์ของ Browser (อ่านติดไวขึ้นมาก)
         },
         videoConstraints: {
-          facingMode: { exact: "environment" },
-          focusMode: "continuous",
-          exposureMode: "continuous", // 🌟 ENHANCED: Auto-exposure
-          exposureCompensation: 0, // 🌟 ENHANCED: Neutral exposure
-          whiteBalanceMode: "continuous", // 🌟 ENHANCED: Auto white balance
-          // torch: false,                   // Disable to avoid flash interference
+          facingMode: { exact: "environment" }, // บังคับให้เป็นกล้องหลังแบบ 100%
+          focusMode: "continuous", // โฟกัสต่อเนื่อง
         },
       },
 
-      // 🌟 SUCCESS HANDLER with validation
       (decodedText) => {
-        // Validate barcode quality before processing
-        if (validateBarcode(decodedText)) {
-          lastSuccessfulScan = Date.now();
-          stopScanner();
-          const searchInput = document.getElementById("searchStockInput");
-          if (searchInput) {
-            searchInput.value = decodedText;
-            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-          }
-          showScanNotification("✓ Barcode Scanned", "#10b981"); // Green
+        stopScanner();
+        const searchInput = document.getElementById("searchStockInput");
+        if (searchInput) {
+          searchInput.value = decodedText;
+          searchInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
       },
-
-      // 🌟 ERROR HANDLER - Silent to avoid noise
       (errorMessage) => {
-        /* Silently continue scanning */
+        /* ซ่อนข้อความ Error ระหว่างเล็งเฟรม */
       },
     );
 
     isScannerRunning = true;
+
+    // วาดและอัปเดตรูปทรงกรอบเล็งสีขาวทันทีตามโหมดปัจจุบัน
     updateScanRegionUI();
   } catch (err) {
     console.error("Camera start failed:", err);
-    showScanNotification("Camera Error: " + err.message, "#ef4444"); // Red
     forceResetUI();
   } finally {
     isTransitioning = false;
@@ -135,7 +123,7 @@ async function stopScanner() {
       await html5QrCode.stop();
     }
   } catch (err) {
-    console.warn("Forcing UI cleanup:", err);
+    console.warn("Forcing UI cleanup due to library stop constraint:", err);
   } finally {
     forceResetUI();
     isTransitioning = false;
@@ -157,61 +145,17 @@ function forceResetUI() {
     btnFlash.style.borderColor = "#fff";
   }
 
+  // ซ่อนกรอบเล็งจำลองออกไปเมื่อปิดกล้อง
   const customOverlay = document.getElementById("custom-scan-border");
   if (customOverlay) customOverlay.style.display = "none";
 }
 
 // ==========================================
-// 3. 🌟 VALIDATION: Check barcode quality
+// 3. ฟังก์ชันควบคุมสากลรองรับชื่อดั้งเดิมข้ามระบบ 100%
 // ==========================================
-function validateBarcode(text) {
-  if (!text) return false;
 
-  // 🌟 ENHANCED: Validate barcode format
-  const cleanText = text.trim();
-
-  // Minimum length check
-  if (cleanText.length < 6) return false;
-
-  // Reject obviously invalid patterns
-  if (/^0+$/.test(cleanText)) return false; // All zeros
-  if (cleanText.length > 50) return false; // Suspiciously long
-
-  return true;
-}
-
-// ==========================================
-// 4. 🌟 NOTIFICATION: Visual feedback
-// ==========================================
-function showScanNotification(message, color) {
-  const notification = document.createElement("div");
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${color};
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 14px;
-    z-index: 9999;
-    animation: slideIn 0.3s ease-out;
-  `;
-  notification.innerText = message;
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.style.animation = "slideOut 0.3s ease-out";
-    setTimeout(() => notification.remove(), 300);
-  }, 2000);
-}
-
-// ==========================================
-// 5. ควบคุมสากล (Global Controls)
-// ==========================================
 function toggleScanner() {
-  if (preventDoubleTrigger()) return;
+  if (preventDoubleTrigger()) return; // ล็อกบั๊กกดเบิ้ลซ้อนกันข้ามไฟล์
   if (isScannerRunning) {
     stopScanner();
   } else {
@@ -229,23 +173,20 @@ async function toggleFlash() {
       const videoTrack = videoElement.srcObject.getVideoTracks()[0];
       if (videoTrack) {
         isFlashOn = !isFlashOn;
-        await videoTrack.applyConstraints({
-          advanced: [{ torch: isFlashOn }],
-        });
+        await videoTrack.applyConstraints({ advanced: [{ torch: isFlashOn }] });
 
         const btnFlash = document.getElementById("btnToggleFlash");
         if (btnFlash) {
           btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
           btnFlash.style.borderColor = isFlashOn ? "#fab919" : "#fff";
         }
-        showScanNotification(
-          isFlashOn ? "📷 Flash ON" : "📷 Flash OFF",
-          "#fab919",
-        );
       }
     }
   } catch (err) {
-    console.warn("Flash toggle failed:", err);
+    console.warn(
+      "Direct hardware flash approach failed, fallback to core:",
+      err,
+    );
     try {
       isFlashOn = !isFlashOn;
       await html5QrCode.applyVideoConstraints({ torch: isFlashOn });
@@ -267,17 +208,12 @@ function toggleScanMode() {
     iconEl.className =
       currentScanMode === "BARCODE" ? "fas fa-barcode" : "fas fa-qrcode";
 
-  showScanNotification(
-    `Switched to ${currentScanMode} Mode`,
-    currentScanMode === "BARCODE" ? "#db8591" : "#e7a08c",
-  );
-
   if (isScannerRunning) {
     updateScanRegionUI();
   }
 }
 
-// 🌟 ฟังก์ชันจัดการกรอบสีขาวจำลอง
+// 🌟 ฟังก์ชันจัดการกรอบสีขาวจำลอง ปรับทรง Barcode / QR ได้อย่างนุ่มนวล สบายตา 100%
 function updateScanRegionUI() {
   const reader = document.getElementById("reader");
   if (!reader) return;
@@ -293,7 +229,7 @@ function updateScanRegionUI() {
     customOverlay.style.transform = "translate(-50%, -50%)";
     customOverlay.style.border = "3px solid #fff";
     customOverlay.style.borderRadius = "12px";
-    customOverlay.style.boxShadow = "0 0 0 5000px rgba(0, 0, 0, 0.5)";
+    customOverlay.style.boxShadow = "0 0 0 5000px rgba(0, 0, 0, 0.5)"; // ทำแรเงาขอบมืดรอบด้านนอก
     customOverlay.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
     customOverlay.style.pointerEvents = "none";
     customOverlay.style.zIndex = "99";
@@ -303,10 +239,10 @@ function updateScanRegionUI() {
   customOverlay.style.display = "block";
   if (currentScanMode === "BARCODE") {
     customOverlay.style.width = "85%";
-    customOverlay.style.height = "130px"; // Optimized for barcodes
+    customOverlay.style.height = "130px"; // เปลี่ยนเป็นสี่เหลี่ยมผืนผ้าแนวนอนรับแถบบาร์โค้ด
   } else {
     customOverlay.style.width = "230px";
-    customOverlay.style.height = "230px"; // Square for QR codes
+    customOverlay.style.height = "230px"; // เปลี่ยนเป็นสี่เหลี่ยมจัตุรัสรับแผ่น QR
   }
 }
 
@@ -318,24 +254,15 @@ function injectScannerCSS() {
     #reader__scan_region { display:none !important; }
     #reader__dashboard { display:none !important; }
     #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-    
-    @keyframes slideIn {
-      from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes slideOut {
-      from { transform: translateX(0); opacity: 1; }
-      to { transform: translateX(400px); opacity: 0; }
-    }
   `;
   document.head.appendChild(style);
 }
 
 // ==========================================
-// 6. ผูกการทำงานระบบ (Event Listeners)
+// 4. ผูกการทำงานระบบ (Event Listeners ป้องกันรันซ้ำ)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
+  // บล็อกตรวจสิทธิ์ปุ่มกู้ระบบ ถ้าปุ่มไม่มีสิทธิ์ onclick ฝังอยู่ จะเปิดใช้งานดักฟังตรงนี้ให้ทันทีอย่างปลอดภัย
   const btnOpen = document.getElementById("btnScannerOpen");
   if (btnOpen && !btnOpen.getAttribute("onclick")) {
     btnOpen.addEventListener("click", toggleScanner);
@@ -351,12 +278,14 @@ document.addEventListener("DOMContentLoaded", () => {
     btnFlash.addEventListener("click", toggleFlash);
   }
 
+  // ปุ่ม Quick Scan เมนูหลัก
   document.getElementById("btnMenuQuickScan")?.addEventListener("click", () => {
     setTimeout(() => {
       startScanner();
     }, 350);
   });
 
+  // ปุ่ม BACK คืนค่าปิดกล้องทุกกรณี
   document.getElementById("btnStockBack")?.addEventListener("click", () => {
     stopScanner();
   });
