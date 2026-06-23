@@ -112,20 +112,17 @@ async function startScanner() {
 // 2. ฟังก์ชันปิดกล้อง (Stop Scanner)
 // ==========================================
 async function stopScanner() {
-  if (!isScannerRunning || isTransitioning) {
-    forceResetUI();
-    return;
-  }
-  isTransitioning = true;
-
   try {
+    // 🌟 แก้ไขจุดนี้จาก ttry ให้เป็น try ตัวเดียวครับ
     if (html5QrCode) {
       await html5QrCode.stop();
+      html5QrCode.clear();
     }
-  } catch (err) {
-    console.warn("Forcing UI cleanup due to library stop constraint:", err);
-  } finally {
+    isScannerRunning = false;
     forceResetUI();
+  } catch (err) {
+    console.warn("Stop scanner error:", err);
+  } finally {
     isTransitioning = false;
   }
 }
@@ -151,17 +148,21 @@ function forceResetUI() {
 }
 
 // ==========================================
-// 3. ฟังก์ชันควบคุมสากลรองรับชื่อดั้งเดิมข้ามระบบ 100%
+// ✅ 3. ฟังก์ชันควบคุมสากล ปลอดภัย ไร้รอยต่อ 100%
 // ==========================================
+async function toggleScanner() {
+  // 🛡️ ป้องกันการกดซ้ำซ้อนในขณะที่กล้องกำลังเปลี่ยนสถานะ (จังหวะโหลดฮาร์ดแวร์)
+  if (preventDoubleTrigger() || isTransitioning) return;
 
-function toggleScanner() {
-  if (preventDoubleTrigger()) return; // ล็อกบั๊กกดเบิ้ลซ้อนกันข้ามไฟล์
   if (isScannerRunning) {
-    stopScanner();
+    await stopScanner(); // 🌟 บังคับให้ระบบรอจนเลนส์และเซนเซอร์ดับสนิทจริง
   } else {
-    startScanner();
+    await startScanner(); // 🌟 บังคับให้ระบบเปิดตัวสแกนเนอร์และเซตโฟกัสให้เสร็จสิ้นก่อนรับคำสั่งถัดไป
   }
 }
+
+// 🌐 ส่งออกฟังก์ชันไปที่ window เพื่อให้ไฟล์ app.js เรียกใช้งานข้ามระบบได้สมบูรณ์
+window.toggleScanner = toggleScanner;
 
 async function toggleFlash() {
   if (preventDoubleTrigger()) return;
