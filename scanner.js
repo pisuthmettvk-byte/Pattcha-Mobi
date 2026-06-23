@@ -71,7 +71,7 @@ async function startScanner() {
     await html5QrCode.start(
       { facingMode: "environment" },
       {
-        fps: 60,
+        fps: 30,
         formatsToSupport: allFormats,
         aspectRatio: 1.77,
         experimentalFeatures: {
