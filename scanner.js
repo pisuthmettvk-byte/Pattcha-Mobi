@@ -17,82 +17,110 @@ function preventDoubleTrigger() {
 }
 
 // ==========================================
-// 🌟 1. ฟังก์ชันเปิดกล้อง (อัปเกรดระบบ Auto-Fallback กันกล้องค้าง)
+// 1. ฟังก์ชันเปิดกล้อง (Start Scanner)
 // ==========================================
 async function startScanner() {
-  if (preventDoubleTrigger() || isScannerRunning || isTransitioning) return;
-  isTransitioning = true; // ล็อกป้ายไฟ
-
-  const searchInput = document.getElementById("searchStockInput");
-  if (searchInput) {
-    searchInput.value = "";
-    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-  }
+  if (isScannerRunning || isTransitioning) return;
+  isTransitioning = true;
 
   try {
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    const readerContainer = document.getElementById("readerContainer");
+    const stockScrollArea = document.getElementById("stockScrollArea");
+    const readerElement = document.getElementById("reader");
 
-    try {
-      // ด่านที่ 1: พยายามเปิดกล้องหลังก่อน (สำหรับมือถือ)
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        qrCodeSuccessCallback,
-      );
-    } catch (camErr) {
-      console.warn(
-        "กล้องหลังไม่พร้อมใช้งาน สลับไปใช้กล้องหน้า/เว็บแคมแทน...",
-        camErr,
-      );
-      // ด่านที่ 2: ถ้าไม่มีกล้องหลัง (เช่น เปิดบนคอมพิวเตอร์) ให้บังคับเปิดกล้องหน้าแทน
-      await html5QrCode.start(
-        { facingMode: "user" },
-        config,
-        qrCodeSuccessCallback,
-      );
+    // 🌟 ดัดเลย์เอาต์ดึงสัดส่วนพื้นที่ตรงกลางให้เต็มผืนพอดีระหว่าง Header และปุ่มด้านล่าง
+    if (readerContainer) {
+      readerContainer.style.display = "flex";
+      readerContainer.style.flexDirection = "column";
+      readerContainer.style.flex = "1";
+      readerContainer.style.width = "100%";
+      readerContainer.style.height = "100%";
+      readerContainer.style.overflow = "hidden";
+    }
+    if (stockScrollArea) stockScrollArea.classList.add("hide");
+
+    if (readerElement) {
+      readerElement.style.width = "100%";
+      readerElement.style.height = "100%";
+      readerElement.style.flex = "1";
+      readerElement.style.backgroundColor = "#000";
     }
 
-    isScannerRunning = true; // เปิดกล้องติดจริงๆ ค่อยสลับสถานะ
+    // ฉีด CSS ด่วนซ่อนกรอบเล็งแข็งๆ ของเก่าทิ้ง เพื่อเปิดทางให้กรอบแบบยืดหดสมูททำงานแทน
+    injectScannerCSS();
 
-    // โชว์ UI กล้องให้ลอยขึ้นมา
-    const scanView = document.getElementById("scannerView");
-    if (scanView) scanView.classList.add("active");
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    // โหลดสิทธิ์ให้อ่านได้ทั้งสองระบบตั้งแต่แรก เพื่อความเร็วสูงสุดและกล้องไม่กระตุก
+    const allFormats = [
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.QR_CODE,
+    ];
+
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 30,
+        formatsToSupport: allFormats,
+        aspectRatio: 1.77,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true, // ใช้ตัวอ่านระดับฮาร์ดแวร์ของ Browser (อ่านติดไวขึ้นมาก)
+        },
+        videoConstraints: {
+          facingMode: { exact: "environment" }, // บังคับให้เป็นกล้องหลังแบบ 100%
+          focusMode: "continuous", // โฟกัสต่อเนื่อง
+        },
+      },
+
+      (decodedText) => {
+        stopScanner();
+        const searchInput = document.getElementById("searchStockInput");
+        if (searchInput) {
+          searchInput.value = decodedText;
+          searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      },
+      (errorMessage) => {
+        /* ซ่อนข้อความ Error ระหว่างเล็งเฟรม */
+      },
+    );
+
+    isScannerRunning = true;
+
+    // วาดและอัปเดตรูปทรงกรอบเล็งสีขาวทันทีตามโหมดปัจจุบัน
+    updateScanRegionUI();
   } catch (err) {
-    console.error("ระบบกล้องถูกปฏิเสธโดยสมบูรณ์:", err);
-    isScannerRunning = false; // 🛑 ถ้ารันไม่ผ่านเลย ต้องกู้สถานะกลับ
+    console.error("Camera start failed:", err);
+    forceResetUI();
   } finally {
-    isTransitioning = false; // 🛑 ปลดล็อกปุ่มเสมอ เพื่อไม่ให้แอปค้าง
+    isTransitioning = false;
   }
 }
 
 // ==========================================
-// 🌟 2. ฟังก์ชันปิดกล้อง (อัปเกรดให้สั่งเคลียร์ UI ได้แม้ฮาร์ดแวร์จะรวน)
+// 2. ฟังก์ชันปิดกล้อง (Stop Scanner)
 // ==========================================
 async function stopScanner() {
-  if (preventDoubleTrigger() || isTransitioning) return;
+  if (!isScannerRunning || isTransitioning) {
+    forceResetUI();
+    return;
+  }
   isTransitioning = true;
 
   try {
     if (html5QrCode) {
-      try {
-        // ลองสั่งหยุดเลนส์กล้อง
-        await html5QrCode.stop();
-      } catch (stopErr) {
-        // หากกล้องไม่ได้เปิดอยู่ ให้ข้ามไปล้าง UI ได้เลย ไม่ต้อง Error พังทั้งแอป
-        console.warn("ข้ามการหยุดฮาร์ดแวร์ เนื่องจากกล้องไม่ได้เปิดอยู่");
-      }
-      html5QrCode.clear(); // ล้างกรอบบาร์โค้ด
+      await html5QrCode.stop();
     }
   } catch (err) {
-    console.warn("Stop scanner error:", err);
+    console.warn("Forcing UI cleanup due to library stop constraint:", err);
   } finally {
-    isScannerRunning = false; // บังคับสลับสถานะกลับเป็นปิด
-    forceResetUI(); // สั่งพับหน้าจอกล้องเก็บเสมอ
-
-    const scanView = document.getElementById("scannerView");
-    if (scanView) scanView.classList.remove("active");
-
-    isTransitioning = false; // ปลดล็อก
+    forceResetUI();
+    isTransitioning = false;
   }
 }
 
@@ -117,21 +145,17 @@ function forceResetUI() {
 }
 
 // ==========================================
-// ✅ 3. ฟังก์ชันควบคุมสากล ปลอดภัย ไร้รอยต่อ 100%
+// 3. ฟังก์ชันควบคุมสากลรองรับชื่อดั้งเดิมข้ามระบบ 100%
 // ==========================================
-async function toggleScanner() {
-  // 🛡️ ป้องกันการกดซ้ำซ้อนในขณะที่กล้องกำลังเปลี่ยนสถานะ (จังหวะโหลดฮาร์ดแวร์)
-  if (preventDoubleTrigger() || isTransitioning) return;
 
+function toggleScanner() {
+  if (preventDoubleTrigger()) return; // ล็อกบั๊กกดเบิ้ลซ้อนกันข้ามไฟล์
   if (isScannerRunning) {
-    await stopScanner(); // 🌟 บังคับให้ระบบรอจนเลนส์และเซนเซอร์ดับสนิทจริง
+    stopScanner();
   } else {
-    await startScanner(); // 🌟 บังคับให้ระบบเปิดตัวสแกนเนอร์และเซตโฟกัสให้เสร็จสิ้นก่อนรับคำสั่งถัดไป
+    startScanner();
   }
 }
-
-// 🌐 ส่งออกฟังก์ชันไปที่ window เพื่อให้ไฟล์ app.js เรียกใช้งานข้ามระบบได้สมบูรณ์
-window.toggleScanner = toggleScanner;
 
 async function toggleFlash() {
   if (preventDoubleTrigger()) return;
