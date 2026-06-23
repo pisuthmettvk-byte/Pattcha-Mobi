@@ -198,18 +198,14 @@ function initEventListeners() {
   if (btnLocation)
     btnLocation.addEventListener("click", () => alert("LOCATION - กำลังพัฒนา"));
 
-  // ปุ่ม Quick Scan หน้า Main Menu (ปรับปรุงเฟส 1: แยกท่อคู่ขนาน)
+  // ปุ่ม Quick Scan หน้า Main Menu (ปรับปรุงเฟส 1: แก้ไขคิวมือถือเปิดทันที)
   const btnQuickScan = document.getElementById("btnMenuQuickScan");
   if (btnQuickScan) {
     btnQuickScan.addEventListener("click", () => {
-      // 🌟 ถอด async ออกเพื่อทำลายคอขวดการรอ
-      // 1. สั่งโหลดสต็อกสดจาก Google Sheets ทำงานขนานไปเบื้องหลังเงียบๆ (ไม่บล็อกคิวกล้อง)
-      openStockInHouse();
-
-      // 2. เปิดสัญญาณกล้องขึ้นมาทำงานทันทีหน้าร้านแบบไร้รอยต่อ
+      // 🌟 Step 1: เรียกเปิดสัญญาณกล้องทันทีในมิลลิวินาทีแรก (ผ่านกฎ User Gesture ของมือถือชัวร์ 100%)
       if (typeof toggleScanner === "function") {
         if (typeof isScannerMode !== "undefined" && !isScannerMode) {
-          // 🌟 บังคับจัดระเบียบชั้นเลเยอร์ให้ปุ่มกล้องลัดเปิดกล้องมาแล้วอยู่บนสุด
+          // บังคับจัดระเบียบชั้นเลเยอร์ให้หน้าต่างกล้องลอยอยู่บนสุด
           const scanView = document.getElementById("scannerView");
           if (scanView) {
             scanView.style.position = "fixed";
@@ -217,6 +213,11 @@ function initEventListeners() {
           }
           toggleScanner();
         }
+      }
+
+      // 🌟 Step 2: ปล่อยให้ระบบโหลดสต็อกสดทำงานคู่ขนานตามหลังไปเบื้องหลังเงียบๆ
+      if (typeof openStockInHouse === "function") {
+        openStockInHouse();
       }
     });
   }
