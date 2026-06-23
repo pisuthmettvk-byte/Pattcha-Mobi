@@ -72,9 +72,11 @@ async function startScanner() {
           useBarCodeDetectorIfSupported: true, // ใช้ตัวอ่านระดับฮาร์ดแวร์ของ Browser (อ่านติดไวขึ้นมาก)
         },
         videoConstraints: {
-          focusMode: "continuous",
+          facingMode: { exact: "environment" }, // บังคับให้เป็นกล้องหลังแบบ 100%
+          focusMode: "continuous"              // โฟกัสต่อเนื่อง
         },
       },
+      
       (decodedText) => {
         stopScanner();
         const searchInput = document.getElementById("searchStockInput");
