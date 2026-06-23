@@ -63,7 +63,7 @@ try {
     Html5QrcodeSupportedFormats.CODABAR, // ✅ Added
     Html5QrcodeSupportedFormats.QR_CODE,
   ];
-  await html5QrCode.start(
+    await html5QrCode.start(
     { facingMode: "environment" },
     {
       fps: 60, // 🌟 ENHANCED: 60 FPS for faster detection (was 30)
