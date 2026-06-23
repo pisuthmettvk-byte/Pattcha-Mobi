@@ -22,6 +22,11 @@ function preventDoubleTrigger() {
 async function startScanner() {
   if (isScannerRunning || isTransitioning) return;
   isTransitioning = true;
+  const searchInput = document.getElementById("searchStockInput");
+  if (searchInput) {
+    searchInput.value = ""; // ล้างค่าตัวอักษรให้เป็นช่องว่าง
+    searchInput.dispatchEvent(new Event("input", { bubbles: true })); // แจ้งเตือนระบบให้รีเฟรชปุ่มกากบาทสีชมพูออกไปด้วย
+  }
 
   try {
     const readerContainer = document.getElementById("readerContainer");
