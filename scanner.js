@@ -67,7 +67,7 @@ async function startScanner() {
       {
         fps: 30,
         formatsToSupport: allFormats,
-        aspectRatio: 1.77,
+        aspectRatio: 16:9,
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true, // ใช้ตัวอ่านระดับฮาร์ดแวร์ของ Browser (อ่านติดไวขึ้นมาก)
         },
