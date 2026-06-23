@@ -3,7 +3,7 @@
 // ==========================================
 let html5QrCode = null;
 let isScannerRunning = false;
-let currentScanMode = "BARCODE"; 
+let currentScanMode = "BARCODE";
 let isFlashOn = false;
 
 // ==========================================
@@ -28,7 +28,7 @@ async function startScanner() {
       Html5QrcodeSupportedFormats.EAN_13,
       Html5QrcodeSupportedFormats.EAN_8,
       Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.QR_CODE
+      Html5QrcodeSupportedFormats.QR_CODE,
     ];
 
     await html5QrCode.start(
@@ -37,17 +37,19 @@ async function startScanner() {
         fps: 15,
         qrbox: { width: 260, height: 260 }, // จองพื้นที่เล็งสูงสุดของสตรีมกล้องไว้
         formatsToSupport: allFormats,
-        aspectRatio: 1.0
+        aspectRatio: 1.0,
       },
       (decodedText) => {
         stopScanner();
         const searchInput = document.getElementById("searchStockInput");
         if (searchInput) {
           searchInput.value = decodedText;
-          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          searchInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
       },
-      (errorMessage) => { /* ข้ามข้อความตรวจสอบระหว่างเล็งเฟรม */ }
+      (errorMessage) => {
+        /* ข้ามข้อความตรวจสอบระหว่างเล็งเฟรม */
+      },
     );
 
     isScannerRunning = true;
@@ -56,7 +58,6 @@ async function startScanner() {
     setTimeout(() => {
       updateScanRegionUI();
     }, 150);
-
   } catch (err) {
     console.error("Camera start failed:", err);
     isScannerRunning = false;
@@ -72,12 +73,15 @@ async function stopScanner() {
       await html5QrCode.stop();
     }
   } catch (err) {
-    console.warn("ไลบรารีกล้องปิดตัวแบบติดขัด ระบบกำลังบังคับเคลียร์ UI ให้ทันทีครับ:", err);
+    console.warn(
+      "ไลบรารีกล้องปิดตัวแบบติดขัด ระบบกำลังบังคับเคลียร์ UI ให้ทันทีครับ:",
+      err,
+    );
   } finally {
     // 🌟 ระบบสวิตช์นิรภัย: การันตีหน้าต่างกล้องปิดตัวและคืนหน้างานปกติแน่นอนต่อให้ระบบภายในเออเร่อ
     isScannerRunning = false;
-    isFlashOn = false; 
-    
+    isFlashOn = false;
+
     const btnFlash = document.getElementById("btnToggleFlash");
     if (btnFlash) {
       btnFlash.style.color = "#fff";
@@ -114,10 +118,10 @@ async function toggleFlash() {
       const videoTrack = videoElement.srcObject.getVideoTracks()[0];
       if (videoTrack) {
         isFlashOn = !isFlashOn;
-        
+
         // สั่งเปิดไฟฉายบนแทร็กฮาร์ดแวร์โดยตรง ไม่ทำให้กล้องรีสตาร์ทกระพริบวูบแน่นอน
         await videoTrack.applyConstraints({
-          advanced: [{ torch: isFlashOn }]
+          advanced: [{ torch: isFlashOn }],
         });
 
         // เปลี่ยนสีปุ่มแจ้งเตือนหน้าร้าน (สีเหลืองทองเวลาเปิด)
@@ -129,7 +133,10 @@ async function toggleFlash() {
       }
     }
   } catch (err) {
-    console.warn("ระบบควบคุมตรงติดขัด กำลังลองใช้คำสั่งสำรองผ่านไลบรารีครับ:", err);
+    console.warn(
+      "ระบบควบคุมตรงติดขัด กำลังลองใช้คำสั่งสำรองผ่านไลบรารีครับ:",
+      err,
+    );
     try {
       if (html5QrCode) {
         await html5QrCode.applyVideoConstraints({ torch: isFlashOn });
@@ -140,7 +147,10 @@ async function toggleFlash() {
         }
       }
     } catch (libErr) {
-      console.error("อุปกรณ์นี้ไม่รองรับระบบเปิดไฟแฟลชผ่านเว็บเบราว์เซอร์:", libErr);
+      console.error(
+        "อุปกรณ์นี้ไม่รองรับระบบเปิดไฟแฟลชผ่านเว็บเบราว์เซอร์:",
+        libErr,
+      );
       isFlashOn = false;
     }
   }
@@ -153,7 +163,9 @@ function toggleScanMode() {
   const textEl = document.getElementById("scanModeText");
   const iconEl = document.getElementById("scanModeIcon");
   if (textEl) textEl.innerText = currentScanMode;
-  if (iconEl) iconEl.className = currentScanMode === "BARCODE" ? "fas fa-barcode" : "fas fa-qrcode";
+  if (iconEl)
+    iconEl.className =
+      currentScanMode === "BARCODE" ? "fas fa-barcode" : "fas fa-qrcode";
 
   if (isScannerRunning) {
     updateScanRegionUI();
@@ -166,7 +178,7 @@ function updateScanRegionUI() {
   if (scanRegion) {
     // ใส่อนิเมชันการยืดหดกรอบให้สมูท สบายตากรรมการ
     scanRegion.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
-    
+
     if (currentScanMode === "BARCODE") {
       scanRegion.style.width = "260px";
       scanRegion.style.height = "120px"; // ทรงสี่เหลี่ยมผืนผ้าแนวนอน สำหรับสแกนแท็กบาร์โค้ดสินค้า
@@ -181,17 +193,24 @@ function updateScanRegionUI() {
 // 4. ผูกเหตุการณ์กับปุ่มต่างๆ (Event Listeners)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  
   // ปุ่ม Quick Scan เมนูหลัก: กดปุ๊บ สลับหน้าจอเสร็จแล้วสั่งสตาร์ทกล้องขึ้นทันทีอัตโนมัติ
   document.getElementById("btnMenuQuickScan")?.addEventListener("click", () => {
     setTimeout(async () => {
-      if (isScannerRunning) { await stopScanner(); }
+      if (isScannerRunning) {
+        await stopScanner();
+      }
       startScanner();
     }, 320);
   });
 
   // ผูกการทำงานปุ่มคำสั่งควบคุมภายในหน้าร้านตามไอดีดั้งเดิมในระบบ
-  document.getElementById("btnScannerOpen")?.addEventListener("click", toggleScanner);
-  document.getElementById("btnToggleScanMode")?.addEventListener("click", toggleScanMode);
-  document.getElementById("btnToggleFlash")?.addEventListener("click", toggleFlash);
+  document
+    .getElementById("btnScannerOpen")
+    ?.addEventListener("click", toggleScanner);
+  document
+    .getElementById("btnToggleScanMode")
+    ?.addEventListener("click", toggleScanMode);
+  document
+    .getElementById("btnToggleFlash")
+    ?.addEventListener("click", toggleFlash);
 });
