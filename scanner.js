@@ -66,9 +66,9 @@ async function startScanner() {
     ];
 
     await html5QrCode.start(
-      { facingMode: "environment" },
+      { facingMode: "environment" }, // 💡 ถ้าเทสต์บนคอมพิวเตอร์ ลองเปลี่ยนคำว่า "environment" เป็น "user" ดูครับ กล้องจะติดทันที
       {
-        fps: 60, // 🌟 ENHANCED: 60 FPS for faster detection (was 30)
+        fps: 30, // 🌟 ENHANCED: 60 FPS for faster detection (was 30)
         qrbox:
           currentScanMode === "BARCODE"
             ? { width: 280, height: 140 } // Wider for barcodes
