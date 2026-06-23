@@ -6,7 +6,6 @@ let isScannerRunning = false;
 let isScannerMode = false;
 let isTransitioning = false;
 let currentScanMode = "BARCODE";
-let isFlashOn = false;
 let lastExecutionTime = 0;
 
 // 🌟 ระบบป้องกันคำสั่งเบิ้ลซ้อนกันข้ามไฟล์ (Debounce Guard สำหรับ onclick + addEventListener)
