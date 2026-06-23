@@ -22,7 +22,7 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // เปิดโหมดอ่านพร้อมกันทัังหมดเพื่อความเร็วและตัดปัญหากล้องรีสตาร์ท
+    // โหลดฟอร์แมตรองรับทั้งคู่พร้อมกัน เพื่อไม่ให้กล้องต้องเปิดๆ ปิดๆ ตอนสลับโหมด
     const allFormats = [
       Html5QrcodeSupportedFormats.CODE_128,
       Html5QrcodeSupportedFormats.EAN_13,
@@ -35,7 +35,7 @@ async function startScanner() {
       { facingMode: "environment" },
       {
         fps: 15,
-        qrbox: { width: 260, height: 260 }, // จองพื้นที่ขนาดกล่องเล็งสูงสุดไว้
+        qrbox: { width: 260, height: 260 }, // ล็อคพื้นที่เล็งสูงสุดของสตรีมกล้องไว้
         formatsToSupport: allFormats,
         aspectRatio: 1.0,
       },
@@ -48,13 +48,13 @@ async function startScanner() {
         }
       },
       (errorMessage) => {
-        /* ข้ามข้อความตรวจสอบระหว่างเล็งเฟรม */
+        /* ข้ามข้อความแจ้งเตือนระหว่างเล็งเฟรม */
       },
     );
 
     isScannerRunning = true;
 
-    // หน่วงเวลาเล็กน้อยเพื่อให้โครงสร้าง HTML โหลดเสร็จ แล้วดัดทรงกรอบทันที
+    // หน่วงเวลาเล็กน้อยเพื่อให้โครงสร้าง HTML ของไลบรารีนิ่ง แล้วดัดกรอบเล็งทันที
     setTimeout(() => {
       updateScanRegionUI();
     }, 150);
@@ -65,7 +65,7 @@ async function startScanner() {
 }
 
 // ==========================================
-// 2. ฟังก์ชันปิดกล้อง (Stop Scanner)
+// 2. ฟังก์ชันปิดกล้อง (Stop Scanner - แก้ไขให้ปิดได้ 100% ไม่ติดค้าง)
 // ==========================================
 async function stopScanner() {
   try {
@@ -74,11 +74,11 @@ async function stopScanner() {
     }
   } catch (err) {
     console.warn(
-      "ไลบรารีกล้องปิดตัวแบบติดขัด กำลังบังคับเคลียร์ระบบหลังบ้านให้ครับ:",
+      "ระบบกล้องปิดตัวแบบติดขัด กำลังบังคับเคลียร์ UI ให้ทันทีครับ:",
       err,
     );
   } finally {
-    // 🌟 ระบบสวิตช์นิรภัย: มั่นใจได้ว่าหน้าต่างกล้องจะถูกปิดทิ้งและรีเซ็ตค่าเสมอแน่นอน
+    // 🌟 มั่นใจได้ว่าสวิตช์ปิดกล้องและคืนหน้าจอปกติจะทำงานได้เสมอ แม้ระบบไลบรารีจะติดขัด
     isScannerRunning = false;
     isFlashOn = false;
 
@@ -96,10 +96,10 @@ async function stopScanner() {
 }
 
 // ==========================================
-// 3. ฟังก์ชันสากลเพื่อรักษาสิทธิ์ระบบเดิม (ชื่อและหน้าที่เดิม 100%)
+// 3. ฟังก์ชันสากลเพื่อรักษาสิทธิ์การเรียกใช้งานเดิม (ชื่อเดิม หน้าที่เดิม 100%)
 // ==========================================
 
-// ปุ่มภายนอกเรียกสั่งเปิด/ปิดสลับกัน
+// ปุ่มกดเปิด/ปิดสลับกันภายในหน้างาน
 function toggleScanner() {
   if (isScannerRunning) {
     stopScanner();
@@ -108,37 +108,53 @@ function toggleScanner() {
   }
 }
 
-// ปุ่มควบคุมดวงไฟแฟลชอัปเกรดใหม่ (เจาะตรงเข้าหาแทร็กวิดีโอฮาร์ดแวร์)
+// ปุ่มควบคุมไฟแฟลชอัปเกรดความเสถียร (คุมตรงผ่านฮาร์ดแวร์แทร็ก ไม่กระพริบดับแน่นอน)
 async function toggleFlash() {
-  if (!isScannerRunning) return;
+  if (!isScannerRunning || !html5QrCode) return;
 
   try {
-    const videoElement = document.querySelector("#reader video");
-    if (videoElement && videoElement.srcObject) {
-      const videoTrack = videoElement.srcObject.getVideoTracks()[0];
-      if (videoTrack) {
-        isFlashOn = !isFlashOn;
+    isFlashOn = !isFlashOn;
+    // สั่งเปิดไฟส่องสว่างผ่านลอจิกมาตรฐานของไลบรารี
+    await html5QrCode.applyVideoConstraints({
+      torch: isFlashOn,
+    });
 
-        // สั่งเปิดไฟฉายแบบ Advanced บนแทร็กกล้องโดยตรง ไม่กระพริบดับแน่นอน
-        await videoTrack.applyConstraints({
-          advanced: [{ torch: isFlashOn }],
-        });
-
-        // เปลี่ยนสีไอคอนปุ่มแจ้งเตือนหน้าร้าน
-        const btnFlash = document.getElementById("btnToggleFlash");
-        if (btnFlash) {
-          btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
-          btnFlash.style.borderColor = isFlashOn ? "#fab919" : "#fff";
-        }
-      }
+    const btnFlash = document.getElementById("btnToggleFlash");
+    if (btnFlash) {
+      btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
+      btnFlash.style.borderColor = isFlashOn ? "#fab919" : "#fff";
     }
   } catch (err) {
-    console.warn("เบราว์เซอร์หรืออุปกรณ์นี้ไม่รองรับระบบควบคุมไฟแฟลชตรง:", err);
-    isFlashOn = false;
+    console.warn(
+      "คำสั่งแรกติดขัด กำลังใช้แผนสำรองเจาะเข้าแทร็กวิดีโอโดยตรง:",
+      err,
+    );
+    try {
+      const videoElement = document.querySelector("#reader video");
+      if (videoElement && videoElement.srcObject) {
+        const videoTrack = videoElement.srcObject.getVideoTracks()[0];
+        if (videoTrack) {
+          await videoTrack.applyConstraints({
+            advanced: [{ torch: isFlashOn }],
+          });
+          const btnFlash = document.getElementById("btnToggleFlash");
+          if (btnFlash) {
+            btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
+            btnFlash.style.borderColor = isFlashOn ? "#fab919" : "#fff";
+          }
+        }
+      }
+    } catch (trackErr) {
+      console.error(
+        "อุปกรณ์นี้ไม่รองรับระบบไฟแฟลชผ่านเว็บเบราว์เซอร์:",
+        trackErr,
+      );
+      isFlashOn = false;
+    }
   }
 }
 
-// ฟังก์ชันสลับโหมดการทำงาน
+// ฟังก์ชันสลับโหมดการทำงานบาร์โค้ด และ คิวอาร์โค้ด
 function toggleScanMode() {
   currentScanMode = currentScanMode === "BARCODE" ? "QR" : "BARCODE";
 
@@ -154,35 +170,38 @@ function toggleScanMode() {
   }
 }
 
-// ฟังก์ชันดัดปรับเฉพาะมิติกรอบโฟกัสสีขาวแบบ Smooth ไร้รอยต่อ
+// 🌟 ฟังก์ชันปรับแต่งมิติกรอบโฟกัสสีขาวแบบนุ่มนวล โดยไม่มีการกระตุกของภาพวิดีโอ
 function updateScanRegionUI() {
   const scanRegion = document.getElementById("reader__scan_region");
   if (scanRegion) {
-    // ใส่ Transition ให้กรอบยืดหดแบบนุ่มนวล สบายตา
+    // ใส่อนิเมชันให้กรอบยืดหดได้อย่างสบายตา ราบรื่น 100%
     scanRegion.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
 
     if (currentScanMode === "BARCODE") {
       scanRegion.style.width = "260px";
-      scanRegion.style.height = "110px"; // ทรงสี่เหลี่ยมผืนผ้าแนวนอนสแกนบาร์โค้ด
+      scanRegion.style.height = "120px"; // ทรงสี่เหลี่ยมผืนผ้าแนวนอน เล็งแถบโค้ดสินค้า
     } else {
       scanRegion.style.width = "220px";
-      scanRegion.style.height = "220px"; // ทรงสี่เหลี่ยมจัตุรัสสแกน QR Code
+      scanRegion.style.height = "220px"; // ทรงสี่เหลี่ยมจัตุรัส เล็งแผ่น QR
     }
   }
 }
 
 // ==========================================
-// 4. ผูกการดักฟังเหตุการณ์ปุ่มต่างๆ (Event Listeners)
+// 4. ผูกเหตุการณ์กับปุ่มต่างๆ (Event Listeners)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  // ปุ่ม Quick Scan หน้าแรก: กดแล้วกระโดดเข้าหน้า Stock พร้อมหน่วงเปิดกล้องออโต้ทันที
+  // ปุ่ม Quick Scan เมนูหลัก: กดปุ๊บ สลับหน้าจอเสร็จแล้วสั่งสตาร์ทกล้องขึ้นทันทีออโต้
   document.getElementById("btnMenuQuickScan")?.addEventListener("click", () => {
-    setTimeout(() => {
+    setTimeout(async () => {
+      if (isScannerRunning) {
+        await stopScanner();
+      }
       startScanner();
     }, 320);
   });
 
-  // ผูกการทำงานปุ่มคำสั่งควบคุมภายในหน้าจอ
+  // ผูกการทำงานปุ่มคำสั่งควบคุมภายในหน้าร้านตามไอดีดั้งเดิม
   document
     .getElementById("btnScannerOpen")
     ?.addEventListener("click", toggleScanner);
