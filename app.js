@@ -198,18 +198,18 @@ function initEventListeners() {
   if (btnLocation)
     btnLocation.addEventListener("click", () => alert("LOCATION - กำลังพัฒนา"));
 
-// ปุ่ม Quick Scan หน้า Main Menu
-  const btnQuickScan = document.getElementById('btnMenuQuickScan');
+  // ปุ่ม Quick Scan หน้า Main Menu
+  const btnQuickScan = document.getElementById("btnMenuQuickScan");
   if (btnQuickScan) {
-    btnQuickScan.addEventListener('click', async () => { 
+    btnQuickScan.addEventListener("click", async () => {
       // 1. สั่งเปิดหน้าและรอให้คำสั่งโหลดสต็อกสดจาก Google Sheets ทำงานเสร็จสิ้นก่อน 100%
       await openStockInHouse();
 
       // 2. เมื่อหน้าจอปรากฏตัวและพร้อมแสดงผลเรียบร้อยแล้ว ค่อยสั่งเปิดกล้องทำงานทันที
-      if (typeof toggleScanner === 'function') {
-        if (typeof isScannerMode !== 'undefined' && !isScannerMode) {
+      if (typeof toggleScanner === "function") {
+        if (typeof isScannerMode !== "undefined" && !isScannerMode) {
           // 🌟 บังคับจัดระเบียบชั้นเลเยอร์ให้ปุ่ม Quick Scan เปิดกล้องมาแล้วอยู่บนสุด
-          const scanView = document.getElementById('scannerView');
+          const scanView = document.getElementById("scannerView");
           if (scanView) {
             scanView.style.position = "fixed";
             scanView.style.zIndex = "9999";
@@ -545,7 +545,6 @@ function renderProducts(products) {
     container.appendChild(div);
   });
 }
-
 function openProductDetail(sku) {
   const item = localProductDatabase.find((p) => p.sku === sku);
   if (!item) return;
@@ -556,21 +555,29 @@ function openProductDetail(sku) {
   const barcodeElement = document.getElementById("detailBarcode");
   if (barcodeElement && item.sku) {
     try {
-      // ในฟังก์ชัน openProductDetail แก้ความสูงบาร์โค้ดกลับมาที่ 45 ครับ
+      // 🌟 ใช้ JsBarcode วาดบาร์โค้ดลงบนหน้าจอสดๆ ปลอดภัย ไม่กระทบ DOM อื่นๆ
       JsBarcode("#detailBarcode", item.sku, {
         format: "CODE128",
         lineColor: "#333",
         width: 2,
-        height: 45, // 🌟 คืนความสูงที่พอดีต่อการสแกน
-        displayValue: false,
+        height: 45, // ความสูง 45 พอดีต่อการสแกนตามที่เจเลอร์กำหนด
+
+        // 🌟 ปรับจูนเพิ่มเติมจาก Taylor เพื่อความสมบูรณ์ของเลย์เอาท์:
+        displayValue: true, // เปลี่ยนเป็น true เพื่อให้มีเลข SKU โชว์ใต้บาร์โค้ดเลย (ไม่ต้องเขียน HTML เพิ่ม)
+        fontSize: 16, // ขนาดตัวอักษรใต้บาร์โค้ด
+        textMargin: 8, // ระยะห่างระหว่างแท่งบาร์โค้ดกับตัวอักษร
+        fontWeight: "bold", // ให้ตัวเลขหนาขึ้น อ่านง่าย
+        background: "transparent", // 🌟 สำคัญมาก: สั่งให้พื้นหลังใส เพื่อให้ทะลุไปเห็นสี #fffafa ใน .barcode-box ของเจเลอร์
       });
-      barcodeElement.style.display = "block";
+
+      barcodeElement.style.display = "inline-block"; // ใช้ inline-block เพื่อให้อยู่กึ่งกลางกล่องพอดี
     } catch (e) {
       console.warn("Barcode error:", e);
       barcodeElement.style.display = "none";
     }
   }
 
+  // ฟังก์ชัน safeSetText สำหรับใส่ข้อมูลอื่นๆ ลงในหน้าจอ (ปลอดภัยและคงไว้เหมือนเดิม)
   const safeSetText = (id, text) => {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
