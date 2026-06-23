@@ -69,7 +69,10 @@ async function startScanner() {
         formatsToSupport: allFormats,
         aspectRatio: 1.77,
         experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true, // ใช้ตัวอ่านระดับฮาร์ดแวร์ของ Browser (อ่านติดไวขึ้นมาก)
+          useBarCodeDetectorIfSupported: true, // ใช้ตัวอ่านระดับฮาร์ดแวร์ของ Browser (อ่านติดไวขึ้นมาก)
+        },
+        videoConstraints: {
+          focusMode: "continuous",
         },
       },
       (decodedText) => {
