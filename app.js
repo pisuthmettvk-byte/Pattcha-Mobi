@@ -198,26 +198,24 @@ function initEventListeners() {
   if (btnLocation)
     btnLocation.addEventListener("click", () => alert("LOCATION - กำลังพัฒนา"));
 
-  // ปุ่ม Quick Scan หน้า Main Menu (ปรับปรุงเฟส 1: แก้ไขคิวมือถือเปิดทันที)
-  const btnQuickScan = document.getElementById("btnMenuQuickScan");
+// ปุ่ม Quick Scan หน้า Main Menu
+  const btnQuickScan = document.getElementById('btnMenuQuickScan');
   if (btnQuickScan) {
-    btnQuickScan.addEventListener("click", () => {
-      // 🌟 Step 1: เรียกเปิดสัญญาณกล้องทันทีในมิลลิวินาทีแรก (ผ่านกฎ User Gesture ของมือถือชัวร์ 100%)
-      if (typeof toggleScanner === "function") {
-        if (typeof isScannerMode !== "undefined" && !isScannerMode) {
-          // บังคับจัดระเบียบชั้นเลเยอร์ให้หน้าต่างกล้องลอยอยู่บนสุด
-          const scanView = document.getElementById("scannerView");
+    btnQuickScan.addEventListener('click', async () => { 
+      // 1. สั่งเปิดหน้าและรอให้คำสั่งโหลดสต็อกสดจาก Google Sheets ทำงานเสร็จสิ้นก่อน 100%
+      await openStockInHouse();
+
+      // 2. เมื่อหน้าจอปรากฏตัวและพร้อมแสดงผลเรียบร้อยแล้ว ค่อยสั่งเปิดกล้องทำงานทันที
+      if (typeof toggleScanner === 'function') {
+        if (typeof isScannerMode !== 'undefined' && !isScannerMode) {
+          // 🌟 บังคับจัดระเบียบชั้นเลเยอร์ให้ปุ่ม Quick Scan เปิดกล้องมาแล้วอยู่บนสุด
+          const scanView = document.getElementById('scannerView');
           if (scanView) {
             scanView.style.position = "fixed";
             scanView.style.zIndex = "9999";
           }
           toggleScanner();
         }
-      }
-
-      // 🌟 Step 2: ปล่อยให้ระบบโหลดสต็อกสดทำงานคู่ขนานตามหลังไปเบื้องหลังเงียบๆ
-      if (typeof openStockInHouse === "function") {
-        openStockInHouse();
       }
     });
   }
