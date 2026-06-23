@@ -264,13 +264,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btnFlash.addEventListener("click", toggleFlash);
   }
 
-  // ปุ่ม Quick Scan เมนูหลัก
-  document.getElementById("btnMenuQuickScan")?.addEventListener("click", () => {
-    setTimeout(() => {
-      startScanner();
-    }, 350);
-  });
-
   // ปุ่ม BACK คืนค่าปิดกล้องทุกกรณี
   document.getElementById("btnStockBack")?.addEventListener("click", () => {
     stopScanner();
