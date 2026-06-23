@@ -9,6 +9,7 @@ let currentScanMode = "BARCODE";
 let isFlashOn = false;
 let lastExecutionTime = 0;
 let lastSuccessfulScan = 0;
+
 // 🌟 ระบบป้องกันคำสั่งเบิ้ลซ้อนกันข้ามไฟล์ (Debounce Guard)
 function preventDoubleTrigger() {
   const now = Date.now();
@@ -16,102 +17,107 @@ function preventDoubleTrigger() {
   lastExecutionTime = now;
   return false;
 }
+
 // ==========================================
 // 1. ฟังก์ชันเปิดกล้อง (Start Scanner) - ENHANCED
 // ==========================================
 async function startScanner() {
   if (isScannerRunning || isTransitioning) return;
   isTransitioning = true;
-}
-const searchInput = document.getElementById("searchStockInput");
-if (searchInput) {
-  searchInput.value = ""; // ล้างค่าตัวอักษรให้เป็นช่องว่าง
-  searchInput.dispatchEvent(new Event("input", { bubbles: true })); // แจ้งเตือนระบบให้รีเฟรชปุ่มกากบาทสีชมพูออกไปด้วย
-}
 
-try {
-  const readerContainer = document.getElementById("readerContainer");
-  const stockScrollArea = document.getElementById("stockScrollArea");
-  const readerElement = document.getElementById("reader");
-  if (readerContainer) {
-    readerContainer.style.display = "flex";
-    readerContainer.style.flexDirection = "column";
-    readerContainer.style.flex = "1";
-    readerContainer.style.width = "100%";
-    readerContainer.style.height = "100%";
-    readerContainer.style.overflow = "hidden";
-  }
-  if (stockScrollArea) stockScrollArea.classList.add("hide");
-  if (readerElement) {
-    readerElement.style.width = "100%";
-    readerElement.style.height = "100%";
-    readerElement.style.flex = "1";
-    readerElement.style.backgroundColor = "#000";
-  }
-  injectScannerCSS();
-  if (!html5QrCode) {
-    html5QrCode = new Html5Qrcode("reader");
-  }
-  // 🌟 ENHANCED: Support all barcode formats
-  const allFormats = [
-    Html5QrcodeSupportedFormats.CODE_128,
-    Html5QrcodeSupportedFormats.EAN_13,
-    Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.UPC_A,
-    Html5QrcodeSupportedFormats.UPC_E, // ✅ Added
-    Html5QrcodeSupportedFormats.CODE_39, // ✅ Added
-    Html5QrcodeSupportedFormats.CODABAR, // ✅ Added
-    Html5QrcodeSupportedFormats.QR_CODE,
-  ];
+  try {
+    const readerContainer = document.getElementById("readerContainer");
+    const stockScrollArea = document.getElementById("stockScrollArea");
+    const readerElement = document.getElementById("reader");
+
+    if (readerContainer) {
+      readerContainer.style.display = "flex";
+      readerContainer.style.flexDirection = "column";
+      readerContainer.style.flex = "1";
+      readerContainer.style.width = "100%";
+      readerContainer.style.height = "100%";
+      readerContainer.style.overflow = "hidden";
+    }
+    if (stockScrollArea) stockScrollArea.classList.add("hide");
+
+    if (readerElement) {
+      readerElement.style.width = "100%";
+      readerElement.style.height = "100%";
+      readerElement.style.flex = "1";
+      readerElement.style.backgroundColor = "#000";
+    }
+
+    injectScannerCSS();
+
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    // 🌟 ENHANCED: Support all barcode formats
+    const allFormats = [
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E, // ✅ Added
+      Html5QrcodeSupportedFormats.CODE_39, // ✅ Added
+      Html5QrcodeSupportedFormats.CODABAR, // ✅ Added
+      Html5QrcodeSupportedFormats.QR_CODE,
+    ];
+
     await html5QrCode.start(
-    { facingMode: "environment" },
-    {
-      fps: 60, // 🌟 ENHANCED: 60 FPS for faster detection (was 30)
-      qrbox:
-        currentScanMode === "BARCODE"
-          ? { width: 280, height: 140 } // Wider for barcodes
-          : { width: 250, height: 250 }, // Square for QR
-      formatsToSupport: allFormats,
-      aspectRatio: 1.77,
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true,
+      { facingMode: "environment" },
+      {
+        fps: 60, // 🌟 ENHANCED: 60 FPS for faster detection (was 30)
+        qrbox:
+          currentScanMode === "BARCODE"
+            ? { width: 280, height: 140 } // Wider for barcodes
+            : { width: 250, height: 250 }, // Square for QR
+        formatsToSupport: allFormats,
+        aspectRatio: 1.77,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
+        videoConstraints: {
+          facingMode: { exact: "environment" },
+          focusMode: "continuous",
+          exposureMode: "continuous", // 🌟 ENHANCED: Auto-exposure
+          exposureCompensation: 0, // 🌟 ENHANCED: Neutral exposure
+          whiteBalanceMode: "continuous", // 🌟 ENHANCED: Auto white balance
+          // torch: false,                   // Disable to avoid flash interference
+        },
       },
-      videoConstraints: {
-        facingMode: { exact: "environment" },
-        focusMode: "continuous",
-        exposureMode: "continuous", // 🌟 ENHANCED: Auto-exposure
-        exposureCompensation: 0, // 🌟 ENHANCED: Neutral exposure
-        whiteBalanceMode: "continuous", // 🌟 ENHANCED: Auto white balance
-        // torch: false,                   // Disable to avoid flash interference
-      },
-    },
-    // 🌟 SUCCESS HANDLER with validation
-    (decodedText) => {
-      // Validate barcode quality before processing
-      if (validateBarcode(decodedText)) {
-        lastSuccessfulScan = Date.now();
-        stopScanner();
-        const searchInput = document.getElementById("searchStockInput");
-        if (searchInput) {
-          searchInput.value = decodedText;
-          searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+      // 🌟 SUCCESS HANDLER with validation
+      (decodedText) => {
+        // Validate barcode quality before processing
+        if (validateBarcode(decodedText)) {
+          lastSuccessfulScan = Date.now();
+          stopScanner();
+          const searchInput = document.getElementById("searchStockInput");
+          if (searchInput) {
+            searchInput.value = decodedText;
+            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          showScanNotification("✓ Barcode Scanned", "#10b981"); // Green
         }
-        showScanNotification("✓ Barcode Scanned", "#10b981"); // Green
-      }
-    },
-    // 🌟 ERROR HANDLER - Silent to avoid noise
-    (errorMessage) => {
-      /* Silently continue scanning */
-    },
-  );
-  isScannerRunning = true;
-  updateScanRegionUI();
-} catch (err) {
-  console.error("Camera start failed:", err);
-  showScanNotification("Camera Error: " + err.message, "#ef4444"); // Red
-  forceResetUI();
-} finally {
-  isTransitioning = false;
+      },
+
+      // 🌟 ERROR HANDLER - Silent to avoid noise
+      (errorMessage) => {
+        /* Silently continue scanning */
+      },
+    );
+
+    isScannerRunning = true;
+    updateScanRegionUI();
+  } catch (err) {
+    console.error("Camera start failed:", err);
+    showScanNotification("Camera Error: " + err.message, "#ef4444"); // Red
+    forceResetUI();
+  } finally {
+    isTransitioning = false;
+  }
 }
 
 // ==========================================
@@ -123,6 +129,7 @@ async function stopScanner() {
     return;
   }
   isTransitioning = true;
+
   try {
     if (html5QrCode) {
       await html5QrCode.stop();
@@ -134,21 +141,26 @@ async function stopScanner() {
     isTransitioning = false;
   }
 }
+
 function forceResetUI() {
   isScannerRunning = false;
   isFlashOn = false;
+
   const readerContainer = document.getElementById("readerContainer");
   const stockScrollArea = document.getElementById("stockScrollArea");
   if (readerContainer) readerContainer.style.display = "none";
   if (stockScrollArea) stockScrollArea.classList.remove("hide");
+
   const btnFlash = document.getElementById("btnToggleFlash");
   if (btnFlash) {
     btnFlash.style.color = "#fff";
     btnFlash.style.borderColor = "#fff";
   }
+
   const customOverlay = document.getElementById("custom-scan-border");
   if (customOverlay) customOverlay.style.display = "none";
 }
+
 // ==========================================
 // 3. 🌟 VALIDATION: Check barcode quality
 // ==========================================
@@ -167,6 +179,7 @@ function validateBarcode(text) {
 
   return true;
 }
+
 // ==========================================
 // 4. 🌟 NOTIFICATION: Visual feedback
 // ==========================================
@@ -193,6 +206,7 @@ function showScanNotification(message, color) {
     setTimeout(() => notification.remove(), 300);
   }, 2000);
 }
+
 // ==========================================
 // 5. ควบคุมสากล (Global Controls)
 // ==========================================
@@ -204,9 +218,11 @@ function toggleScanner() {
     startScanner();
   }
 }
+
 async function toggleFlash() {
   if (preventDoubleTrigger()) return;
   if (!isScannerRunning || !html5QrCode) return;
+
   try {
     const videoElement = document.querySelector("#reader video");
     if (videoElement && videoElement.srcObject) {
@@ -216,6 +232,7 @@ async function toggleFlash() {
         await videoTrack.applyConstraints({
           advanced: [{ torch: isFlashOn }],
         });
+
         const btnFlash = document.getElementById("btnToggleFlash");
         if (btnFlash) {
           btnFlash.style.color = isFlashOn ? "#fab919" : "#fff";
@@ -237,27 +254,34 @@ async function toggleFlash() {
     }
   }
 }
+
 function toggleScanMode() {
   if (preventDoubleTrigger()) return;
+
   currentScanMode = currentScanMode === "BARCODE" ? "QR" : "BARCODE";
+
   const textEl = document.getElementById("scanModeText");
   const iconEl = document.getElementById("scanModeIcon");
   if (textEl) textEl.innerText = currentScanMode;
   if (iconEl)
     iconEl.className =
       currentScanMode === "BARCODE" ? "fas fa-barcode" : "fas fa-qrcode";
+
   showScanNotification(
     `Switched to ${currentScanMode} Mode`,
     currentScanMode === "BARCODE" ? "#db8591" : "#e7a08c",
   );
+
   if (isScannerRunning) {
     updateScanRegionUI();
   }
 }
+
 // 🌟 ฟังก์ชันจัดการกรอบสีขาวจำลอง
 function updateScanRegionUI() {
   const reader = document.getElementById("reader");
   if (!reader) return;
+
   let customOverlay = document.getElementById("custom-scan-border");
   if (!customOverlay) {
     reader.style.position = "relative";
@@ -275,6 +299,7 @@ function updateScanRegionUI() {
     customOverlay.style.zIndex = "99";
     reader.appendChild(customOverlay);
   }
+
   customOverlay.style.display = "block";
   if (currentScanMode === "BARCODE") {
     customOverlay.style.width = "85%";
@@ -284,6 +309,7 @@ function updateScanRegionUI() {
     customOverlay.style.height = "230px"; // Square for QR codes
   }
 }
+
 function injectScannerCSS() {
   if (document.getElementById("scanner-core-css")) return;
   const style = document.createElement("style");
@@ -305,6 +331,7 @@ function injectScannerCSS() {
   `;
   document.head.appendChild(style);
 }
+
 // ==========================================
 // 6. ผูกการทำงานระบบ (Event Listeners)
 // ==========================================
@@ -313,19 +340,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnOpen && !btnOpen.getAttribute("onclick")) {
     btnOpen.addEventListener("click", toggleScanner);
   }
+
   const btnMode = document.getElementById("btnToggleScanMode");
   if (btnMode && !btnMode.getAttribute("onclick")) {
     btnMode.addEventListener("click", toggleScanMode);
   }
+
   const btnFlash = document.getElementById("btnToggleFlash");
   if (btnFlash && !btnFlash.getAttribute("onclick")) {
     btnFlash.addEventListener("click", toggleFlash);
   }
+
   document.getElementById("btnMenuQuickScan")?.addEventListener("click", () => {
     setTimeout(() => {
       startScanner();
     }, 350);
   });
+
   document.getElementById("btnStockBack")?.addEventListener("click", () => {
     stopScanner();
   });
