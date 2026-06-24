@@ -759,3 +759,9 @@ body {
 #scannerView.active {
   display: flex !important; /* เชื่อมคลาส .active จากไฟล์ JS */
 }
+
+
+
+#qr-shaded-region {
+  transition: border-width 0.3s ease-in-out !important;
+}
