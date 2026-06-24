@@ -765,19 +765,61 @@ body {
   transition: border-width 0.3s ease-in-out !important;
 }
 
-/* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือนรถบรรทุก (Minimal & Optimized) */
-.notification-badge {
-  background-color: #e53935; /* พื้นหลังสีแดงที่ดูพรีเมียมและชัดเจน */
-  color: #ffffff; /* ไอคอนและตัวเลขสีขาว */
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: bold;
+/* ==========================================
+   MODULE: MOVEMENT LAYERED ICONS (CLEAN UI)
+========================================== */
+
+/* กลุ่มจัดวางไอคอนให้อยู่ตรงกลางเสมอ */
+.movement-icons-group {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  border: 1px solid #ffffff;
-  margin: 0 auto; /* พระเอกที่ช่วยดันให้สัญลักษณ์ลอยอยู่กึ่งกลางเป๊ะ */
-  /* หมายเหตุ: ถอดคำสั่ง Animation ออกทั้งหมดเพื่อประหยัดพลังงาน */
+  gap: 12px;
+  margin: 0 auto;
 }
+
+/* กรอบสำหรับซ้อนไอคอน (ฐาน) */
+.layered-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+}
+
+/* ไอคอนโกดัง (ตัวหลัง) - ให้สีเทากลางๆ เพื่อดันรถให้เด่น */
+.base-icon {
+  font-size: 16px;
+  color: #888888;
+}
+
+/* ไอคอนรถบรรทุก/ลูกศร (ตัวหน้า) */
+.overlay-icon {
+  position: absolute;
+  font-size: 10px;
+  bottom: 0px;
+  /* 🌟 เทคนิคสร้างเส้นขอบสีขาวรอบๆ รถ เพื่อตัดให้ลอยออกมาจากโกดัง */
+  text-shadow:
+    1px 1px 0 #fff,
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    0px 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ระบบสีสื่อความหมาย (Semantic Colors) */
+.icon-red {
+  color: #e44542;
+} /* Transfer Out */
+
+.icon-green {
+  color: #1c9249;
+} /* Transfer In */
+
+.icon-yellow {
+  color: #fbc02d;
+  text-shadow:
+    1px 1px 0 #fff,
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff;
+} /* Pending */

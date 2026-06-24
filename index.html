@@ -129,14 +129,35 @@
           <div class="menu-icon"><i class="fas fa-exchange-alt"></i></div>
           <div class="menu-text">PRODUCT MOVEMENT</div>
 
-          <div id="badgeInbound" class="notification-badge hide">
-            <i class="fas fa-truck"></i>
-            <span class="badge-count">0</span>
+          <
+          <div class="movement-icons-group">
+            <span id="iconIn" class="layered-icon hide">
+              <i class="fas fa-warehouse base-icon"></i>
+              <i
+                class="fas fa-truck overlay-icon icon-green"
+                style="transform: scaleX(-1); right: 2px"
+              ></i>
+            </span>
+
+            <span id="iconOut" class="layered-icon hide">
+              <i class="fas fa-warehouse base-icon"></i>
+              <i
+                class="fas fa-truck overlay-icon icon-red"
+                style="right: -4px"
+              ></i>
+            </span>
+
+            <span id="iconPending" class="layered-icon hide">
+              <i class="fas fa-box base-icon" style="font-size: 14px"></i>
+              <i
+                class="fas fa-sync-alt overlay-icon icon-yellow"
+                style="font-size: 11px; top: -3px; right: -4px"
+              ></i>
+            </span>
           </div>
 
           <div class="menu-arrow">❯</div>
         </button>
-
         <button id="btnMenuTake" class="menu-card">
           <div class="menu-icon"><i class="fas fa-chart-bar"></i></div>
           <div class="menu-text">STOCK TAKE</div>
