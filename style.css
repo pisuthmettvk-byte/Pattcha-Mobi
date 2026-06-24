@@ -764,7 +764,7 @@ body {
   transition: border-width 0.3s ease-in-out !important;
 }
 
-/* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือน (แบบ Inline) */
+/* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือนรถบรรทุก */
 .notification-badge {
   background-color: #e7a08c;
   color: #000;
@@ -780,7 +780,6 @@ body {
   animation: pulse-badge 2s infinite;
 }
 
-/* อนิเมชั่นกระพริบเบาๆ */
 @keyframes pulse-badge {
   0% {
     transform: scale(1);
