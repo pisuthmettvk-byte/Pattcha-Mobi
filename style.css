@@ -764,10 +764,10 @@ body {
   transition: border-width 0.3s ease-in-out !important;
 }
 
-/* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือนรถบรรทุก */
+/* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือนรถบรรทุก (Minimal & Optimized) */
 .notification-badge {
-  background-color: #e7a08c;
-  color: #000;
+  background-color: #e53935; /* พื้นหลังสีแดงที่ดูพรีเมียมและชัดเจน */
+  color: #ffffff; /* ไอคอนและตัวเลขสีขาว */
   padding: 3px 8px;
   border-radius: 20px;
   font-size: 11px;
@@ -776,21 +776,7 @@ body {
   align-items: center;
   gap: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  border: 1px solid #fff;
-  animation: pulse-badge 2s infinite;
-
-  /* 🌟 พระเอกของเรา: ผลักซ้ายขวาให้เท่ากันเพื่อให้อยู่ตรงกลางเป๊ะ */
-  margin: 0 auto;
-}
-
-@keyframes pulse-badge {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
+  border: 1px solid #ffffff;
+  margin: 0 auto; /* พระเอกที่ช่วยดันให้สัญลักษณ์ลอยอยู่กึ่งกลางเป๊ะ */
+  /* หมายเหตุ: ถอดคำสั่ง Animation ออกทั้งหมดเพื่อประหยัดพลังงาน */
 }
