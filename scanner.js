@@ -150,18 +150,23 @@ window.toggleFlash = async function () {
   }
 };
 
-// 🌟 เพิ่มระบบสลับแสดงโหมดไอคอนบนหน้าจอ
-window.toggleScanMode = function () {
+window.toggleScanMode = function() {
   const modeText = document.getElementById("scanModeText");
   const modeIcon = document.getElementById("scanModeIcon");
-  if (!modeText || !modeIcon) return;
+  const readerBox = document.getElementById("reader"); // ส่วนที่ครอบกล้อง
+  
+  if (!modeText || !modeIcon || !readerBox) return;
 
   if (modeText.innerText === "BARCODE") {
+    // สลับเป็น QR CODE
     modeText.innerText = "QR CODE";
     modeIcon.className = "fas fa-qrcode";
+    readerBox.style.width = "250px"; // จัตุรัส 250px
   } else {
+    // สลับเป็น BARCODE
     modeText.innerText = "BARCODE";
     modeIcon.className = "fas fa-barcode";
+    readerBox.style.width = "320px"; // ผืนผ้า 320px
   }
 };
 
