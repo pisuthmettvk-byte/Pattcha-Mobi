@@ -778,6 +778,9 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   border: 1px solid #fff;
   animation: pulse-badge 2s infinite;
+
+  /* 🌟 พระเอกของเรา: ผลักซ้ายขวาให้เท่ากันเพื่อให้อยู่ตรงกลางเป๊ะ */
+  margin: 0 auto;
 }
 
 @keyframes pulse-badge {
