@@ -3,9 +3,9 @@
 // ==========================================
 const CONFIG = {
   API_URL:
-    "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec", // 🌟 คืนค่าลิงก์หลักดั้งเดิมสำหรับ Login และดึงข้อมูลสต็อกสาขาตัวเอง
+    "https://script.google.com/macros/s/AKfycbwzwaDlMarLw7tvgm6dFRnnORWdgZ5o3M01NhNf9lNm0tvwOw2WvB9CkOP5jYcnDFMjhA/exec",
   CROSS_BRANCH_URL:
-    "https://script.google.com/macros/s/AKfycbzPJweCC9wgdKzqnWV5kuPWMiUbM9uNgjaO3rfCRaXtTW80nLflLORQIizxay9LbTkbHg/exec", // 🌟 ใช้ลิงก์ใหม่ตัวนี้สำหรับการยิงเช็กสต็อกต่างสาขาโดยเฉพาะ
+    "https://script.google.com/macros/s/AKfycbzPJweCC9wgdKzqnWV5kuPWMiUbM9uNgjaO3rfCRaXtTW80nLflLORQIizxay9LbTkbHg/exec",
   SEARCH_DELAY: 250,
 };
 
@@ -28,7 +28,7 @@ function customAlert(message, title = "NOTICE") {
     const btnOk = document.getElementById("customAlertOk");
     const btnCancel = document.getElementById("customAlertCancel");
 
-    btnCancel.classList.add("hide"); // ซ่อนปุ่ม Cancel (มีแค่ OK)
+    btnCancel.classList.add("hide");
     overlay.classList.remove("hide");
 
     btnOk.onclick = () => {
@@ -47,7 +47,7 @@ function customConfirm(message, title = "CONFIRM") {
     const btnOk = document.getElementById("customAlertOk");
     const btnCancel = document.getElementById("customAlertCancel");
 
-    btnCancel.classList.remove("hide"); // แสดงปุ่ม Cancel ให้เลือก
+    btnCancel.classList.remove("hide");
     overlay.classList.remove("hide");
 
     btnOk.onclick = () => {
@@ -68,20 +68,17 @@ let localProductDatabase = [];
 let currentBranch = "";
 let currentStockView = "category";
 let searchTimeout = null;
-let isScannerMode = false;
-// ==========================================
-// GLOBAL STATE (อัปเดตเพิ่มเติม)
-// ==========================================
+window.isScannerMode = false;
+
 let idleTimeout = null;
-const IDLE_TIME_LIMIT = 5 * 60 * 1000; // ตั้งเวลา 5 นาที (หน่วยเป็นมิลลิวินาที)
+const IDLE_TIME_LIMIT = 5 * 60 * 1000;
 
 // ==========================================
-// IDLE TIMEOUT FUNCTIONS (ระบบจับเวลาแสตนด์บาย)
+// IDLE TIMEOUT FUNCTIONS
 // ==========================================
 function resetIdleTimer() {
   const stockView = document.getElementById("stockInHouseView");
 
-  // 🟢 ปรับปรุง: ถ้าไม่ได้เปิดหน้าจอสต็อกค้างไว้ ให้ล้างไทม์เมอร์ทิ้งทันที ประหยัดทรัพยากร CPU เครื่อง
   if (!stockView || stockView.classList.contains("hide")) {
     clearTimeout(idleTimeout);
     return;
@@ -92,21 +89,17 @@ function resetIdleTimer() {
 }
 
 function returnToMainMenuOnIdle() {
-  // 🟢 ปรับปรุง: สั่งปิดการทำงานของกล้องสแกนเนอร์ทันทีหากเปิดค้างไว้ เพื่อประหยัดแบตเตอรี่มือถือ
-  if (typeof isScannerMode !== "undefined" && isScannerMode) {
-    toggleScanner();
+  if (window.isScannerMode) {
+    if (typeof window.toggleScanner === "function") window.toggleScanner();
   }
 
-  // ปิดหน้าต่างลอยทั้งหมดที่อาจจะเปิดค้างไว้ลึกๆ
   const detailModal = document.getElementById("productDetailModal");
   const crossModal = document.getElementById("crossBranchModal");
   if (detailModal) detailModal.classList.add("hide");
   if (crossModal) crossModal.classList.add("hide-modal");
 
-  // เคลียร์ช่องค้นหา
   clearSearch();
 
-  // ปิดหน้า Stock แล้วเด้งกลับ Main Menu
   const stockView = document.getElementById("stockInHouseView");
   if (stockView) stockView.classList.add("hide");
 
@@ -117,7 +110,7 @@ function returnToMainMenuOnIdle() {
 }
 
 // ==========================================
-// UTILITY FUNCTIONS (Security & Core Logic)
+// UTILITY FUNCTIONS
 // ==========================================
 function escapeHTML(str) {
   if (str == null) return "";
@@ -160,14 +153,12 @@ function getCategoryIcon(catName) {
 }
 
 // ==========================================
-// INITIALIZATION & EVENT LISTENERS (เวอร์ชันแก้เลเยอร์กล้องซ้อนทับ)
+// INITIALIZATION & EVENT LISTENERS
 // ==========================================
 function initEventListeners() {
-  // หน้า Login
   const btnSubmit = document.getElementById("btnSubmitLogin");
   if (btnSubmit) btnSubmit.addEventListener("click", submitLogin);
 
-  // กด Enter เพื่อล็อกอินได้เลย
   const inputLogin = document.getElementById("branchCodeInput");
   if (inputLogin) {
     inputLogin.addEventListener("keypress", function (e) {
@@ -175,7 +166,6 @@ function initEventListeners() {
     });
   }
 
-  // หน้า Main Menu (5 ปุ่มใหม่)
   const btnStock = document.getElementById("btnMenuStock");
   if (btnStock) btnStock.addEventListener("click", openStockInHouse);
 
@@ -199,24 +189,18 @@ function initEventListeners() {
   if (btnLocation)
     btnLocation.addEventListener("click", () => alert("LOCATION - กำลังพัฒนา"));
 
-  // ปุ่ม Quick Scan หน้า Main Menu
   const btnQuickScan = document.getElementById("btnMenuQuickScan");
   if (btnQuickScan) {
     btnQuickScan.addEventListener("click", async () => {
-      // 1. สั่งเปิดหน้าและรอให้คำสั่งโหลดสต็อกสดจาก Google Sheets ทำงานเสร็จสิ้นก่อน 100%
       await openStockInHouse();
 
-      // 2. เมื่อหน้าจอปรากฏตัวและพร้อมแสดงผลเรียบร้อยแล้ว ค่อยสั่งเปิดกล้องทำงานทันที
-      if (typeof toggleScanner === "function") {
-        if (typeof isScannerMode !== "undefined" && !isScannerMode) {
-          // 🌟 บังคับจัดระเบียบชั้นเลเยอร์ให้ปุ่ม Quick Scan เปิดกล้องมาแล้วอยู่บนสุด
-          const scanView = document.getElementById("scannerView");
-          if (scanView) {
-            scanView.style.position = "fixed";
-            scanView.style.zIndex = "9999";
-          }
-          toggleScanner();
+      if (typeof window.toggleScanner === "function") {
+        const scanView = document.getElementById("scannerView");
+        if (scanView) {
+          scanView.style.position = "fixed";
+          scanView.style.zIndex = "99999";
         }
+        await window.toggleScanner();
       }
     });
   }
@@ -224,45 +208,39 @@ function initEventListeners() {
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout) btnLogout.addEventListener("click", logoutBranch);
 
-  // หน้า Stock
   const btnBack = document.getElementById("btnStockBack");
   if (btnBack) btnBack.addEventListener("click", handleStockBack);
 
   const btnClear = document.getElementById("clearSearchBtn");
   if (btnClear) btnClear.addEventListener("click", clearSearch);
 
-  // กล้องสแกนหลักด้านใน
-  const toggleCam = () => {
-    if (typeof toggleScanner === "function") {
-      // 🌟 บังคับให้หน้าต่างกล้องลอยมาอยู่ชั้นบนสุดเหนือคอลัมน์หมวดหมู่เสมอ
-      const scanView = document.getElementById("scannerView");
-      if (scanView) {
-        scanView.style.position = "fixed";
-        scanView.style.zIndex = "9999";
+  const btnScannerOpen = document.getElementById("btnScannerOpen");
+  if (btnScannerOpen) {
+    btnScannerOpen.addEventListener("click", async () => {
+      if (typeof window.toggleScanner === "function") {
+        const scanView = document.getElementById("scannerView");
+        if (scanView) {
+          scanView.style.position = "fixed";
+          scanView.style.zIndex = "99999";
+        }
+        await window.toggleScanner();
       }
-      toggleScanner();
-    }
-  };
-  const btnCamOpen = document.getElementById("btnScannerOpen");
-  if (btnCamOpen) btnCamOpen.addEventListener("click", toggleCam);
+    });
+  }
 
-  const btnCamClose = document.getElementById("btnScannerClose");
-  if (btnCamClose) btnCamClose.addEventListener("click", toggleCam);
-
-  // ปุ่มควบคุมกล้อง (โหมด & แฟลช)
+  // 🌟 อัปเกรดความปลอดภัย เชื่อมฟังก์ชันปุ่ม Flash & Mode แบบระบุตัวตน (window.)
   const btnScanMode = document.getElementById("btnToggleScanMode");
   if (btnScanMode)
     btnScanMode.addEventListener("click", () => {
-      if (typeof toggleScanMode === "function") toggleScanMode();
+      if (typeof window.toggleScanMode === "function") window.toggleScanMode();
     });
 
   const btnFlash = document.getElementById("btnToggleFlash");
   if (btnFlash)
     btnFlash.addEventListener("click", () => {
-      if (typeof toggleFlash === "function") toggleFlash();
+      if (typeof window.toggleFlash === "function") window.toggleFlash();
     });
 
-  // ช่องค้นหา
   const searchInput = document.getElementById("searchStockInput");
   if (searchInput)
     searchInput.addEventListener(
@@ -270,7 +248,6 @@ function initEventListeners() {
       debounceSearch(handleMagicSearch, CONFIG.SEARCH_DELAY),
     );
 
-  // หน้า Modal Detail
   const btnCloseMod = document.getElementById("btnCloseModal");
   if (btnCloseMod) btnCloseMod.addEventListener("click", closeProductDetail);
 }
@@ -305,16 +282,13 @@ async function submitLogin() {
       const loginView = document.getElementById("loginView");
       const mainMenuView = document.getElementById("mainMenuView");
 
-      // เฟดหน้าจอ Login ออก
       loginView.classList.add("fade-out");
 
-      // สั่งแชร์เฮดเดอร์สไลด์ขึ้นไปจอดด้านบน
       if (sharedHeader) {
         sharedHeader.classList.remove("header-center");
         sharedHeader.classList.add("header-top");
       }
 
-      // เปิดหน้าเมนูอย่างนุ่มนวลตามลำดับบล็อก Flow
       loginView.addEventListener("transitionend", function onEnd(e) {
         if (e.propertyName !== "opacity") return;
         loginView.removeEventListener("transitionend", onEnd);
@@ -350,7 +324,7 @@ async function logoutBranch() {
 }
 
 // ==========================================
-// STOCK IN HOUSE VIEW MANAGEMENT (เวอร์ชันแก้บั๊กหน้าจอขาว)
+// STOCK IN HOUSE VIEW MANAGEMENT
 // ==========================================
 async function openStockInHouse() {
   const btnStock = document.getElementById("btnMenuStock");
@@ -362,7 +336,6 @@ async function openStockInHouse() {
   }
 
   try {
-    // ดึงข้อมูลสต็อกล่าสุดของสาขาตัวเองผ่านลิงก์หลักสม่ำเสมอ
     const response = await fetch(
       CONFIG.API_URL + "?action=login&branch=" + currentBranch,
     );
@@ -379,7 +352,6 @@ async function openStockInHouse() {
     btnStock.disabled = false;
   }
 
-  // ดักจับ Element เลเยอร์หน้าจอทั้งหมดเพื่อจัดระเบียบ
   const sharedHeader = document.getElementById("sharedHeader");
   const mainMenuView = document.getElementById("mainMenuView");
   const stockInHouseView = document.getElementById("stockInHouseView");
@@ -391,14 +363,13 @@ async function openStockInHouse() {
   if (mainMenuView) mainMenuView.classList.add("hide");
   if (stockInHouseView) stockInHouseView.classList.remove("hide");
 
-  // 🟢 [จุดแก้ไขวิกฤต] บังคับปลดล็อกสถานะซ่อนตัวของหมวดหมู่ และซ่อนหน้ารายชื่อสินค้าทิ้ง ป้องกันอาการจอว่าง
   if (categoryContainer) categoryContainer.classList.remove("hide");
   if (productContainer) productContainer.classList.add("hide");
   if (headerTitle) headerTitle.innerText = "STOCK IN HOUSE";
 
-  currentStockView = "category"; // รีเซ็ตมุมมองหลักกลับสู่หน้าหมวดหมู่
-  renderCategories(); // สั่งวาดการ์ดหมวดหมู่สินค้าหลักลงบนจอ
-  if (typeof resetIdleTimer === "function") resetIdleTimer(); // เริ่มจับเวลาแสตนด์บาย 5 นาที
+  currentStockView = "category";
+  renderCategories();
+  if (typeof resetIdleTimer === "function") resetIdleTimer();
 }
 
 function renderCategories() {
@@ -441,8 +412,8 @@ function filterByCategory(catName) {
 
 function handleStockBack() {
   clearTimeout(searchTimeout);
-  if (typeof isScannerMode !== "undefined" && isScannerMode) {
-    toggleScanner();
+  if (window.isScannerMode) {
+    if (typeof window.toggleScanner === "function") window.toggleScanner();
   }
   if (currentStockView === "product") {
     clearSearch();
@@ -451,14 +422,10 @@ function handleStockBack() {
     document.getElementById("sharedHeader").classList.remove("hide");
     document.getElementById("mainMenuView").classList.remove("hide");
 
-    // 🌟 หยุดระบบจับเวลาเมื่อพนักงานตั้งใจกดถอยหลังกลับมาที่ Main Menu เอง
     clearTimeout(idleTimeout);
   }
 }
 
-// ==========================================================
-// 🌟 [นำกลับมาคืนระบบ] ฟังก์ชันสำหรับจัดการระบบค้นหาเวทมนตร์ (Magic Search)
-// ==========================================================
 function handleMagicSearch() {
   const query = document
     .getElementById("searchStockInput")
@@ -507,7 +474,6 @@ function renderProducts(products) {
     div.className = "product-row";
     div.addEventListener("click", () => openProductDetail(item.sku));
 
-    // ดึงและคัดกรองความปลอดภัยของข้อมูลสถานะสต็อกทั้งหมด
     const safeSku = escapeHTML(item.sku || "-");
     const safeName = escapeHTML(item.name || "-");
     const priceStr = Number(item.price || 0).toLocaleString();
@@ -546,6 +512,7 @@ function renderProducts(products) {
     container.appendChild(div);
   });
 }
+
 function openProductDetail(sku) {
   const item = localProductDatabase.find((p) => p.sku === sku);
   if (!item) return;
@@ -556,35 +523,30 @@ function openProductDetail(sku) {
   const barcodeElement = document.getElementById("detailBarcode");
   if (barcodeElement && item.sku) {
     try {
-      // 🌟 ใช้ JsBarcode วาดบาร์โค้ดลงบนหน้าจอสดๆ ปลอดภัย ไม่กระทบ DOM อื่นๆ
       JsBarcode("#detailBarcode", item.sku, {
         format: "CODE128",
         lineColor: "#333",
         width: 2,
-        height: 45, // ความสูง 45 พอดีต่อการสแกนตามที่เจเลอร์กำหนด
-
-        // 🌟 ปรับจูนเพิ่มเติมจาก Taylor เพื่อความสมบูรณ์ของเลย์เอาท์:
-        displayValue: true, // เปลี่ยนเป็น true เพื่อให้มีเลข SKU โชว์ใต้บาร์โค้ดเลย (ไม่ต้องเขียน HTML เพิ่ม)
-        fontSize: 16, // ขนาดตัวอักษรใต้บาร์โค้ด
-        textMargin: 8, // ระยะห่างระหว่างแท่งบาร์โค้ดกับตัวอักษร
-        fontWeight: "bold", // ให้ตัวเลขหนาขึ้น อ่านง่าย
-        background: "transparent", // 🌟 สำคัญมาก: สั่งให้พื้นหลังใส เพื่อให้ทะลุไปเห็นสี #fffafa ใน .barcode-box ของเจเลอร์
+        height: 45,
+        displayValue: true,
+        fontSize: 16,
+        textMargin: 8,
+        fontWeight: "bold",
+        background: "transparent",
       });
 
-      barcodeElement.style.display = "inline-block"; // ใช้ inline-block เพื่อให้อยู่กึ่งกลางกล่องพอดี
+      barcodeElement.style.display = "inline-block";
     } catch (e) {
       console.warn("Barcode error:", e);
       barcodeElement.style.display = "none";
     }
   }
 
-  // ฟังก์ชัน safeSetText สำหรับใส่ข้อมูลอื่นๆ ลงในหน้าจอ (ปลอดภัยและคงไว้เหมือนเดิม)
   const safeSetText = (id, text) => {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
   };
 
-  // 🌟 ส่งข้อมูลเข้าเลย์เอาต์ใหม่ ซ้าย-ขวา และ Card UI ได้ทันที
   safeSetText("detailCategory", item.category || "NO CATEGORY");
   safeSetText("detailSku", item.sku || "-");
   safeSetText("detailName", item.name || "-");
@@ -597,31 +559,25 @@ function openProductDetail(sku) {
 
   document.getElementById("productDetailModal").classList.remove("hide");
 
-  // ==========================================================
-  // 🌟 [ปรับปรุงล่าสุด] คำสั่งเช็กสต็อกต่างสาขา (กรองสาขาตัวเองออก 100%)
-  // ==========================================================
   const btnCrossBranch = document.getElementById("btnCrossBranch");
   if (btnCrossBranch) {
-    btnCrossBranch.classList.add("hide"); // ซ่อนไอคอนไว้ก่อนทุกครั้ง
+    btnCrossBranch.classList.add("hide");
 
-    // 🌟 เปลี่ยนมาเรียกใช้งานผ่าน CONFIG.CROSS_BRANCH_URL เส้นใหม่
     fetch(
       `${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`,
     )
       .then((res) => res.json())
       .then((response) => {
         if (response.status === "success" && response.data) {
-          // 🌟 กรองเอาสาขาที่ล็อกอินปัจจุบันออกไปจากรายการผลลัพธ์
           const otherBranches = response.data.filter(
             (b) => b.branch !== currentBranch,
           );
 
-          // 🟢 เงื่อนไขตรงโจทย์: จะแสดงไอคอนก็ต่อเมื่อสาขา "อื่น" มีสินค้าจริงๆ เท่านั้น
           if (otherBranches.length > 0) {
             btnCrossBranch.classList.remove("hide");
 
             btnCrossBranch.onclick = () => {
-              renderCrossBranchModal(otherBranches); // ส่งเฉพาะสาขาอื่นไปวาดบนหน้าต่างลอย
+              renderCrossBranchModal(otherBranches);
             };
           }
         }
@@ -634,17 +590,13 @@ function closeProductDetail() {
   document.getElementById("productDetailModal").classList.add("hide");
 }
 
-// ==========================================================
-// 🌟 [เพิ่มใหม่] ฟังก์ชันสำหรับวาดรายชื่อสาขาที่มีสต็อกลงในหน้าต่างลอย
-// ==========================================================
 function renderCrossBranchModal(branchData) {
   const listContainer = document.getElementById("crossBranchList");
   const modal = document.getElementById("crossBranchModal");
   if (!listContainer || !modal) return;
 
-  listContainer.innerHTML = ""; // ล้างข้อมูลเก่าออกก่อน
+  listContainer.innerHTML = "";
 
-  // วนลูปวาดรายชื่อสาขาที่มีของเฉพาะที่มีแต้มมากกว่า 0 ตามที่เรากรองมาจากหลังบ้าน
   branchData.forEach((item) => {
     const div = document.createElement("div");
     div.className = "cross-branch-item";
@@ -655,20 +607,17 @@ function renderCrossBranchModal(branchData) {
     listContainer.appendChild(div);
   });
 
-  // เปิดแสดงหน้าต่างลอยข้ามสาขา
   modal.classList.remove("hide-modal");
 }
 
 // ==========================================
-// 🌟 ENGINE STARTER (สวิตช์สตาร์ทเครื่องยนต์หลักรวมศูนย์)
+// ENGINE STARTER
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. สตาร์ทสายไฟผูกปุ่มกดทั้งหมดในระบบ (แก้บั๊กปุ่ม Submit นิ่งสนิท)
   if (typeof initEventListeners === "function") {
     initEventListeners();
   }
 
-  // 2. ผูกเหตุการณ์กดปิดหน้าต่างลอยข้ามสาขา (คงไว้ตามลอจิกล่าสุด)
   const btnCloseCross = document.getElementById("btnCloseCrossBranch");
   const crossModal = document.getElementById("crossBranchModal");
   if (btnCloseCross && crossModal) {
@@ -677,7 +626,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 3. ระบบจดจำและล็อกอินอัตโนมัติเมื่อพนักงานเปิดแอปใหม่
   const savedBranch = localStorage.getItem("pattcha_branch");
   if (savedBranch) {
     const inputLogin = document.getElementById("branchCodeInput");

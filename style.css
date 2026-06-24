@@ -738,3 +738,24 @@ body {
   border-radius: 10px;
   font-size: 11px;
 }
+
+/* =========================================
+   🌟 SCANNER FULL-SCREEN OVERLAY (เชื่อมหน้าจอสแกนเนอร์)
+   ========================================= */
+#scannerView {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 99999; /* 👑 ชั้นสูงสุดของระบบ: ลอยทับ Alert และ Modal ทั้งหมด */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#scannerView.active {
+  display: flex !important; /* เชื่อมคลาส .active จากไฟล์ JS */
+}
