@@ -760,12 +760,9 @@ body {
   display: flex !important; /* เชื่อมคลาส .active จากไฟล์ JS */
 }
 
-
-
 #qr-shaded-region {
   transition: border-width 0.3s ease-in-out !important;
 }
-
 
 /* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือน (แบบ Inline) */
 .notification-badge {
@@ -778,16 +775,22 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  border: 1px solid #fff; 
-  animation: pulse-badge 2s infinite; 
-  margin-left: 8px; /* เว้นระยะห่างจากข้อความ PRODUCT MOVEMENT นิดหน่อย */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px solid #fff;
+  animation: pulse-badge 2s infinite;
+  margin-left: auto; /* เว้นระยะห่างจากข้อความ PRODUCT MOVEMENT นิดหน่อย */
   margin-right: auto; /* ดันให้ลูกศร ❯ ชิดขวาสุดเสมอ */
 }
 
 /* อนิเมชั่นกระพริบเบาๆ */
 @keyframes pulse-badge {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
