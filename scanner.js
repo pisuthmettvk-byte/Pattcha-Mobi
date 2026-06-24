@@ -197,3 +197,24 @@ const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
     searchInput.dispatchEvent(new Event("input", { bubbles: true }));
   }
 };
+
+
+// ฟังก์ชันจำลองการรับสัญญาณจาก Firebase หรือ PATTCHA Inventory
+function mockReceiveSignal(hasPendingDelivery, qty = 0) {
+  const badge = document.getElementById("badgeInbound");
+  const countDisplay = badge.querySelector(".badge-count");
+
+  if (hasPendingDelivery) {
+    // มีของเข้า -> ลบคลาส hidden ออก เพื่อแสดงรูปรถบรรทุก
+    badge.classList.remove("hidden");
+    countDisplay.innerText = qty; // อัปเดตตัวเลขจำนวนกล่อง/คิว
+  } else {
+    // ไม่มีของเข้า -> ใส่คลาส hidden เพื่อซ่อนรถบรรทุก
+    badge.classList.add("hidden");
+  }
+}
+
+// 🛠️ วิธีทดสอบ: เจเลอร์สามารถเปิด F12 (Console) แล้วพิมพ์คำสั่งนี้เพื่อทดสอบ:
+// mockReceiveSignal(true, 3);  <-- รถโผล่มาพร้อมเลข 3
+// mockReceiveSignal(false);    <-- รถหายไป
+
