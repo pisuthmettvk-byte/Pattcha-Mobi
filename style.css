@@ -767,23 +767,22 @@ body {
 }
 
 
-/* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือน (Notification Badge) */
+/* 🚚 สไตล์ของสัญลักษณ์แจ้งเตือน (แบบ Inline) */
 .notification-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
   background-color: #e7a08c;
   color: #000;
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 20px;
   font-size: 11px;
   font-weight: bold;
   display: flex;
   align-items: center;
   gap: 5px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  border: 2px solid #fff; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  border: 1px solid #fff; 
   animation: pulse-badge 2s infinite; 
+  margin-left: 8px; /* เว้นระยะห่างจากข้อความ PRODUCT MOVEMENT นิดหน่อย */
+  margin-right: auto; /* ดันให้ลูกศร ❯ ชิดขวาสุดเสมอ */
 }
 
 /* อนิเมชั่นกระพริบเบาๆ */
