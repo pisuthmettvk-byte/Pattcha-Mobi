@@ -153,20 +153,32 @@ window.toggleFlash = async function () {
 window.toggleScanMode = function() {
   const modeText = document.getElementById("scanModeText");
   const modeIcon = document.getElementById("scanModeIcon");
-  const readerBox = document.getElementById("reader"); // ส่วนที่ครอบกล้อง
+  const shadedRegion = document.getElementById("qr-shaded-region");
   
-  if (!modeText || !modeIcon || !readerBox) return;
+  if (!modeText || !modeIcon || !shadedRegion) return;
+
+  // 1. จำค่าความหนา "ขอบซ้าย/ขวา" ดั้งเดิมที่ Library คำนวณให้พอดีกับจอไว้
+  if (!window.originalSideBorder) {
+    window.originalSideBorder = shadedRegion.style.borderLeftWidth; 
+  }
 
   if (modeText.innerText === "BARCODE") {
-    // สลับเป็น QR CODE
+    // 🔙 สลับกลับเป็น QR CODE (จัตุรัส)
     modeText.innerText = "QR CODE";
     modeIcon.className = "fas fa-qrcode";
-    readerBox.style.width = "250px"; // จัตุรัส 250px
+    
+    // คืนค่าขอบซ้าย/ขวา ให้กลับไปเป็นค่าที่ Library คำนวณไว้แต่แรก
+    shadedRegion.style.borderLeftWidth = window.originalSideBorder;
+    shadedRegion.style.borderRightWidth = window.originalSideBorder;
   } else {
-    // สลับเป็น BARCODE
+    // ↔️ สลับไปเป็น BARCODE (ผืนผ้า)
     modeText.innerText = "BARCODE";
     modeIcon.className = "fas fa-barcode";
-    readerBox.style.width = "320px"; // ผืนผ้า 320px
+    
+    // ลดขอบเงาด้านซ้าย/ขวาลงเหลือแค่ 25px (เป็นระยะขอบปลอดภัย) 
+    // ทำให้พื้นที่ใสๆ ตรงกลางถูกดันขยายออกไปด้านข้างอัตโนมัติ โดยที่ขอบบน/ล่างยังมีความสูงเท่าเดิม!
+    shadedRegion.style.borderLeftWidth = "25px";
+    shadedRegion.style.borderRightWidth = "25px";
   }
 };
 
