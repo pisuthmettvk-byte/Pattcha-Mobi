@@ -778,8 +778,6 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   border: 1px solid #fff;
   animation: pulse-badge 2s infinite;
-  margin-left: -2px; /* เว้นระยะห่างจากข้อความ PRODUCT MOVEMENT นิดหน่อย */
-  margin-right: auto; /* ดันให้ลูกศร ❯ ชิดขวาสุดเสมอ */
 }
 
 /* อนิเมชั่นกระพริบเบาๆ */
