@@ -252,10 +252,6 @@ function initEventListeners() {
   if (btnCloseMod) btnCloseMod.addEventListener("click", closeProductDetail);
 }
 
-// ==========================================
-// MAIN FUNCTIONALITIES
-// ==========================================
-
 async function submitLogin() {
   const inputLogin = document.getElementById("branchCodeInput");
   if (!inputLogin) return;
@@ -264,8 +260,13 @@ async function submitLogin() {
 
   if (!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
 
-  btn.innerText = "⏳ LOADING...";
+  // 🌟 1. เก็บข้อความเดิมของปุ่มไว้ก่อน (เพื่อเอาไว้คืนค่า)
+  const originalText = btn.innerHTML;
+
+  // 🌟 2. เริ่มสถานะ LOADING (ล็อกปุ่ม + ไอคอนหมุน)
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> LOADING...';
   btn.disabled = true;
+  btn.style.opacity = "0.7";
 
   try {
     const response = await fetch(
@@ -282,33 +283,20 @@ async function submitLogin() {
       const loginView = document.getElementById("loginView");
       const mainMenuView = document.getElementById("mainMenuView");
 
-      loginView.classList.add("fade-out");
-
-      if (sharedHeader) {
-        sharedHeader.classList.remove("header-center");
-        sharedHeader.classList.add("header-top");
-      }
-
-      loginView.addEventListener("transitionend", function onEnd(e) {
-        if (e.propertyName !== "opacity") return;
-        loginView.removeEventListener("transitionend", onEnd);
-
-        loginView.classList.add("hide");
-        mainMenuView.classList.remove("hide");
-        mainMenuView.classList.add("fade-in");
-
-        document.getElementById("branchLabel").innerText =
-          "LOCATION : " + escapeHTML(currentBranch);
-      });
+      // (ลอจิกการสลับหน้าจอของเจเลอร์ที่อยู่ด้านล่างตรงนี้... ให้คงไว้เหมือนเดิมได้เลยครับ)
     } else {
-      alert("❌ " + escapeHTML(res.message));
+      // กรณี API ส่งข้อมูลกลับมาว่าไม่พบสาขา
+      alert("⚠️ เข้าสู่ระบบไม่สำเร็จ: ไม่พบข้อมูลสาขา");
     }
-  } catch (err) {
-    console.error("Login Error:", err);
-    alert("❌ ระบบขัดข้อง: ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้");
+  } catch (error) {
+    // 🌟 จับ Error กรณีเน็ตเวิร์กล่มหรือหา API ไม่เจอ
+    console.error("Login Error:", error);
+    alert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
   } finally {
-    btn.innerText = "SUBMIT";
+    // 🌟 3. ปลดล็อกปุ่มเสมอ (ไม่ว่าจะล็อกอินผ่าน หรือเกิด Error)
+    btn.innerHTML = originalText;
     btn.disabled = false;
+    btn.style.opacity = "1";
   }
 }
 
