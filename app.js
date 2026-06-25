@@ -260,7 +260,6 @@ async function submitLogin() {
 
   if (!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
 
-  // 1. เก็บข้อความปุ่มและเริ่มสถานะ LOADING
   const originalText = btn.innerHTML;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> LOADING...';
   btn.disabled = true;
@@ -277,14 +276,28 @@ async function submitLogin() {
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
 
+      // 🌟 1. คืนชีพ Branch Label ที่หายไป (นำรหัสสาขาไปแสดงใต้ MAIN MENU)
+      const branchLabel = document.getElementById("branchLabel");
+      if (branchLabel) {
+        branchLabel.innerText = "สาขา: " + code;
+      }
+
       const sharedHeader = document.getElementById("sharedHeader");
       const loginView = document.getElementById("loginView");
       const mainMenuView = document.getElementById("mainMenuView");
 
-      // 🌟 2. ลอจิกสลับหน้าจอที่หายไป (พอดึงข้อมูลเสร็จ ให้ซ่อนหน้าล็อกอิน โชว์หน้าเมนู)
+      // สลับหน้าจอ
       if (loginView) loginView.classList.add("hide");
       if (mainMenuView) mainMenuView.classList.remove("hide");
       if (sharedHeader) sharedHeader.classList.remove("hide");
+
+      // 🌟 2. กระตุ้นอนิเมชั่นโลโก้
+      const mainLogo = document.getElementById("mainLogoContainer");
+      if (mainLogo) {
+        mainLogo.classList.remove("logo-fade-pulse");
+        void mainLogo.offsetWidth; // บังคับรีเซ็ตอนิเมชั่น
+        mainLogo.classList.add("logo-fade-pulse");
+      }
     } else {
       alert("⚠️ เข้าสู่ระบบไม่สำเร็จ: ไม่พบข้อมูลสาขา");
     }
@@ -292,7 +305,6 @@ async function submitLogin() {
     console.error("Login Error:", error);
     alert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
   } finally {
-    // 3. ปลดล็อกปุ่มคืนค่าเดิมเสมอ
     btn.innerHTML = originalText;
     btn.disabled = false;
     btn.style.opacity = "1";

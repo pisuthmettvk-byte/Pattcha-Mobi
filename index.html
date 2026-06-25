@@ -73,9 +73,19 @@
         <button id="btnSubmitLogin" class="login-btn">SUBMIT</button>
       </div>
     </div>
-
     <div id="mainMenuView" class="view-screen hide">
-      <div id="mainMenuTitleGroup">
+      <div
+        id="mainLogoContainer"
+        class="logo-container"
+        style="text-align: center; margin-top: 40px"
+      >
+        <img src="pattcha-logo.png" alt="Pattcha Logo" style="width: 140px" />
+      </div>
+
+      <div
+        id="mainMenuTitleGroup"
+        style="margin-top: 25px; margin-bottom: 30px"
+      >
         <div
           style="
             display: flex;
@@ -105,6 +115,7 @@
             font-size: 11px;
             margin-top: 8px;
             font-weight: bold;
+            text-align: center;
           "
         ></p>
       </div>
@@ -117,8 +128,24 @@
           display: flex;
           flex-direction: column;
           gap: 10px;
+          margin: 0 auto;
         "
       >
+        ``` --- ### 3. Documentation & Verification * **System Integration:**
+        เชื่อมรอยต่อโครงสร้าง UI เข้ากับ JavaScript อย่างสมบูรณ์ โดย `app.js`
+        จะสามารถค้นหา `mainLogoContainer` เพื่อยิงอนิเมชั่น และค้นหา
+        `branchLabel` เพื่อใส่รหัสสาขาได้อย่างแม่นยำ * **Preservation:**
+        โค้ดส่วนไอคอนซ้อน (Layered Icons V2) และการตั้งค่าสี (Green/Red/Yellow)
+        ที่เจเลอร์ทำไว้ในปุ่ม `btnMenuMovement` จะไม่ถูกแตะต้องและปลอดภัย 100%
+        **✅ Quality Control (Completion Checklist):** * [x] ตรวจสอบ
+        `id="mainLogoContainer"` ถูกต้องตรงกับ `app.js` * [x] ตรวจสอบ
+        `id="branchLabel"` ถูกต้องตรงกับ `app.js` * [x] โครงสร้าง Flexbox
+        กลับมาเรียงตัวสวยงามตรงกลางหน้าจอ เจเลอร์วางโค้ดชุดนี้แล้วกด Save
+        ได้เลยครับ! ลองล็อกอินดูอีกครั้ง โลโก้จะเด้งลอยขึ้นมา และรหัสสาขา KKN02
+        จะปรากฏอยู่ใต้คำว่า MAIN MENU อย่างสวยงามครับ หากผลลัพธ์หน้าจอหลักกลับมา
+        100% แล้ว เราพร้อมเปิดไฟล์ `main-menu.js` เพื่อลุยทำลอจิกกดปุ่ม PRODUCT
+        MOVEMENT ให้สไลด์เข้าหน้าย่อย (Transfer In/Out) ตามแผนงานหลักทันทีครับ!
+        🫡 >
         <button id="btnMenuStock" class="menu-card">
           <div class="menu-icon"><i class="fas fa-warehouse"></i></div>
           <div class="menu-text">STOCK IN HOUSE</div>
