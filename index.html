@@ -220,257 +220,291 @@
       </div>
     </div>
 
-    <div id="productMovementView" class="view-screen hide">
+    <div
+      id="productMovementView"
+      class="view-screen hide"
+      style="
+        background-color: #f9fafb;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      "
+    >
       <div
         style="
-          display: flex;
-          align-items: center;
-          padding: 15px 20px;
-          background: white;
-          border-bottom: 2px solid #f0f0f0;
-          position: sticky;
-          top: 0;
+          width: 100%;
+          background: linear-gradient(
+            135deg,
+            #db8591 0%,
+            #e7a08c 50%,
+            #fab919 100%
+          );
+          flex-shrink: 0;
+          box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4);
+          padding: 20px;
           z-index: 10;
+        "
+      >
+        <h3
+          style="
+            color: #ffffff;
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 2px;
+          "
+        >
+          PRODUCT MOVEMENT
+        </h3>
+      </div>
+
+      <div
+        style="
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+          padding: 20px 0;
+        "
+      >
+        <div
+          class="menu-container"
+          style="
+            width: 85%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+          "
+        >
+          <button
+            id="btnTransferIn"
+            class="menu-card anim-pop-out"
+            style="
+              padding: 18px 20px;
+              background: white;
+              border: 1px solid #e0e0e0;
+              border-left: 6px solid #e7a08c;
+              border-radius: 12px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 15px">
+              <i
+                class="fas fa-box-open"
+                style="
+                  font-size: 22px;
+                  color: #e7a08c;
+                  width: 30px;
+                  text-align: center;
+                "
+              ></i>
+              <div style="text-align: left">
+                <h3
+                  style="
+                    margin: 0;
+                    font-size: 15px;
+                    color: #333;
+                    font-weight: bold;
+                  "
+                >
+                  Transfer In
+                </h3>
+                <span style="font-size: 12px; color: #888"
+                  >รับสินค้าเข้าสาขา</span
+                >
+              </div>
+            </div>
+            <i
+              class="fas fa-chevron-right"
+              style="color: #ddd; font-size: 14px"
+            ></i>
+          </button>
+
+          <button
+            id="btnTransferOut"
+            class="menu-card anim-pop-out"
+            style="
+              animation-delay: 0.1s;
+              padding: 18px 20px;
+              background: white;
+              border: 1px solid #e0e0e0;
+              border-left: 6px solid #db8591;
+              border-radius: 12px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 15px">
+              <i
+                class="fas fa-truck-loading"
+                style="
+                  font-size: 22px;
+                  color: #db8591;
+                  width: 30px;
+                  text-align: center;
+                "
+              ></i>
+              <div style="text-align: left">
+                <h3
+                  style="
+                    margin: 0;
+                    font-size: 15px;
+                    color: #333;
+                    font-weight: bold;
+                  "
+                >
+                  Transfer Out
+                </h3>
+                <span style="font-size: 12px; color: #888"
+                  >ส่งสินค้าออกจากสาขา</span
+                >
+              </div>
+            </div>
+            <i
+              class="fas fa-chevron-right"
+              style="color: #ddd; font-size: 14px"
+            ></i>
+          </button>
+
+          <button
+            id="btnHold"
+            class="menu-card anim-pop-out"
+            style="
+              animation-delay: 0.2s;
+              padding: 18px 20px;
+              background: white;
+              border: 1px solid #e0e0e0;
+              border-left: 6px solid #f3c623;
+              border-radius: 12px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 15px">
+              <i
+                class="fas fa-pause-circle"
+                style="
+                  font-size: 22px;
+                  color: #f3c623;
+                  width: 30px;
+                  text-align: center;
+                "
+              ></i>
+              <div style="text-align: left">
+                <h3
+                  style="
+                    margin: 0;
+                    font-size: 15px;
+                    color: #333;
+                    font-weight: bold;
+                  "
+                >
+                  Hold
+                </h3>
+                <span style="font-size: 12px; color: #888"
+                  >พักสินค้า / จองสินค้า</span
+                >
+              </div>
+            </div>
+            <i
+              class="fas fa-chevron-right"
+              style="color: #ddd; font-size: 14px"
+            ></i>
+          </button>
+
+          <button
+            id="btnDefective"
+            class="menu-card anim-pop-out"
+            style="
+              animation-delay: 0.3s;
+              padding: 18px 20px;
+              background: white;
+              border: 1px solid #e0e0e0;
+              border-left: 6px solid #ff6b6b;
+              border-radius: 12px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <div style="display: flex; align-items: center; gap: 15px">
+              <i
+                class="fas fa-exclamation-triangle"
+                style="
+                  font-size: 22px;
+                  color: #ff6b6b;
+                  width: 30px;
+                  text-align: center;
+                "
+              ></i>
+              <div style="text-align: left">
+                <h3
+                  style="
+                    margin: 0;
+                    font-size: 15px;
+                    color: #333;
+                    font-weight: bold;
+                  "
+                >
+                  Defective
+                </h3>
+                <span style="font-size: 12px; color: #888"
+                  >สินค้ามีตำหนิ / ส่งซ่อม</span
+                >
+              </div>
+            </div>
+            <i
+              class="fas fa-chevron-right"
+              style="color: #ddd; font-size: 14px"
+            ></i>
+          </button>
+        </div>
+      </div>
+
+      <div
+        style="
+          width: 100%;
+          padding: 20px;
+          display: flex;
+          justify-content: center;
+          background: transparent;
+          padding-bottom: 40px;
         "
       >
         <button
           id="btnBackToMain"
           style="
-            background: transparent;
-            border: none;
+            background: white;
+            border: 2px solid #db8591;
             color: #db8591;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
+            padding: 12px 30px;
+            border-radius: 25px;
+            box-shadow: 0 4px 10px rgba(219, 133, 145, 0.2);
             display: flex;
             align-items: center;
-            gap: 5px;
-            padding: 5px 0;
+            gap: 8px;
           "
         >
-          <i class="fas fa-chevron-left"></i> BACK
-        </button>
-        <h2
-          style="
-            flex-grow: 1;
-            text-align: center;
-            color: #db8591;
-            margin: 0;
-            font-size: 15px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            padding-right: 20px;
-          "
-        >
-          PRODUCT MOVEMENT
-        </h2>
-      </div>
-
-      <div
-        class="menu-container"
-        style="
-          width: 85%;
-          max-width: 400px;
-          margin: 25px auto;
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-          padding-bottom: 30px;
-        "
-      >
-        <button
-          id="btnTransferIn"
-          class="menu-card anim-pop-out"
-          style="
-            padding: 18px 20px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-left: 6px solid #e7a08c;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 15px">
-            <i
-              class="fas fa-box-open"
-              style="
-                font-size: 22px;
-                color: #e7a08c;
-                width: 30px;
-                text-align: center;
-              "
-            ></i>
-            <div style="text-align: left">
-              <h3
-                style="
-                  margin: 0;
-                  font-size: 15px;
-                  color: #333;
-                  font-weight: bold;
-                "
-              >
-                Transfer In
-              </h3>
-              <span style="font-size: 12px; color: #888"
-                >รับสินค้าเข้าสาขา</span
-              >
-            </div>
-          </div>
-          <i
-            class="fas fa-chevron-right"
-            style="color: #ddd; font-size: 14px"
-          ></i>
-        </button>
-
-        <button
-          id="btnTransferOut"
-          class="menu-card anim-pop-out"
-          style="
-            animation-delay: 0.1s;
-            padding: 18px 20px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-left: 6px solid #db8591;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 15px">
-            <i
-              class="fas fa-truck-loading"
-              style="
-                font-size: 22px;
-                color: #db8591;
-                width: 30px;
-                text-align: center;
-              "
-            ></i>
-            <div style="text-align: left">
-              <h3
-                style="
-                  margin: 0;
-                  font-size: 15px;
-                  color: #333;
-                  font-weight: bold;
-                "
-              >
-                Transfer Out
-              </h3>
-              <span style="font-size: 12px; color: #888"
-                >ส่งสินค้าออกจากสาขา</span
-              >
-            </div>
-          </div>
-          <i
-            class="fas fa-chevron-right"
-            style="color: #ddd; font-size: 14px"
-          ></i>
-        </button>
-
-        <button
-          id="btnHold"
-          class="menu-card anim-pop-out"
-          style="
-            animation-delay: 0.2s;
-            padding: 18px 20px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-left: 6px solid #f3c623;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 15px">
-            <i
-              class="fas fa-pause-circle"
-              style="
-                font-size: 22px;
-                color: #f3c623;
-                width: 30px;
-                text-align: center;
-              "
-            ></i>
-            <div style="text-align: left">
-              <h3
-                style="
-                  margin: 0;
-                  font-size: 15px;
-                  color: #333;
-                  font-weight: bold;
-                "
-              >
-                Hold
-              </h3>
-              <span style="font-size: 12px; color: #888"
-                >พักสินค้า / จองสินค้า</span
-              >
-            </div>
-          </div>
-          <i
-            class="fas fa-chevron-right"
-            style="color: #ddd; font-size: 14px"
-          ></i>
-        </button>
-
-        <button
-          id="btnDefective"
-          class="menu-card anim-pop-out"
-          style="
-            animation-delay: 0.3s;
-            padding: 18px 20px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-left: 6px solid #ff6b6b;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          "
-        >
-          <div style="display: flex; align-items: center; gap: 15px">
-            <i
-              class="fas fa-exclamation-triangle"
-              style="
-                font-size: 22px;
-                color: #ff6b6b;
-                width: 30px;
-                text-align: center;
-              "
-            ></i>
-            <div style="text-align: left">
-              <h3
-                style="
-                  margin: 0;
-                  font-size: 15px;
-                  color: #333;
-                  font-weight: bold;
-                "
-              >
-                Defective
-              </h3>
-              <span style="font-size: 12px; color: #888"
-                >สินค้ามีตำหนิ / ส่งซ่อม</span
-              >
-            </div>
-          </div>
-          <i
-            class="fas fa-chevron-right"
-            style="color: #ddd; font-size: 14px"
-          ></i>
+          <i class="fas fa-chevron-left"></i> BACK TO MAIN
         </button>
       </div>
     </div>
