@@ -276,28 +276,18 @@ async function submitLogin() {
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
 
-      // 🌟 1. คืนชีพ Branch Label ที่หายไป (นำรหัสสาขาไปแสดงใต้ MAIN MENU)
+      // 🌟 คืนชื่อสาขาแบบดั้งเดิม
       const branchLabel = document.getElementById("branchLabel");
-      if (branchLabel) {
-        branchLabel.innerText = "สาขา: " + code;
-      }
+      if (branchLabel) branchLabel.innerText = "สาขา: " + code;
 
       const sharedHeader = document.getElementById("sharedHeader");
       const loginView = document.getElementById("loginView");
       const mainMenuView = document.getElementById("mainMenuView");
 
-      // สลับหน้าจอ
+      // 🌟 การสลับหน้าจอดั้งเดิมที่สมบูรณ์แบบ (เมื่อถอด hide โลโก้จะขยับเองตามธรรมชาติ)
       if (loginView) loginView.classList.add("hide");
       if (mainMenuView) mainMenuView.classList.remove("hide");
       if (sharedHeader) sharedHeader.classList.remove("hide");
-
-      // 🌟 2. กระตุ้นอนิเมชั่นโลโก้
-      const mainLogo = document.getElementById("mainLogoContainer");
-      if (mainLogo) {
-        mainLogo.classList.remove("logo-fade-pulse");
-        void mainLogo.offsetWidth; // บังคับรีเซ็ตอนิเมชั่น
-        mainLogo.classList.add("logo-fade-pulse");
-      }
     } else {
       alert("⚠️ เข้าสู่ระบบไม่สำเร็จ: ไม่พบข้อมูลสาขา");
     }
