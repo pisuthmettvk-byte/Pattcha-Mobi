@@ -33,7 +33,6 @@
       src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
       defer
     ></script>
-
     <style>
       #scannerView {
         display: none;
@@ -128,7 +127,6 @@
         <button id="btnMenuMovement" class="menu-card">
           <div class="menu-icon"><i class="fas fa-exchange-alt"></i></div>
           <div class="menu-text">PRODUCT MOVEMENT</div>
-
           <div class="movement-icons-group">
             <span id="iconIn" class="layered-icon icon-green hide">
               <i class="fas fa-warehouse base-icon"></i>
@@ -137,7 +135,6 @@
                 style="transform: scaleX(-1); right: -2px; bottom: -2px"
               ></i>
             </span>
-
             <span id="iconOut" class="layered-icon icon-red hide">
               <i class="fas fa-warehouse base-icon"></i>
               <i
@@ -145,7 +142,6 @@
                 style="right: -6px; bottom: -2px"
               ></i>
             </span>
-
             <span id="iconPending" class="layered-icon icon-yellow hide">
               <i class="fas fa-sync-alt base-icon" style="font-size: 30px"></i>
               <i
@@ -160,7 +156,6 @@
               ></i>
             </span>
           </div>
-
           <div class="menu-arrow">❯</div>
         </button>
 
@@ -205,9 +200,7 @@
           <div class="menu-arrow" style="color: white">❯</div>
         </button>
 
-
         <div style="margin-top: 25px; text-align: center">
-
           <button
             id="btnLogout"
             style="
@@ -223,80 +216,264 @@
           >
             LOGOUT SYSTEM
           </button>
-
         </div>
       </div>
     </div>
 
-        <div id="productMovementView" class="view-screen hide">
+    <div id="productMovementView" class="view-screen hide">
       <div
         style="
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          margin-top: 30px;
-          padding: 0 20px;
+          padding: 15px 20px;
+          background: white;
+          border-bottom: 2px solid #f0f0f0;
+          position: sticky;
+          top: 0;
+          z-index: 10;
         "
       >
         <button
           id="btnBackToMain"
           style="
-            background: none;
+            background: transparent;
             border: none;
             color: #db8591;
             font-weight: bold;
             font-size: 14px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 0;
           "
         >
-          ❮ BACK
+          <i class="fas fa-chevron-left"></i> BACK
         </button>
         <h2
           style="
+            flex-grow: 1;
+            text-align: center;
             color: #db8591;
             margin: 0;
             font-size: 15px;
             font-weight: bold;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
+            padding-right: 20px;
           "
         >
           PRODUCT MOVEMENT
         </h2>
-        <div style="width: 50px"></div>
-      </div>
-
-      <div style="text-align: center; margin-top: 15px; margin-bottom: 30px">
-        <div
-          style="height: 1px; width: 85%; background: #e7a08c; margin: 0 auto"
-        ></div>
       </div>
 
       <div
         class="menu-container"
         style="
           width: 85%;
-          max-width: 340px;
+          max-width: 400px;
+          margin: 25px auto;
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          margin: 0 auto;
-          text-align: center;
-          color: #888;
+          gap: 15px;
+          padding-bottom: 30px;
         "
       >
-        <p
+        <button
+          id="btnTransferIn"
           class="menu-card anim-pop-out"
           style="
-            justify-content: center;
-            border: 2px dashed #e7a08c;
-            background: transparent;
-            box-shadow: none;
+            padding: 18px 20px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-left: 6px solid #e7a08c;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
           "
         >
-          <i class="fas fa-tools"></i> พื้นที่รองรับปุ่มรับ-ส่งของ
-        </p>
+          <div style="display: flex; align-items: center; gap: 15px">
+            <i
+              class="fas fa-box-open"
+              style="
+                font-size: 22px;
+                color: #e7a08c;
+                width: 30px;
+                text-align: center;
+              "
+            ></i>
+            <div style="text-align: left">
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 15px;
+                  color: #333;
+                  font-weight: bold;
+                "
+              >
+                Transfer In
+              </h3>
+              <span style="font-size: 12px; color: #888"
+                >รับสินค้าเข้าสาขา</span
+              >
+            </div>
+          </div>
+          <i
+            class="fas fa-chevron-right"
+            style="color: #ddd; font-size: 14px"
+          ></i>
+        </button>
+
+        <button
+          id="btnTransferOut"
+          class="menu-card anim-pop-out"
+          style="
+            animation-delay: 0.1s;
+            padding: 18px 20px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-left: 6px solid #db8591;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 15px">
+            <i
+              class="fas fa-truck-loading"
+              style="
+                font-size: 22px;
+                color: #db8591;
+                width: 30px;
+                text-align: center;
+              "
+            ></i>
+            <div style="text-align: left">
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 15px;
+                  color: #333;
+                  font-weight: bold;
+                "
+              >
+                Transfer Out
+              </h3>
+              <span style="font-size: 12px; color: #888"
+                >ส่งสินค้าออกจากสาขา</span
+              >
+            </div>
+          </div>
+          <i
+            class="fas fa-chevron-right"
+            style="color: #ddd; font-size: 14px"
+          ></i>
+        </button>
+
+        <button
+          id="btnHold"
+          class="menu-card anim-pop-out"
+          style="
+            animation-delay: 0.2s;
+            padding: 18px 20px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-left: 6px solid #f3c623;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 15px">
+            <i
+              class="fas fa-pause-circle"
+              style="
+                font-size: 22px;
+                color: #f3c623;
+                width: 30px;
+                text-align: center;
+              "
+            ></i>
+            <div style="text-align: left">
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 15px;
+                  color: #333;
+                  font-weight: bold;
+                "
+              >
+                Hold
+              </h3>
+              <span style="font-size: 12px; color: #888"
+                >พักสินค้า / จองสินค้า</span
+              >
+            </div>
+          </div>
+          <i
+            class="fas fa-chevron-right"
+            style="color: #ddd; font-size: 14px"
+          ></i>
+        </button>
+
+        <button
+          id="btnDefective"
+          class="menu-card anim-pop-out"
+          style="
+            animation-delay: 0.3s;
+            padding: 18px 20px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-left: 6px solid #ff6b6b;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 15px">
+            <i
+              class="fas fa-exclamation-triangle"
+              style="
+                font-size: 22px;
+                color: #ff6b6b;
+                width: 30px;
+                text-align: center;
+              "
+            ></i>
+            <div style="text-align: left">
+              <h3
+                style="
+                  margin: 0;
+                  font-size: 15px;
+                  color: #333;
+                  font-weight: bold;
+                "
+              >
+                Defective
+              </h3>
+              <span style="font-size: 12px; color: #888"
+                >สินค้ามีตำหนิ / ส่งซ่อม</span
+              >
+            </div>
+          </div>
+          <i
+            class="fas fa-chevron-right"
+            style="color: #ddd; font-size: 14px"
+          ></i>
+        </button>
       </div>
-        </div>
+    </div>
 
     <div
       id="stockInHouseView"
@@ -409,6 +586,7 @@
           </div>
         </div>
       </div>
+
       <div
         id="stockScrollArea"
         style="flex: 1; overflow-y: auto; width: 100%; padding-bottom: 20px"
@@ -502,7 +680,6 @@
             background: #000;
           "
         ></div>
-
         <div
           id="scannerOverlayControls"
           style="
@@ -531,7 +708,6 @@
             <i class="fas fa-qrcode" id="scanModeIcon"></i>
             <span id="scanModeText">QR CODE</span>
           </button>
-
           <button
             id="btnToggleFlash"
             style="
@@ -568,7 +744,6 @@
           "
         />
       </div>
-
       <div class="detail-content-section">
         <div class="barcode-box">
           <svg
@@ -576,7 +751,6 @@
             style="max-height: 45px; max-width: 100%"
           ></svg>
         </div>
-
         <div class="product-header-row">
           <div class="product-info-left">
             <div id="detailCategory" class="lbl-category"></div>
@@ -587,7 +761,6 @@
             <div id="detailPrice" class="lbl-price"></div>
           </div>
         </div>
-
         <div class="section-title">
           <i class="fas fa-box-open"></i> INVENTORY STATUS
         </div>
@@ -595,14 +768,12 @@
           <div class="stat-card main-card" style="position: relative">
             <div class="stat-lbl">Available Stock</div>
             <div class="stat-val">
-              <i class="fas fa-check-circle"></i>
-              <span id="detailAvail">0</span>
+              <i class="fas fa-check-circle"></i><span id="detailAvail">0</span>
             </div>
             <div id="btnCrossBranch" class="btn-cross-branch hide">
               <i class="fas fa-store-alt"></i>
             </div>
           </div>
-
           <div class="stat-card">
             <div class="stat-lbl">Current Stock</div>
             <div class="stat-val val-current" id="detailCurrent">0</div>
@@ -611,7 +782,6 @@
             <div class="stat-lbl">Hold Qty</div>
             <div class="stat-val val-hold" id="detailHold">0</div>
           </div>
-
           <div class="stat-card">
             <div class="stat-lbl">Defective Qty</div>
             <div class="stat-val val-defect" id="detailDefect">0</div>
@@ -653,10 +823,8 @@
       src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"
       defer
     ></script>
-
     <script src="app.js" defer></script>
     <script src="scanner.js" defer></script>
     <script src="main-menu.js" defer></script>
-    
   </body>
 </html>
