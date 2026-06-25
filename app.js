@@ -260,10 +260,8 @@ async function submitLogin() {
 
   if (!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
 
-  // 🌟 1. เก็บข้อความเดิมของปุ่มไว้ก่อน (เพื่อเอาไว้คืนค่า)
+  // 1. เก็บข้อความปุ่มและเริ่มสถานะ LOADING
   const originalText = btn.innerHTML;
-
-  // 🌟 2. เริ่มสถานะ LOADING (ล็อกปุ่ม + ไอคอนหมุน)
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> LOADING...';
   btn.disabled = true;
   btn.style.opacity = "0.7";
@@ -283,17 +281,18 @@ async function submitLogin() {
       const loginView = document.getElementById("loginView");
       const mainMenuView = document.getElementById("mainMenuView");
 
-      // (ลอจิกการสลับหน้าจอของเจเลอร์ที่อยู่ด้านล่างตรงนี้... ให้คงไว้เหมือนเดิมได้เลยครับ)
+      // 🌟 2. ลอจิกสลับหน้าจอที่หายไป (พอดึงข้อมูลเสร็จ ให้ซ่อนหน้าล็อกอิน โชว์หน้าเมนู)
+      if (loginView) loginView.classList.add("hide");
+      if (mainMenuView) mainMenuView.classList.remove("hide");
+      if (sharedHeader) sharedHeader.classList.remove("hide");
     } else {
-      // กรณี API ส่งข้อมูลกลับมาว่าไม่พบสาขา
       alert("⚠️ เข้าสู่ระบบไม่สำเร็จ: ไม่พบข้อมูลสาขา");
     }
   } catch (error) {
-    // 🌟 จับ Error กรณีเน็ตเวิร์กล่มหรือหา API ไม่เจอ
     console.error("Login Error:", error);
     alert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
   } finally {
-    // 🌟 3. ปลดล็อกปุ่มเสมอ (ไม่ว่าจะล็อกอินผ่าน หรือเกิด Error)
+    // 3. ปลดล็อกปุ่มคืนค่าเดิมเสมอ
     btn.innerHTML = originalText;
     btn.disabled = false;
     btn.style.opacity = "1";
