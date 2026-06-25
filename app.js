@@ -252,6 +252,10 @@ function initEventListeners() {
   if (btnCloseMod) btnCloseMod.addEventListener("click", closeProductDetail);
 }
 
+// ==========================================
+// MAIN FUNCTIONALITIES
+// ==========================================
+
 async function submitLogin() {
   const inputLogin = document.getElementById("branchCodeInput");
   if (!inputLogin) return;
@@ -260,10 +264,8 @@ async function submitLogin() {
 
   if (!code) return alert("⚠️ กรุณากรอกรหัสสาขาครับ");
 
-  const originalText = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> LOADING...';
+  btn.innerText = "⏳ LOADING...";
   btn.disabled = true;
-  btn.style.opacity = "0.7";
 
   try {
     const response = await fetch(
@@ -276,28 +278,37 @@ async function submitLogin() {
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
 
-      // 🌟 คืนชื่อสาขาแบบดั้งเดิม
-      const branchLabel = document.getElementById("branchLabel");
-      if (branchLabel) branchLabel.innerText = "สาขา: " + code;
-
       const sharedHeader = document.getElementById("sharedHeader");
       const loginView = document.getElementById("loginView");
       const mainMenuView = document.getElementById("mainMenuView");
 
-      // 🌟 การสลับหน้าจอดั้งเดิมที่สมบูรณ์แบบ (เมื่อถอด hide โลโก้จะขยับเองตามธรรมชาติ)
-      if (loginView) loginView.classList.add("hide");
-      if (mainMenuView) mainMenuView.classList.remove("hide");
-      if (sharedHeader) sharedHeader.classList.remove("hide");
+      loginView.classList.add("fade-out");
+
+      if (sharedHeader) {
+        sharedHeader.classList.remove("header-center");
+        sharedHeader.classList.add("header-top");
+      }
+
+      loginView.addEventListener("transitionend", function onEnd(e) {
+        if (e.propertyName !== "opacity") return;
+        loginView.removeEventListener("transitionend", onEnd);
+
+        loginView.classList.add("hide");
+        mainMenuView.classList.remove("hide");
+        mainMenuView.classList.add("fade-in");
+
+        document.getElementById("branchLabel").innerText =
+          "LOCATION : " + escapeHTML(currentBranch);
+      });
     } else {
-      alert("⚠️ เข้าสู่ระบบไม่สำเร็จ: ไม่พบข้อมูลสาขา");
+      alert("❌ " + escapeHTML(res.message));
     }
-  } catch (error) {
-    console.error("Login Error:", error);
-    alert("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
+  } catch (err) {
+    console.error("Login Error:", err);
+    alert("❌ ระบบขัดข้อง: ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้");
   } finally {
-    btn.innerHTML = originalText;
+    btn.innerText = "SUBMIT";
     btn.disabled = false;
-    btn.style.opacity = "1";
   }
 }
 

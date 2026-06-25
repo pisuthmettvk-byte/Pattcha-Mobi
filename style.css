@@ -181,14 +181,14 @@ body {
 }
 .menu-text {
   flex-grow: 1;
-  color: #2a2828;
+  color: #333333;
   font-size: 14px;
   font-weight: bold;
   text-align: left;
 }
 .menu-arrow {
   color: #fab919;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: bold;
   margin-left: 8%;
 }

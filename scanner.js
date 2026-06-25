@@ -214,4 +214,3 @@ function mockReceiveSignal(hasPendingDelivery, qty = 0) {
 // 🛠️ วิธีทดสอบ: เจเลอร์สามารถเปิด F12 (Console) แล้วพิมพ์คำสั่งนี้เพื่อทดสอบ:
 // mockReceiveSignal(true, 3);  <-- รถโผล่มาพร้อมเลข 3
 // mockReceiveSignal(false);    <-- รถหายไป
-
