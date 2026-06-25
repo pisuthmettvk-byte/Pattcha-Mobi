@@ -820,3 +820,53 @@ body {
 .icon-yellow {
   color: #fbc02d;
 } /* Pending */
+
+/* ==========================================
+   MODULE: HERO TRANSITION ANIMATION
+========================================== */
+
+/* 1. ปุ่มที่ไม่เกี่ยวข้อง (หดตัวและจางหาย) */
+.anim-shrink-fade {
+  animation: shrinkFade 0.4s ease-in forwards;
+}
+@keyframes shrinkFade {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* 2. ปุ่ม Product Movement (ลอยขึ้นไปแปลงร่างเป็น Header) */
+.anim-move-up {
+  animation: moveUpToHeader 0.4s ease-in-out forwards;
+}
+@keyframes moveUpToHeader {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-150px);
+    opacity: 0;
+  }
+}
+
+/* 3. ปุ่มเมนูย่อย Transfer In/Out (เด้งกระจายตัวออกมาตอนเปิดหน้า) */
+.anim-pop-out {
+  opacity: 0;
+  animation: popOutExpand 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popOutExpand {
+  0% {
+    transform: scale(0.5) translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
