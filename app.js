@@ -169,12 +169,6 @@ function initEventListeners() {
   const btnStock = document.getElementById("btnMenuStock");
   if (btnStock) btnStock.addEventListener("click", openStockInHouse);
 
-  const btnMovement = document.getElementById("btnMenuMovement");
-  if (btnMovement)
-    btnMovement.addEventListener("click", () =>
-      alert("PRODUCT MOVEMENT: Transfer In/Out, Hold, Defective (กำลังพัฒนา)"),
-    );
-
   const btnTake = document.getElementById("btnMenuTake");
   if (btnTake)
     btnTake.addEventListener("click", () => alert("STOCK TAKE - กำลังพัฒนา"));
