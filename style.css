@@ -182,7 +182,7 @@ body {
 .menu-text {
   flex-grow: 1;
   color: #413b3b;
-  font-size: 13px;
+  font-size: large;
   font-weight: bold;
   text-align: left;
 }
