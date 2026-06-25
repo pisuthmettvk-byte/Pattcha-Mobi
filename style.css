@@ -858,7 +858,7 @@ body {
 /* 3. ปุ่มเมนูย่อย Transfer In/Out (เด้งกระจายตัวออกมาตอนเปิดหน้า) */
 .anim-pop-out {
   opacity: 0;
-  animation: popOutExpand 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: popOutExpand 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 @keyframes popOutExpand {
   0% {
