@@ -765,281 +765,46 @@
       </div>
     </div>
 
-    <div
-      id="transferOutLobbyView"
-      class="view-screen hide"
-      style="
-        background-color: #f5f4f0;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-      "
-    >
-      <div
-        style="
-          width: 100%;
-          background: linear-gradient(
-            135deg,
-            #dc3545 0%,
-            #ff6b6b 50%,
-            #ff8e99 100%
-          );
-          flex-shrink: 0;
-          box-shadow: 0 4px 15px rgba(220, 53, 69, 0.25);
-          padding: 30px 20px;
-          z-index: 10;
-          text-align: center;
-        "
-      >
-        <h3
-          style="
-            color: #ffffff;
-            margin: 0;
-            font-size: 16px;
-            font-weight: bold;
-            letter-spacing: 2px;
-          "
-        >
-          TRANSFER OUT LOBBY
-        </h3>
+
+
+    <div id="transferOutLobbyView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; height: 100vh;"> <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); flex-shrink: 0; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.25); padding: 30px 20px; z-index: 10; text-align: center;">
+        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">TRANSFER OUT LOBBY</h3>
       </div>
 
-      <div
-        style="
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          width: 100%;
-          overflow-y: auto;
-          position: relative;
-        "
-      >
-        <div
-          id="lobbyEmptyContainer"
-          style="
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            position: relative;
-          "
-        >
-          <img
-            src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800"
-            alt="Watermark"
-            style="
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              max-width: 180px;
-              filter: grayscale(100%) brightness(120%) contrast(80%);
-              opacity: 0.05;
-              pointer-events: none;
-            "
-          />
-
-          <button
-            id="btnTransferOutNew"
-            class="menu-card"
-            style="
-              width: 100%;
-              max-width: 300px;
-              height: 140px;
-              background: white;
-              border: 2px dashed #dc3545;
-              border-radius: 16px;
-              box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.1);
-              cursor: pointer;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-              gap: 12px;
-              z-index: 2;
-            "
-          >
-            <div
-              style="
-                position: relative;
-                width: 50px;
-                height: 50px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-              "
-            >
-              <i
-                class="fas fa-box-open"
-                style="font-size: 44px; color: #dc3545"
-              ></i>
-              <i
-                class="fas fa-plus"
-                style="
-                  font-size: 12px;
-                  color: white;
-                  position: absolute;
-                  top: 16px;
-                  font-weight: bold;
-                  background: #dc3545;
-                  border-radius: 50%;
-                  width: 16px;
-                  height: 16px;
-                  display: flex;
-                  justify-content: center;
-                  align-items: center;
-                  border: 2px solid white;
-                "
-              ></i>
+      <div style="flex: 1; display: flex; flex-direction: column; width: 100%; overflow-y: auto; position: relative;">
+        <div id="lobbyEmptyContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; position: relative;">
+          <img src="https://drive.google.com/thumbnail?id=1H7haMB9djDC8J7-C0LiIvTGcuXQIDxf2&sz=w800" alt="Watermark" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 180px; filter: grayscale(100%) brightness(120%) contrast(80%); opacity: 0.05; pointer-events: none;" />
+          <button id="btnTransferOutNew" class="menu-card" style="width: 100%; max-width: 300px; height: 140px; background: white; border: 2px dashed #dc3545; border-radius: 16px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.1); cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; z-index: 2;">
+            <div style="position: relative; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;">
+              <i class="fas fa-box-open" style="font-size: 44px; color: #dc3545;"></i>
+              <i class="fas fa-plus" style="font-size: 12px; color: white; position: absolute; top: 16px; font-weight: bold; background: #dc3545; border-radius: 50%; width: 16px; height: 16px; display: flex; justify-content: center; align-items: center; border: 2px solid white;"></i>
             </div>
-            <span
-              style="
-                font-size: 16px;
-                font-weight: bold;
-                color: #dc3545;
-                letter-spacing: 1px;
-              "
-              >เปิดกล่องลังใหม่</span
-            >
+            <span style="font-size: 16px; font-weight: bold; color: #dc3545; letter-spacing: 1px;">เปิดกล่องลังใหม่</span>
           </button>
         </div>
 
-        <div
-          id="lobbyActiveContainer"
-          class="hide"
-          style="
-            width: 100%;
-            padding: 15px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-          "
-        >
-          <div
-            class="branch-group-card"
-            style="
-              background: white;
-              border-radius: 14px;
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-              overflow: hidden;
-            "
-          >
-            <div
-              style="
-                background: #dc3545;
-                padding: 14px 18px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                color: white;
-              "
-            >
-              <span
-                style="
-                  font-weight: bold;
-                  font-size: 14px;
-                  letter-spacing: 0.5px;
-                "
-              >
-                <i class="fas fa-store-alt" style="margin-right: 6px"></i> B001
-                - สาขาเซ็นทรัลเวิลด์
-              </span>
-              <div style="display: flex; gap: 8px">
-                <button
-                  style="
-                    background: rgba(255, 255, 255, 0.2);
-                    border: none;
-                    color: white;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                  "
-                >
-                  <i class="fas fa-plus" style="font-size: 12px"></i>
-                </button>
-                <button
-                  style="
-                    background: rgba(255, 255, 255, 0.2);
-                    border: none;
-                    color: white;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                  "
-                >
-                  <i class="fas fa-edit" style="font-size: 12px"></i>
-                </button>
-                <button
-                  style="
-                    background: rgba(255, 255, 255, 0.2);
-                    border: none;
-                    color: white;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                  "
-                >
-                  <i class="fas fa-trash-alt" style="font-size: 12px"></i>
-                </button>
+        <div id="lobbyActiveContainer" class="hide" style="width: 100%; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px;">
+          <div class="branch-group-card" style="background: white; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden;">
+            <div style="background: #dc3545; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; color: white;">
+              <span style="font-weight: bold; font-size: 14px; letter-spacing: 0.5px;"><i class="fas fa-store-alt" style="margin-right: 6px;"></i> B001 - สาขาเซ็นทรัลเวิลด์</span>
+              <div style="display: flex; gap: 8px;">
+                <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 6px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 12px;"></i></button>
+                <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 6px; cursor: pointer;"><i class="fas fa-edit" style="font-size: 12px;"></i></button>
+                <button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash-alt" style="font-size: 12px;"></i></button>
               </div>
             </div>
-
-            <div class="shipment-list-area" style="padding: 10px 0">
-              <div
-                class="box-row-item"
-                style="border-bottom: 1px solid #f0f0f0; padding: 12px 18px"
-              >
-                <div
-                  style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    cursor: pointer;
-                  "
-                >
-                  <span style="font-size: 14px; color: #333; font-weight: bold"
-                    ><i
-                      class="fas fa-box"
-                      style="color: #e7a08c; margin-right: 8px"
-                    ></i>
-                    กล่องที่ 1 (BOX-001)</span
-                  >
-                  <span style="font-size: 12px; color: #888"
-                    >รวม 3 ชิ้น
-                    <i
-                      class="fas fa-chevron-down"
-                      style="margin-left: 5px; font-size: 10px"
-                    ></i
-                  ></span>
+            <div class="shipment-list-area" style="padding: 10px 0;">
+              <div class="box-row-item" style="border-bottom: 1px solid #f0f0f0; padding: 12px 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                  <span style="font-size: 14px; color: #333; font-weight: bold;">
+                    <input type="checkbox" style="margin-right: 10px; transform: scale(1.2);"> 
+                    <i class="fas fa-box" style="color: #e7a08c; margin-right: 8px;"></i> กล่องที่ 1 (BOX-001)
+                  </span>
+                  <span style="font-size: 12px; color: #888;">รวม 3 ชิ้น <i class="fas fa-chevron-down" style="margin-left: 5px; font-size: 10px;"></i></span>
                 </div>
-                <div
-                  class="box-items-inside"
-                  style="
-                    margin-top: 10px;
-                    padding: 8px 12px;
-                    background-color: #faf9f6;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    color: #555;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 6px;
-                  "
-                >
-                  <div style="display: flex; justify-content: space-between">
-                    <span>• รองเท้าผ้าใบหนังแกะคู่ใจ (ไซส์ 38)</span>
-                    <span style="font-weight: bold; color: #333">2 ชิ้น</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between">
-                    <span>• กระเป๋าสตางค์มินิมอลสีครีม</span>
-                    <span style="font-weight: bold; color: #333">1 ชิ้น</span>
-                  </div>
+                <div class="box-items-inside" style="margin-top: 10px; padding: 8px 12px; background-color: #faf9f6; border-radius: 8px; font-size: 13px; color: #555; display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; justify-content: space-between;"><span>• รองเท้าผ้าใบหนังแกะคู่ใจ (ไซส์ 38)</span><span style="font-weight: bold; color: #333;">2 ชิ้น</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span>• กระเป๋าสตางค์มินิมอลสีครีม</span><span style="font-weight: bold; color: #333;">1 ชิ้น</span></div>
                 </div>
               </div>
             </div>
@@ -1047,328 +812,81 @@
         </div>
       </div>
 
-      <div
-        style="
-          width: 100%;
-          padding: 20px;
-          padding-bottom: 40px;
-          background: transparent;
-          box-sizing: border-box;
-          flex-shrink: 0;
-        "
-      >
-        <div
-          id="footerEmptyControl"
-          style="display: flex; justify-content: center; width: 100%"
-        >
-          <button
-            id="btnBackFromLobbyEmpty"
-            style="
-              width: 100%;
-              max-width: 400px;
-              background: linear-gradient(
-                135deg,
-                #dc3545 0%,
-                #ff6b6b 50%,
-                #ff8e99 100%
-              );
-              color: white;
-              border: none;
-              border-radius: 12px;
-              padding: 15px;
-              font-size: 22px;
-              font-weight: bold;
-              box-shadow: 0 6px 15px rgba(220, 53, 69, 0.2);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              cursor: pointer;
-            "
-          >
-            <i class="fas fa-chevron-left"></i> BACK TO MAIN MENU
-          </button>
+      <div style="width: 100%; padding: 20px; padding-bottom: 40px; background: transparent; box-sizing: border-box; flex-shrink: 0;">
+        <div id="footerEmptyControl" style="display: flex; justify-content: center; width: 100%;">
+          <button id="btnBackFromLobbyEmpty" style="width: 100%; max-width: 400px; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); color: white; border: none; border-radius: 12px; padding: 15px; font-size: 22px; font-weight: bold; box-shadow: 0 6px 15px rgba(220, 53, 69, 0.2); display: flex; justify-content: center; align-items: center; cursor: pointer;"><i class="fas fa-chevron-left"></i> BACK TO MAIN MENU</button>
         </div>
-
-        <div
-          id="footerActiveControl"
-          class="hide"
-          style="
-            display: flex;
-            gap: 15px;
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-          "
-        >
-          <button
-            id="btnBackFromLobbyActive"
-            style="
-              flex: 1;
-              background: #6c757d;
-              color: white;
-              border: none;
-              border-radius: 12px;
-              padding: 15px;
-              font-size: 16px;
-              font-weight: bold;
-              cursor: pointer;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              gap: 8px;
-            "
-          >
-            <i class="fas fa-chevron-left"></i> BACK
-          </button>
-          <button
-            id="btnAddNewFromLobbyActive"
-            style="
-              flex: 1;
-              background: #dc3545;
-              color: white;
-              border: none;
-              border-radius: 12px;
-              padding: 15px;
-              font-size: 16px;
-              font-weight: bold;
-              cursor: pointer;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              gap: 8px;
-              box-shadow: 0 4px 10px rgba(220, 53, 69, 0.15);
-            "
-          >
-            <i class="fas fa-plus"></i> NEW BRANCH
-          </button>
+        <div id="footerActiveControl" class="hide" style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; margin: 0 auto;">
+          <button id="btnExportShipment" style="width: 100%; background: #007bff; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,123,255,0.2);">ส่งออก (EXPORT) <i class="fas fa-paper-plane" style="margin-left: 5px;"></i></button>
+          <div style="display: flex; gap: 15px; width: 100%;">
+            <button id="btnBackFromLobbyActive" style="flex: 1; background: #6c757d; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;"><i class="fas fa-chevron-left"></i> BACK</button>
+            <button id="btnAddNewFromLobbyActive" style="flex: 1; background: #dc3545; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(220, 53, 69, 0.15);"><i class="fas fa-plus"></i> NEW BRANCH</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div
-      id="transferOutStaffView"
-      class="view-screen hide"
-      style="
-        background-color: #f5f4f0;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-      "
-    >
-      <div
-        style="
-          width: 100%;
-          background: linear-gradient(
-            135deg,
-            #db8591 0%,
-            #e7a08c 50%,
-            #fab919 100%
-          );
-          padding: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        "
-      >
-        <button
-          id="btnBackFromStaff"
-          style="
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 8px 15px;
-            border-radius: 20px;
-          "
-        >
-          <i class="fas fa-chevron-left"></i> BACK
-        </button>
-        <h3
-          style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold"
-        >
-          STAFF VERIFICATION
-        </h3>
-        <div style="width: 70px"></div>
-      </div>
 
-      <div
-        style="
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          padding: 20px;
-        "
-      >
-        <div
-          class="menu-card"
-          style="
-            width: 100%;
-            max-width: 350px;
-            background: white;
-            padding: 30px 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            text-align: center;
-          "
-        >
-          <i
-            class="fas fa-id-badge"
-            style="font-size: 40px; color: #db8591; margin-bottom: 20px"
-          ></i>
-          <h3 style="margin: 0 0 15px 0; color: #333">กรอกรหัสพนักงาน</h3>
-          <input
-            type="password"
-            id="inputStaffId"
-            placeholder="Staff ID"
-            style="
-              width: 100%;
-              padding: 15px;
-              border-radius: 8px;
-              border: 1px solid #ddd;
-              font-size: 16px;
-              text-align: center;
-              margin-bottom: 20px;
-              box-sizing: border-box;
-            "
-          />
-          <button
-            id="btnSubmitStaff"
-            style="
-              width: 100%;
-              background: #28a745;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              padding: 15px;
-              font-size: 16px;
-              font-weight: bold;
-              cursor: pointer;
-            "
-          >
-            NEXT <i class="fas fa-arrow-right"></i>
-          </button>
-        </div>
+    <div id="transferOutStaffView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; justify-content: space-between; height: 100vh;"> <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); padding: 30px 20px; text-align: center; flex-shrink: 0;">
+        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">STAFF VERIFICATION</h3>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px;">
+        <i class="fas fa-id-badge" style="font-size: 48px; color: #dc3545; margin-bottom: 15px;"></i>
+        <label style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px;">กรอกรหัสประจำตัวพนักงาน</label>
+        <input type="password" id="inputStaffId" placeholder="ENTER STAFF ID" style="width: 100%; max-width: 320px; padding: 16px; border-radius: 12px; border: 1px solid #ddd; font-size: 18px; text-align: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+      </div>
+      <div style="padding: 20px; padding-bottom: 40px; display: flex; gap: 15px; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box;">
+        <button id="btnBackFromStaff" style="flex: 1; background: #6c757d; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer;">CANCEL</button>
+        <button id="btnSubmitStaff" style="flex: 1; background: #28a745; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer;">NEXT</button>
       </div>
     </div>
 
-    <div
-      id="transferOutDestView"
-      class="view-screen hide"
-      style="
-        background-color: #f5f4f0;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-      "
-    >
-      <div
-        style="
-          width: 100%;
-          background: linear-gradient(
-            135deg,
-            #db8591 0%,
-            #e7a08c 50%,
-            #fab919 100%
-          );
-          padding: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        "
-      >
-        <button
-          id="btnBackFromDest"
-          style="
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 8px 15px;
-            border-radius: 20px;
-          "
-        >
-          <i class="fas fa-chevron-left"></i> BACK
-        </button>
-        <h3
-          style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold"
-        >
-          DESTINATION
-        </h3>
-        <div style="width: 70px"></div>
-      </div>
 
-      <div
-        style="
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          padding: 20px;
-        "
-      >
-        <div
-          class="menu-card"
-          style="
-            width: 100%;
-            max-width: 350px;
-            background: white;
-            padding: 30px 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            text-align: center;
-          "
-        >
-          <i
-            class="fas fa-store-alt"
-            style="font-size: 40px; color: #db8591; margin-bottom: 20px"
-          ></i>
-          <h3 style="margin: 0 0 15px 0; color: #333">เลือกสาขาปลายทาง</h3>
-          <select
-            id="selectDestination"
-            style="
-              width: 100%;
-              padding: 15px;
-              border-radius: 8px;
-              border: 1px solid #ddd;
-              font-size: 16px;
-              text-align: center;
-              margin-bottom: 20px;
-              box-sizing: border-box;
-              appearance: none;
-              background: #f9f9f9;
-            "
-          >
-            <option value="" disabled selected>-- เลือกสาขา --</option>
-            <option value="B001">สาขาเซ็นทรัลเวิลด์</option>
-            <option value="B002">สาขาสยามพารากอน</option>
-            <option value="B003">สาขาไอคอนสยาม</option>
-          </select>
-          <button
-            id="btnSubmitDest"
-            style="
-              width: 100%;
-              background: #007bff;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              padding: 15px;
-              font-size: 16px;
-              font-weight: bold;
-              cursor: pointer;
-            "
-          >
-            CONFIRM & OPEN BOX <i class="fas fa-box-open"></i>
-          </button>
-        </div>
+    <div id="transferOutDestView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; justify-content: space-between; height: 100vh;"> <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); padding: 30px 20px; text-align: center; flex-shrink: 0;">
+        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SELECT DESTINATION</h3>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px;">
+        <i class="fas fa-store-alt" style="font-size: 48px; color: #dc3545; margin-bottom: 15px;"></i>
+        <label style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px;">เลือกสาขาหรือสถานที่ปลายทาง</label>
+        <select id="selectDestination" style="width: 100%; max-width: 320px; padding: 16px; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; background: white; text-align-last: center;">
+          <option value="" disabled selected>-- SELECT BRANCH --</option>
+          <option value="B001">สาขาเซ็นทรัลเวิลด์</option>
+          <option value="B002">สาขาสยามพารากอน</option>
+          <option value="B003">สาขาไอคอนสยาม</option>
+        </select>
+      </div>
+      <div style="padding: 20px; padding-bottom: 40px; display: flex; gap: 15px; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box;">
+        <button id="btnBackFromDest" style="flex: 1; background: #6c757d; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer;">BACK</button>
+        <button id="btnSubmitDest" style="flex: 1; background: #28a745; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer;">NEXT</button>
       </div>
     </div>
+
+
+    <div id="transferOutTypeView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; justify-content: space-between; height: 100vh;"> <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); padding: 30px 20px; text-align: center; flex-shrink: 0;">
+        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">TRANSFER REASON</h3>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px;">
+        <i class="fas fa-shipping-fast" style="font-size: 48px; color: #dc3545; margin-bottom: 15px;"></i>
+        <label style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px;">ระบุวัตถุประสงค์ในการส่งออก</label>
+        <select id="selectTransferType" style="width: 100%; max-width: 320px; padding: 16px; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; background: white; text-align-last: center;">
+          <option value="" disabled selected>-- SELECT REASON --</option>
+          <option value="TR">ส่งข้ามระหว่างสาขาปกติทั่วไป</option>
+          <option value="DF">ส่งสินค้าชำรุดกลับคลัง (Defective)</option>
+          <option value="RB">ส่งตามใบสั่งปรับสมดุลคลัง (Rebalancing)</option>
+          <option value="DC">ส่งคืนสินค้าหมดรุ่น (Discontinue)</option>
+        </select>
+      </div>
+      <div style="padding: 20px; padding-bottom: 40px; display: flex; gap: 15px; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box;">
+        <button id="btnBackFromType" style="flex: 1; background: #6c757d; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer;">BACK</button>
+        <button id="btnSubmitType" style="flex: 1; background: #007bff; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,123,255,0.2);">OPEN BOX <i class="fas fa-box-open"></i></button>
+      </div>
+    </div>
+
+
+
+
+
+
 
     <div
       id="stockInHouseView"
