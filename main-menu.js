@@ -78,127 +78,90 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/* =========================================================
-   [ ระบบนำทาง TRANSFER OUT : FINAL MOBILE UI ]
-   ========================================================= */
-
-// 1. ประกาศตัวแปรหน้าจอ
+// 1. ประกาศตัวแปรหน้าจอ 
 const viewProductMovement = document.getElementById('productMovementView');
 const viewTaskHub = document.getElementById('transferOutTaskHubView');
-const viewStaff = document.getElementById('transferOutStaffView');
 const viewDest = document.getElementById('transferOutDestView');
-const viewType = document.getElementById('transferOutTypeView');
 const viewLobby = document.getElementById('transferOutLobbyView');
 
-// 2. ฟังก์ชันโชว์แจ้งเตือนของเราเอง (Custom Modal)
-function showCustomAlert(title, message, isSuccess = false) {
-    const modal = document.getElementById('customAlertModal');
-    const header = document.getElementById('modalAlertHeader');
-    const icon = document.getElementById('modalAlertIcon');
-    
-    document.getElementById('modalAlertTitle').innerText = title;
-    document.getElementById('modalAlertMessage').innerHTML = message; // ใช้ innerHTML เพื่อรองรับการขึ้นบรรทัดใหม่
-    
-    if (isSuccess) {
-        header.style.background = '#28a745'; // สีเขียว
-        icon.className = 'fas fa-check-circle';
-    } else {
-        header.style.background = '#dc3545'; // สีแดง
-        icon.className = 'fas fa-exclamation-circle';
-    }
-    
-    modal.classList.remove('hide');
-}
-
-// ผูกปุ่มปิด Modal
-document.getElementById('btnModalAlertOk').addEventListener('click', () => {
-    document.getElementById('customAlertModal').classList.add('hide');
-});
-
-// 3. ฟังก์ชันสลับหน้าจอ
+// 2. ฟังก์ชันช่วยสลับหน้าจอ
 function navigationTo(hideView, showView) {
     if (hideView) hideView.classList.add('hide');
     if (showView) showView.classList.remove('hide');
 }
 
-// --- ⏩ โฟลว์ขาเดินหน้า ---
+// จำลองฐานข้อมูลสาขาที่เปิดค้างไว้ (สำหรับด่าน 2 เช็กบ้านซ้ำ)
+const activePendingBranches = ['B001']; 
+
+// ฟังก์ชันเปิดเข้าบ้าน Lobby สาขา และเซ็ตหัวข้อ Dynamic
+function enterLobby(branchFullName) {
+    document.getElementById('lobbyBranchHeaderName').innerText = branchFullName;
+    navigationTo(viewDest, viewLobby);
+    
+    // รีเซ็ตปุ่มกดยืนยัน Modal ให้กลับเป็นค่าเริ่มต้น
+    document.getElementById('btnModalAlertOk').onclick = () => {
+        document.getElementById('customAlertModal').classList.add('hide');
+    };
+}
+
+// --- ⏩ โฟลว์ขาเดินหน้า (Forward Flow) ---
+
+// หน้าแรกสุด -> ด่าน 1 (Task Hub)
 document.getElementById('btnTransferOut').addEventListener('click', () => {
     navigationTo(viewProductMovement, viewTaskHub);
 });
 
+// ด่าน 1 -> ด่าน 2 (สร้างงานใหม่/เลือกสาขา)
 document.getElementById('btnCreateNewTask').addEventListener('click', () => {
-    navigationTo(viewTaskHub, viewStaff);
+    document.getElementById('selectDestination').selectedIndex = 0;
+    navigationTo(viewTaskHub, viewDest);
 });
 
-document.getElementById('btnSubmitStaff').addEventListener('click', () => {
-    if (document.getElementById('inputStaffId').value.trim() === "") {
-        showCustomAlert("ข้อมูลไม่ครบถ้วน", "กรุณากรอกรหัสประจำตัวพนักงานก่อนไปขั้นตอนถัดไปครับ");
-        return;
-    }
-    navigationTo(viewStaff, viewDest);
-});
-
+// ด่าน 2 -> ด่าน 3 (ตรวจความซ้ำซ้อน -> เข้าบ้าน Lobby สาขา)
 document.getElementById('btnSubmitDest').addEventListener('click', () => {
-    if (!document.getElementById('selectDestination').value) {
-        showCustomAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาหรือสถานที่ปลายทางก่อนครับ");
+    const destDropdown = document.getElementById('selectDestination');
+    const selectedBranchValue = destDropdown.value;
+    
+    if (!selectedBranchValue) {
+        showCustomAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
         return;
     }
-    navigationTo(viewDest, viewType);
+    
+    // เช็กเงื่อนไขถ้าเปิดบ้านค้างไว้แล้ว
+    if (activePendingBranches.includes(selectedBranchValue)) {
+        showCustomAlert(
+            "สาขานี้เปิดใช้งานอยู่แล้ว", 
+            "พบว่ามีการสร้างงานของสาขานี้ค้างไว้ ต้องการเข้าไปยังหน้าจัดการสาขาเลยหรือไม่?"
+        );
+        
+        // ถ้ากด OK บน Custom Modal ให้ทะลุเข้าบ้านเก่าทันที
+        document.getElementById('btnModalAlertOk').onclick = () => {
+            document.getElementById('customAlertModal').classList.add('hide');
+            enterLobby(destDropdown.options[destDropdown.selectedIndex].text);
+        };
+    } else {
+        // ถ้าเป็นสาขาใหม่ เข้าบ้านได้เลย
+        enterLobby(destDropdown.options[destDropdown.selectedIndex].text);
+    }
 });
 
-document.getElementById("btnSubmitType").addEventListener("click", () => {
-  const selectedType = document.getElementById("selectTransferType").value;
-  const selectedBranch = document.getElementById("selectDestination").value;
+// --- ⏪ โฟลว์ขากดย้อนกลับ (Backward Flow) ---
 
-  if (!selectedType) {
-    showCustomAlert(
-      "ข้อมูลไม่ครบถ้วน",
-      "กรุณาระบุวัตถุประสงค์ในการจัดส่งก่อนครับ",
-    );
-    return;
-  }
-
-  const generatedShipmentId = `SM-${selectedType}-${selectedBranch.split(" - ")[0]}-260626-01`;
-
-  showCustomAlert(
-    "สร้างรายการสำเร็จ",
-    `ระบบได้เริ่มดำเนินการแล้ว<br><br><strong style="font-size: 18px; color: #333;">${generatedShipmentId}</strong><br><br>กรุณากดตกลงเพื่อเข้าสู่หน้าจัดการกล่อง`,
-    true,
-  );
-
-  document.getElementById("displayShipmentId").innerText = generatedShipmentId;
-
-  // 🌟 ข้อ 5: เคลียร์ค่าข้อมูลอินพุตของทั้ง 3 ด่านออกให้เกลี้ยงหลังการใช้งาน
-  document.getElementById("inputStaffId").value = "";
-  document.getElementById("selectDestination").selectedIndex = 0;
-  document.getElementById("selectTransferType").selectedIndex = 0;
-
-  navigationTo(viewType, viewLobby);
-});
-
-// การกดปุ่ม + (FAB) เพื่อสร้างกล่อง
-document.getElementById('btnCreateBoxFab').addEventListener('click', () => {
-    // โค้ดสำหรับวิ่งเข้าหน้าสแกนเนอร์ (Screen 5) จะอยู่ตรงนี้
-    console.log("พุ่งเข้าหน้าสแกนของลงกล่อง!");
-});
-
-
-// --- ⏪ โฟลว์ขากดย้อนกลับ ---
-document.getElementById('btnBackFromTaskHub').addEventListener('click', () => {
-    navigationTo(viewTaskHub, viewProductMovement);
-});
-document.getElementById('btnBackFromStaff').addEventListener('click', () => {
-    navigationTo(viewStaff, viewTaskHub);
-});
+// จากด่าน 2 (เลือกสาขา) กดยกเลิก -> ถอยกลับด่าน 1 (Task Hub)
 document.getElementById('btnBackFromDest').addEventListener('click', () => {
-    navigationTo(viewDest, viewStaff);
+    navigationTo(viewDest, viewTaskHub);
 });
-document.getElementById('btnBackFromType').addEventListener('click', () => {
-    navigationTo(viewType, viewDest);
+
+// จากด่าน 3 (Lobby สาขา) กดยกเลิก -> ถอยกลับด่าน 1 (Task Hub)
+document.getElementById('btnCancelFromLobby').addEventListener('click', () => {
+    navigationTo(viewLobby, viewTaskHub);
 });
-document.getElementById('btnBackFromLobbyActive').addEventListener('click', () => {
-    navigationTo(viewLobby, viewTaskHub); // กลับไปหน้าศูนย์รวมงาน
+
+// ปุ่มรถบรรทุก + สำหรับกดสร้างชิปเมนต์ใหม่ในด่านถัดไป
+document.getElementById('btnAddShipmentTruck').addEventListener('click', () => {
+    console.log("เตรียมวิ่งเข้าหน้าระบุ Reason เพื่อสร้างหัวคอลัมน์ชิปเมนต์");
 });
+
 
 
 // =========================================================
