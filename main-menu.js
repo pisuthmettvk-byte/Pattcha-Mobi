@@ -146,26 +146,34 @@ document.getElementById('btnSubmitDest').addEventListener('click', () => {
     navigationTo(viewDest, viewType);
 });
 
-document.getElementById('btnSubmitType').addEventListener('click', () => {
-    const selectedType = document.getElementById('selectTransferType').value;
-    const selectedBranch = document.getElementById('selectDestination').value;
-    
-    if (!selectedType) {
-        showCustomAlert("ข้อมูลไม่ครบถ้วน", "กรุณาระบุวัตถุประสงค์ในการจัดส่งก่อนครับ");
-        return;
-    }
-    
-    // สร้างเลข Shipment ชั่วคราว
-    const generatedShipmentId = `SM-${selectedType}-${selectedBranch.split(' - ')[0]}-260626-01`;
-    
-    // โชว์ Alert Success
-    showCustomAlert("สร้างรายการสำเร็จ", `ระบบได้เริ่มดำเนินการแล้ว<br><br><strong style="font-size: 18px; color: #333;">${generatedShipmentId}</strong><br><br>กรุณากดตกลงเพื่อเข้าสู่หน้าจัดการกล่อง`, true);
-    
-    // อัปเดตเลขโชว์ที่หน้า Lobby
-    document.getElementById('displayShipmentId').innerText = generatedShipmentId;
-    
-    // สลับไปหน้า Action Lobby
-    navigationTo(viewType, viewLobby);
+document.getElementById("btnSubmitType").addEventListener("click", () => {
+  const selectedType = document.getElementById("selectTransferType").value;
+  const selectedBranch = document.getElementById("selectDestination").value;
+
+  if (!selectedType) {
+    showCustomAlert(
+      "ข้อมูลไม่ครบถ้วน",
+      "กรุณาระบุวัตถุประสงค์ในการจัดส่งก่อนครับ",
+    );
+    return;
+  }
+
+  const generatedShipmentId = `SM-${selectedType}-${selectedBranch.split(" - ")[0]}-260626-01`;
+
+  showCustomAlert(
+    "สร้างรายการสำเร็จ",
+    `ระบบได้เริ่มดำเนินการแล้ว<br><br><strong style="font-size: 18px; color: #333;">${generatedShipmentId}</strong><br><br>กรุณากดตกลงเพื่อเข้าสู่หน้าจัดการกล่อง`,
+    true,
+  );
+
+  document.getElementById("displayShipmentId").innerText = generatedShipmentId;
+
+  // 🌟 ข้อ 5: เคลียร์ค่าข้อมูลอินพุตของทั้ง 3 ด่านออกให้เกลี้ยงหลังการใช้งาน
+  document.getElementById("inputStaffId").value = "";
+  document.getElementById("selectDestination").selectedIndex = 0;
+  document.getElementById("selectTransferType").selectedIndex = 0;
+
+  navigationTo(viewType, viewLobby);
 });
 
 // การกดปุ่ม + (FAB) เพื่อสร้างกล่อง

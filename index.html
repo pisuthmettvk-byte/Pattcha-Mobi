@@ -764,61 +764,59 @@
       </div>
           </div>
                 <div id="transferOutTaskHubView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; height: 100vh;">
-                        
-                        <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); flex-shrink: 0; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.25); padding: 30px 20px; text-align: center;">
-                          <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">TRANSFER TASKS</h3>
-                        </div>
+                  
+                  <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); flex-shrink: 0; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.25); padding: 30px 20px; text-align: center;">
+                    <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">TRANSFER TASKS</h3>
+                  </div>
 
-                        <div style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0; width: 100%;">
-                          
-                          <div style="width: 100%;">
-                            <div style="padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; font-size: 13px; font-weight: bold; color: #666; letter-spacing: 0.5px;">
-                              <i class="fas fa-hourglass-half" style="color: #dc3545; margin-right: 5px;"></i> PENDING TASKS
-                            </div>
+                  <div style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0; width: 100%; background: #fff;">
+                    
+                    <div style="width: 100%;">
+                      <div style="padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; font-weight: bold; color: #666; letter-spacing: 0.5px;">
+                          <i class="fas fa-hourglass-half" style="color: #dc3545; margin-right: 5px;"></i> PENDING TASKS
+                        </span>
+                        <span style="background: #dc3545; color: white; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 12px;">2 TASKS</span>
+                      </div>
 
-                            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 16px 20px; background: white; border-bottom: 1px solid #eee; border-left: 5px solid #dc3545; cursor: pointer; gap: 10px;">
-                              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 15px; flex: 1;">
-                                <div style="font-size: 14px; font-weight: bold; color: #333; min-width: 80px;">26/06/26</div>
-                                <div style="font-size: 14px; font-weight: 800; color: #dc3545; min-width: 140px; letter-spacing: 0.5px;">REF: RB-WH-260626-01</div>
-                                <div style="background: #fff0f1; color: #dc3545; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">Rebalancing</div>
-                                <div style="font-size: 14px; color: #555;"><i class="fas fa-arrow-right" style="color: #aaa; margin: 0 5px;"></i> B001 - สาขาเซ็นทรัลเวิลด์</div>
-                              </div>
-                              <div style="display: flex; align-items: center; gap: 20px;">
-                                <div style="font-size: 16px; font-weight: 800; color: #333; text-align: right;">15 <span style="font-size: 12px; font-weight: normal; color: #888;">ชิ้น</span></div>
-                                <span style="background: #dc3545; color: white; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px;">ASSIGNED</span>
-                              </div>
-                            </div>
+                      <div style="display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #eee; border-left: 5px solid #dc3545; cursor: pointer; text-align: left;">
+                        <div style="flex-basis: 15%; font-size: 14px; font-weight: bold; color: #333;">26/06/26</div>
+                        <div style="flex-basis: 25%; font-size: 14px; font-weight: 800; color: #dc3545; letter-spacing: 0.5px;">REF: RB-WH-260626-01</div>
+                        <div style="flex-basis: 15%;"><span style="background: #fff0f1; color: #dc3545; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">Rebalancing</span></div>
+                        <div style="flex-basis: 10%; font-size: 15px; font-weight: 800; color: #333;">15 ชิ้น</div>
+                        <div style="flex-basis: 25%; font-size: 14px; color: #555;">B001 - เซ็นทรัลเวิลด์</div>
+                        <div style="flex-basis: 10%; text-align: right;"><span style="background: #dc3545; color: white; font-size: 11px; font-weight: bold; padding: 3px 6px; border-radius: 4px;">ASSIGNED</span></div>
+                      </div>
 
-                            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 16px 20px; background: #fffdf8; border-bottom: 1px solid #eee; border-left: 5px solid #f39c12; cursor: pointer; gap: 10px;">
-                              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 15px; flex: 1;">
-                                <div style="font-size: 14px; font-weight: bold; color: #333; min-width: 80px;">25/06/26</div>
-                                <div style="font-size: 14px; font-weight: 800; color: #f39c12; min-width: 140px; letter-spacing: 0.5px;">REF: SM-DF-B002-250626-01</div>
-                                <div style="background: #fff9eb; color: #f39c12; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">Defective</div>
-                                <div style="font-size: 14px; color: #555;"><i class="fas fa-arrow-right" style="color: #aaa; margin: 0 5px;"></i> คลังสินค้ากลาง</div>
-                              </div>
-                              <div style="display: flex; align-items: center; gap: 20px;">
-                                <div style="font-size: 16px; font-weight: 800; color: #333; text-align: right;">8 <span style="font-size: 12px; font-weight: normal; color: #888;">ชิ้น</span></div>
-                                <span style="background: #f39c12; color: white; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px;">DOING</span>
-                              </div>
-                            </div>
-                          </div>
+                      <div style="display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #eee; border-left: 5px solid #f39c12; cursor: pointer; background: #fffdf8; text-align: left;">
+                        <div style="flex-basis: 15%; font-size: 14px; font-weight: bold; color: #333;">25/06/26</div>
+                        <div style="flex-basis: 25%; font-size: 14px; font-weight: 800; color: #f39c12; letter-spacing: 0.5px;">REF: SM-DF-B002-250626-01</div>
+                        <div style="flex-basis: 15%;"><span style="background: #fff9eb; color: #f39c12; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">Defective</span></div>
+                        <div style="flex-basis: 10%; font-size: 15px; font-weight: 800; color: #333;">8 ชิ้น</div>
+                        <div style="flex-basis: 25%; font-size: 14px; color: #555;">WH01 - คลังสินค้ากลาง</div>
+                        <div style="flex-basis: 10%; text-align: right;"><span style="background: #f39c12; color: white; font-size: 11px; font-weight: bold; padding: 3px 6px; border-radius: 4px;">DOING</span></div>
+                      </div>
+                    </div>
 
-                          <div style="width: 100%;">
-                            <div style="padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; font-size: 13px; font-weight: bold; color: #666; letter-spacing: 0.5px; border-top: 10px solid #f5f4f0;">
-                              <i class="fas fa-check-circle" style="color: #28a745; margin-right: 5px;"></i> COMPLETED TASKS
-                            </div>
-                          </div>
+                    <div style="width: 100%;">
+                      <div style="padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; border-top: 10px solid #f5f4f0;">
+                        <span style="font-size: 13px; font-weight: bold; color: #666; letter-spacing: 0.5px;">
+                          <i class="fas fa-check-circle" style="color: #28a745; margin-right: 5px;"></i> COMPLETED TASKS
+                        </span>
+                        <span style="background: #28a745; color: white; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 12px;">0 TASK</span>
+                      </div>
+                    </div>
 
-                        </div>
+                  </div>
 
-                        <div style="display: flex; width: 100%; box-sizing: border-box; flex-shrink: 0; background: white; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);">
-                          <button id="btnBackFromTaskHub" style="flex: 1; background: #6c757d; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">
-                            <i class="fas fa-chevron-left"></i> BACK
-                          </button>
-                          <button id="btnCreateNewTask" style="flex: 1; background: #dc3545; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">
-                            <i class="fas fa-plus"></i> NEW TASK
-                          </button>
-                        </div>
+                  <div style="display: flex; width: 100%; box-sizing: border-box; flex-shrink: 0; background: white; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); z-index: 10;">
+                    <button id="btnBackFromTaskHub" style="flex: 1; background: #6c757d; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">
+                      <i class="fas fa-chevron-left"></i> BACK
+                    </button>
+                    <button id="btnCreateNewTask" style="flex: 1; background: #dc3545; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">
+                      <i class="fas fa-plus"></i> NEW TASK
+                    </button>
+                  </div>
                 </div>
 
 
@@ -827,7 +825,7 @@
                     <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">STAFF VERIFICATION</h3>
                   </div>
 
-                  <div style="width: 80%; margin: 20px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
+                  <div style="width: 80%; margin: 25px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
                     <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #ddd; z-index: 1; transform: translateY(-50%);"></div>
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: #dc3545; color: white; display: flex; justify-content: center; align-items: center; z-index: 2; box-shadow: 0 2px 5px rgba(220,53,69,0.3); font-size: 14px;"><i class="fas fa-id-badge"></i></div>
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: #e9ecef; color: #adb5bd; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 14px;"><i class="fas fa-store-alt"></i></div>
@@ -853,7 +851,7 @@
                     <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SELECT DESTINATION</h3>
                   </div>
 
-                  <div style="width: 80%; margin: 20px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
+                  <div style="width: 80%; margin: 25px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
                     <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #dc3545; z-index: 1; transform: translateY(-50%);"></div>
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: #f8d7da; color: #dc3545; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 12px;"><i class="fas fa-check"></i></div>
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: #dc3545; color: white; display: flex; justify-content: center; align-items: center; z-index: 2; box-shadow: 0 2px 5px rgba(220,53,69,0.3); font-size: 14px;"><i class="fas fa-store-alt"></i></div>
@@ -885,7 +883,7 @@
                     <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">TRANSFER REASON</h3>
                   </div>
 
-                  <div style="width: 80%; margin: 20px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
+                  <div style="width: 80%; margin: 25px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
                     <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #dc3545; z-index: 1; transform: translateY(-50%);"></div>
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: #f8d7da; color: #dc3545; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 12px;"><i class="fas fa-check"></i></div>
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: #f8d7da; color: #dc3545; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 12px;"><i class="fas fa-check"></i></div>
