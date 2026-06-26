@@ -191,3 +191,53 @@ document.getElementById('btnBackFromType').addEventListener('click', () => {
 document.getElementById('btnBackFromLobbyActive').addEventListener('click', () => {
     navigationTo(viewLobby, viewTaskHub); // กลับไปหน้าศูนย์รวมงาน
 });
+
+
+// =========================================================
+// 🌟 [CONTROL STATE LOGIC] ปุ่ม EXPORT ล็อกสีตามสถานะติ๊กกล่อง
+// =========================================================
+
+const mainShipmentCheckbox = document.getElementById('selectAllBoxesInShipment');
+const childBoxCheckboxes = document.querySelectorAll('.box-select-checkbox');
+const exportBtn = document.getElementById('btnExportShipment');
+
+// ฟังก์ชันสำหรับคำนวณและอัปเดตสี/สถานะของปุ่มส่งออก
+function updateExportButtonState() {
+    // นับจำนวนกล่องลูกที่ถูกติ๊กเลือกอยู่ ณ ปัจจุบัน
+    const checkedCount = document.querySelectorAll('.box-select-checkbox:checked').length;
+    
+    if (checkedCount > 0) {
+        // หากมีกล่องถูกเลือกอย่างน้อย 1 กล่อง ➔ เปิดระบบปุ่ม เปลี่ยนเป็นสีน้ำเงินตามแบรนด์
+        exportBtn.disabled = false;
+        exportBtn.style.background = '#007bff';
+        exportBtn.style.color = '#ffffff';
+        exportBtn.style.cursor = 'pointer';
+    } else {
+        // หากไม่มีการเลือกเลย ➔ ปิดระบบ ล็อกสีเทา
+        exportBtn.disabled = true;
+        exportBtn.style.background = '#cccccc';
+        exportBtn.style.color = '#666666';
+        exportBtn.style.cursor = 'not-allowed';
+    }
+}
+
+// 1. ลอจิกเมื่อกด Checkbox ตัวแม่ที่แถบหัวข้อชิปเมนต์ (ติ๊กเลือกทั้งหมด / ล้างทั้งหมด)
+mainShipmentCheckbox.addEventListener('change', function() {
+    const isChecked = this.checked;
+    childBoxCheckboxes.forEach(cb => {
+        cb.checked = isChecked;
+    });
+    updateExportButtonState();
+});
+
+// 2. ลอจิกเมื่อพนักงานกดติ๊กเลือกกล่องลูกรายตัว
+childBoxCheckboxes.forEach(cb => {
+    cb.addEventListener('change', function() {
+        // ถ้ากล่องลูกถูกติ๊กไม่ครบทุกอัน ให้ถอนติ๊กตัวแม่ชั่วคราว
+        const totalCount = childBoxCheckboxes.length;
+        const checkedCount = document.querySelectorAll('.box-select-checkbox:checked').length;
+        
+        mainShipmentCheckbox.checked = (totalCount === checkedCount);
+        updateExportButtonState();
+    });
+});
