@@ -78,13 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// /* =========================================================
-[ ระบบนำทาง TRANSFER OUT : 7-TIER (แก้ไขบั๊ก UAT แล้ว 100%) ]
-========================================================= */
-const viewProductMovement = document.getElementById('productMovementView');
-const viewTaskHub = document.getElementById('transferOutTaskHubView');
-const viewDest = document.getElementById('transferOutDestView');
-const viewLobby = document.getElementById('transferOutLobbyView');
+        // =========================================================
+        // [ ระบบนำทาง TRANSFER OUT : 7-TIER (แก้ไขบั๊ก UAT แล้ว 100%) ]
+        // =========================================================        const viewProductMovement = document.getElementById('productMovementView');
+        const viewTaskHub = document.getElementById('transferOutTaskHubView');
+        const viewDest = document.getElementById('transferOutDestView');
+        const viewLobby = document.getElementById('transferOutLobbyView');
 
 // 🌟 เพิ่มความสมูทในการเปลี่ยนหน้า (Fade in/out เล็กน้อย)
 function navigationTo(hideView, showView) {
