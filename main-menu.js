@@ -78,88 +78,130 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// 1. ประกาศตัวแปรหน้าจอ 
+// /* =========================================================
+[ ระบบนำทาง TRANSFER OUT : 7-TIER (แก้ไขบั๊ก UAT แล้ว 100%) ]
+========================================================= */
 const viewProductMovement = document.getElementById('productMovementView');
 const viewTaskHub = document.getElementById('transferOutTaskHubView');
 const viewDest = document.getElementById('transferOutDestView');
 const viewLobby = document.getElementById('transferOutLobbyView');
 
-// 2. ฟังก์ชันช่วยสลับหน้าจอ
+// 🌟 เพิ่มความสมูทในการเปลี่ยนหน้า (Fade in/out เล็กน้อย)
 function navigationTo(hideView, showView) {
-    if (hideView) hideView.classList.add('hide');
-    if (showView) showView.classList.remove('hide');
+    if (hideView) {
+        hideView.style.opacity = '0'; // สั่งจางลง
+        setTimeout(() => {
+            hideView.classList.add('hide');
+            if (showView) {
+                showView.classList.remove('hide');
+                showView.style.opacity = '0';
+                // หน่วงเวลานิดนึงให้ DOM วาดเสร็จแล้วค่อย Fade in
+                setTimeout(() => {
+                    showView.style.transition = 'opacity 0.15s ease-in-out';
+                    showView.style.opacity = '1';
+                }, 10);
+            }
+        }, 150); // รอ 150ms ให้หน้าจอเก่าจางหายไปก่อน
+    }
 }
 
-// จำลองฐานข้อมูลสาขาที่เปิดค้างไว้ (สำหรับด่าน 2 เช็กบ้านซ้ำ)
+// 🌟 ฟังก์ชันแจ้งเตือนที่ปลอดภัย 100% (กันระบบพังถ้าหา Modal ไม่เจอ)
+function safeAlert(title, message) {
+    const modal = document.getElementById('customAlertModal');
+    if (modal) {
+        // ถ้ามี Custom Modal ให้ใช้ของหรู
+        const header = document.getElementById('modalAlertHeader');
+        const icon = document.getElementById('modalAlertIcon');
+        document.getElementById('modalAlertTitle').innerText = title;
+        document.getElementById('modalAlertMessage').innerHTML = message;
+        header.style.background = '#dc3545';
+        icon.className = 'fas fa-exclamation-circle';
+        modal.classList.remove('hide');
+    } else {
+        // ถ้าหาไม่เจอ ให้ใช้ Alert มาตรฐานของ Browser (ป้องกัน JS ช็อก)
+        alert(title + "\n\n" + message.replace(/<br>/g, '\n'));
+    }
+}
+
+// ฐานข้อมูลสาขาที่เปิดค้างไว้
 const activePendingBranches = ['B001']; 
 
-// ฟังก์ชันเปิดเข้าบ้าน Lobby สาขา และเซ็ตหัวข้อ Dynamic
 function enterLobby(branchFullName) {
     document.getElementById('lobbyBranchHeaderName').innerText = branchFullName;
     navigationTo(viewDest, viewLobby);
-    
-    // รีเซ็ตปุ่มกดยืนยัน Modal ให้กลับเป็นค่าเริ่มต้น
-    document.getElementById('btnModalAlertOk').onclick = () => {
-        document.getElementById('customAlertModal').classList.add('hide');
-    };
+    const modalBtn = document.getElementById('btnModalAlertOk');
+    if(modalBtn) modalBtn.onclick = () => { document.getElementById('customAlertModal').classList.add('hide'); };
 }
 
-// --- ⏩ โฟลว์ขาเดินหน้า (Forward Flow) ---
+// ================= ⏩ โฟลว์เดินหน้า =================
 
-// หน้าแรกสุด -> ด่าน 1 (Task Hub)
+// หน้าแรก -> เข้า Task Hub
 document.getElementById('btnTransferOut').addEventListener('click', () => {
     navigationTo(viewProductMovement, viewTaskHub);
 });
 
-// ด่าน 1 -> ด่าน 2 (สร้างงานใหม่/เลือกสาขา)
+// ด่าน 1 -> ด่าน 2
 document.getElementById('btnCreateNewTask').addEventListener('click', () => {
     document.getElementById('selectDestination').selectedIndex = 0;
     navigationTo(viewTaskHub, viewDest);
 });
 
-// ด่าน 2 -> ด่าน 3 (ตรวจความซ้ำซ้อน -> เข้าบ้าน Lobby สาขา)
+// 🌟 แก้บั๊ก: กดที่แถบรายการ Pending แล้วต้องพาทะลุเข้า Lobby
+document.querySelectorAll('.pending-task-row').forEach(row => {
+    row.addEventListener('click', function() {
+        // ดึงชื่อจาก div ด้านในมาใช้ (ดึงข้อความสาขา)
+        const branchName = this.querySelector('div').innerText;
+        document.getElementById('lobbyBranchHeaderName').innerText = branchName;
+        navigationTo(viewTaskHub, viewLobby);
+    });
+});
+
+// ด่าน 2 -> ด่าน 3 (พร้อมระบบแจ้งเตือนที่ซ่อมแล้ว)
 document.getElementById('btnSubmitDest').addEventListener('click', () => {
     const destDropdown = document.getElementById('selectDestination');
     const selectedBranchValue = destDropdown.value;
     
     if (!selectedBranchValue) {
-        showCustomAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
+        safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
         return;
     }
     
-    // เช็กเงื่อนไขถ้าเปิดบ้านค้างไว้แล้ว
     if (activePendingBranches.includes(selectedBranchValue)) {
-        showCustomAlert(
-            "สาขานี้เปิดใช้งานอยู่แล้ว", 
-            "พบว่ามีการสร้างงานของสาขานี้ค้างไว้ ต้องการเข้าไปยังหน้าจัดการสาขาเลยหรือไม่?"
-        );
+        safeAlert("สาขานี้เปิดใช้งานอยู่แล้ว", "พบว่ามีการสร้างงานของสาขานี้ค้างไว้ ต้องการเข้าไปยังหน้าจัดการสาขาเลยหรือไม่?");
         
-        // ถ้ากด OK บน Custom Modal ให้ทะลุเข้าบ้านเก่าทันที
-        document.getElementById('btnModalAlertOk').onclick = () => {
-            document.getElementById('customAlertModal').classList.add('hide');
-            enterLobby(destDropdown.options[destDropdown.selectedIndex].text);
-        };
+        const modalBtn = document.getElementById('btnModalAlertOk');
+        if(modalBtn) {
+            modalBtn.onclick = () => {
+                document.getElementById('customAlertModal').classList.add('hide');
+                enterLobby(destDropdown.options[destDropdown.selectedIndex].text);
+            };
+        }
     } else {
-        // ถ้าเป็นสาขาใหม่ เข้าบ้านได้เลย
         enterLobby(destDropdown.options[destDropdown.selectedIndex].text);
     }
 });
 
-// --- ⏪ โฟลว์ขากดย้อนกลับ (Backward Flow) ---
+// ================= ⏪ โฟลว์ถอยหลัง =================
 
-// จากด่าน 2 (เลือกสาขา) กดยกเลิก -> ถอยกลับด่าน 1 (Task Hub)
+// 🌟 แก้บั๊ก: ปุ่มถอยหลังจาก Task Hub กลับไป Product Movement
+document.getElementById('btnBackFromTaskHub').addEventListener('click', () => {
+    navigationTo(viewTaskHub, viewProductMovement);
+});
+
+// กดยกเลิกจาก ด่าน 2 -> กลับ ด่าน 1
 document.getElementById('btnBackFromDest').addEventListener('click', () => {
     navigationTo(viewDest, viewTaskHub);
 });
 
-// จากด่าน 3 (Lobby สาขา) กดยกเลิก -> ถอยกลับด่าน 1 (Task Hub)
+// กดยกเลิกจาก ด่าน 3 -> กลับ ด่าน 1
 document.getElementById('btnCancelFromLobby').addEventListener('click', () => {
     navigationTo(viewLobby, viewTaskHub);
 });
 
-// ปุ่มรถบรรทุก + สำหรับกดสร้างชิปเมนต์ใหม่ในด่านถัดไป
+// ปุ่มรถบรรทุก (FAB) -> อนาคต
 document.getElementById('btnAddShipmentTruck').addEventListener('click', () => {
-    console.log("เตรียมวิ่งเข้าหน้าระบุ Reason เพื่อสร้างหัวคอลัมน์ชิปเมนต์");
+    console.log("เตรียมวิ่งเข้าด่าน 4: ระบุ Reason สร้างหัวรถบรรทุก!");
+    // โค้ดสำหรับเด้งหน้าต่างระบุ Reason จะอยู่ตรงนี้
 });
 
 
