@@ -79,11 +79,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================================================
-   [ ระบบนำทาง TRANSFER OUT (Navigation Logic เต็มรูปแบบ) ]
+  [ ระบบนำทาง TRANSFER OUT : 2-TIER LOBBY (เวอร์ชันอัปเดต Task Hub) ]
    ========================================================= */
 
 // 1. ประกาศตัวแปรอ้างอิงหน้า
 const viewProductMovement = document.getElementById('productMovementView');
+const viewTaskHub = document.getElementById('transferOutTaskHubView'); // 🌟 เพิ่มหน้า Task Hub
 const viewLobby = document.getElementById('transferOutLobbyView');
 const viewStaff = document.getElementById('transferOutStaffView');
 const viewDest = document.getElementById('transferOutDestView');
@@ -96,19 +97,18 @@ function navigationTo(hideView, showView) {
 }
 
 // --- ⏩ โฟลว์ขาเดินหน้า (Forward Flow) ---
+
+// ด่าน 1: เข้า Transfer Out ➔ เจอหน้า Task Hub
 document.getElementById('btnTransferOut').addEventListener('click', () => {
-    navigationTo(viewProductMovement, viewLobby);
+    navigationTo(viewProductMovement, viewTaskHub);
 });
 
-document.getElementById('btnTransferOutNew').addEventListener('click', () => {
-    navigationTo(viewLobby, viewStaff);
+// ด่าน 2: กดสร้างงานใหม่จาก Task Hub ➔ ไปหน้ากรอกพนักงาน
+document.getElementById('btnCreateNewTask').addEventListener('click', () => {
+    navigationTo(viewTaskHub, viewStaff);
 });
 
-// *หมายเหตุ: หากกดจากปุ่ม NEW BRANCH ในโหมดมีงานค้าง ก็ให้ไปหน้า Staff เหมือนกัน
-document.getElementById('btnAddNewFromLobbyActive').addEventListener('click', () => {
-    navigationTo(viewLobby, viewStaff);
-});
-
+// ด่าน 3: กรอกพนักงาน ➔ ไปหน้าเลือกสาขา
 document.getElementById('btnSubmitStaff').addEventListener('click', () => {
     if (document.getElementById('inputStaffId').value.trim() === "") {
         alert("กรุณากรอกรหัสพนักงานก่อนครับ");
@@ -117,6 +117,7 @@ document.getElementById('btnSubmitStaff').addEventListener('click', () => {
     navigationTo(viewStaff, viewDest);
 });
 
+// ด่าน 4: เลือกสาขา ➔ ไปหน้าระบุประเภท
 document.getElementById('btnSubmitDest').addEventListener('click', () => {
     if (!document.getElementById('selectDestination').value) {
         alert("กรุณาเลือกสาขาปลายทางก่อนครับ");
@@ -125,6 +126,7 @@ document.getElementById('btnSubmitDest').addEventListener('click', () => {
     navigationTo(viewDest, viewType);
 });
 
+// ด่าน 5: เลือกประเภท ➔ จำลองเข้าหน้า Lobby จัดการกล่อง
 document.getElementById('btnSubmitType').addEventListener('click', () => {
     const selectedType = document.getElementById('selectTransferType').value;
     const selectedBranch = document.getElementById('selectDestination').value;
@@ -136,33 +138,40 @@ document.getElementById('btnSubmitType').addEventListener('click', () => {
     
     alert(`สร้างรหัส Shipment: SM-${selectedType}-${selectedBranch}-260626-01 สำเร็จ!\n(เตรียมเข้าหน้าสแกนสินค้า)`);
     
-    // ทริกเกอร์เปลี่ยนหน้าโถงกลางให้กลายเป็นโหมดมีงานค้างอัตโนมัติ (เพื่อการทดสอบ)
+    // ทริกเกอร์เปลี่ยนหน้าโถงกล่องให้เป็นโหมด Active 
     document.getElementById('lobbyEmptyContainer').classList.add('hide');
     document.getElementById('footerEmptyControl').classList.add('hide');
     document.getElementById('lobbyActiveContainer').classList.remove('hide');
     document.getElementById('footerActiveControl').classList.remove('hide');
     
+    // สลับจากหน้า Type เข้าหน้า Lobby
     navigationTo(viewType, viewLobby);
 });
 
 // --- ⏪ ระบบปุ่มกดย้อนกลับ (Seamless Backward Flow) ---
-document.getElementById('btnBackFromLobbyEmpty').addEventListener('click', () => {
-    navigationTo(viewLobby, viewProductMovement);
+
+// ปุ่ม BACK จาก Task Hub ➔ ถอยกลับ Main Menu
+document.getElementById('btnBackFromTaskHub').addEventListener('click', () => {
+    navigationTo(viewTaskHub, viewProductMovement);
 });
 
-document.getElementById('btnBackFromLobbyActive').addEventListener('click', () => {
-    navigationTo(viewLobby, viewProductMovement);
-});
-
+// ปุ่ม CANCEL จากหน้า Staff ➔ ถอยกลับ Task Hub
 document.getElementById('btnBackFromStaff').addEventListener('click', () => {
-    navigationTo(viewStaff, viewLobby);
+    navigationTo(viewStaff, viewTaskHub);
 });
 
+// ปุ่ม BACK จากหน้า Dest ➔ ถอยกลับ Staff
 document.getElementById('btnBackFromDest').addEventListener('click', () => {
     navigationTo(viewDest, viewStaff);
 });
 
+// ปุ่ม BACK จากหน้า Type ➔ ถอยกลับ Dest
 document.getElementById('btnBackFromType').addEventListener('click', () => {
     navigationTo(viewType, viewDest);
+});
+
+// ปุ่ม BACK จากโถง Active Lobby ➔ ถอยกลับ Task Hub (เพื่อไปเลือกงานอื่น)
+document.getElementById('btnBackFromLobbyActive').addEventListener('click', () => {
+    navigationTo(viewLobby, viewTaskHub);
 });
 
