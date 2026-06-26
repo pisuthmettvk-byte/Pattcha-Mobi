@@ -818,65 +818,65 @@
                 <!-- =========================================================
                 [ด่าน 2] SELECT DESTINATION (สร้างบ้าน/เลือกสาขา - ใช้ Blueprint เลเอาท์ 3 ด่าน)
                 ========================================================= -->
-                  <div id="transferOutDestView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; justify-content: space-between; height: 100vh;">
-                    
-                    <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); padding: 30px 20px; text-align: center; flex-shrink: 0;">
-                      <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SELECT BRANCH</h3>
-                    </div>
+                <div id="transferOutDestView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; justify-content: space-between; height: 100vh;">
+                      
+                      <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); padding: 30px 20px; text-align: center; flex-shrink: 0;">
+                        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SELECT BRANCH</h3>
+                      </div>
 
-                    <div style="width: 80%; margin: 25px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
-                      <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #dc3545; z-index: 1; transform: translateY(-50%);"></div>
-                      <div style="width: 36px; height: 36px; border-radius: 50%; background: #f8d7da; color: #dc3545; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 12px;"><i class="fas fa-check"></i></div>
-                      <div style="width: 36px; height: 36px; border-radius: 50%; background: #dc3545; color: white; display: flex; justify-content: center; align-items: center; z-index: 2; box-shadow: 0 2px 5px rgba(220,53,69,0.3); font-size: 14px;"><i class="fas fa-store-alt"></i></div>
-                      <div style="width: 36px; height: 36px; border-radius: 50%; background: #e9ecef; color: #adb5bd; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 14px;"><i class="fas fa-shipping-fast"></i></div>
-                    </div>
+                      <div style="width: 80%; margin: 25px auto 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
+                        <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #ddd; z-index: 1; transform: translateY(-50%);"></div>
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #f8d7da; color: #dc3545; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 12px;"><i class="fas fa-check"></i></div>
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #dc3545; color: white; display: flex; justify-content: center; align-items: center; z-index: 2; box-shadow: 0 2px 5px rgba(220,53,69,0.3); font-size: 14px;"><i class="fas fa-store-alt"></i></div>
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #e9ecef; color: #adb5bd; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 14px;"><i class="fas fa-shipping-fast"></i></div>
+                      </div>
 
-                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 30px;">
-                      <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column;">
-                        <label style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 12px; text-align: center; width: 100%;">เลือกสาขาที่ต้องการสร้างงาน</label>
-                        <select id="selectDestination" style="width: 100%; padding: 18px; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; background: #fff; text-align-last: center; box-shadow: inset 0 3px 6px rgba(0,0,0,0.08); outline: none;">
-                          <option value="" disabled selected>-- SELECT BRANCH --</option>
-                          <option value="B001">B001 - สาขาเซ็นทรัลเวิลด์</option>
-                          <option value="B002">B002 - สาขาสยามพารากอน</option>
-                          <option value="B003">B003 - สาขาไอคอนสยาม</option>
-                        </select>
+                      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 30px;">
+                        <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column;">
+                          <label for="selectDestination" style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 12px; text-align: center; width: 100%;">เลือกสาขาที่ต้องการสร้างงาน</label>
+                          <select id="selectDestination" style="width: 100%; padding: 18px; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; background: #fff; text-align-last: center; box-shadow: inset 0 3px 6px rgba(0,0,0,0.08); outline: none;">
+                            <option value="" disabled selected>-- SELECT BRANCH --</option>
+                            <option value="B001">B001 - สาขาเซ็นทรัลเวิลด์</option>
+                            <option value="B002">B002 - สาขาสยามพารากอน</option>
+                            <option value="B003">B003 - สาขาไอคอนสยาม</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div style="display: flex; width: 100%; box-sizing: border-box; flex-shrink: 0; background: white; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);">
+                        <button id="btnBackFromDest" style="flex: 1; background: #6c757d; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">CANCEL</button>
+                        <button id="btnSubmitDest" style="flex: 1; background: #28a745; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">NEXT</button>
                       </div>
                     </div>
 
-                    <div style="display: flex; width: 100%; box-sizing: border-box; flex-shrink: 0; background: white; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);">
-                      <button id="btnBackFromDest" style="flex: 1; background: #6c757d; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">CANCEL</button>
-                      <button id="btnSubmitDest" style="flex: 1; background: #28a745; color: white; border: none; padding: 22px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">NEXT</button>
-                    </div>
-                  </div>
-
-                  <div id="transferOutLobbyView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; height: 100vh; position: relative;">
-                    
-                    <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); flex-shrink: 0; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(220,53,69,0.25);">
-                      <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SHIPMENT LOBBY</h3>
-                      <p id="lobbyBranchHeaderName" style="color: #ffdde0; margin: 5px 0 0 0; font-size: 14px; font-weight: bold;">[B000] - ชื่อสาขา</p>
-                    </div>
-
-                    <div style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; width: 100%; box-sizing: border-box;">
-                      <div style="text-align: center; padding: 40px 20px;">
-                        <i class="fas fa-truck-loading" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
-                        <p style="color: #888; font-weight: bold;">ยังไม่มีข้อมูลการส่งออกในสาขานี้</p>
-                        <p style="color: #aaa; font-size: 14px;">กดปุ่ม + รูปรถบรรทุก เพื่อสร้างรายการ</p>
+                    <div id="transferOutLobbyView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; height: 100vh; position: relative;">
+                      
+                      <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); flex-shrink: 0; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(220,53,69,0.25);">
+                        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SHIPMENT LOBBY</h3>
+                        <p id="lobbyBranchHeaderName" style="color: #ffdde0; margin: 5px 0 0 0; font-size: 14px; font-weight: bold;">[B000] - ชื่อสาขา</p>
                       </div>
-                    </div>
 
-                    <button id="btnAddShipmentTruck" style="position: absolute; bottom: 90px; right: 20px; width: 65px; height: 65px; border-radius: 50%; background: #007bff; color: white; border: none; box-shadow: 0 6px 15px rgba(0,123,255,0.4); font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 50;">
-                      <i class="fas fa-truck"></i><i class="fas fa-plus" style="font-size: 12px; margin-left: 2px; margin-top: -10px;"></i>
-                    </button>
+                      <div style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; width: 100%; box-sizing: border-box;">
+                        <div style="text-align: center; padding: 40px 20px;">
+                          <i class="fas fa-truck-loading" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                          <p style="color: #888; font-weight: bold;">ยังไม่มีข้อมูลการส่งออกในสาขานี้</p>
+                          <p style="color: #aaa; font-size: 14px;">กดปุ่ม + รูปรถบรรทุก เพื่อสร้างรายการ</p>
+                        </div>
+                      </div>
 
-                    <div style="display: flex; width: 100%; flex-shrink: 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1);">
-                      <button id="btnCancelFromLobby" style="flex: 1; background: #6c757d; color: white; border: none; padding: 22px 10px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">
-                        ยกเลิก
+                      <button id="btnAddShipmentTruck" style="position: absolute; bottom: 90px; right: 20px; width: 65px; height: 65px; border-radius: 50%; background: #007bff; color: white; border: none; box-shadow: 0 6px 15px rgba(0,123,255,0.4); font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 50;">
+                        <i class="fas fa-truck"></i><i class="fas fa-plus" style="font-size: 12px; margin-left: 2px; margin-top: -10px;"></i>
                       </button>
-                      <button id="btnExportShipment" disabled style="flex: 1; background: #cccccc; color: #666666; border: none; padding: 22px 10px; font-size: 16px; font-weight: bold; cursor: not-allowed; border-radius: 0;">
-                        ส่งออก
-                      </button>
-                    </div>
-                  </div>      
+
+                      <div style="display: flex; width: 100%; flex-shrink: 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.1);">
+                        <button id="btnCancelFromLobby" style="flex: 1; background: #6c757d; color: white; border: none; padding: 22px 10px; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 0;">
+                          ยกเลิก
+                        </button>
+                        <button id="btnExportShipment" disabled style="flex: 1; background: #cccccc; color: #666666; border: none; padding: 22px 10px; font-size: 16px; font-weight: bold; cursor: not-allowed; border-radius: 0;">
+                          ส่งออก
+                        </button>
+                      </div>
+                    </div>    
 
                   <div id="transferOutStaffView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; justify-content: space-between; height: 100vh;">
                                     <div style="width: 100%; background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%); padding: 30px 20px; text-align: center; flex-shrink: 0;">
@@ -935,167 +935,167 @@
                   </div>
 
 
-        <div id="stockInHouseView" class="view-screen hide"
-  style="
-    justify-content: flex-start;
-    background-color: #f9fafb;
-    display: flex;
-    flex-direction: column;
-  "
->
-  <div
-    style="
-      width: 100%;
-      background: linear-gradient(
-        135deg,
-        #db8591 0%,
-        #e7a08c 50%,
-        #fab919 100%
-      );
-      flex-shrink: 0;
-      box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4);
-      padding-bottom: 20px;
-      z-index: 10;
-    "
-  >
-    <div
-      style="
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px;
-        box-sizing: border-box;
-      "
-    >
-      <button
-        id="btnStockBack"
-        style="
-          background: #ffffff;
-          border: none;
-          color: #db8591;
-          font-size: 13px;
-          font-weight: bold;
-          cursor: pointer;
-          padding: 8px 15px;
-          border-radius: 20px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        "
-      >
-        <i class="fas fa-chevron-left"></i> BACK
-      </button>
-      <h3
-        id="stockHeaderTitle"
-        style="
-          color: #ffffff;
-          margin: 0;
-          font-size: 16px;
-          font-weight: bold;
-          text-align: center;
-          flex: 1;
-        "
-      >
-        STOCK IN HOUSE
-      </h3>
-      <div style="width: 80px"></div>
-    </div>
+                  <div id="stockInHouseView" class="view-screen hide"
+            style="
+              justify-content: flex-start;
+              background-color: #f9fafb;
+              display: flex;
+              flex-direction: column;
+            "
+          >
+            <div
+              style="
+                width: 100%;
+                background: linear-gradient(
+                  135deg,
+                  #db8591 0%,
+                  #e7a08c 50%,
+                  #fab919 100%
+                );
+                flex-shrink: 0;
+                box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4);
+                padding-bottom: 20px;
+                z-index: 10;
+              "
+            >
+              <div
+                style="
+                  width: 100%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  padding: 20px;
+                  box-sizing: border-box;
+                "
+              >
+                <button
+                  id="btnStockBack"
+                  style="
+                    background: #ffffff;
+                    border: none;
+                    color: #db8591;
+                    font-size: 13px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    padding: 8px 15px;
+                    border-radius: 20px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+                  "
+                >
+                  <i class="fas fa-chevron-left"></i> BACK
+                </button>
+                <h3
+                  id="stockHeaderTitle"
+                  style="
+                    color: #ffffff;
+                    margin: 0;
+                    font-size: 16px;
+                    font-weight: bold;
+                    text-align: center;
+                    flex: 1;
+                  "
+                >
+                  STOCK IN HOUSE
+                </h3>
+                <div style="width: 80px"></div>
+              </div>
 
-    <div
-      id="unifiedInputArea"
-      style="width: 100%; padding: 0px 20px; box-sizing: border-box"
-    >
-      <div id="searchContainer" style="position: relative">
-        <i
-          class="fas fa-search"
-          style="position: absolute; left: 20px; top: 16px; color: #db8591"
-        ></i>
-        <input
-          type="text"
-          id="searchStockInput"
-          placeholder="ค้นหาสินค้า (SKU, หมวดหมู่...)"
-          style="
-            width: 100%;
-            padding: 15px 45px 15px 50px;
-            border-radius: 30px;
-            border: none;
-            outline: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-          "
-        />
-        <div
-          id="clearSearchBtn"
-          style="
-            position: absolute;
-            right: 15px;
-            top: 13px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #db8591;
-            color: white;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-          "
-        >
-          <i class="fas fa-times" style="font-size: 12px"></i>
-        </div>
-      </div>
-    </div>
-  </div>
+              <div
+                id="unifiedInputArea"
+                style="width: 100%; padding: 0px 20px; box-sizing: border-box"
+              >
+                <div id="searchContainer" style="position: relative">
+                  <i
+                    class="fas fa-search"
+                    style="position: absolute; left: 20px; top: 16px; color: #db8591"
+                  ></i>
+                  <input
+                    type="text"
+                    id="searchStockInput"
+                    placeholder="ค้นหาสินค้า (SKU, หมวดหมู่...)"
+                    style="
+                      width: 100%;
+                      padding: 15px 45px 15px 50px;
+                      border-radius: 30px;
+                      border: none;
+                      outline: none;
+                      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    "
+                  />
+                  <div
+                    id="clearSearchBtn"
+                    style="
+                      position: absolute;
+                      right: 15px;
+                      top: 13px;
+                      width: 24px;
+                      height: 24px;
+                      border-radius: 50%;
+                      background: #db8591;
+                      color: white;
+                      display: none;
+                      justify-content: center;
+                      align-items: center;
+                      cursor: pointer;
+                    "
+                  >
+                    <i class="fas fa-times" style="font-size: 12px"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-  <div
-    id="stockScrollArea"
-    style="flex: 1; overflow-y: auto; width: 100%; padding-bottom: 20px"
-  >
-    <div
-      id="categoryListContainer"
-      style="width: 100%; display: flex; flex-direction: column"
-    ></div>
-    <div
-      id="productListContainer"
-      class="hide"
-      style="width: 100%; display: flex; flex-direction: column"
-    ></div>
-  </div>
+            <div
+              id="stockScrollArea"
+              style="flex: 1; overflow-y: auto; width: 100%; padding-bottom: 20px"
+            >
+              <div
+                id="categoryListContainer"
+                style="width: 100%; display: flex; flex-direction: column"
+              ></div>
+              <div
+                id="productListContainer"
+                class="hide"
+                style="width: 100%; display: flex; flex-direction: column"
+              ></div>
+            </div>
 
-  <div
-    style="
-      width: 100%;
-      padding: 15px;
-      background: #ffffff;
-      border-top: 1px solid rgba(231, 160, 140, 0.2);
-      box-sizing: border-box;
-      z-index: 10;
-    "
-  >
-    <button
-      id="btnScannerOpen"
-      style="
-        width: 100%;
-        background: linear-gradient(
-          135deg,
-          #db8591 0%,
-          #e7a08c 50%,
-          #fab919 100%
-        );
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 15px;
-        font-size: 20px;
-        box-shadow: 0 6px 15px rgba(219, 133, 145, 0.3);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-      "
-    >
-      <i class="fas fa-camera"></i>
-    </button>
-  </div>
-      </div>
+            <div
+              style="
+                width: 100%;
+                padding: 15px;
+                background: #ffffff;
+                border-top: 1px solid rgba(231, 160, 140, 0.2);
+                box-sizing: border-box;
+                z-index: 10;
+              "
+            >
+              <button
+                id="btnScannerOpen"
+                style="
+                  width: 100%;
+                  background: linear-gradient(
+                    135deg,
+                    #db8591 0%,
+                    #e7a08c 50%,
+                    #fab919 100%
+                  );
+                  color: white;
+                  border: none;
+                  border-radius: 12px;
+                  padding: 15px;
+                  font-size: 20px;
+                  box-shadow: 0 6px 15px rgba(219, 133, 145, 0.3);
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  cursor: pointer;
+                "
+              >
+                <i class="fas fa-camera"></i>
+              </button>
+            </div>
+                </div>
 
                 <div id="scannerView">
                   <button
