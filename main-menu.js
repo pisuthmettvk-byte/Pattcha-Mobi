@@ -83,65 +83,70 @@ document.addEventListener("DOMContentLoaded", () => {
    MODULE: Transfer Out Navigation Logic (Express Flow)
    ========================================================= */
 
-// 1. ประกาศตัวแปรอ้างอิง Element หน้าจอต่างๆ
+// 1. ผูกตัวแปรหน้าจอ
 const viewProductMovement = document.getElementById("productMovementView");
 const viewLobby = document.getElementById("transferOutLobbyView");
 const viewStaff = document.getElementById("transferOutStaffView");
 const viewDest = document.getElementById("transferOutDestView");
 
-// 2. ฟังก์ชันส่วนกลางสำหรับสลับหน้าจออย่างปลอดภัย
+// 2. ฟังก์ชันช่วยสลับหน้าจอ
 function navigationTo(hideView, showView) {
   if (hideView) hideView.classList.add("hide");
   if (showView) showView.classList.remove("hide");
 }
 
-// 3. ผูกคำสั่งควบคุมปุ่มกดเดินหน้า (Forward Flow)
-// 3.1 จากหน้าหลักเข้าสู่โถงกลาง Transfer Out
+// --- โฟลว์ขาเดินหน้า (Forward Flow) ---
 document.getElementById("btnTransferOut").addEventListener("click", () => {
   navigationTo(viewProductMovement, viewLobby);
 });
 
-// 3.2 จากโถงกลาง กด NEW ไปหน้ากรอกรหัสพนักงาน
 document.getElementById("btnTransferOutNew").addEventListener("click", () => {
   navigationTo(viewLobby, viewStaff);
 });
 
-// 3.3 จากหน้ากรอกรหัสพนักงาน ไปหน้าเลือกสาขาปลายทาง
 document.getElementById("btnSubmitStaff").addEventListener("click", () => {
-  const staffIdInput = document.getElementById("inputStaffId").value.trim();
-  if (staffIdInput === "") {
-    alert("กรุณากรอกรหัสพนักงานก่อนไปขั้นตอนถัดไปครับ");
+  if (document.getElementById("inputStaffId").value.trim() === "") {
+    alert("กรุณากรอกรหัสพนักงานก่อนครับ");
     return;
   }
   navigationTo(viewStaff, viewDest);
 });
 
-// 3.4 จากหน้าเลือกสาขา ยืนยันเปิดกล่องอัตโนมัติ (สเต็ปถัดไปจะเชื่อมกับหน้า Scanner)
 document.getElementById("btnSubmitDest").addEventListener("click", () => {
-  const selectedBranch = document.getElementById("selectDestination").value;
-  if (!selectedBranch) {
+  if (!document.getElementById("selectDestination").value) {
     alert("กรุณาเลือกสาขาปลายทางก่อนครับ");
     return;
   }
-  alert(
-    `ระบบสร้างกล่องใบแรกของสาขา ${selectedBranch} สำเร็จ! (เตรียมเปิดกล้องสแกนสินค้า)`,
-  );
-  // โน้ต: เมื่อหน้า Scanner พร้อม ตรงนี้จะเปลี่ยนเป็นสั่งเปิดหน้ากล้องทันที
-  navigationTo(viewDest, viewLobby); // ตัวอย่าง: เด้งกลับมาโถงกลางเพื่อดูผลลัพธ์ก่อน
+  // เมื่อทำรายการเลือกสาขาจบเสร็จสิ้น ให้เปลี่ยนสถานะโถงกลางเป็นแบบมีงานค้างชั่วคราวเพื่อแสดงผลลัพธ์
+  document.getElementById("lobbyEmptyContainer").classList.add("hide");
+  document.getElementById("footerEmptyControl").classList.add("hide");
+  document.getElementById("lobbyActiveContainer").classList.remove("hide");
+  document.getElementById("footerActiveControl").classList.remove("hide");
+
+  navigationTo(viewDest, viewLobby);
 });
 
-// 4. ผูกคำสั่งควบคุมปุ่มกดย้อนกลับ (Seamless Back-tracking)
-// 4.1 จากโถงกลาง ถอยกลับหน้า PRODUCT MOVEMENT
-document.getElementById("btnBackFromLobby").addEventListener("click", () => {
-  navigationTo(viewLobby, viewProductMovement);
-});
+// --- 🛠️ ซ่อมแซมระบบปุ่มกดย้อนกลับ (Fixed Backward Flow) ---
+// 4.1 ปุ่ม BACK จากโถงกลางหน้าว่างเปล่า ย้อนกลับหน้าแรกสุด
+document
+  .getElementById("btnBackFromLobbyEmpty")
+  .addEventListener("click", () => {
+    navigationTo(viewLobby, viewProductMovement);
+  });
 
-// 4.2 จากหน้ากรอกรหัสพนักงาน ถอยกลับหน้าโถงกลาง
+// 4.2 ปุ่ม BACK จากโถงกลางหน้ามีงานค้าง ย้อนกลับหน้าแรกสุด
+document
+  .getElementById("btnBackFromLobbyActive")
+  .addEventListener("click", () => {
+    navigationTo(viewLobby, viewProductMovement);
+  });
+
+// 4.3 ปุ่ม BACK จากหน้าสแกนรหัสพนักงาน ถอยกลับมาหน้าตั้งหลักโถงกลาง
 document.getElementById("btnBackFromStaff").addEventListener("click", () => {
   navigationTo(viewStaff, viewLobby);
 });
 
-// 4.3 จากหน้าเลือกสาขา ถอยกลับหน้ากรอกรหัสพนักงาน
+// 4.4 ปุ่ม BACK จากหน้าเลือกสาขาปลายทาง ถอยกลับมาหน้าสแกนรหัสพนักงาน
 document.getElementById("btnBackFromDest").addEventListener("click", () => {
   navigationTo(viewDest, viewStaff);
 });
