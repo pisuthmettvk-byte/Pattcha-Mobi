@@ -765,6 +765,65 @@
       </div>
     </div>
 
+    <div id="transferOutLobbyView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; height: 100vh;">
+      <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); flex-shrink: 0; box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4); padding: 20px; z-index: 10; display: flex; align-items: center; justify-content: space-between;">
+        <button id="btnBackFromLobby" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 13px; font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 5px;">
+          <i class="fas fa-chevron-left"></i> BACK
+        </button>
+        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 1px;">TRANSFER OUT</h3>
+        <div style="width: 70px;"></div> </div>
+
+      <div style="flex: 1; overflow-x: auto; padding: 20px; display: flex; gap: 20px;">
+        </div>
+
+      <div style="padding: 20px; background: transparent; display: flex; flex-direction: column; gap: 10px;">
+        <button id="btnTransferOutNew" style="width: 100%; background: #dc3545; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 18px; font-weight: bold; box-shadow: 0 6px 15px rgba(220, 53, 69, 0.3); cursor: pointer;">
+          <i class="fas fa-plus-circle"></i> NEW (สร้างรายการส่งออก)
+        </button>
+      </div>
+    </div>
+
+    <div id="transferOutStaffView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; height: 100vh;">
+      <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+        <button id="btnBackFromStaff" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 13px; font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px;"><i class="fas fa-chevron-left"></i> BACK</button>
+        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold;">STAFF VERIFICATION</h3>
+        <div style="width: 70px;"></div>
+      </div>
+
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+        <div class="menu-card" style="width: 100%; max-width: 350px; background: white; padding: 30px 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center;">
+          <i class="fas fa-id-badge" style="font-size: 40px; color: #db8591; margin-bottom: 20px;"></i>
+          <h3 style="margin: 0 0 15px 0; color: #333;">กรอกรหัสพนักงาน</h3>
+          <input type="password" id="inputStaffId" placeholder="Staff ID" style="width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; text-align: center; margin-bottom: 20px; box-sizing: border-box;">
+          <button id="btnSubmitStaff" style="width: 100%; background: #28a745; color: white; border: none; border-radius: 8px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer;">NEXT <i class="fas fa-arrow-right"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="transferOutDestView" class="view-screen hide" style="background-color: #f5f4f0; display: flex; flex-direction: column; height: 100vh;">
+      <div style="width: 100%; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+        <button id="btnBackFromDest" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 13px; font-weight: bold; cursor: pointer; padding: 8px 15px; border-radius: 20px;"><i class="fas fa-chevron-left"></i> BACK</button>
+        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold;">DESTINATION</h3>
+        <div style="width: 70px;"></div>
+      </div>
+
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+        <div class="menu-card" style="width: 100%; max-width: 350px; background: white; padding: 30px 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center;">
+          <i class="fas fa-store-alt" style="font-size: 40px; color: #db8591; margin-bottom: 20px;"></i>
+          <h3 style="margin: 0 0 15px 0; color: #333;">เลือกสาขาปลายทาง</h3>
+          <select id="selectDestination" style="width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; text-align: center; margin-bottom: 20px; box-sizing: border-box; appearance: none; background: #f9f9f9;">
+            <option value="" disabled selected>-- เลือกสาขา --</option>
+            <option value="B001">สาขาเซ็นทรัลเวิลด์</option>
+            <option value="B002">สาขาสยามพารากอน</option>
+            <option value="B003">สาขาไอคอนสยาม</option>
+          </select>
+          <button id="btnSubmitDest" style="width: 100%; background: #007bff; color: white; border: none; border-radius: 8px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer;">CONFIRM & OPEN BOX <i class="fas fa-box-open"></i></button>
+        </div>
+      </div>
+    </div>
+
+
+
     <div
       id="stockInHouseView"
       class="view-screen hide"
