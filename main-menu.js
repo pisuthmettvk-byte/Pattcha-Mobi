@@ -79,74 +79,90 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================================================
-   PROJECT: Pattcha-Mobi
-   MODULE: Transfer Out Navigation Logic (Express Flow)
+   [ ระบบนำทาง TRANSFER OUT (Navigation Logic เต็มรูปแบบ) ]
    ========================================================= */
 
-// 1. ผูกตัวแปรหน้าจอ
-const viewProductMovement = document.getElementById("productMovementView");
-const viewLobby = document.getElementById("transferOutLobbyView");
-const viewStaff = document.getElementById("transferOutStaffView");
-const viewDest = document.getElementById("transferOutDestView");
+// 1. ประกาศตัวแปรอ้างอิงหน้า
+const viewProductMovement = document.getElementById('productMovementView');
+const viewLobby = document.getElementById('transferOutLobbyView');
+const viewStaff = document.getElementById('transferOutStaffView');
+const viewDest = document.getElementById('transferOutDestView');
+const viewType = document.getElementById('transferOutTypeView');
 
-// 2. ฟังก์ชันช่วยสลับหน้าจอ
+// 2. ฟังก์ชันช่วยสลับหน้าจอ (ซ่อนหน้าเก่า โชว์หน้าใหม่)
 function navigationTo(hideView, showView) {
-  if (hideView) hideView.classList.add("hide");
-  if (showView) showView.classList.remove("hide");
+    if (hideView) hideView.classList.add('hide');
+    if (showView) showView.classList.remove('hide');
 }
 
-// --- โฟลว์ขาเดินหน้า (Forward Flow) ---
-document.getElementById("btnTransferOut").addEventListener("click", () => {
-  navigationTo(viewProductMovement, viewLobby);
+// --- ⏩ โฟลว์ขาเดินหน้า (Forward Flow) ---
+document.getElementById('btnTransferOut').addEventListener('click', () => {
+    navigationTo(viewProductMovement, viewLobby);
 });
 
-document.getElementById("btnTransferOutNew").addEventListener("click", () => {
-  navigationTo(viewLobby, viewStaff);
+document.getElementById('btnTransferOutNew').addEventListener('click', () => {
+    navigationTo(viewLobby, viewStaff);
 });
 
-document.getElementById("btnSubmitStaff").addEventListener("click", () => {
-  if (document.getElementById("inputStaffId").value.trim() === "") {
-    alert("กรุณากรอกรหัสพนักงานก่อนครับ");
-    return;
-  }
-  navigationTo(viewStaff, viewDest);
+// *หมายเหตุ: หากกดจากปุ่ม NEW BRANCH ในโหมดมีงานค้าง ก็ให้ไปหน้า Staff เหมือนกัน
+document.getElementById('btnAddNewFromLobbyActive').addEventListener('click', () => {
+    navigationTo(viewLobby, viewStaff);
 });
 
-document.getElementById("btnSubmitDest").addEventListener("click", () => {
-  if (!document.getElementById("selectDestination").value) {
-    alert("กรุณาเลือกสาขาปลายทางก่อนครับ");
-    return;
-  }
-  // เมื่อทำรายการเลือกสาขาจบเสร็จสิ้น ให้เปลี่ยนสถานะโถงกลางเป็นแบบมีงานค้างชั่วคราวเพื่อแสดงผลลัพธ์
-  document.getElementById("lobbyEmptyContainer").classList.add("hide");
-  document.getElementById("footerEmptyControl").classList.add("hide");
-  document.getElementById("lobbyActiveContainer").classList.remove("hide");
-  document.getElementById("footerActiveControl").classList.remove("hide");
-
-  navigationTo(viewDest, viewLobby);
+document.getElementById('btnSubmitStaff').addEventListener('click', () => {
+    if (document.getElementById('inputStaffId').value.trim() === "") {
+        alert("กรุณากรอกรหัสพนักงานก่อนครับ");
+        return;
+    }
+    navigationTo(viewStaff, viewDest);
 });
 
-// --- 🛠️ ซ่อมแซมระบบปุ่มกดย้อนกลับ (Fixed Backward Flow) ---
-// 4.1 ปุ่ม BACK จากโถงกลางหน้าว่างเปล่า ย้อนกลับหน้าแรกสุด
-document
-  .getElementById("btnBackFromLobbyEmpty")
-  .addEventListener("click", () => {
+document.getElementById('btnSubmitDest').addEventListener('click', () => {
+    if (!document.getElementById('selectDestination').value) {
+        alert("กรุณาเลือกสาขาปลายทางก่อนครับ");
+        return;
+    }
+    navigationTo(viewDest, viewType);
+});
+
+document.getElementById('btnSubmitType').addEventListener('click', () => {
+    const selectedType = document.getElementById('selectTransferType').value;
+    const selectedBranch = document.getElementById('selectDestination').value;
+    
+    if (!selectedType) {
+        alert("กรุณาระบุวัตถุประสงค์ในการจัดส่งก่อนครับ");
+        return;
+    }
+    
+    alert(`สร้างรหัส Shipment: SM-${selectedType}-${selectedBranch}-260626-01 สำเร็จ!\n(เตรียมเข้าหน้าสแกนสินค้า)`);
+    
+    // ทริกเกอร์เปลี่ยนหน้าโถงกลางให้กลายเป็นโหมดมีงานค้างอัตโนมัติ (เพื่อการทดสอบ)
+    document.getElementById('lobbyEmptyContainer').classList.add('hide');
+    document.getElementById('footerEmptyControl').classList.add('hide');
+    document.getElementById('lobbyActiveContainer').classList.remove('hide');
+    document.getElementById('footerActiveControl').classList.remove('hide');
+    
+    navigationTo(viewType, viewLobby);
+});
+
+// --- ⏪ ระบบปุ่มกดย้อนกลับ (Seamless Backward Flow) ---
+document.getElementById('btnBackFromLobbyEmpty').addEventListener('click', () => {
     navigationTo(viewLobby, viewProductMovement);
-  });
+});
 
-// 4.2 ปุ่ม BACK จากโถงกลางหน้ามีงานค้าง ย้อนกลับหน้าแรกสุด
-document
-  .getElementById("btnBackFromLobbyActive")
-  .addEventListener("click", () => {
+document.getElementById('btnBackFromLobbyActive').addEventListener('click', () => {
     navigationTo(viewLobby, viewProductMovement);
-  });
-
-// 4.3 ปุ่ม BACK จากหน้าสแกนรหัสพนักงาน ถอยกลับมาหน้าตั้งหลักโถงกลาง
-document.getElementById("btnBackFromStaff").addEventListener("click", () => {
-  navigationTo(viewStaff, viewLobby);
 });
 
-// 4.4 ปุ่ม BACK จากหน้าเลือกสาขาปลายทาง ถอยกลับมาหน้าสแกนรหัสพนักงาน
-document.getElementById("btnBackFromDest").addEventListener("click", () => {
-  navigationTo(viewDest, viewStaff);
+document.getElementById('btnBackFromStaff').addEventListener('click', () => {
+    navigationTo(viewStaff, viewLobby);
 });
+
+document.getElementById('btnBackFromDest').addEventListener('click', () => {
+    navigationTo(viewDest, viewStaff);
+});
+
+document.getElementById('btnBackFromType').addEventListener('click', () => {
+    navigationTo(viewType, viewDest);
+});
+
