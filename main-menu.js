@@ -217,17 +217,17 @@ const exportBtn = document.getElementById('btnExportShipment');
 
 // ฟังก์ชันสำหรับคำนวณและอัปเดตสี/สถานะของปุ่มส่งออก
 function updateExportButtonState() {
-    // นับจำนวนกล่องลูกที่ถูกติ๊กเลือกอยู่ ณ ปัจจุบัน
     const checkedCount = document.querySelectorAll('.box-select-checkbox:checked').length;
     
+    // ป้องกัน Error ถ้าหาปุ่ม Export ไม่เจอ
+    if (!exportBtn) return; 
+
     if (checkedCount > 0) {
-        // หากมีกล่องถูกเลือกอย่างน้อย 1 กล่อง ➔ เปิดระบบปุ่ม เปลี่ยนเป็นสีน้ำเงินตามแบรนด์
         exportBtn.disabled = false;
         exportBtn.style.background = '#007bff';
         exportBtn.style.color = '#ffffff';
         exportBtn.style.cursor = 'pointer';
     } else {
-        // หากไม่มีการเลือกเลย ➔ ปิดระบบ ล็อกสีเทา
         exportBtn.disabled = true;
         exportBtn.style.background = '#cccccc';
         exportBtn.style.color = '#666666';
@@ -235,23 +235,28 @@ function updateExportButtonState() {
     }
 }
 
-// 1. ลอจิกเมื่อกด Checkbox ตัวแม่ที่แถบหัวข้อชิปเมนต์ (ติ๊กเลือกทั้งหมด / ล้างทั้งหมด)
-mainShipmentCheckbox.addEventListener('change', function() {
-    const isChecked = this.checked;
-    childBoxCheckboxes.forEach(cb => {
-        cb.checked = isChecked;
-    });
-    updateExportButtonState();
-});
-
-// 2. ลอจิกเมื่อพนักงานกดติ๊กเลือกกล่องลูกรายตัว
-childBoxCheckboxes.forEach(cb => {
-    cb.addEventListener('change', function() {
-        // ถ้ากล่องลูกถูกติ๊กไม่ครบทุกอัน ให้ถอนติ๊กตัวแม่ชั่วคราว
-        const totalCount = childBoxCheckboxes.length;
-        const checkedCount = document.querySelectorAll('.box-select-checkbox:checked').length;
-        
-        mainShipmentCheckbox.checked = (totalCount === checkedCount);
+// 1. ลอจิกเมื่อกด Checkbox ตัวแม่ (ใส่ IF ป้องกัน Error ถ้าไม่มี Checkbox ในหน้าจอ)
+if (mainShipmentCheckbox) {
+    mainShipmentCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        childBoxCheckboxes.forEach(cb => {
+            cb.checked = isChecked;
+        });
         updateExportButtonState();
     });
-});
+}
+
+// 2. ลอจิกเมื่อพนักงานกดติ๊กเลือกกล่องลูกรายตัว (ทำงานเฉพาะเมื่อมีกล่องลูก)
+if (childBoxCheckboxes.length > 0) {
+    childBoxCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            const totalCount = childBoxCheckboxes.length;
+            const checkedCount = document.querySelectorAll('.box-select-checkbox:checked').length;
+            
+            if (mainShipmentCheckbox) {
+                mainShipmentCheckbox.checked = (totalCount === checkedCount);
+            }
+            updateExportButtonState();
+        });
+    });
+}
