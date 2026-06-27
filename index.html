@@ -351,11 +351,14 @@
                   </div>
           </div>
               
+          
+
 
                   <div id="transferOutTaskHubView" class="view-screen hide master-layout">
                     
-                    <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25); z-index: 20;">
-                      <div class="master-header-content">
+                    <div class="master-header" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.3); z-index: 20;">
+                      <div class="master-header-content" style="display: flex; justify-content: center; align-items: center; gap: 8px;">
+                        <i class="fas fa-truck-loading" style="color: #ffffff; font-size: 18px;"></i>
                         <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">
                           TRANSFER OUT TASKS
                         </h3>
@@ -365,9 +368,12 @@
                     <div class="master-content" style="width: 100%; padding: 0; margin: 0; display: flex; flex-direction: column; overflow-y: auto; background-color: #f5f4f0;">
                       
                       <div class="task-column-group" style="width: 100%; margin: 0;">
-                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 13; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
-                          <span>ASSIGN TASKS</span>
-                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
+                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 13; background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); border-top: 1px solid #fff; border-bottom: 1px solid #bbb; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                          <div style="display: flex; align-items: center; gap: 8px; color: #dc3545;">
+                            <i class="fas fa-clipboard-list" style="font-size: 16px;"></i>
+                            <span>ASSIGN TASKS</span>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #888; font-weight: normal;">
                             <span>Task (2)</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
                           </div>
@@ -380,20 +386,16 @@
                             </div>
                             <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
                           </div>
-                          <div class="task-list-item" style="width: 100%; border-left: 6px solid #dc3545; border-bottom: 1px solid #e0e0e0; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: white;">
-                            <div style="text-align: left;">
-                              <div style="font-weight: bold; font-size: 14px; color: #333;">Doc No: #TO-2606002</div>
-                              <span style="font-size: 12px; color: #777;">คลังสินค้ากลาง -> สาขาลาดพร้าว</span>
-                            </div>
-                            <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
-                          </div>
                         </div>
                       </div>
 
                       <div class="task-column-group" style="width: 100%; margin: 0;">
-                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 12; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
-                          <span>PENDING TASKS</span>
-                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
+                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 12; background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); border-top: 1px solid #fff; border-bottom: 1px solid #bbb; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                          <div style="display: flex; align-items: center; gap: 8px; color: #d39e00;">
+                            <i class="fas fa-hourglass-half" style="font-size: 16px;"></i>
+                            <span>PENDING TASKS</span>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #888; font-weight: normal;">
                             <span>Task (0)</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
                           </div>
@@ -403,9 +405,12 @@
                       </div>
 
                       <div class="task-column-group" style="width: 100%; margin: 0;">
-                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 11; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
-                          <span>COMPLETE TASKS</span>
-                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
+                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 11; background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); border-top: 1px solid #fff; border-bottom: 1px solid #bbb; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                          <div style="display: flex; align-items: center; gap: 8px; color: #28a745;">
+                            <i class="fas fa-check-circle" style="font-size: 16px;"></i>
+                            <span>COMPLETE TASKS</span>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #888; font-weight: normal;">
                             <span>Task (0)</span>
                             <i class="fas fa-chevron-down toggle-icon"></i>
                           </div>
@@ -417,15 +422,16 @@
                     </div>
 
                     <div class="master-footer">
-                      <button id="btnBackFromTaskHub" class="master-btn-half" style="background: #6c757d; color: white; font-weight: bold; font-size: 16px;">
+                      <button id="btnBackToMovement" class="master-btn-half" style="background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; font-weight: bold; font-size: 16px; border-top: 1px solid #ccc;">
                         BACK
                       </button>
-                      <button id="btnCreateNewTask" class="master-btn-half" style="background: #dc3545; color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.2);">
+                      <button id="btnCreateNewTask" class="master-btn-half" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99;">
                         <i class="fas fa-plus" style="margin-right: 5px;"></i> NEW TASK
                       </button>
                     </div>
 
                   </div>
+
                   <div id="transferOutDestView" class="view-screen hide master-layout">
                     
                     <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25);">
@@ -461,6 +467,7 @@
                     </div>
 
                   </div>
+
                   <div id="transferOutLobbyView" class="view-screen hide master-layout">
                     
                     <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25);">

@@ -106,6 +106,9 @@ function navigationTo(hideView, showView) {
     }
 }
 
+
+
+
 // 🌟 ฟังก์ชันแจ้งเตือนที่ปลอดภัย 100% (กันระบบพังถ้าหา Modal ไม่เจอ)
 function safeAlert(title, message) {
     const modal = document.getElementById('customAlertModal');
@@ -124,6 +127,10 @@ function safeAlert(title, message) {
     }
 }
 
+
+
+
+
 // ฐานข้อมูลสาขาที่เปิดค้างไว้
 const activePendingBranches = ['B001']; 
 
@@ -134,77 +141,100 @@ function enterLobby(branchFullName) {
     if(modalBtn) modalBtn.onclick = () => { document.getElementById('customAlertModal').classList.add('hide'); };
 }
 
-// ================= ⏩ โฟลว์เดินหน้า =================
 
-// หน้าแรก -> เข้า Task Hub
-document.getElementById('btnTransferOut').addEventListener('click', () => {
-    navigationTo(viewProductMovement, viewTaskHub);
-});
 
-// ด่าน 1 -> ด่าน 2
-document.getElementById('btnCreateNewTask').addEventListener('click', () => {
-    document.getElementById('selectDestination').selectedIndex = 0;
-    navigationTo(viewTaskHub, viewDest);
-});
 
-// 🌟 แก้บั๊ก: กดที่แถบรายการ Pending แล้วต้องพาทะลุเข้า Lobby
-document.querySelectorAll('.pending-task-row').forEach(row => {
+// =========================================================
+// MODULE: TRANSFER OUT - FLOW MANAGEMENT (Pattcha-Mobi)
+// =========================================================
+
+// --- [โฟลว์เดินหน้า - Forward Flow] ---
+
+// หน้าแรก (Product Movement) -> เข้าด่าน 1 (Task Hub)
+const btnTransferOut = document.getElementById('btnTransferOut');
+if (btnTransferOut) {
+    btnTransferOut.addEventListener('click', () => {
+        navigationTo(viewProductMovement, viewTaskHub);
+    });
+}
+
+// ด่าน 1 (Task Hub) -> ด่าน 2 (Select Branch)
+const btnCreateNewTask = document.getElementById('btnCreateNewTask') || document.getElementById('btnNewTask');
+if (btnCreateNewTask) {
+    btnCreateNewTask.addEventListener('click', () => {
+        const selectDest = document.getElementById('selectDestination');
+        if (selectDest) selectDest.selectedIndex = 0; // รีเซ็ต Dropdown
+        navigationTo(viewTaskHub, viewDest);
+    });
+}
+
+// กดที่แถบรายการชิ้นงาน (Task Item) -> พาทะลุเข้าด่าน 3 (Lobby)
+document.querySelectorAll('.task-list-item, .pending-task-row').forEach(row => {
     row.addEventListener('click', function() {
-        // ดึงชื่อจาก div ด้านในมาใช้ (ดึงข้อความสาขา)
-        const branchName = this.querySelector('div').innerText;
-        document.getElementById('lobbyBranchHeaderName').innerText = branchName;
+        const textContainer = this.querySelector('div');
+        if (textContainer) {
+            // ดึงข้อความสาขาปลายทางมาแสดงบนหัวของหน้า Lobby
+            const branchInfo = textContainer.innerText.split('\n')[1] || "สาขาปลายทาง";
+            const lobbyHeader = document.getElementById('lobbyBranchHeaderName');
+            if (lobbyHeader) lobbyHeader.innerText = branchInfo;
+        }
         navigationTo(viewTaskHub, viewLobby);
     });
 });
 
-// ด่าน 2 -> ด่าน 3 (พร้อมระบบแจ้งเตือนที่ซ่อมแล้ว)
-document.getElementById('btnSubmitDest').addEventListener('click', () => {
-    const destDropdown = document.getElementById('selectDestination');
-    const selectedBranchValue = destDropdown.value;
-    
-    if (!selectedBranchValue) {
-        safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
-        return;
-    }
-    
-    if (activePendingBranches.includes(selectedBranchValue)) {
-        safeAlert("สาขานี้เปิดใช้งานอยู่แล้ว", "พบว่ามีการสร้างงานของสาขานี้ค้างไว้ ต้องการเข้าไปยังหน้าจัดการสาขาเลยหรือไม่?");
-        
-        const modalBtn = document.getElementById('btnModalAlertOk');
-        if(modalBtn) {
-            modalBtn.onclick = () => {
-                document.getElementById('customAlertModal').classList.add('hide');
-                enterLobby(destDropdown.options[destDropdown.selectedIndex].text);
-            };
+// ด่าน 2 (Select Branch) -> ด่าน 3 (Lobby) [ซ่อมแซมลอจิกสมบูรณ์]
+const btnSubmitDest = document.getElementById('btnSubmitDest') || document.getElementById('btnNextDest');
+if (btnSubmitDest) {
+    btnSubmitDest.addEventListener('click', () => {
+        const destDropdown = document.getElementById('selectDestination');
+        if (!destDropdown || !destDropdown.value) {
+            safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
+            return;
         }
-    } else {
-        enterLobby(destDropdown.options[destDropdown.selectedIndex].text);
-    }
-});
+        
+        // 🔒 [LOCKED PROTOCOL]: ปลดบล็อก False Positive ปล่อยผ่านเข้าหน้า Lobby ของสาขานั้นโดยตรง
+        const selectedBranchText = destDropdown.options[destDropdown.selectedIndex].text;
+        const lobbyHeader = document.getElementById('lobbyBranchHeaderName');
+        if (lobbyHeader) lobbyHeader.innerText = selectedBranchText;
+        
+        navigationTo(viewDest, viewLobby);
+    });
+}
 
-// ================= ⏪ โฟลว์ถอยหลัง =================
 
-// 🌟 แก้บั๊ก: ปุ่มถอยหลังจาก Task Hub กลับไป Product Movement
-document.getElementById('btnBackFromTaskHub').addEventListener('click', () => {
-    navigationTo(viewTaskHub, viewProductMovement);
-});
-                                            
-// กดยกเลิกจาก ด่าน 2 -> กลับ ด่าน 1
-document.getElementById('btnBackFromDest').addEventListener('click', () => {
-    navigationTo(viewDest, viewTaskHub);
-});
+// --- [โฟลว์ถอยหลัง - Backward Flow] ---
 
-// กดยกเลิกจาก ด่าน 3 -> กลับ ด่าน 1
-document.getElementById('btnCancelFromLobby').addEventListener('click', () => {
-    navigationTo(viewLobby, viewTaskHub);
-});
+// ด่าน 1 (Task Hub) -> กลับหน้าเมนูหลัก (Product Movement)
+const btnBackFromTaskHub = document.getElementById('btnBackToMovement') || document.getElementById('btnBackFromTaskHub');
+if (btnBackFromTaskHub) {
+    btnBackFromTaskHub.addEventListener('click', () => {
+        navigationTo(viewTaskHub, viewProductMovement);
+    });
+}
 
-// ปุ่มรถบรรทุก (FAB) -> อนาคต
-document.getElementById('btnAddShipmentTruck').addEventListener('click', () => {
-    console.log("เตรียมวิ่งเข้าด่าน 4: ระบุ Reason สร้างหัวรถบรรทุก!");
-    // โค้ดสำหรับเด้งหน้าต่างระบุ Reason จะอยู่ตรงนี้
-});
+// ด่าน 2 (Select Branch) -> ถอยกลับด่าน 1 (Task Hub)
+const btnBackFromDest = document.getElementById('btnCancelDest') || document.getElementById('btnBackFromDest');
+if (btnBackFromDest) {
+    btnBackFromDest.addEventListener('click', () => {
+        navigationTo(viewDest, viewTaskHub);
+    });
+}
 
+// 🔒 [LOCKED PROTOCOL] ด่าน 3 (Lobby) -> ดีดกลับไปด่าน 1 (Task Hub) เท่านั้น ห้ามผ่านด่าน 2
+const btnCancelFromLobby = document.getElementById('btnCancelFromLobby') || document.getElementById('btnBackToDest');
+if (btnCancelFromLobby) {
+    btnCancelFromLobby.addEventListener('click', () => {
+        navigationTo(viewLobby, viewTaskHub);
+    });
+}
+
+// ปุ่มรถบรรทุก (FAB) -> โหมดการทำงานในอนาคต
+const btnAddShipmentTruck = document.getElementById('btnAddShipmentTruck');
+if (btnAddShipmentTruck) {
+    btnAddShipmentTruck.addEventListener('click', () => {
+        console.log("เตรียมวิ่งเข้าด่าน 4: ระบุ Reason สร้างหัวรถบรรทุก!");
+    });
+}
 
 
 // =========================================================
