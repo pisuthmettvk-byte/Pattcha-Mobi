@@ -887,30 +887,38 @@ body {
   overflow: hidden;
 }
 .master-header {
-  min-height: 13vh; /* ล็อกหัวปกติ 13vh */
+  min-height: 13vh;
   flex-shrink: 0;
+  width: 100%; /* 🌟 เพิ่มตัวนี้เข้าไปบังคับให้กว้างเต็ม */
   background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 15px rgba(220,53,69,0.25);
-  padding: 0 20px;
   position: relative;
   z-index: 10;
 }
+
 .master-header-search {
   min-height: 18vh; /* ล็อกหัวแบบมีค้นหา 18vh */
 }
+
 .master-header-content {
   text-align: center;
   width: 100%;
 }
+
 .master-content {
-  flex: 1; /* ส่วนกลางยืดหยุ่น */
+  flex: 1;
+  width: 100%; /* 🌟 ให้กว้างเต็ม */
   overflow-y: auto;
-  width: 100%;
   position: relative;
+  display: flex; /* 🌟 เพิ่มตัวนี้เพื่อคุมไส้ใน */
+  flex-direction: column; /* 🌟 เรียงของแนวตั้ง */
+  justify-content: center; /* 🌟 คุมให้ของอยู่กลางหน้าจอแนวตั้ง (สำหรับหน้าด่าน 2) */
+  align-items: center; /* 🌟 คุมให้ของอยู่กลางหน้าจอแนวขวาง */
 }
+
 .master-footer {
   min-height: 10vh; /* ล็อกท้าย 10vh */
   flex-shrink: 0;
@@ -920,6 +928,7 @@ body {
   position: relative;
   z-index: 10;
 }
+
 .master-btn-half {
   flex: 1; /* แบ่งครึ่ง 50/50 */
   display: flex;
