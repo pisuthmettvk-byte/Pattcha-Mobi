@@ -399,8 +399,8 @@ body {
 }
 
 /* =========================================
-   PRODUCT LIST ITEM (จัดระเบียบการ์ดสินค้าในหมวดหมู่)
-   ========================================= */
+  PRODUCT LIST ITEM (จัดระเบียบการ์ดสินค้าในหมวดหมู่)
+  ========================================= */
 .product-item-card {
   display: flex;
   flex-direction: column;
@@ -741,8 +741,9 @@ body {
 }
 
 /* =========================================
-   🌟 SCANNER FULL-SCREEN OVERLAY (เชื่อมหน้าจอสแกนเนอร์)
-   ========================================= */
+🌟 SCANNER FULL-SCREEN OVERLAY (เชื่อมหน้าจอสแกนเนอร์)
+ ========================================= */
+ /* #region */
 #scannerView {
   display: none;
   position: fixed;
@@ -764,15 +765,19 @@ body {
 #qr-shaded-region {
   transition: border-width 0.3s ease-in-out !important;
 }
+/* #endregion */
+
+
 
 /* ==========================================
    MODULE: MOVEMENT LAYERED ICONS (CLEAN UI V2)
-========================================== */
+   ========================================== */
+/* #region ---------------------------------- */
 
 /* กลุ่มจัดวางไอคอนให้อยู่ตรงกลางเสมอ */
 .movement-icons-group {
   display: flex;
-  gap: 16px; /* 🌟 เพิ่มระยะห่างนิดหน่อยเพราะไอคอนใหญ่ขึ้น */
+  gap: 16px;
   margin: 0 auto;
 }
 
@@ -788,16 +793,13 @@ body {
 
 /* ไอคอนฐาน (ตัวหลัง) */
 .base-icon {
-  font-size: 20px; /* 🌟 ขยายให้ใหญ่ขึ้น */
-  /* ลบ color: #888888 ออก เพื่อให้ไอคอนดูดสีจากคลาสกล่องแม่ (icon-green/red) มาใช้แทน */
+  font-size: 20px;
 }
 
 /* ไอคอนตัวหน้า (รถ/กล่อง) */
 .overlay-icon {
   position: absolute;
-  font-size: 13px; /* 🌟 ขยายให้ใหญ่ขึ้น */
-
-  /* 🌟 พระเอกของเรา: เส้นขอบสีขาวแบบ หนา 2px ถักทอ 8 ทิศทาง เพื่อให้ตัดภาพขาดชัดเจน */
+  font-size: 13px;
   text-shadow:
     2px 2px 0 #fff,
     -2px -2px 0 #fff,
@@ -810,20 +812,18 @@ body {
     0 4px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* ระบบสีสื่อความหมาย (Semantic Colors) - ย้ายมาครอบที่กล่องแม่ */
-.icon-red {
-  color: #e44542;
-} /* Transfer Out */
-.icon-green {
-  color: #1c9249;
-} /* Transfer In */
-.icon-yellow {
-  color: #fbc02d;
-} /* Pending */
+/* ระบบสีสื่อความหมาย (Semantic Colors) */
+.icon-red { color: #e44542; } /* Transfer Out */
+.icon-green { color: #1c9249; } /* Transfer In */
+.icon-yellow { color: #fbc02d; } /* Pending */
 
-/* ==========================================
-   MODULE: HERO TRANSITION ANIMATION
-========================================== */
+/* #endregion */
+
+
+  /* ==========================================
+  MODULE: HERO TRANSITION ANIMATION
+  ========================================== */
+  /* #region */
 
 /* 1. ปุ่มที่ไม่เกี่ยวข้อง (หดตัวและจางหาย) */
 .anim-shrink-fade {
@@ -870,3 +870,66 @@ body {
     opacity: 1;
   }
 }
+/* #endregion */
+
+
+
+/* =========================================================
+  🌟 MASTER BLUEPRINT (Fluid Responsive สำหรับด่าน 1-จบ)
+  ========================================================= */
+   /* #region */
+.master-layout {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f4f0;
+  overflow: hidden;
+}
+.master-header {
+  min-height: 13vh; /* ล็อกหัวปกติ 13vh */
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(220,53,69,0.25);
+  padding: 0 20px;
+  position: relative;
+  z-index: 10;
+}
+.master-header-search {
+  min-height: 18vh; /* ล็อกหัวแบบมีค้นหา 18vh */
+}
+.master-header-content {
+  text-align: center;
+  width: 100%;
+}
+.master-content {
+  flex: 1; /* ส่วนกลางยืดหยุ่น */
+  overflow-y: auto;
+  width: 100%;
+  position: relative;
+}
+.master-footer {
+  min-height: 10vh; /* ล็อกท้าย 10vh */
+  flex-shrink: 0;
+  display: flex;
+  width: 100%;
+  box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+  position: relative;
+  z-index: 10;
+}
+.master-btn-half {
+  flex: 1; /* แบ่งครึ่ง 50/50 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-size: clamp(14px, 4vw, 16px);
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 0;
+  text-transform: uppercase;
+}
+/* #endregion */
