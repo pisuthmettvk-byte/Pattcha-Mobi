@@ -188,7 +188,7 @@ document.getElementById('btnSubmitDest').addEventListener('click', () => {
 document.getElementById('btnBackFromTaskHub').addEventListener('click', () => {
     navigationTo(viewTaskHub, viewProductMovement);
 });
-
+                                            
 // กดยกเลิกจาก ด่าน 2 -> กลับ ด่าน 1
 document.getElementById('btnBackFromDest').addEventListener('click', () => {
     navigationTo(viewDest, viewTaskHub);
