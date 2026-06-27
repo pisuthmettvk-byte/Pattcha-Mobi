@@ -220,221 +220,222 @@
       </div>
 
           <div id="productMovementView" class="view-screen hide master-layout">
-                
-
-              <div class="master-header" style="background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4);">
-                  <div class="master-header-content">
-                    <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">
-                      PRODUCT MOVEMENT
-                    </h3>
-                  </div>
-              </div>
-
-              <div class="master-content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px 0;">
-                <div class="menu-container" style="width: 80%; display: flex; flex-direction: column; gap: 15px;">
-                  
-                  <button id="btnTransferIn" class="menu-card anim-pop-out btn-transfer-in" style="padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #28a745; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-                      <i class="fas fa-box-open" style="font-size: 22px; color: #28a745; width: 30px; text-align: center;"></i>
-                      <div style="text-align: left">
-                        <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Transfer In</h3>
-                        <span style="font-size: 12px; color: #888">รับสินค้าเข้าสาขา</span>
-                      </div>
-                    </div>
-                    <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
-                      <div style="display: flex; align-items: center; gap: 6px">
-                        <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
-                          <span class="layered-icon icon-green" style="margin: 0">
-                            <i class="fas fa-warehouse base-icon"></i>
-                            <i class="fas fa-truck overlay-icon" style="transform: scaleX(-1); right: -2px; bottom: -2px"></i>
-                          </span>
-                        </div>
-                        <span style="color: #28a745; font-weight: bold; font-size: 18px">2</span>
-                      </div>
-                      <div style="width: 1px; height: 18px; background-color: #e0e0e0"></div>
-                      <div style="display: flex; align-items: center; gap: 6px">
-                        <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
-                          <span class="layered-icon icon-red" style="margin: 0">
-                            <i class="fas fa-warehouse base-icon"></i>
-                            <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
-                          </span>
-                        </div>
-                        <span style="color: #dc3545; font-weight: bold; font-size: 18px">1</span>
-                      </div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
-                  </button>
-
-                  <button id="btnTransferOut" class="menu-card anim-pop-out btn-transfer-out" style="animation-delay: 0.1s; padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #dc3545; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-                      <i class="fas fa-truck-loading" style="font-size: 22px; color: #dc3545; width: 30px; text-align: center;"></i>
-                      <div style="text-align: left">
-                        <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Transfer Out</h3>
-                        <span style="font-size: 12px; color: #888">ส่งสินค้าออกจากสาขา</span>
-                      </div>
-                    </div>
-                    <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
-                      <div style="display: flex; align-items: center; gap: 6px">
-                        <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
-                          <span class="layered-icon icon-red" style="margin: 0">
-                            <i class="fas fa-warehouse base-icon"></i>
-                            <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
-                          </span>
-                        </div>
-                        <span style="color: #dc3545; font-weight: bold; font-size: 18px">3</span>
-                      </div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
-                  </button>
-
-                  <button id="btnHold" class="menu-card anim-pop-out btn-hold" style="animation-delay: 0.2s; padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #ffc107; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-                      <i class="fas fa-pause-circle" style="font-size: 22px; color: #ffc107; width: 30px; text-align: center;"></i>
-                      <div style="text-align: left">
-                        <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Hold</h3>
-                        <span style="font-size: 12px; color: #888">พักสินค้า / จองสินค้า</span>
-                      </div>
-                    </div>
-                    <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
-                      <div style="display: flex; align-items: center; gap: 6px">
-                        <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
-                          <span class="layered-icon icon-green" style="margin: 0">
-                            <i class="fas fa-warehouse base-icon"></i>
-                            <i class="fas fa-truck overlay-icon" style="transform: scaleX(-1); right: -2px; bottom: -2px"></i>
-                          </span>
-                        </div>
-                        <span style="color: #28a745; font-weight: bold; font-size: 18px">1</span>
-                      </div>
-                      <div style="width: 1px; height: 18px; background-color: #e0e0e0"></div>
-                      <div style="display: flex; align-items: center; gap: 6px">
-                        <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
-                          <span class="layered-icon icon-red" style="margin: 0">
-                            <i class="fas fa-warehouse base-icon"></i>
-                            <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
-                          </span>
-                        </div>
-                        <span style="color: #dc3545; font-weight: bold; font-size: 18px">1</span>
-                      </div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
-                  </button>
-
-                  <button id="btnDefective" class="menu-card anim-pop-out btn-defective" style="animation-delay: 0.3s; padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #343a40; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-                      <i class="fas fa-exclamation-triangle" style="font-size: 22px; color: #343a40; width: 30px; text-align: center;"></i>
-                      <div style="text-align: left">
-                        <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Defective</h3>
-                        <span style="font-size: 12px; color: #888">สินค้ามีตำหนิ / ส่งซ่อม</span>
-                      </div>
-                    </div>
-                    <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
-                      <div style="display: flex; align-items: center; gap: 6px">
-                        <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
-                          <span class="layered-icon icon-red" style="margin: 0">
-                            <i class="fas fa-warehouse base-icon"></i>
-                            <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
-                          </span>
-                        </div>
-                        <span style="color: #dc3545; font-weight: bold; font-size: 18px">2</span>
-                      </div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
-                  </button>
-
-                </div>
-              </div>
-
-              <div class="master-footer">
-                <button id="btnBackToMain" style="width: 100%; height: 100%; border: none; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); color: white; font-weight: bold; font-size: 18px; text-transform: uppercase;">
-                  <i class="fas fa-chevron-left" style="margin-right: 8px;"></i> BACK TO MAIN MENU
-                </button>
-              </div>
-              </div>
               
-              <div id="transferOutTaskHubView" class="view-screen hide master-layout">
-                
-                <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25); z-index: 20;">
-                  <div class="master-header-content">
-                    <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">
-                      TRANSFER OUT TASKS
-                    </h3>
-                  </div>
-                </div>
 
-                <div class="master-content" style="width: 100%; padding: 0; margin: 0; display: flex; flex-direction: column; overflow-y: auto; background-color: #f5f4f0;">
-                  
-                  <div class="task-column-group" style="width: 100%; margin: 0;">
-                    <div class="task-column-header" style="position: sticky; top: 0; z-index: 13; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
-                      <span>ASSIGN TASKS</span>
-                      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
-                        <span>Task (2)</span>
-                        <i class="fas fa-chevron-down toggle-icon"></i>
+                  <div class="master-header" style="background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); box-shadow: 0 4px 15px rgba(219, 133, 145, 0.4);">
+                      <div class="master-header-content">
+                        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">
+                          PRODUCT MOVEMENT
+                        </h3>
                       </div>
-                    </div>
-                    <div class="task-list-wrapper" style="display: flex; flex-direction: column; width: 100%; background: #ffffff;">
-                      <div class="task-list-item" style="width: 100%; border-left: 6px solid #dc3545; border-bottom: 1px solid #e0e0e0; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: white;">
-                        <div style="text-align: left;">
-                          <div style="font-weight: bold; font-size: 14px; color: #333;">Doc No: #TO-2606001</div>
-                          <span style="font-size: 12px; color: #777;">คลังสินค้ากลาง -> สาขาพารากอน</span>
+                  </div>
+
+                  <div class="master-content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px 0;">
+                    <div class="menu-container" style="width: 80%; display: flex; flex-direction: column; gap: 15px;">
+                      
+                      <button id="btnTransferIn" class="menu-card anim-pop-out btn-transfer-in" style="padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #28a745; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+                          <i class="fas fa-box-open" style="font-size: 22px; color: #28a745; width: 30px; text-align: center;"></i>
+                          <div style="text-align: left">
+                            <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Transfer In</h3>
+                            <span style="font-size: 12px; color: #888">รับสินค้าเข้าสาขา</span>
+                          </div>
                         </div>
-                        <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
-                      </div>
-                      <div class="task-list-item" style="width: 100%; border-left: 6px solid #dc3545; border-bottom: 1px solid #e0e0e0; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: white;">
-                        <div style="text-align: left;">
-                          <div style="font-weight: bold; font-size: 14px; color: #333;">Doc No: #TO-2606002</div>
-                          <span style="font-size: 12px; color: #777;">คลังสินค้ากลาง -> สาขาลาดพร้าว</span>
+                        <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
+                          <div style="display: flex; align-items: center; gap: 6px">
+                            <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
+                              <span class="layered-icon icon-green" style="margin: 0">
+                                <i class="fas fa-warehouse base-icon"></i>
+                                <i class="fas fa-truck overlay-icon" style="transform: scaleX(-1); right: -2px; bottom: -2px"></i>
+                              </span>
+                            </div>
+                            <span style="color: #28a745; font-weight: bold; font-size: 18px">2</span>
+                          </div>
+                          <div style="width: 1px; height: 18px; background-color: #e0e0e0"></div>
+                          <div style="display: flex; align-items: center; gap: 6px">
+                            <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
+                              <span class="layered-icon icon-red" style="margin: 0">
+                                <i class="fas fa-warehouse base-icon"></i>
+                                <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
+                              </span>
+                            </div>
+                            <span style="color: #dc3545; font-weight: bold; font-size: 18px">1</span>
+                          </div>
                         </div>
-                        <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
-                      </div>
+                        <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
+                      </button>
+
+                      <button id="btnTransferOut" class="menu-card anim-pop-out btn-transfer-out" style="animation-delay: 0.1s; padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #dc3545; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+                          <i class="fas fa-truck-loading" style="font-size: 22px; color: #dc3545; width: 30px; text-align: center;"></i>
+                          <div style="text-align: left">
+                            <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Transfer Out</h3>
+                            <span style="font-size: 12px; color: #888">ส่งสินค้าออกจากสาขา</span>
+                          </div>
+                        </div>
+                        <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
+                          <div style="display: flex; align-items: center; gap: 6px">
+                            <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
+                              <span class="layered-icon icon-red" style="margin: 0">
+                                <i class="fas fa-warehouse base-icon"></i>
+                                <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
+                              </span>
+                            </div>
+                            <span style="color: #dc3545; font-weight: bold; font-size: 18px">3</span>
+                          </div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
+                      </button>
+
+                      <button id="btnHold" class="menu-card anim-pop-out btn-hold" style="animation-delay: 0.2s; padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #ffc107; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+                          <i class="fas fa-pause-circle" style="font-size: 22px; color: #ffc107; width: 30px; text-align: center;"></i>
+                          <div style="text-align: left">
+                            <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Hold</h3>
+                            <span style="font-size: 12px; color: #888">พักสินค้า / จองสินค้า</span>
+                          </div>
+                        </div>
+                        <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
+                          <div style="display: flex; align-items: center; gap: 6px">
+                            <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
+                              <span class="layered-icon icon-green" style="margin: 0">
+                                <i class="fas fa-warehouse base-icon"></i>
+                                <i class="fas fa-truck overlay-icon" style="transform: scaleX(-1); right: -2px; bottom: -2px"></i>
+                              </span>
+                            </div>
+                            <span style="color: #28a745; font-weight: bold; font-size: 18px">1</span>
+                          </div>
+                          <div style="width: 1px; height: 18px; background-color: #e0e0e0"></div>
+                          <div style="display: flex; align-items: center; gap: 6px">
+                            <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
+                              <span class="layered-icon icon-red" style="margin: 0">
+                                <i class="fas fa-warehouse base-icon"></i>
+                                <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
+                              </span>
+                            </div>
+                            <span style="color: #dc3545; font-weight: bold; font-size: 18px">1</span>
+                          </div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
+                      </button>
+
+                      <button id="btnDefective" class="menu-card anim-pop-out btn-defective" style="animation-delay: 0.3s; padding: 18px 20px; background: white; border: 1px solid #e0e0e0; border-left: 6px solid #343a40; border-radius: 12px; box-shadow: 5px 8px 13px 4px rgba(0, 0, 0, 0.18); cursor: pointer; display: flex; align-items: center; justify-content: space-between; overflow: hidden;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+                          <i class="fas fa-exclamation-triangle" style="font-size: 22px; color: #343a40; width: 30px; text-align: center;"></i>
+                          <div style="text-align: left">
+                            <h3 style="margin: 0; font-size: 15px; color: #333; font-weight: bold;">Defective</h3>
+                            <span style="font-size: 12px; color: #888">สินค้ามีตำหนิ / ส่งซ่อม</span>
+                          </div>
+                        </div>
+                        <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 0 10px;">
+                          <div style="display: flex; align-items: center; gap: 6px">
+                            <div style="transform: scale(0.85); width: 28px; display: flex; justify-content: center;">
+                              <span class="layered-icon icon-red" style="margin: 0">
+                                <i class="fas fa-warehouse base-icon"></i>
+                                <i class="fas fa-truck overlay-icon" style="right: -6px; bottom: -2px"></i>
+                              </span>
+                            </div>
+                            <span style="color: #dc3545; font-weight: bold; font-size: 18px">2</span>
+                          </div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #ddd; font-size: 14px; flex-shrink: 0"></i>
+                      </button>
+
                     </div>
                   </div>
 
-                  <div class="task-column-group" style="width: 100%; margin: 0;">
-                    <div class="task-column-header" style="position: sticky; top: 0; z-index: 12; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
-                      <span>PENDING TASKS</span>
-                      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
-                        <span>Task (0)</span>
-                        <i class="fas fa-chevron-down toggle-icon"></i>
+                  <div class="master-footer">
+                    <button id="btnBackToMain" style="width: 100%; height: 100%; border: none; background: linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%); color: white; font-weight: bold; font-size: 18px; text-transform: uppercase;">
+                      <i class="fas fa-chevron-left" style="margin-right: 8px;"></i> BACK TO MAIN MENU
+                    </button>
+                  </div>
+          </div>
+              
+
+                  <div id="transferOutTaskHubView" class="view-screen hide master-layout">
+                    
+                    <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25); z-index: 20;">
+                      <div class="master-header-content">
+                        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">
+                          TRANSFER OUT TASKS
+                        </h3>
                       </div>
                     </div>
-                    <div class="task-list-wrapper" style="display: flex; flex-direction: column; width: 100%; background: #ffffff;">
-                    </div>
-                  </div>
 
-                  <div class="task-column-group" style="width: 100%; margin: 0;">
-                    <div class="task-column-header" style="position: sticky; top: 0; z-index: 11; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
-                      <span>COMPLETE TASKS</span>
-                      <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
-                        <span>Task (0)</span>
-                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    <div class="master-content" style="width: 100%; padding: 0; margin: 0; display: flex; flex-direction: column; overflow-y: auto; background-color: #f5f4f0;">
+                      
+                      <div class="task-column-group" style="width: 100%; margin: 0;">
+                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 13; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
+                          <span>ASSIGN TASKS</span>
+                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
+                            <span>Task (2)</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                          </div>
+                        </div>
+                        <div class="task-list-wrapper" style="display: flex; flex-direction: column; width: 100%; background: #ffffff;">
+                          <div class="task-list-item" style="width: 100%; border-left: 6px solid #dc3545; border-bottom: 1px solid #e0e0e0; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: white;">
+                            <div style="text-align: left;">
+                              <div style="font-weight: bold; font-size: 14px; color: #333;">Doc No: #TO-2606001</div>
+                              <span style="font-size: 12px; color: #777;">คลังสินค้ากลาง -> สาขาพารากอน</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
+                          </div>
+                          <div class="task-list-item" style="width: 100%; border-left: 6px solid #dc3545; border-bottom: 1px solid #e0e0e0; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: white;">
+                            <div style="text-align: left;">
+                              <div style="font-weight: bold; font-size: 14px; color: #333;">Doc No: #TO-2606002</div>
+                              <span style="font-size: 12px; color: #777;">คลังสินค้ากลาง -> สาขาลาดพร้าว</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
+                          </div>
+                        </div>
                       </div>
+
+                      <div class="task-column-group" style="width: 100%; margin: 0;">
+                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 12; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
+                          <span>PENDING TASKS</span>
+                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
+                            <span>Task (0)</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                          </div>
+                        </div>
+                        <div class="task-list-wrapper" style="display: flex; flex-direction: column; width: 100%; background: #ffffff;">
+                        </div>
+                      </div>
+
+                      <div class="task-column-group" style="width: 100%; margin: 0;">
+                        <div class="task-column-header" style="position: sticky; top: 0; z-index: 11; background: #343a40; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 1px solid #23272b;">
+                          <span>COMPLETE TASKS</span>
+                          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #adb5bd; font-weight: normal;">
+                            <span>Task (0)</span>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                          </div>
+                        </div>
+                        <div class="task-list-wrapper" style="display: flex; flex-direction: column; width: 100%; background: #ffffff;">
+                        </div>
+                      </div>
+
                     </div>
-                    <div class="task-list-wrapper" style="display: flex; flex-direction: column; width: 100%; background: #ffffff;">
+
+                    <div class="master-footer">
+                      <button id="btnBackToMovement" class="master-btn-half" style="background: #6c757d; color: white; font-weight: bold; font-size: 16px;">
+                        BACK
+                      </button>
+                      <button id="btnCreateNewTask" class="master-btn-half" style="background: #dc3545; color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.2);">
+                        <i class="fas fa-plus" style="margin-right: 5px;"></i> NEW TASK
+                      </button>
                     </div>
+
                   </div>
-
-                </div>
-
-                <div class="master-footer">
-                  <button id="btnCancelDest" class="master-btn-half" ...>CANCEL</button>
-                  <button id="btnNextDest" class="master-btn-half" ...>NEXT</button>
-                </div>
-
-                <button id="btnCreateNewTask" class="master-btn-half" ...>
-                  <i class="fas fa-plus"></i> NEW TASK
-                </button>
-                </div>
-
-              </div> 
-
                   <div id="transferOutDestView" class="view-screen hide master-layout">
-                    <div class="master-header">
+                    
+                    <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25);">
                       <div class="master-header-content">
                         <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SELECT BRANCH</h3>
                       </div>
                     </div>
 
-                    <div class="master-content" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: center;">
+                    <div class="master-content center-stage" style="display: flex; flex-direction: column; align-items: center;">
+                      
                       <div style="width: 80%; margin: 25px auto; display: flex; justify-content: space-between; align-items: center; position: relative;">
                         <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #ddd; z-index: 1; transform: translateY(-50%);"></div>
                         <div style="width: 36px; height: 36px; border-radius: 50%; background: #f8d7da; color: #dc3545; display: flex; justify-content: center; align-items: center; z-index: 2; font-size: 12px;"><i class="fas fa-check"></i></div>
@@ -451,23 +452,25 @@
                           <option value="B003">B003 - สาขาไอคอนสยาม</option>
                         </select>
                       </div>
+
                     </div>
 
                     <div class="master-footer">
-                      <button id="btnBackFromDest" class="master-btn-half" style="background: #6c757d; color: white;">CANCEL</button>
+                      <button id="btnCancelDest" class="master-btn-half" style="background: #6c757d; color: white;">CANCEL</button>
                       <button id="btnSubmitDest" class="master-btn-half" style="background: #28a745; color: white;">NEXT</button>
                     </div>
-                  </div>
 
+                  </div>
                   <div id="transferOutLobbyView" class="view-screen hide master-layout">
-                    <div class="master-header">
+                    
+                    <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25);">
                       <div class="master-header-content">
                         <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SHIPMENT LOBBY</h3>
                         <p id="lobbyBranchHeaderName" style="color: #ffdde0; margin: 5px 0 0 0; font-size: 14px; font-weight: bold;">[B000] - ชื่อสาขา</p>
                       </div>
                     </div>
 
-                    <div class="master-content" style="padding: 15px;">
+                    <div class="master-content" style="padding: 15px; display: flex; align-items: center; justify-content: center;">
                       <div style="text-align: center; padding: 40px 20px;">
                         <i class="fas fa-truck-loading" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
                         <p style="color: #888; font-weight: bold;">ยังไม่มีข้อมูลการส่งออกในสาขานี้</p>
@@ -480,10 +483,15 @@
                     </button>
 
                     <div class="master-footer">
-                      <button id="btnCancelFromLobby" class="master-btn-half" style="background: #6c757d; color: white;">ยกเลิก</button>
-                      <button id="btnExportShipment" class="master-btn-half" disabled style="background: #cccccc; color: #666666; cursor: not-allowed;">ส่งออก</button>
+                      <button id="btnBackToDest" class="master-btn-half" style="background: #6c757d; color: white;">ยกเลิก</button>
+                      <button id="btnSubmitLobby" class="master-btn-half" disabled style="background: #cccccc; color: #666666; cursor: not-allowed;">ส่งออก</button>
                     </div>
+
                   </div>
+
+
+
+
 
           <div id="stockInHouseView" class="view-screen hide"
             style="
