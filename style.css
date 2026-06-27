@@ -318,7 +318,6 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  /* ใช้ 30vh คือการดันลงมา 30% ของความสูงหน้าจอ ทำให้เมนูไปกองอยู่ครึ่งล่างพอดี */
   padding-top: 30vh !important;
   justify-content: flex-start !important;
   box-sizing: border-box;
@@ -328,11 +327,11 @@ body {
   width: 100%;
   text-align: center;
   margin-top: 0 !important;
-  margin-bottom: 25px; /* เว้นระยะห่างก่อนถึงปุ่มแรก */
+  margin-bottom: 25px;
 }
 
 /* =========================================
-   CUSTOM ALERT MODAL (หน้าต่างแจ้งเตือน)
+   CUSTOM ALERT MODAL
    ========================================= */
 .custom-alert-overlay {
   position: fixed;
@@ -341,7 +340,7 @@ body {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 9999; /* ทับทุกอย่างในแอป */
+  z-index: 9999;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -399,26 +398,25 @@ body {
 }
 
 /* =========================================
-  PRODUCT LIST ITEM (จัดระเบียบการ์ดสินค้าในหมวดหมู่)
+  PRODUCT LIST ITEM
   ========================================= */
 .product-item-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* 🌟 ดันเนื้อหาบนและล่างให้แยกจากกันไปชิดขอบ */
-  min-height: 90px; /* กำหนดความสูงขั้นต่ำเพื่อให้มีพื้นที่ดันขึ้น-ลง */
+  justify-content: space-between;
+  min-height: 90px;
   padding: 12px 15px;
   background: #ffffff;
   border-bottom: 1px solid #f0f0f0;
   box-sizing: border-box;
 }
 
-/* 🌟 ส่วนบน: SKU, ชื่อ, ราคา (ดันชิดขอบบนสุด) */
 .product-item-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  margin-top: 0 !important; /* บังคับชิดขอบฟ้าบนสุด */
+  margin-top: 0 !important;
 }
 
 .product-info-left {
@@ -446,18 +444,16 @@ body {
   margin-top: 0 !important;
 }
 
-/* 🌟 ส่วนล่าง: จำนวนสต็อก (ดันชิดขอบล่างสุด) */
 .product-item-bottom {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 15px; /* ระยะห่างระหว่าง Available, Hold, Defect */
+  gap: 15px;
   width: 100%;
-  margin-top: auto !important; /* พระเอกของงาน: ดันเนื้อหาดิ่งลงไปชิดขอบฟ้าล่างสุด */
+  margin-top: auto !important;
   padding-top: 10px;
 }
 
-/* 🌟 สไตล์กล่องตัวเลขและไอคอน */
 .stock-badge {
   display: flex;
   align-items: center;
@@ -465,52 +461,43 @@ body {
   font-size: 13px;
   font-weight: bold;
 }
-
-.stock-avail {
-  color: #10b981;
-} /* เขียว */
-.stock-hold {
-  color: #fab919;
-} /* เหลือง */
-.stock-defect {
-  color: #ef4444;
-} /* แดง */
+.stock-avail { color: #10b981; }
+.stock-hold { color: #fab919; }
+.stock-defect { color: #ef4444; }
 
 /* =========================================
-   PRODUCT DETAIL MODAL (ฉบับยืดหยุ่นตามธรรมชาติของแอป)
+   PRODUCT DETAIL MODAL
    ========================================= */
 #productDetailModal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0; /* 🌟 ยึดขอบ 4 ด้าน แทนการใช้ 100vw (แก้ปัญหาจออ้วน) */
-  margin: 0 auto; /* 🌟 จัดกึ่งกลางบนจอคอมพิวเตอร์ */
-  max-width: 100%; /* 🌟 ล็อกความกว้างให้เท่ากับหน้าแอปหลัก */
+  bottom: 0;
+  margin: 0 auto;
+  max-width: 100%;
   background: #ffffff;
   z-index: 999;
   display: flex;
   flex-direction: column;
 }
 
-/* 🌟 1. กล่องรูปภาพ: ปลดล็อกการบังคับความสูง ให้กลับไปเป็นธรรมชาติแบบดั้งเดิม */
 .detail-image-section {
-  flex: none !important; /* 🌟 ปลดล็อก! ห้ามยืด ห้ามหด ให้กล่องกางออกตามรูปภาพจริงแบบของเดิม */
+  flex: none !important;
   width: 100%;
   background: #f9fafb;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px 0; /* เว้นระยะบนล่างให้รูปหายใจแบบดั้งเดิม */
+  padding: 20px 0;
   position: relative;
   z-index: 10;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* 🌟 2. ตัวรูปภาพ: ตั้งเพดานความสูงไว้ เพื่อไม่ให้รูปแนวตั้งทะลักล้นจอ */
 .detail-image-section img {
   max-width: 80%;
-  max-height: 280px; /* 🌟 นี่คือสัดส่วนดั้งเดิม: รูปจะใหญ่สุดได้เท่านี้ ถ้าจอคอมก็ไม่หดเล็ก ถ้ามือถือก็ไม่ล้นจอ */
+  max-height: 280px;
   object-fit: contain;
 }
 .btn-close-modal {
@@ -527,17 +514,15 @@ body {
   cursor: pointer;
 }
 
-/* 2. โซนข้อมูล (ใช้พื้นที่ 65% ที่เหลือ และคืนระยะเว้นวรรค) */
 .detail-content-section {
   flex: 1;
-  padding: 20px; /* 🌟 คืนระยะ Padding ให้ดูสวยงาม ไม่อึดอัด */
+  padding: 20px;
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* 🌟 ปล่อยให้ Scroll ได้ตามธรรมชาติติ๊ดนึง ดีกว่ายอมให้เนื้อหาพังทับกันบนมือถือเครื่องเล็กครับ */
+  overflow-y: auto;
 }
 
-/* --- คืนสัดส่วนช่องไฟให้บาร์โค้ดและตัวหนังสือ --- */
 .barcode-box {
   text-align: center;
   margin-bottom: 20px;
@@ -588,7 +573,6 @@ body {
   color: #fab919;
 }
 
-/* --- CARD UI สต็อก --- */
 .section-title {
   font-size: 12px;
   color: #db8591;
@@ -616,7 +600,6 @@ body {
   justify-content: center;
 }
 
-/* เอาช่องว่างออกเพื่อให้ CSS จับคลาสที่อยู่บนแท็กเดียวกันได้อย่างถูกต้อง */
 .stat-card.main-card {
   grid-column: span 2;
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
@@ -644,23 +627,14 @@ body {
   color: #16a34a;
 }
 
-.val-current {
-  color: #333;
-}
-.val-hold {
-  color: #fab919;
-}
-.val-defect {
-  color: #ef4444;
-}
-.val-sold {
-  color: #db8591;
-}
+.val-current { color: #333; }
+.val-hold { color: #fab919; }
+.val-defect { color: #ef4444; }
+.val-sold { color: #db8591; }
 
 /* =========================================
-   CROSS BRANCH STOCK UI (ฉบับ Compact สวยงาม)
+   CROSS BRANCH STOCK UI
    ========================================= */
-/* ปุ่มบ้านซ้อนที่มุมขวาล่างของการ์ดเขียว */
 .btn-cross-branch {
   position: absolute;
   bottom: 6px;
@@ -675,7 +649,6 @@ body {
   transform: scale(0.9);
 }
 
-/* หน้าต่างลอยแสดงผลข้ามสาขา (Mini Popup ซ้อนด้านบน) */
 #crossBranchModal {
   position: fixed;
   top: 0;
@@ -719,7 +692,6 @@ body {
   cursor: pointer;
 }
 
-/* รายการสาขาเรียงลงมา */
 .cross-branch-item {
   display: flex;
   justify-content: space-between;
@@ -741,7 +713,7 @@ body {
 }
 
 /* =========================================
-🌟 SCANNER FULL-SCREEN OVERLAY (เชื่อมหน้าจอสแกนเนอร์)
+🌟 SCANNER FULL-SCREEN OVERLAY
  ========================================= */
  /* #region */
 #scannerView {
@@ -752,14 +724,14 @@ body {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.95);
-  z-index: 99999; /* 👑 ชั้นสูงสุดของระบบ: ลอยทับ Alert และ Modal ทั้งหมด */
+  z-index: 99999;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 
 #scannerView.active {
-  display: flex !important; /* เชื่อมคลาส .active จากไฟล์ JS */
+  display: flex !important;
 }
 
 #qr-shaded-region {
@@ -767,21 +739,15 @@ body {
 }
 /* #endregion */
 
-
-
 /* ==========================================
    MODULE: MOVEMENT LAYERED ICONS (CLEAN UI V2)
    ========================================== */
 /* #region ---------------------------------- */
-
-/* กลุ่มจัดวางไอคอนให้อยู่ตรงกลางเสมอ */
 .movement-icons-group {
   display: flex;
   gap: 16px;
   margin: 0 auto;
 }
-
-/* กรอบสำหรับซ้อนไอคอน (🌟 ฐานใหญ่ขึ้น) */
 .layered-icon {
   position: relative;
   display: inline-flex;
@@ -790,13 +756,9 @@ body {
   width: 28px;
   height: 24px;
 }
-
-/* ไอคอนฐาน (ตัวหลัง) */
 .base-icon {
   font-size: 20px;
 }
-
-/* ไอคอนตัวหน้า (รถ/กล่อง) */
 .overlay-icon {
   position: absolute;
   font-size: 13px;
@@ -811,73 +773,45 @@ body {
     0 -2px 0 #fff,
     0 4px 4px rgba(0, 0, 0, 0.2);
 }
-
-/* ระบบสีสื่อความหมาย (Semantic Colors) */
-.icon-red { color: #e44542; } /* Transfer Out */
-.icon-green { color: #1c9249; } /* Transfer In */
-.icon-yellow { color: #fbc02d; } /* Pending */
-
+.icon-red { color: #e44542; }
+.icon-green { color: #1c9249; }
+.icon-yellow { color: #fbc02d; }
 /* #endregion */
 
-
-  /* ==========================================
+/* ==========================================
   MODULE: HERO TRANSITION ANIMATION
   ========================================== */
   /* #region */
-
-/* 1. ปุ่มที่ไม่เกี่ยวข้อง (หดตัวและจางหาย) */
 .anim-shrink-fade {
   animation: shrinkFade 0.4s ease-in forwards;
 }
 @keyframes shrinkFade {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.5); opacity: 0; }
 }
 
-/* 2. ปุ่ม Product Movement (ลอยขึ้นไปแปลงร่างเป็น Header) */
 .anim-move-up {
   animation: moveUpToHeader 0.4s ease-in-out forwards;
 }
 @keyframes moveUpToHeader {
-  0% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-150px);
-    opacity: 0;
-  }
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-150px); opacity: 0; }
 }
 
-/* 3. ปุ่มเมนูย่อย Transfer In/Out (เด้งกระจายตัวออกมาตอนเปิดหน้า) */
 .anim-pop-out {
   opacity: 0;
   animation: popOutExpand 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 @keyframes popOutExpand {
-  0% {
-    transform: scale(0.5) translateY(-20px);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+  0% { transform: scale(0.5) translateY(-20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 /* #endregion */
-
-
 
 /* =========================================================
   🌟 MASTER BLUEPRINT (Fluid Responsive สำหรับด่าน 1-จบ)
   ========================================================= */
-   /* #region */
+/* #region */
 .master-layout {
   width: 100%;
   height: 100dvh;
@@ -889,7 +823,7 @@ body {
 .master-header {
   min-height: 13vh;
   flex-shrink: 0;
-  width: 100%; /* 🌟 เพิ่มตัวนี้เข้าไปบังคับให้กว้างเต็ม */
+  width: 100%; 
   background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 50%, #ff8e99 100%);
   display: flex;
   align-items: center;
@@ -900,7 +834,7 @@ body {
 }
 
 .master-header-search {
-  min-height: 18vh; /* ล็อกหัวแบบมีค้นหา 18vh */
+  min-height: 18vh;
 }
 
 .master-header-content {
@@ -910,17 +844,23 @@ body {
 
 .master-content {
   flex: 1;
-  width: 100%; /* 🌟 ให้กว้างเต็ม */
+  width: 100%; 
   overflow-y: auto;
   position: relative;
-  display: flex; /* 🌟 เพิ่มตัวนี้เพื่อคุมไส้ใน */
-  flex-direction: column; /* 🌟 เรียงของแนวตั้ง */
-  justify-content: center; /* 🌟 คุมให้ของอยู่กลางหน้าจอแนวตั้ง (สำหรับหน้าด่าน 2) */
-  align-items: center; /* 🌟 คุมให้ของอยู่กลางหน้าจอแนวขวาง */
+  display: flex; 
+  flex-direction: column; 
+  /* 🌟 แก้ไขจุดติดขัด: เปลี่ยนเป็น flex-start เพื่อให้หน้า Task Hub ดันติดขอบบนสุดเสมอ 🌟 */
+  justify-content: flex-start; 
+  align-items: center; 
+}
+
+/* 🌟 คลาสเสริมสำหรับหน้าที่ต้องการให้อยู่ตรงกลางจอพอดี (เช่น หน้าเลือกสาขา Destination) */
+.master-content.center-stage {
+  justify-content: center;
 }
 
 .master-footer {
-  min-height: 10vh; /* ล็อกท้าย 10vh */
+  min-height: 10vh; 
   flex-shrink: 0;
   display: flex;
   width: 100%;
@@ -930,7 +870,7 @@ body {
 }
 
 .master-btn-half {
-  flex: 1; /* แบ่งครึ่ง 50/50 */
+  flex: 1; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -940,5 +880,39 @@ body {
   cursor: pointer;
   border-radius: 0;
   text-transform: uppercase;
+}
+/* #endregion */
+
+/* =========================================================
+  🌟 MODULE: MENU & TASK HUB SPECIFIC LOGIC (เพิ่มใหม่ล่าสุด)
+  ========================================================= */
+/* #region */
+
+/* 1. ล็อกความกว้างของเมนูหลักตามสเปกที่เจเลอร์ระบุไว้ */
+.menu-container {
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* 2. แอนิเมชันลูกศรหุบ/กาง ของหน้า Task Hub (ด่าน 1) */
+.toggle-icon {
+  transition: transform 0.3s ease;
+}
+.toggle-icon.rotated {
+  transform: rotate(-180deg);
+}
+
+/* 3. แอนิเมชันสำหรับการพับเก็บเนื้อหาลิสต์รายการใน Task Hub */
+.task-list-wrapper {
+  transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+  overflow: hidden;
+  transform-origin: top;
+}
+.task-list-wrapper.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+  border: none;
 }
 /* #endregion */
