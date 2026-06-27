@@ -220,13 +220,28 @@ if (btnBackFromDest) {
     });
 }
 
-// 🔒 [LOCKED PROTOCOL] ด่าน 3 (Lobby) -> ดีดกลับไปด่าน 1 (Task Hub) เท่านั้น ห้ามผ่านด่าน 2
-const btnCancelFromLobby = document.getElementById('btnCancelFromLobby') || document.getElementById('btnBackToDest');
-if (btnCancelFromLobby) {
-    btnCancelFromLobby.addEventListener('click', () => {
-        navigationTo(viewLobby, viewTaskHub);
+
+// ด่าน 3 (Lobby) -> กดปุ่ม "ส่งออก"
+const btnSubmitLobby = document.getElementById('btnSubmitLobby');
+if (btnSubmitLobby) {
+    btnSubmitLobby.addEventListener('click', () => {
+        // 1. แพ็คข้อมูลจำลอง (Mock Payload)
+        const mockPayload = {
+            docNo: "TO-" + Date.now(),
+            branch: document.getElementById('lobbyBranchHeaderName').innerText,
+            boxCount: 1,
+            itemCount: 5,
+            isExpress: false // สมมติว่าดึงค่ามาจากปุ่ม Toggle หน้าจอ
+        };
+
+        // 2. โยนเข้าเต้ารับ (Dispatcher)
+        dispatchTransferOutData(mockPayload);
+
+        // 3. ปิดจ๊อบ กลับไปหน้าแรก
+        safeNavigate(viewLobby, viewTaskHub);
     });
 }
+
 
 // ปุ่มรถบรรทุก (FAB) -> โหมดการทำงานในอนาคต
 const btnAddShipmentTruck = document.getElementById('btnAddShipmentTruck');
