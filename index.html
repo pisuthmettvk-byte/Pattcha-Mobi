@@ -488,8 +488,42 @@
                     <button id="btnAddShipmentTruck" style="position: absolute; bottom: calc(10vh + 20px); right: 20px; width: 65px; height: 65px; border-radius: 50%; background: #007bff; color: white; border: none; box-shadow: 0 6px 15px rgba(0,123,255,0.4); font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 50;">
                       <i class="fas fa-truck"></i><i class="fas fa-plus" style="font-size: 12px; margin-left: 2px; margin-top: -10px;"></i>
                     </button>
+                    
+                    
+                    
+<!-- =========================================================
+     MODULE: SHIPMENT BOX SETUP MODAL (ด่าน 3 - สร้างกล่อง)
+     ========================================================= -->
+<div id="shipmentBoxModal" class="custom-alert-overlay hide" style="z-index: 100000;">
+  <div class="custom-alert-box" style="text-align: left; padding: 25px; width: 85%;">
+    <h3 style="text-align: center; margin-bottom: 20px; color: #dc3545;">
+      <i class="fas fa-box-open"></i> สร้างกล่องใหม่
+    </h3>
+    
+    <label style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">ประเภทการส่งออก</label>
+    <select id="selectShipmentReason" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; outline: none; background: #f9fafb; color: #333;">
+      <option value="" disabled selected>-- เลือกเหตุผล --</option>
+      <option value="transfer">ย้ายสาขา (Transfer)</option>
+      <option value="return">ส่งคืนคลัง (Return)</option>
+      <option value="defect">สินค้ามีตำหนิ (Defect)</option>
+    </select>
 
-                    <div class="master-footer">
+    <label style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">หมายเลขกล่อง (รันอัตโนมัติ)</label>
+    <input type="text" id="inputBoxNumber" value="BOX-001" disabled style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #eee; font-size: 15px; margin-bottom: 25px; background: #e9ecef; color: #6c757d; font-weight: bold; box-sizing: border-box; text-align: center;">
+
+    <div class="custom-alert-buttons">
+      <button id="btnCancelBox" class="btn-alert-cancel" style="color: #6c757d; border-color: #6c757d;">ยกเลิก</button>
+      <button id="btnConfirmBox" class="btn-alert-ok" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">เริ่มสแกน</button>
+    </div>
+  </div>
+</div>
+
+               
+                    
+                        
+                            
+                                
+                                         <div class="master-footer">
                       <button id="btnCancelFromLobby" class="master-btn-half" style="background: #6c757d; color: white;">ยกเลิก</button>
                       <button id="btnSubmitLobby" class="master-btn-half" disabled style="background: #cccccc; color: #666666; cursor: not-allowed;">ส่งออก</button>
                     </div>
