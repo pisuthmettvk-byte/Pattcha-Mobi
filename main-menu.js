@@ -243,13 +243,65 @@ if (btnSubmitLobby) {
 }
 
 
-// ปุ่มรถบรรทุก (FAB) -> โหมดการทำงานในอนาคต
+// =========================================================
+// MODULE: SHIPMENT BOX SETUP (จัดการปุ่มรถบรรทุก ด่าน 3)
+// =========================================================
 const btnAddShipmentTruck = document.getElementById('btnAddShipmentTruck');
+const shipmentBoxModal = document.getElementById('shipmentBoxModal');
+const btnCancelBox = document.getElementById('btnCancelBox');
+const btnConfirmBox = document.getElementById('btnConfirmBox');
+const btnSubmitLobby = document.getElementById('btnSubmitLobby'); // ปุ่มส่งออกสีเทา
+
+// 1. กดปุ่ม + รถบรรทุก -> เปิดหน้าต่างสร้างกล่อง
 if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener('click', () => {
-        console.log("เตรียมวิ่งเข้าด่าน 4: ระบุ Reason สร้างหัวรถบรรทุก!");
+        // รีเซ็ต Dropdown เหตุผลให้กลับไปค่าเริ่มต้นทุกครั้งที่เปิด
+        const reasonSelect = document.getElementById('selectShipmentReason');
+        if (reasonSelect) reasonSelect.selectedIndex = 0;
+        
+        if (shipmentBoxModal) shipmentBoxModal.classList.remove('hide');
     });
 }
+
+// 2. กดยกเลิก -> ปิดหน้าต่าง
+if (btnCancelBox) {
+    btnCancelBox.addEventListener('click', () => {
+        if (shipmentBoxModal) shipmentBoxModal.classList.add('hide');
+    });
+}
+
+// 3. กดยืนยันเริ่มสแกน (สร้างกล่อง)
+if (btnConfirmBox) {
+    btnConfirmBox.addEventListener('click', () => {
+        const reasonSelect = document.getElementById('selectShipmentReason');
+        
+        // Validation: บังคับให้เลือกเหตุผลก่อน
+        if (reasonSelect && !reasonSelect.value) {
+            // (ถ้าเจเลอร์มีฟังก์ชัน safeAlert สามารถนำมาครอบตรงนี้ได้)
+            alert("กรุณาเลือกประเภทการส่งออกก่อนครับ");
+            return; 
+        }
+
+        console.log("📦 เริ่มเปิดกล่องเพื่อเตรียมสแกน! เหตุผล:", reasonSelect.value);
+        
+        // ซ่อน Modal
+        if (shipmentBoxModal) shipmentBoxModal.classList.add('hide');
+
+        // 🌟 [UI UPDATE]: ปลดล็อกปุ่ม "ส่งออก" (จำลองสเต็ปสุดท้าย)
+        if (btnSubmitLobby) {
+            btnSubmitLobby.disabled = false;
+            // เปลี่ยนปุ่มเป็นสีฟ้าเงางาม พร้อมใช้งาน
+            btnSubmitLobby.style.background = "linear-gradient(135deg, #007bff 0%, #0056b3 100%)";
+            btnSubmitLobby.style.color = "white";
+            btnSubmitLobby.style.cursor = "pointer";
+            btnSubmitLobby.style.border = "none";
+        }
+        
+        // Note: ขั้นตอนต่อไป (Phase 2 & 3) เราจะเขียนโค้ดเคลียร์ข้อความ "ยังไม่มีข้อมูล"
+        // และอัปเดต UI ให้แสดง Card ของสินค้ารอแพ็คแทนครับ
+    });
+}
+
 
 
 // =========================================================
