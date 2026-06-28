@@ -46,9 +46,19 @@ function safeAlert(title, message) {
   }
 }
 
+// 🌟 ตัวท่อรอรับรหัสสาขาจริง (Real Branch Code Wiring)
+function getRealBranchCode(branchId) {
+  const branchCodeMap = {
+    B001: "CKC01", // เซ็นทรัลเวิลด์
+    B002: "KKN02", // สยามพารากอน
+    B003: "ICS03", // ไอคอนสยาม
+  };
+  return branchCodeMap[branchId] || "UNKN";
+}
+
 // 🌟 ลอจิกพรางรหัสความปลอดภัย (Security Obfuscation)
 function obfuscateBranchCode(code) {
-  if (!code) return "00XX";
+  if (!code || code === "UNKN") return "00XX";
   const clean = code.replace(/[^a-zA-Z0-9]/g, "");
   if (clean.length < 4) return clean;
   const alpha = clean.substring(0, 2).toUpperCase();
@@ -224,13 +234,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectShipmentReason = document.getElementById("selectShipmentReason");
   const inputBoxNumber = document.getElementById("inputBoxNumber");
 
-  // ดึงพื้นที่สำหรับเสก Card (ถ้าระบบไม่เจอ ให้ใช้ตัว Fallback เดิม)
   const lobbyContentContainer =
     document.getElementById("lobbyContentContainer") ||
     document.querySelector("#transferOutLobbyView .master-content");
   const lobbyEmptyState = document.getElementById("lobbyEmptyState");
 
   let temporaryShipmentID = "";
+  let selectedOriginRealCode = "CKC01"; // ต้นทางสมมติ
 
   if (btnSubmitLobby) {
     btnSubmitLobby.addEventListener("click", () => {
@@ -251,17 +261,18 @@ document.addEventListener("DOMContentLoaded", () => {
   if (selectShipmentReason) {
     selectShipmentReason.addEventListener("change", () => {
       const type = selectShipmentReason.value;
-      const originRaw = "CKC01";
       const destDropdown = document.getElementById("selectDestination");
-      const destRaw = destDropdown ? destDropdown.value : "KKN02";
+      const destRaw = destDropdown ? destDropdown.value : "";
+
+      const destRealCode = getRealBranchCode(destRaw);
 
       const p_type = type;
       const p_date = getFormattedDate();
-      const p_origin = obfuscateBranchCode(originRaw);
-      const p_seq = generateAuditSequence(type, originRaw);
-      const p_dest = obfuscateBranchCode(destRaw);
+      const p_origin = obfuscateBranchCode(selectedOriginRealCode);
+      const p_dest = obfuscateBranchCode(destRealCode);
+      const mockSeq = "000X";
 
-      temporaryShipmentID = `${p_type}-${p_date}-${p_origin}-${p_seq}-${p_dest}`;
+      temporaryShipmentID = `${p_type}-${p_date}-${p_origin}-${mockSeq}-${p_dest}`;
       if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
     });
   }
@@ -282,16 +293,44 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // 🛡️ ผู้คุมกฎห้ามสร้างงานซ้ำ (Anti-Duplicate Logic)
+      const existingCardType = document.querySelector(
+        `.shipment-card[data-shipment-type="${selectShipmentReason.value}"]`,
+      );
+      if (existingCardType) {
+        safeAlert(
+          "ไม่อนุญาตให้สร้างซ้ำ",
+          `มีรอบการจัดส่งประเภทนี้ค้างอยู่ในล็อบบี้แล้ว กรุณาดำเนินการของเดิมให้เสร็จสิ้นก่อนครับ`,
+        );
+        return;
+      }
+
+      // ดึงเลขรัน Audit จริง
+      const realSeq = generateAuditSequence(
+        selectShipmentReason.value,
+        selectedOriginRealCode,
+      );
+      const destRealCode = getRealBranchCode(
+        document.getElementById("selectDestination").value,
+      );
+
+      const finalShipmentID = `${selectShipmentReason.value}-${getFormattedDate()}-${obfuscateBranchCode(selectedOriginRealCode)}-${realSeq}-${obfuscateBranchCode(destRealCode)}`;
+
       if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
+      // 🛡️ เสกการ์ดพร้อมกล่อง Checkbox
       const card = document.createElement("div");
       card.className = "shipment-card";
+      card.setAttribute("data-shipment-type", selectShipmentReason.value);
       card.style.cssText =
         "background: white; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 10px; width: 100%;";
       card.innerHTML = `
-                <div style="background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); padding: 12px 15px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #111;">
-                    <div><i class="fas fa-barcode" style="margin-right: 6px;"></i> ID: ${temporaryShipmentID}</div>
+                <div style="background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); padding: 12px 15px; border-bottom: 1px solid #ccc; display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #111;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" class="shipment-select-cb" style="transform: scale(1.4); margin-right: 15px; cursor: pointer;">
+                        <div><i class="fas fa-barcode" style="margin-right: 6px;"></i> ID: ${finalShipmentID}</div>
+                    </div>
                     <span style="background: #222; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${selectShipmentReason.value}</span>
                 </div>
                 <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center;">
@@ -301,17 +340,33 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
       if (lobbyContentContainer) lobbyContentContainer.appendChild(card);
 
-      if (btnSubmitLobby) {
-        btnSubmitLobby.disabled = false;
-        // เปลี่ยนปุ่มเป็นสีลูกระนาดแบบโปร่งใสเพื่อคุมธีม
-        btnSubmitLobby.style.background = "transparent";
-        btnSubmitLobby.style.color = "#111";
-        btnSubmitLobby.style.cursor = "pointer";
-      }
+      // ผูกสายไฟกล่อง Checkbox กับปุ่มส่งออกทันที
+      const newCheckbox = card.querySelector(".shipment-select-cb");
+      newCheckbox.addEventListener("change", evaluateExportButton);
     });
   }
 
-  // --- 6. Checkbox Logic (ระบบกล่องติ๊กของเดิม) ---
+  // 🛡️ ระบบคุมปุ่มส่งออกขั้นเด็ดขาด
+  function evaluateExportButton() {
+    const checkedCount = document.querySelectorAll(
+      ".shipment-select-cb:checked",
+    ).length;
+    if (checkedCount > 0) {
+      btnSubmitLobby.disabled = false;
+      btnSubmitLobby.style.background = "transparent";
+      btnSubmitLobby.style.color = "#ffffff";
+      btnSubmitLobby.style.textShadow = "1px 1px 2px rgba(0,0,0,0.5)";
+      btnSubmitLobby.style.cursor = "pointer";
+    } else {
+      btnSubmitLobby.disabled = true;
+      btnSubmitLobby.style.background = "rgba(0,0,0,0.4)";
+      btnSubmitLobby.style.color = "#aaa";
+      btnSubmitLobby.style.textShadow = "none";
+      btnSubmitLobby.style.cursor = "not-allowed";
+    }
+  }
+
+  // --- 6. Checkbox Logic (ระบบกล่องติ๊กของเดิม คงไว้ไม่ให้กระทบ) ---
   const mainShipmentCheckbox = document.getElementById(
     "selectAllBoxesInShipment",
   );
