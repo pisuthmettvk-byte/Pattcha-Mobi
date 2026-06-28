@@ -220,19 +220,22 @@ if (btnBackFromDest) {
     });
 }
 
-// 🔒 [LOCKED PROTOCOL] ด่าน 3 (Lobby) -> ถอยกลับด่าน 1 (ซ่อมแซมส่วนที่หายไป)
-const btnCancelFromLobby = document.getElementById('btnCancelFromLobby') || document.getElementById('btnBackToDest');
-if (btnCancelFromLobby) {
-    btnCancelFromLobby.addEventListener('click', () => {
-        navigationTo(viewLobby, viewTaskHub);
-    });
-}
+// 🌟 บันทึกการทำงานของปุ่มตกลงแจ้งเตือนไว้ระดับ Global (แก้ไขบั๊กกดตกลงไม่ได้ตอนรีเฟรชครั้งแรก)
+document.addEventListener("DOMContentLoaded", () => {
+    const btnModalAlertOk = document.getElementById('btnModalAlertOk');
+    if (btnModalAlertOk) {
+        btnModalAlertOk.addEventListener('click', () => {
+            const alertModal = document.getElementById('customAlertModal');
+            if (alertModal) alertModal.classList.add('hide');
+        });
+    }
+});
+
 
 // =========================================================
 // MODULE: SHIPMENT LOBBY & SETUP (จัดการปุ่มในด่าน 3)
 // =========================================================
 
-// 🌟 ประกาศตัวแปรทั้งหมดแค่ "ครั้งเดียว" (แก้บั๊ก Duplicate Const)
 const btnSubmitLobby = document.getElementById('btnSubmitLobby'); 
 const btnAddShipmentTruck = document.getElementById('btnAddShipmentTruck');
 const shipmentBoxModal = document.getElementById('shipmentBoxModal');
@@ -242,60 +245,53 @@ const btnConfirmBox = document.getElementById('btnConfirmBox');
 // --- 1. จัดการปุ่ม "ส่งออก" (เมื่อข้อมูลพร้อม) ---
 if (btnSubmitLobby) {
     btnSubmitLobby.addEventListener('click', () => {
-        // 1.1 แพ็คข้อมูลจำลอง (Mock Payload)
         const branchLabel = document.getElementById('lobbyBranchHeaderName');
         const mockPayload = {
             docNo: "TO-" + Date.now(),
             branch: branchLabel ? branchLabel.innerText : "Unknown",
             boxCount: 1,
             itemCount: 5,
-            isExpress: false // สมมติว่าดึงค่ามาจากปุ่ม Toggle หน้าจอ
+            isExpress: false 
         };
 
-        // 1.2 โยนเข้าเต้ารับ (Dispatcher API) อย่างปลอดภัย
         if (typeof dispatchTransferOutData === "function") {
             dispatchTransferOutData(mockPayload);
         } else {
             console.warn("🚨 [System] ยังไม่ได้เชื่อมต่อไฟล์ data-connector.js");
         }
 
-        // 1.3 ปิดจ๊อบ กลับไปหน้าแรก (แก้บั๊กชื่อฟังก์ชันผิดจาก safeNavigate เป็น navigationTo)
-        navigationTo(viewLobby, viewTaskHub);
+        // 🌟 [REALIGNMENT]: แจ้งเตือนเสร็จสิ้น แล้วปักหลักอยู่ในหน้า Lobby ต่อ (ไม่เด้งกลับหน้า 1 แล้ว)
+        safeAlert("เสร็จสิ้น", "ระบบทำการบันทึกและส่งออกข้อมูลเรียบร้อยแล้ว");
     });
 }
 
 // --- 2. จัดการปุ่ม + รถบรรทุก (สร้าง Shipment) ---
-// เปิดหน้าต่าง Modal
 if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener('click', () => {
         const reasonSelect = document.getElementById('selectShipmentReason');
-        if (reasonSelect) reasonSelect.selectedIndex = 0; // รีเซ็ตค่า
+        if (reasonSelect) reasonSelect.selectedIndex = 0; 
         if (shipmentBoxModal) shipmentBoxModal.classList.remove('hide');
     });
 }
 
-// กดยกเลิก Modal -> ปิดหน้าต่าง
 if (btnCancelBox) {
     btnCancelBox.addEventListener('click', () => {
         if (shipmentBoxModal) shipmentBoxModal.classList.add('hide');
     });
 }
 
-// กดยืนยันสร้าง Shipment จาก Modal
 if (btnConfirmBox) {
     btnConfirmBox.addEventListener('click', () => {
         const reasonSelect = document.getElementById('selectShipmentReason');
         
-        // เช็คเงื่อนไขก่อนสร้าง
+        // 🌟 แก้ไขบั๊กข้อ 3: เปลี่ยนจากระบบ alert ธรรมดา มาใช้ safeAlert สีแดงที่สวยงามของเรา
         if (reasonSelect && !reasonSelect.value) {
-            safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกประเภทการส่งออกก่อนครับ");
+            safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ");
             return; 
         }
 
-        // ปิดหน้าต่าง Modal
         if (shipmentBoxModal) shipmentBoxModal.classList.add('hide');
 
-        // ปลดล็อกปุ่มส่งออกด้านล่างให้เป็นสีฟ้า (พร้อมใช้งาน)
         if (btnSubmitLobby) {
             btnSubmitLobby.disabled = false;
             btnSubmitLobby.style.background = "linear-gradient(135deg, #007bff 0%, #0056b3 100%)";
