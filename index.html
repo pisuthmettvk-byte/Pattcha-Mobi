@@ -431,9 +431,6 @@
 
                   </div>
 
-
-
-
                   <div id="transferOutDestView" class="view-screen hide master-layout">
                     <div class="master-header" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); z-index: 20;">
                       <div class="master-header-content">
@@ -465,8 +462,6 @@
                     </div>
                   </div>
 
-
-
                   <div id="transferOutLobbyView" class="view-screen hide master-layout">
                     <div class="master-header" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); z-index: 20;">
                       <div class="master-header-content">
@@ -487,9 +482,9 @@
                       <i class="fas fa-truck"></i><i class="fas fa-plus" style="font-size: 12px; margin-left: 2px; margin-top: -10px;"></i>
                     </button>
                     
-                    <div class="master-footer" style="background: linear-gradient(to bottom, #321da7 0%, #694de6 25%, #beb3ff 50%, #644de6 75%, #a71d2a 100%); border-top: 1px solid #7a151e;">
+                    <div class="master-footer" style="background: linear-gradient(to bottom, #1d5da7 0%, #4d7de6 25%, #b3cbff 50%, #644de6 75%, #1d3da7 100%); border-top: 1px solid #7a151e;">
                       <button id="btnCancelFromLobby" class="master-btn-half" style="background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; font-weight: bold; font-size: 16px; border-top: 1px solid #ccc;">CANCEL</button>
-                      <button id="btnSubmitLobby" class="master-btn-half" disabled style="background: rgba(0,0,0,0.4); color: #aaa; font-weight: bold; border-left: 1px solid rgba(255,255,255,0.2); cursor: not-allowed; transition: all 0.3s;">ส่งออก</button>
+                      <button id="btnSubmitLobby" class="master-btn-half" disabled style="background: rgba(0, 0, 0, 0.466); color: #aaa; font-weight: bold; border-left: 1px solid rgba(255,255,255,0.2); cursor: not-allowed; transition: all 0.3s;">ส่งออก</button>
                     </div>
                   </div> 
                           <div id="customAlertModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000005; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
@@ -512,18 +507,20 @@
                               <h3 style="text-align: center; margin-bottom: 20px; color: #dc3545;">
                                 <i class="fas fa-truck-loading"></i> สร้างรอบการจัดส่ง
                               </h3>
-                              <label for="selectShipmentReason" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">ประเภทการส่งออก</label>
+                              <label for="selectShipmentReason" style="font-size: medium; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">Transfer Type: </label>
                               <select id="selectShipmentReason" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; outline: none; background: #f9fafb;">
                                 <option value="" disabled selected>-- เลือกประเภท --</option>
-                                <option value="TF">ย้ายสาขา (Transfer)</option>
-                                <option value="RT">ส่งคืนคลัง (Return)</option>
-                                <option value="DF">สินค้ามีตำหนิ (Defect)</option>
+                                <option value="TF">TF - Between Store</option>
+                                <option value="RT">RT - Return to Warehouse</option>
+                                <option value="DF">DF - Defective</option>
+                                <option value="VM">VN - Visual Prop</option>
+                                <option value="MT">MT - Made to Order</option>
                               </select>
                               <label for="inputBoxNumber" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">หมายเลข Shipment</label>
                               <input type="text" id="inputBoxNumber" value="กรุณาเลือกประเภท..." disabled style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; margin-bottom: 25px; background: #e9ecef; color: #495057; font-weight: bold; text-align: center;">
                               <div class="custom-alert-buttons">
                                 <button id="btnCancelBox" class="btn-alert-cancel" style="color: #6c757d; border-color: #6c757d;">ยกเลิก</button>
-                                <button id="btnConfirmBox" class="btn-alert-ok" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white;">ยืนยันสร้าง</button>
+                                <button id="btnConfirmBox" class="btn-alert-ok" style="background: linear-gradient(135deg, #00ff22 0%, #008d3f 100%); color: white;">ยืนยันสร้าง</button>
                               </div>
                             </div>
                           </div>
