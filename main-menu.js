@@ -220,85 +220,89 @@ if (btnBackFromDest) {
     });
 }
 
+// 🔒 [LOCKED PROTOCOL] ด่าน 3 (Lobby) -> ถอยกลับด่าน 1 (ซ่อมแซมส่วนที่หายไป)
+const btnCancelFromLobby = document.getElementById('btnCancelFromLobby') || document.getElementById('btnBackToDest');
+if (btnCancelFromLobby) {
+    btnCancelFromLobby.addEventListener('click', () => {
+        navigationTo(viewLobby, viewTaskHub);
+    });
+}
 
-// ด่าน 3 (Lobby) -> กดปุ่ม "ส่งออก"
-const btnSubmitLobby = document.getElementById('btnSubmitLobby');
+// =========================================================
+// MODULE: SHIPMENT LOBBY & SETUP (จัดการปุ่มในด่าน 3)
+// =========================================================
+
+// 🌟 ประกาศตัวแปรทั้งหมดแค่ "ครั้งเดียว" (แก้บั๊ก Duplicate Const)
+const btnSubmitLobby = document.getElementById('btnSubmitLobby'); 
+const btnAddShipmentTruck = document.getElementById('btnAddShipmentTruck');
+const shipmentBoxModal = document.getElementById('shipmentBoxModal');
+const btnCancelBox = document.getElementById('btnCancelBox');
+const btnConfirmBox = document.getElementById('btnConfirmBox');
+
+// --- 1. จัดการปุ่ม "ส่งออก" (เมื่อข้อมูลพร้อม) ---
 if (btnSubmitLobby) {
     btnSubmitLobby.addEventListener('click', () => {
-        // 1. แพ็คข้อมูลจำลอง (Mock Payload)
+        // 1.1 แพ็คข้อมูลจำลอง (Mock Payload)
+        const branchLabel = document.getElementById('lobbyBranchHeaderName');
         const mockPayload = {
             docNo: "TO-" + Date.now(),
-            branch: document.getElementById('lobbyBranchHeaderName').innerText,
+            branch: branchLabel ? branchLabel.innerText : "Unknown",
             boxCount: 1,
             itemCount: 5,
             isExpress: false // สมมติว่าดึงค่ามาจากปุ่ม Toggle หน้าจอ
         };
 
-        // 2. โยนเข้าเต้ารับ (Dispatcher)
-        dispatchTransferOutData(mockPayload);
+        // 1.2 โยนเข้าเต้ารับ (Dispatcher API) อย่างปลอดภัย
+        if (typeof dispatchTransferOutData === "function") {
+            dispatchTransferOutData(mockPayload);
+        } else {
+            console.warn("🚨 [System] ยังไม่ได้เชื่อมต่อไฟล์ data-connector.js");
+        }
 
-        // 3. ปิดจ๊อบ กลับไปหน้าแรก
-        safeNavigate(viewLobby, viewTaskHub);
+        // 1.3 ปิดจ๊อบ กลับไปหน้าแรก (แก้บั๊กชื่อฟังก์ชันผิดจาก safeNavigate เป็น navigationTo)
+        navigationTo(viewLobby, viewTaskHub);
     });
 }
 
-
-// =========================================================
-// MODULE: SHIPMENT BOX SETUP (จัดการปุ่มรถบรรทุก ด่าน 3)
-// =========================================================
-const btnAddShipmentTruck = document.getElementById('btnAddShipmentTruck');
-const shipmentBoxModal = document.getElementById('shipmentBoxModal');
-const btnCancelBox = document.getElementById('btnCancelBox');
-const btnConfirmBox = document.getElementById('btnConfirmBox');
-const btnSubmitLobby = document.getElementById('btnSubmitLobby'); // ปุ่มส่งออกสีเทา
-
-// 1. กดปุ่ม + รถบรรทุก -> เปิดหน้าต่างสร้างกล่อง
+// --- 2. จัดการปุ่ม + รถบรรทุก (สร้าง Shipment) ---
+// เปิดหน้าต่าง Modal
 if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener('click', () => {
-        // รีเซ็ต Dropdown เหตุผลให้กลับไปค่าเริ่มต้นทุกครั้งที่เปิด
         const reasonSelect = document.getElementById('selectShipmentReason');
-        if (reasonSelect) reasonSelect.selectedIndex = 0;
-        
+        if (reasonSelect) reasonSelect.selectedIndex = 0; // รีเซ็ตค่า
         if (shipmentBoxModal) shipmentBoxModal.classList.remove('hide');
     });
 }
 
-// 2. กดยกเลิก -> ปิดหน้าต่าง
+// กดยกเลิก Modal -> ปิดหน้าต่าง
 if (btnCancelBox) {
     btnCancelBox.addEventListener('click', () => {
         if (shipmentBoxModal) shipmentBoxModal.classList.add('hide');
     });
 }
 
-// 3. กดยืนยันเริ่มสแกน (สร้างกล่อง)
+// กดยืนยันสร้าง Shipment จาก Modal
 if (btnConfirmBox) {
     btnConfirmBox.addEventListener('click', () => {
         const reasonSelect = document.getElementById('selectShipmentReason');
         
-        // Validation: บังคับให้เลือกเหตุผลก่อน
+        // เช็คเงื่อนไขก่อนสร้าง
         if (reasonSelect && !reasonSelect.value) {
-            // (ถ้าเจเลอร์มีฟังก์ชัน safeAlert สามารถนำมาครอบตรงนี้ได้)
-            alert("กรุณาเลือกประเภทการส่งออกก่อนครับ");
+            safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกประเภทการส่งออกก่อนครับ");
             return; 
         }
 
-        console.log("📦 เริ่มเปิดกล่องเพื่อเตรียมสแกน! เหตุผล:", reasonSelect.value);
-        
-        // ซ่อน Modal
+        // ปิดหน้าต่าง Modal
         if (shipmentBoxModal) shipmentBoxModal.classList.add('hide');
 
-        // 🌟 [UI UPDATE]: ปลดล็อกปุ่ม "ส่งออก" (จำลองสเต็ปสุดท้าย)
+        // ปลดล็อกปุ่มส่งออกด้านล่างให้เป็นสีฟ้า (พร้อมใช้งาน)
         if (btnSubmitLobby) {
             btnSubmitLobby.disabled = false;
-            // เปลี่ยนปุ่มเป็นสีฟ้าเงางาม พร้อมใช้งาน
             btnSubmitLobby.style.background = "linear-gradient(135deg, #007bff 0%, #0056b3 100%)";
             btnSubmitLobby.style.color = "white";
             btnSubmitLobby.style.cursor = "pointer";
             btnSubmitLobby.style.border = "none";
         }
-        
-        // Note: ขั้นตอนต่อไป (Phase 2 & 3) เราจะเขียนโค้ดเคลียร์ข้อความ "ยังไม่มีข้อมูล"
-        // และอัปเดต UI ให้แสดง Card ของสินค้ารอแพ็คแทนครับ
     });
 }
 
