@@ -319,50 +319,89 @@ document.addEventListener("DOMContentLoaded", () => {
       if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
-      // 🛡️ เสกการ์ดพร้อมกล่อง Checkbox
+      // 🛡️ เสกการ์ดพร้อมกล่อง Checkbox และผูกสถานะกล่องที่กำลังทำงาน (Data Logic)
       const card = document.createElement("div");
       card.className = "shipment-card";
       card.setAttribute("data-shipment-type", selectShipmentReason.value);
+      card.setAttribute("data-status", "open"); // 📍 ตั้งค่าเริ่มต้นเป็น "open" ยังไม่ปิดกล่อง
       card.style.cssText =
         "background: white; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 10px; width: 100%;";
+
       card.innerHTML = `
                 <div style="background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); padding: 12px 15px; border-bottom: 1px solid #ccc; display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #111;">
                     <div style="display: flex; align-items: center;">
-                        <input type="checkbox" class="shipment-select-cb" style="transform: scale(1.4); margin-right: 15px; cursor: pointer;">
+                        <input type="checkbox" class="shipment-select-cb" disabled style="transform: scale(1.4); margin-right: 15px; cursor: pointer;">
                         <div><i class="fas fa-barcode" style="margin-right: 6px;"></i> ID: ${finalShipmentID}</div>
                     </div>
                     <span style="background: #222; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${selectShipmentReason.value}</span>
                 </div>
                 <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-                    <div style="font-size: 13px; color: #666;"><i class="fas fa-boxes"></i> ความจุรวม: <b style="color:#111;">0 กล่อง / 0 ชิ้น</b></div>
-                    <button style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;"><i class="fas fa-plus"></i> เพิ่มกล่อง</button>
+                    <div style="font-size: 13px; color: #666;" class="box-status-text"><i class="fas fa-box-open" style="color:#dc3545;"></i> 0 กล่อง (ยังไม่ปิดกล่อง)</div>
+                    <button class="btn-mock-close-box" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;"><i class="fas fa-lock"></i> ปิดกล่อง</button>
                 </div>
             `;
       if (lobbyContentContainer) lobbyContentContainer.appendChild(card);
 
-      // ผูกสายไฟกล่อง Checkbox กับปุ่มส่งออกทันที
+      // ผูกสายไฟกล่อง Checkbox กับปุ่มส่งออก
       const newCheckbox = card.querySelector(".shipment-select-cb");
       newCheckbox.addEventListener("change", evaluateExportButton);
+
+      // 📍 ฟังก์ชันจำลองการปิดกล่องใน Card
+      const btnMockClose = card.querySelector(".btn-mock-close-box");
+      btnMockClose.addEventListener("click", function () {
+        card.setAttribute("data-status", "closed");
+        card.querySelector(".box-status-text").innerHTML =
+          `<i class="fas fa-box" style="color:#28a745;"></i> 1 กล่อง (ปิดแล้ว)`;
+        newCheckbox.disabled = false; // ปลดล็อก Checkbox ให้กดติ๊กได้
+        this.style.display = "none"; // ซ่อนปุ่มปิดกล่อง
+        evaluateExportButton();
+      });
     });
   }
 
-  // 🛡️ ระบบคุมปุ่มส่งออกขั้นเด็ดขาด
+  // 🛡️ ระบบคุมปุ่ม EXPORT ขั้นเด็ดขาด (Strict Logic)
   function evaluateExportButton() {
-    const checkedCount = document.querySelectorAll(
+    const btnSubmitLobby = document.getElementById("btnSubmitLobby");
+    if (!btnSubmitLobby) return;
+
+    const checkedBoxes = document.querySelectorAll(
       ".shipment-select-cb:checked",
-    ).length;
-    if (checkedCount > 0) {
+    );
+    let isReadyToExport = false;
+
+    // ต้องมีการติ๊กเลือกอย่างน้อย 1 รายการ
+    if (checkedBoxes.length > 0) {
+      let allCheckedAreClosed = true;
+
+      // ทุกรายการที่ถูกติ๊ก "ต้องปิดกล่องแล้ว" (data-status="closed")
+      checkedBoxes.forEach((cb) => {
+        const card = cb.closest(".shipment-card");
+        if (!card || card.getAttribute("data-status") !== "closed") {
+          allCheckedAreClosed = false;
+        }
+      });
+
+      if (allCheckedAreClosed) {
+        isReadyToExport = true;
+      }
+    }
+
+    // อัปเดตลอจิกปุ่ม (เคารพสีโปร่งแสงและแสงเงาออริจินัลของเจเลอร์)
+    if (isReadyToExport) {
       btnSubmitLobby.disabled = false;
       btnSubmitLobby.style.background = "transparent";
       btnSubmitLobby.style.color = "#ffffff";
-      btnSubmitLobby.style.textShadow = "1px 1px 2px rgba(0,0,0,0.5)";
+      btnSubmitLobby.style.textShadow = "1px 1px 2px rgba(0,0,0,0.5)"; // ดึงความสวยงามของข้อความคืนมา
       btnSubmitLobby.style.cursor = "pointer";
+      btnSubmitLobby.innerHTML =
+        'EXPORT <i class="fas fa-paper-plane" style="margin-left: 8px;"></i>'; // คำมาตรฐาน + ไอคอนจรวดกระดาษ
     } else {
       btnSubmitLobby.disabled = true;
       btnSubmitLobby.style.background = "rgba(0,0,0,0.4)";
       btnSubmitLobby.style.color = "#aaa";
       btnSubmitLobby.style.textShadow = "none";
       btnSubmitLobby.style.cursor = "not-allowed";
+      btnSubmitLobby.innerText = "EXPORT";
     }
   }
 
