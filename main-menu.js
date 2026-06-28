@@ -7,7 +7,6 @@ function mockReceiveSignal(hasPendingDelivery, qty = 0) {
   if (!badge) return;
   const countDisplay = badge.querySelector(".badge-count");
   if (!countDisplay) return;
-
   if (hasPendingDelivery) {
     badge.classList.remove("hide");
     countDisplay.innerText = qty;
@@ -33,32 +32,53 @@ function navigationTo(hideView, showView) {
   }
 }
 
-// 🌟 ฟังก์ชันแจ้งเตือนส่วนกลาง (บังคับ Z-index ทะลุทุกเลเยอร์เพื่อแก้บั๊ก Test 1)
 function safeAlert(title, message) {
   const modal = document.getElementById("customAlertModal");
   if (modal) {
-    const header = document.getElementById("modalAlertHeader");
-    const icon = document.getElementById("modalAlertIcon");
     const titleElement = document.getElementById("modalAlertTitle");
     const messageElement = document.getElementById("modalAlertMessage");
-
     if (titleElement) titleElement.innerText = title;
     if (messageElement) messageElement.innerHTML = message;
-    if (header) header.style.background = "#dc3545";
-    if (icon) icon.className = "fas fa-exclamation-circle";
-
-    modal.style.zIndex = "1000005"; // เสริมเกราะป้องกันจม
+    modal.style.zIndex = "1000005";
     modal.classList.remove("hide");
   } else {
-    alert(title + "\n\n" + message.replace(/<br>/g, "\n"));
+    alert(title + "\n\n" + message);
   }
 }
 
+// 🌟 ลอจิกพรางรหัสความปลอดภัย (Security Obfuscation)
+function obfuscateBranchCode(code) {
+  if (!code) return "00XX";
+  const clean = code.replace(/[^a-zA-Z0-9]/g, "");
+  if (clean.length < 4) return clean;
+  const alpha = clean.substring(0, 2).toUpperCase();
+  const numeric = clean.substring(clean.length - 2);
+  return numeric + alpha;
+}
+
+// 🌟 ระบบรันเลข Audit อมตะ (Immutable Sequence)
+function generateAuditSequence(type, branch) {
+  const storageKey = `ledger_seq_${branch}_${type}`;
+  let currentSeq = parseInt(localStorage.getItem(storageKey)) || 0;
+  currentSeq += 1;
+  localStorage.setItem(storageKey, currentSeq);
+  return String(currentSeq).padStart(4, "0");
+}
+
+// 🌟 ฟังก์ชันดึงฟอร์แมตวันที่ YYMMDD
+function getFormattedDate() {
+  const d = new Date();
+  const yy = String(d.getFullYear()).substring(2);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return yy + mm + dd;
+}
+
 // ==========================================
-// MODULE 2: INITIALIZATION & EVENT LISTENERS (ล็อกให้อยู่ในกรอบปลอดภัย 100%)
+// MODULE 2: INITIALIZATION & EVENT LISTENERS
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
-  // --- Views ---
+  // --- 1. Main Menu Navigation (ระบบเก่าด่านหน้า) ---
   const mainMenuView = document.getElementById("mainMenuView");
   const productMovementView = document.getElementById("productMovementView");
   const viewTaskHub = document.getElementById("transferOutTaskHubView");
@@ -66,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewLobby = document.getElementById("transferOutLobbyView");
   const sharedHeader = document.getElementById("sharedHeader");
 
-  // --- Buttons Menu ---
   const btnMenuStock = document.getElementById("btnMenuStock");
   const btnMenuMovement = document.getElementById("btnMenuMovement");
   const btnBackToMain = document.getElementById("btnBackToMain");
@@ -101,16 +120,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (sharedHeader) sharedHeader.classList.remove("hide");
       if (btnMenuStock) btnMenuStock.classList.remove("anim-shrink-fade");
       if (btnMenuMovement) btnMenuMovement.classList.remove("anim-move-up");
-      if (sharedHeader) sharedHeader.classList.remove("anim-shrink-fade");
     });
   }
 
-  // --- Forward Flow ---
+  // --- 2. Transfer Out Forward Flow (เดินหน้า) ---
   const btnTransferOut = document.getElementById("btnTransferOut");
   if (btnTransferOut) {
-    btnTransferOut.addEventListener("click", () => {
-      navigationTo(productMovementView, viewTaskHub);
-    });
+    btnTransferOut.addEventListener("click", () =>
+      navigationTo(productMovementView, viewTaskHub),
+    );
   }
 
   const btnCreateNewTask =
@@ -152,44 +170,43 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         return;
       }
-      const selectedBranchText =
+      const selectedText =
         destDropdown.options[destDropdown.selectedIndex].text;
       const lobbyHeader = document.getElementById("lobbyBranchHeaderName");
-      if (lobbyHeader) lobbyHeader.innerText = selectedBranchText;
-
+      if (lobbyHeader) lobbyHeader.innerText = selectedText;
       navigationTo(viewDest, viewLobby);
     });
   }
 
-  // --- Backward Flow ---
+  // --- 3. Transfer Out Backward Flow (ถอยหลัง) ---
   const btnBackFromTaskHub =
     document.getElementById("btnBackToMovement") ||
     document.getElementById("btnBackFromTaskHub");
   if (btnBackFromTaskHub) {
-    btnBackFromTaskHub.addEventListener("click", () => {
-      navigationTo(viewTaskHub, productMovementView);
-    });
+    btnBackFromTaskHub.addEventListener("click", () =>
+      navigationTo(viewTaskHub, productMovementView),
+    );
   }
 
   const btnBackFromDest =
     document.getElementById("btnCancelDest") ||
     document.getElementById("btnBackFromDest");
   if (btnBackFromDest) {
-    btnBackFromDest.addEventListener("click", () => {
-      navigationTo(viewDest, viewTaskHub);
-    });
+    btnBackFromDest.addEventListener("click", () =>
+      navigationTo(viewDest, viewTaskHub),
+    );
   }
 
   const btnCancelFromLobby =
     document.getElementById("btnCancelFromLobby") ||
     document.getElementById("btnBackToDest");
   if (btnCancelFromLobby) {
-    btnCancelFromLobby.addEventListener("click", () => {
-      navigationTo(viewLobby, viewTaskHub);
-    });
+    btnCancelFromLobby.addEventListener("click", () =>
+      navigationTo(viewLobby, viewTaskHub),
+    );
   }
 
-  // --- Global Alert Modal (จัดการปุ่มปิดแจ้งเตือน) ---
+  // --- 4. Global Alert ---
   const btnModalAlertOk = document.getElementById("btnModalAlertOk");
   if (btnModalAlertOk) {
     btnModalAlertOk.addEventListener("click", () => {
@@ -198,39 +215,54 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Shipment Lobby & Setup ---
+  // --- 5. PHASE 2 ENGINE: Shipment Lobby & Generation ---
   const btnSubmitLobby = document.getElementById("btnSubmitLobby");
   const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
   const shipmentBoxModal = document.getElementById("shipmentBoxModal");
   const btnCancelBox = document.getElementById("btnCancelBox");
   const btnConfirmBox = document.getElementById("btnConfirmBox");
+  const selectShipmentReason = document.getElementById("selectShipmentReason");
+  const inputBoxNumber = document.getElementById("inputBoxNumber");
+
+  // ดึงพื้นที่สำหรับเสก Card (ถ้าระบบไม่เจอ ให้ใช้ตัว Fallback เดิม)
+  const lobbyContentContainer =
+    document.getElementById("lobbyContentContainer") ||
+    document.querySelector("#transferOutLobbyView .master-content");
+  const lobbyEmptyState = document.getElementById("lobbyEmptyState");
+
+  let temporaryShipmentID = "";
 
   if (btnSubmitLobby) {
     btnSubmitLobby.addEventListener("click", () => {
-      const branchLabel = document.getElementById("lobbyBranchHeaderName");
-      const mockPayload = {
-        docNo: "TO-" + Date.now(),
-        branch: branchLabel ? branchLabel.innerText : "Unknown",
-        boxCount: 1,
-        itemCount: 5,
-        isExpress: false,
-      };
-
-      if (typeof dispatchTransferOutData === "function") {
-        dispatchTransferOutData(mockPayload);
-      } else {
-        console.warn("🚨 [System] ยังไม่ได้เชื่อมต่อไฟล์ data-connector.js");
-      }
-
       safeAlert("เสร็จสิ้น", "ระบบทำการบันทึกและส่งออกข้อมูลเรียบร้อยแล้ว");
     });
   }
 
   if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener("click", () => {
-      const reasonSelect = document.getElementById("selectShipmentReason");
-      if (reasonSelect) reasonSelect.selectedIndex = 0;
+      if (selectShipmentReason) selectShipmentReason.selectedIndex = 0;
+      if (inputBoxNumber)
+        inputBoxNumber.value = "กรุณาเลือกประเภทระบบเพื่อคำนวณรหัส...";
+      temporaryShipmentID = "";
       if (shipmentBoxModal) shipmentBoxModal.classList.remove("hide");
+    });
+  }
+
+  if (selectShipmentReason) {
+    selectShipmentReason.addEventListener("change", () => {
+      const type = selectShipmentReason.value;
+      const originRaw = "CKC01";
+      const destDropdown = document.getElementById("selectDestination");
+      const destRaw = destDropdown ? destDropdown.value : "KKN02";
+
+      const p_type = type;
+      const p_date = getFormattedDate();
+      const p_origin = obfuscateBranchCode(originRaw);
+      const p_seq = generateAuditSequence(type, originRaw);
+      const p_dest = obfuscateBranchCode(destRaw);
+
+      temporaryShipmentID = `${p_type}-${p_date}-${p_origin}-${p_seq}-${p_dest}`;
+      if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
     });
   }
 
@@ -242,9 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnConfirmBox) {
     btnConfirmBox.addEventListener("click", () => {
-      const reasonSelect = document.getElementById("selectShipmentReason");
-
-      if (reasonSelect && !reasonSelect.value) {
+      if (!selectShipmentReason || !selectShipmentReason.value) {
         safeAlert(
           "ข้อมูลไม่ครบถ้วน",
           "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ",
@@ -252,20 +282,36 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+
+      const card = document.createElement("div");
+      card.className = "shipment-card";
+      card.style.cssText =
+        "background: white; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 10px; width: 100%;";
+      card.innerHTML = `
+                <div style="background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); padding: 12px 15px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #111;">
+                    <div><i class="fas fa-barcode" style="margin-right: 6px;"></i> ID: ${temporaryShipmentID}</div>
+                    <span style="background: #222; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${selectShipmentReason.value}</span>
+                </div>
+                <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 13px; color: #666;"><i class="fas fa-boxes"></i> ความจุรวม: <b style="color:#111;">0 กล่อง / 0 ชิ้น</b></div>
+                    <button style="background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;"><i class="fas fa-plus"></i> เพิ่มกล่อง</button>
+                </div>
+            `;
+      if (lobbyContentContainer) lobbyContentContainer.appendChild(card);
 
       if (btnSubmitLobby) {
         btnSubmitLobby.disabled = false;
-        btnSubmitLobby.style.background =
-          "linear-gradient(135deg, #007bff 0%, #0056b3 100%)";
-        btnSubmitLobby.style.color = "white";
+        // เปลี่ยนปุ่มเป็นสีลูกระนาดแบบโปร่งใสเพื่อคุมธีม
+        btnSubmitLobby.style.background = "transparent";
+        btnSubmitLobby.style.color = "#111";
         btnSubmitLobby.style.cursor = "pointer";
-        btnSubmitLobby.style.border = "none";
       }
     });
   }
 
-  // --- Checkbox Logic ---
+  // --- 6. Checkbox Logic (ระบบกล่องติ๊กของเดิม) ---
   const mainShipmentCheckbox = document.getElementById(
     "selectAllBoxesInShipment",
   );
@@ -277,7 +323,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ".box-select-checkbox:checked",
     ).length;
     if (!exportBtn) return;
-
     if (checkedCount > 0) {
       exportBtn.disabled = false;
       exportBtn.style.background = "#007bff";

@@ -470,32 +470,70 @@
 
                   <div id="transferOutLobbyView" class="view-screen hide master-layout">
                     
-                    <div class="master-header" style="background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.25);">
-                      <div class="master-header-content">
-                        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px;">SHIPMENT LOBBY</h3>
-                        <p id="lobbyBranchHeaderName" style="color: #ffdde0; margin: 5px 0 0 0; font-size: 14px; font-weight: bold;">[B000] - ชื่อสาขา</p>
+                    <div class="master-header" style="background: linear-gradient(to bottom, #4a4a4a 0%, #b8b8b8 30%, #ffffff 50%, #b8b8b8 70%, #4a4a4a 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 20;">
+                      <div class="master-header-content" style="text-align: center;">
+                        <h3 style="color: #111; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px; text-shadow: 0 1px 1px rgba(255,255,255,0.8);">SHIPMENT LOBBY</h3>
+                        <p id="lobbyBranchHeaderName" style="color: #333; margin: 5px 0 0 0; font-size: 14px; font-weight: bold;">[CKC01] - สาขาต้นทาง</p>
                       </div>
                     </div>
 
-                    <div class="master-content" style="padding: 15px; display: flex; align-items: center; justify-content: center;">
-                      <div style="text-align: center; padding: 40px 20px;">
+                    <div id="lobbyContentContainer" class="master-content" style="padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; background: #f5f4f0;">
+                      <div id="lobbyEmptyState" style="text-align: center; padding: 40px 20px; margin: auto;">
                         <i class="fas fa-truck-loading" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
                         <p style="color: #888; font-weight: bold;">ยังไม่มีข้อมูลการส่งออกในสาขานี้</p>
-                        <p style="color: #aaa; font-size: 14px;">กดปุ่ม +  เพื่อสร้างรายการ</p>
+                        <p style="color: #aaa; font-size: 14px;">กดปุ่ม + เพื่อสร้างรายการ</p>
                       </div>
                     </div>
 
-                    <button id="btnAddShipmentTruck" style="position: absolute; bottom: calc(10vh + 20px); right: 20px; width: 65px; height: 65px; border-radius: 50%; background: #007bff; color: white; border: none; box-shadow: 0 6px 15px rgba(0,123,255,0.4); font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 50;">
+                    <button id="btnAddShipmentTruck" style="position: absolute; bottom: calc(10vh + 20px); right: 20px; width: 68px; height: 68px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #54a0ff 0%, #007bff 50%, #0056b3 100%); color: white; border: none; box-shadow: 0 8px 16px rgba(0,0,0,0.3), inset 0 -4px 8px rgba(0,0,0,0.4), inset 0 4px 8px rgba(255,255,255,0.4); font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 50; transition: transform 0.1s ease;">
                       <i class="fas fa-truck"></i><i class="fas fa-plus" style="font-size: 12px; margin-left: 2px; margin-top: -10px;"></i>
                     </button>
                     
-                    <div class="master-footer">
-                      <button id="btnCancelFromLobby" class="master-btn-half" style="background: #6c757d; color: white;">ยกเลิก</button>
-                      <button id="btnSubmitLobby" class="master-btn-half" disabled style="background: #cccccc; color: #666666; cursor: not-allowed;">ส่งออก</button>
+                    <div class="master-footer" style="background: linear-gradient(to bottom, #4a4a4a 0%, #b8b8b8 30%, #ffffff 50%, #b8b8b8 70%, #4a4a4a 100%); border-top: 1px solid #222;">
+                      <button id="btnCancelFromLobby" class="master-btn-half" style="background: transparent; color: #111; font-weight: bold; border: none; height: 100%;">ยกเลิก</button>
+                      <button id="btnSubmitLobby" class="master-btn-half" disabled style="background: rgba(0,0,0,0.15); color: #666; font-weight: bold; border: none; height: 100%; border-left: 1px solid rgba(0,0,0,0.2); cursor: not-allowed;">ส่งออก</button>
                     </div>
 
                   </div>
 
+                        <div id="customAlertModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000005; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+                          <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column;">
+                            <div id="modalAlertHeader" style="background: #dc3545; padding: 20px; text-align: center;">
+                              <i id="modalAlertIcon" class="fas fa-exclamation-circle" style="font-size: 40px; color: white;"></i>
+                            </div>
+                            <div style="padding: 25px 20px; text-align: center;">
+                              <h3 id="modalAlertTitle" style="margin: 0 0 10px 0; font-size: 18px; color: #333;">แจ้งเตือน</h3>
+                              <p id="modalAlertMessage" style="margin: 0; font-size: 15px; color: #666; line-height: 1.5;">ข้อความเตือน</p>
+                            </div>
+                            <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: center;">
+                              <button id="btnModalAlertOk" style="background: #333; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%;">ตกลง (OK)</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div id="shipmentBoxModal" class="custom-alert-overlay hide" style="z-index: 100000;">
+                          <div class="custom-alert-box" style="text-align: left; padding: 25px; width: 85%;">
+                            <h3 style="text-align: center; margin-bottom: 20px; color: #333;">
+                              <i class="fas fa-truck-loading"></i> สร้างรอบการจัดส่ง
+                            </h3>
+                            
+                            <label for="selectShipmentReason" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">ประเภทการส่งออก</label>
+                            <select id="selectShipmentReason" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; outline: none; background: #f9fafb; color: #333;">
+                              <option value="" disabled selected>-- เลือกประเภท --</option>
+                              <option value="TF">ย้ายสาขา (Transfer)</option>
+                              <option value="RT">ส่งคืนคลัง (Return)</option>
+                              <option value="DF">สินค้ามีตำหนิ (Defect)</option>
+                            </select>
+
+                            <label for="inputBoxNumber" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">หมายเลข Shipment (พรางรหัสความปลอดภัย)</label>
+                            <input type="text" id="inputBoxNumber" value="ระบบกำลังรันรหัสปลอดภัย..." disabled style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; margin-bottom: 25px; background: #e9ecef; color: #495057; font-weight: bold; box-sizing: border-box; text-align: center; letter-spacing: 0.5px;">
+
+                            <div class="custom-alert-buttons">
+                              <button id="btnCancelBox" class="btn-alert-cancel" style="color: #6c757d; border-color: #6c757d;">ยกเลิก</button>
+                              <button id="btnConfirmBox" class="btn-alert-ok" style="background: linear-gradient(135deg, #222 0%, #444 100%); color: white;">ยืนยันสร้าง</button>
+                            </div>
+                          </div>
+                        </div>
 
 
 
@@ -841,47 +879,54 @@
                             </div>
                           </div>
 
-<div id="customAlertModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000005; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
-        <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column;">
-          
-          <div id="modalAlertHeader" style="background: #dc3545; padding: 20px; text-align: center;">
-            <i id="modalAlertIcon" class="fas fa-exclamation-circle" style="font-size: 40px; color: white;"></i>
-          </div>
-          
-          <div style="padding: 25px 20px; text-align: center;">
-            <h3 id="modalAlertTitle" style="margin: 0 0 10px 0; font-size: 18px; color: #333;">แจ้งเตือน</h3>
-            <p id="modalAlertMessage" style="margin: 0; font-size: 15px; color: #666; line-height: 1.5;">ข้อความเตือนจะแสดงตรงนี้</p>
-          </div>
-          
-          <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: center;">
-            <button id="btnModalAlertOk" style="background: #333; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%;">ตกลง (OK)</button>
-          </div>
-        </div>
-      </div>
 
-      <div id="shipmentBoxModal" class="custom-alert-overlay hide" style="z-index: 100000;">
-        <div class="custom-alert-box" style="text-align: left; padding: 25px; width: 85%;">
-          <h3 style="text-align: center; margin-bottom: 20px; color: #dc3545;">
-            <i class="fas fa-truck-loading"></i> สร้างรอบการจัดส่ง
-          </h3>
-          
-          <label for="selectShipmentReason" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">ประเภทการส่งออก</label>
-          <select id="selectShipmentReason" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; outline: none; background: #f9fafb; color: #333;">
-            <option value="" disabled selected>-- เลือกประเภท --</option>
-            <option value="transfer">ย้ายสาขา (Transfer)</option>
-            <option value="return">ส่งคืนคลัง (Return)</option>
-            <option value="defect">สินค้ามีตำหนิ (Defect)</option>
-          </select>
 
-          <label for="inputBoxNumber" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">หมายเลข Shipment (รันอัตโนมัติ)</label>
-          <input type="text" id="inputBoxNumber" value="รอการสร้างจากระบบ..." disabled style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #eee; font-size: 15px; margin-bottom: 25px; background: #e9ecef; color: #6c757d; font-weight: bold; box-sizing: border-box; text-align: center;">
 
-          <div class="custom-alert-buttons">
-            <button id="btnCancelBox" class="btn-alert-cancel" style="color: #6c757d; border-color: #6c757d;">ยกเลิก</button>
-            <button id="btnConfirmBox" class="btn-alert-ok" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">ยืนยันสร้าง</button>
-          </div>
-        </div>
-      </div>
+
+
+
+
+              <div id="customAlertModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000005; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+                <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column;">
+                  
+                  <div id="modalAlertHeader" style="background: #dc3545; padding: 20px; text-align: center;">
+                    <i id="modalAlertIcon" class="fas fa-exclamation-circle" style="font-size: 40px; color: white;"></i>
+                  </div>
+                  
+                  <div style="padding: 25px 20px; text-align: center;">
+                    <h3 id="modalAlertTitle" style="margin: 0 0 10px 0; font-size: 18px; color: #333;">แจ้งเตือน</h3>
+                    <p id="modalAlertMessage" style="margin: 0; font-size: 15px; color: #666; line-height: 1.5;">ข้อความเตือนจะแสดงตรงนี้</p>
+                  </div>
+                  
+                  <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: center;">
+                    <button id="btnModalAlertOk" style="background: #333; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%;">ตกลง (OK)</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="shipmentBoxModal" class="custom-alert-overlay hide" style="z-index: 100000;">
+                <div class="custom-alert-box" style="text-align: left; padding: 25px; width: 85%;">
+                  <h3 style="text-align: center; margin-bottom: 20px; color: #dc3545;">
+                    <i class="fas fa-truck-loading"></i> สร้างรอบการจัดส่ง
+                  </h3>
+                  
+                  <label for="selectShipmentReason" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">ประเภทการส่งออก</label>
+                  <select id="selectShipmentReason" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; outline: none; background: #f9fafb; color: #333;">
+                    <option value="" disabled selected>-- เลือกประเภท --</option>
+                    <option value="transfer">ย้ายสาขา (Transfer)</option>
+                    <option value="return">ส่งคืนคลัง (Return)</option>
+                    <option value="defect">สินค้ามีตำหนิ (Defect)</option>
+                  </select>
+
+                  <label for="inputBoxNumber" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">หมายเลข Shipment (รันอัตโนมัติ)</label>
+                  <input type="text" id="inputBoxNumber" value="รอการสร้างจากระบบ..." disabled style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #eee; font-size: 15px; margin-bottom: 25px; background: #e9ecef; color: #6c757d; font-weight: bold; box-sizing: border-box; text-align: center;">
+
+                  <div class="custom-alert-buttons">
+                    <button id="btnCancelBox" class="btn-alert-cancel" style="color: #6c757d; border-color: #6c757d;">ยกเลิก</button>
+                    <button id="btnConfirmBox" class="btn-alert-ok" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">ยืนยันสร้าง</button>
+                  </div>
+                </div>
+              </div>
 
 
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"
