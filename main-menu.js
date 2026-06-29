@@ -209,6 +209,10 @@ function getFormattedDate() {
   return yy + mm + dd;
 }
 
+
+
+
+
 // ==========================================
 // MODULE 2: INITIALIZATION & EVENT LISTENERS
 // ==========================================
@@ -266,6 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  // --- สร้าง ลอบบี้ สาขา ใหม่(เดินหน้า) ---
   const btnCreateNewTask =
     document.getElementById("btnCreateNewTask") ||
     document.getElementById("btnNewTask");
@@ -277,6 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- ปุ่มตกลงสร้าง ลอบบี้สาขา Tranfer OUT(เดินหน้า) ---
   document
     .querySelectorAll(".task-list-item, .pending-task-row")
     .forEach((row) => {
@@ -313,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 3. Transfer Out Backward Flow (ถอยหลัง) ---
+  // --- 3. ออกไปหน้า PRODUCT MOVEMENT (ถอยหลัง) ---
   const btnBackFromTaskHub =
     document.getElementById("btnBackToMovement") ||
     document.getElementById("btnBackFromTaskHub");
@@ -323,6 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  // --- ออกไปหน้า TRANFER OUT LOBBY (ถอยหลัง) ---
   const btnBackFromDest =
     document.getElementById("btnCancelDest") ||
     document.getElementById("btnBackFromDest");
@@ -332,6 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  // --- ออกไปหน้า TRANFER OUT LOBBY (ถอยหลัง) ---
   const btnCancelFromLobby =
     document.getElementById("btnCancelFromLobby") ||
     document.getElementById("btnBackToDest");
@@ -341,7 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // --- 4. Global Alert ---
+  // --- 4. Global Alert  หน้าต่างแจ้งเตือน ---
   const btnModalAlertOk = document.getElementById("btnModalAlertOk");
   if (btnModalAlertOk) {
     btnModalAlertOk.addEventListener("click", () => {
@@ -350,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 5. PHASE 2 ENGINE: Shipment Lobby & Generation ---
+  // --- 5. PHASE 2 ENGINE:ภายในห้องล็อบบี้สาขา Shipment Lobby & Generation ---
   const btnSubmitLobby = document.getElementById("btnSubmitLobby");
   const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
   const shipmentBoxModal = document.getElementById("shipmentBoxModal");
@@ -367,6 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let temporaryShipmentID = "";
   let selectedOriginRealCode = "CKC01"; // ต้นทางสมมติ
 
+  // ---  กดส่งออก  ---
   if (btnSubmitLobby) {
     btnSubmitLobby.addEventListener("click", () => {
       safeAlert(
@@ -377,6 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ---   ปุ่มรูปรถบรรทุก  ---
   if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener("click", () => {
       if (selectShipmentReason) selectShipmentReason.selectedIndex = 0;
@@ -387,6 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ---   หน้าต่างดาวเลือกประเภทการส่ง  ---
   if (selectShipmentReason) {
     selectShipmentReason.addEventListener("change", () => {
       const type = selectShipmentReason.value;
@@ -406,13 +417,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ---    ปุ่มกดยกเลิก  นายหน้าล็อบบี้สาขา ---
   if (btnCancelBox) {
     btnCancelBox.addEventListener("click", () => {
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
     });
   }
 
-  // 📍 [START: บล็อกสร้างการ์ด Shipment (อัปเดตลอจิก Select All + พรางตัว)]
+  // ---     ปุ่มกดตกลงในหน้าต่างเลือกประเภทการโอน ---
   if (btnConfirmBox) {
     btnConfirmBox.addEventListener("click", () => {
       if (!selectShipmentReason || !selectShipmentReason.value) {
@@ -422,6 +434,8 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         return;
       }
+
+      // --- ตัวโครงสร้างหน้าต่าง ประเภทการโอน---
       const existingCardType = document.querySelector(
         `.shipment-card[data-shipment-type="${selectShipmentReason.value}"]`,
       );
@@ -433,13 +447,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // ID พรางตัวจนกว่าจะ Export
+      //  ปุ่มส่งออกที่ถูกลอค
       const finalShipmentID = `${
         selectShipmentReason.value
       }-${getFormattedDate()}-XXXX-XXXX-XXXX`;
       if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
+      //   สร้างแถบ Ship เมนต์
       const card = document.createElement("div");
       card.className = "shipment-card";
       card.setAttribute("data-shipment-type", selectShipmentReason.value);

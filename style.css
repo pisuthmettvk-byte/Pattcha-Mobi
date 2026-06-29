@@ -778,6 +778,11 @@ body {
 .icon-yellow { color: #fbc02d; }
 /* #endregion */
 
+
+
+
+
+
 /* ==========================================
   MODULE: HERO TRANSITION ANIMATION
   ========================================== */
@@ -807,6 +812,10 @@ body {
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 /* #endregion */
+
+
+
+
 
 /* =========================================================
   🌟 MASTER BLUEPRINT (Fluid Responsive สำหรับด่าน 1-จบ)
