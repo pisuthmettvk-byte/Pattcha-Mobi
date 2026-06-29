@@ -555,8 +555,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   // 📍 [END: บล็อกสร้างการ์ด Shipment]
 
- 
-
   /* 📍 [START: MASTER INTEGRATION - BOX DETAILS & SCANNING] */
 
   // ตัวแปรควบคุมสถานะปัจจุบัน
@@ -587,11 +585,18 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("boxDetailsView").classList.remove("hide");
   }
 
-  // ผูกปุ่มย้อนกลับให้กลับไป Lobby หลัก
+
+
+  
+  // ผูกปุ่มย้อนกลับจากหน้าจอดีเทล (Footer ฝั่งซ้าย)
   document.getElementById("btnBackToLobby").addEventListener("click", () => {
     document.getElementById("boxDetailsView").classList.add("hide");
-    evaluateExportButton(); // อัปเดตสถานะปุ่ม Export ใหม่หลังจากออกจากหน้าจอ
+    evaluateExportButton();
   });
+
+
+
+
 
   /* 📍 [END: MASTER INTEGRATION] */
 
@@ -864,4 +869,4 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-}); // 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
+};); // 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
