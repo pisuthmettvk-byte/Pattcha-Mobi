@@ -32,23 +32,30 @@ function navigationTo(hideView, showView) {
   }
 }
 
-
-
-
 /* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeAlert (Dynamic)  ผลลัพธ์ : แจ้งเตือน 3 สี (แดง=ค่าเริ่มต้น, เขียว=สำเร็จ, เหลือง=เตือน) */
-function safeAlert(title, message, type = 'error') {
-  const overlay = document.createElement('div');
+function safeAlert(title, message, type = "error") {
+  const overlay = document.createElement("div");
   overlay.className = "sys-alert-element";
-  overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+  overlay.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
 
   let headerBg, iconClass, btnBg, btnText;
-  if (type === 'success') {
-      headerBg = '#28a745'; iconClass = 'fas fa-check-circle'; btnBg = '#28a745'; btnText = 'white';
-  } else if (type === 'warning' || type === 'question') {
-      headerBg = '#ffc107'; iconClass = 'fas fa-exclamation-circle'; btnBg = '#ffc107'; btnText = '#000';
-  } else { 
-      // ค่าเริ่มต้น (Error / ล็อก / ผิดเงื่อนไข) -> สีแดง
-      headerBg = '#dc3545'; iconClass = 'fas fa-exclamation-triangle'; btnBg = '#dc3545'; btnText = 'white';
+  if (type === "success") {
+    headerBg = "#28a745";
+    iconClass = "fas fa-check-circle";
+    btnBg = "#28a745";
+    btnText = "white";
+  } else if (type === "warning" || type === "question") {
+    headerBg = "#ffc107";
+    iconClass = "fas fa-exclamation-circle";
+    btnBg = "#ffc107";
+    btnText = "#000";
+  } else {
+    // ค่าเริ่มต้น (Error / ล็อก / ผิดเงื่อนไข) -> สีแดง
+    headerBg = "#dc3545";
+    iconClass = "fas fa-exclamation-triangle";
+    btnBg = "#dc3545";
+    btnText = "white";
   }
 
   overlay.innerHTML = `
@@ -66,21 +73,30 @@ function safeAlert(title, message, type = 'error') {
       </div>
   `;
   document.body.appendChild(overlay);
-  overlay.querySelector('.btn-ok').addEventListener('click', () => document.body.removeChild(overlay));
+  overlay
+    .querySelector(".btn-ok")
+    .addEventListener("click", () => document.body.removeChild(overlay));
 }
 
 /* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeConfirm (Dynamic)  ผลลัพธ์ : หน้าต่างยืนยันแยกสี (แดง=ลบ/ตกใจ, เหลือง=คำถามทั่วไป) */
-function safeConfirm(title, message, onConfirm, type = 'question') {
-  const overlay = document.createElement('div');
-  overlay.className = "sys-alert-element"; 
-  overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
-  
+function safeConfirm(title, message, onConfirm, type = "question") {
+  const overlay = document.createElement("div");
+  overlay.className = "sys-alert-element";
+  overlay.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+
   let headerBg, iconClass, btnBg, btnText;
-  if (type === 'delete' || type === 'error') {
-      headerBg = '#dc3545'; iconClass = 'fas fa-exclamation-triangle'; btnBg = '#dc3545'; btnText = 'white';
-  } else { 
-      // ค่าเริ่มต้น (Question) -> สีเหลือง เครื่องหมายคำถาม
-      headerBg = '#ffc107'; iconClass = 'fas fa-question-circle'; btnBg = '#ffc107'; btnText = '#000';
+  if (type === "delete" || type === "error") {
+    headerBg = "#dc3545";
+    iconClass = "fas fa-exclamation-triangle";
+    btnBg = "#dc3545";
+    btnText = "white";
+  } else {
+    // ค่าเริ่มต้น (Question) -> สีเหลือง เครื่องหมายคำถาม
+    headerBg = "#ffc107";
+    iconClass = "fas fa-question-circle";
+    btnBg = "#ffc107";
+    btnText = "#000";
   }
 
   overlay.innerHTML = `
@@ -100,41 +116,60 @@ function safeConfirm(title, message, onConfirm, type = 'question') {
   `;
   document.body.appendChild(overlay);
 
-  overlay.querySelector('.btn-cancel').addEventListener('click', () => document.body.removeChild(overlay));
-  overlay.querySelector('.btn-confirm').addEventListener('click', () => {
-      document.body.removeChild(overlay);
-      onConfirm();
+  overlay
+    .querySelector(".btn-cancel")
+    .addEventListener("click", () => document.body.removeChild(overlay));
+  overlay.querySelector(".btn-confirm").addEventListener("click", () => {
+    document.body.removeChild(overlay);
+    onConfirm();
   });
 }
 
 /* ประเภท : ฟังก์ชัน Event ดักจับการคลิกสูงสุด  ชื่อ : Global Delete Mode Blocker  ผลลัพธ์ : บล็อกการคลิกปุ่มทุกชนิดในหน้าจอถ้ามีถังขยะเปิดอยู่ พร้อมแจ้งเตือน */
-document.addEventListener("click", function(e) {
-    const activeDeleteCard = document.querySelector('.shipment-card.is-delete-mode');
-    
+document.addEventListener(
+  "click",
+  function (e) {
+    const activeDeleteCard = document.querySelector(
+      ".shipment-card.is-delete-mode",
+    );
+
     // ถ้ามีโหมดลบกล่องเปิดอยู่
     if (activeDeleteCard) {
-        // ยกเว้น: ไม่บล็อกหน้าต่าง Alert ของระบบ และกล่อง Confirm 
-        if (e.target.closest('#customAlertModal') || e.target.closest('.sys-alert-element')) {
-            return; 
-        }
+      // ยกเว้น: ไม่บล็อกหน้าต่าง Alert ของระบบ และกล่อง Confirm
+      if (
+        e.target.closest("#customAlertModal") ||
+        e.target.closest(".sys-alert-element")
+      ) {
+        return;
+      }
 
-        // ถ้าคลิก "ภายใน" การ์ดที่เปิดโหมดถังขยะ
-        if (activeDeleteCard.contains(e.target)) {
-            // อนุญาตแค่ปุ่มถังขยะบนหัว (เพื่อปิดโหมด) และปุ่มลบย่อย เท่านั้น
-            if (!e.target.closest('.btn-toggle-delete') && !e.target.closest('.btn-delete-box')) {
-                e.preventDefault(); e.stopPropagation();
-                safeAlert("ระบบถูกล็อก", "โหมดลบกล่องกำลังทำงานอยู่ กรุณากดปุ่มลบ หรือกดปุ่มถังขยะที่ส่วนหัวเพื่อปิดโหมดก่อนครับ");
-            }
-        } else {
-            // ถ้าไปคลิก "นอกการ์ด" (เช่น ไปกด Export, กด Cancel, หรือกดการ์ดใบอื่น) -> บล็อกทิ้ง!
-            e.preventDefault(); e.stopPropagation();
-            safeAlert("ระบบถูกล็อก", "ไม่อนุญาตให้ทำรายการอื่นขณะเปิดโหมดลบกล่องค้างไว้ กรุณาปิดโหมดลบของรายการนั้นก่อนครับ");
+      // ถ้าคลิก "ภายใน" การ์ดที่เปิดโหมดถังขยะ
+      if (activeDeleteCard.contains(e.target)) {
+        // อนุญาตแค่ปุ่มถังขยะบนหัว (เพื่อปิดโหมด) และปุ่มลบย่อย เท่านั้น
+        if (
+          !e.target.closest(".btn-toggle-delete") &&
+          !e.target.closest(".btn-delete-box")
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          safeAlert(
+            "ระบบถูกล็อก",
+            "โหมดลบกล่องกำลังทำงานอยู่ กรุณากดปุ่มลบ หรือกดปุ่มถังขยะที่ส่วนหัวเพื่อปิดโหมดก่อนครับ",
+          );
         }
+      } else {
+        // ถ้าไปคลิก "นอกการ์ด" (เช่น ไปกด Export, กด Cancel, หรือกดการ์ดใบอื่น) -> บล็อกทิ้ง!
+        e.preventDefault();
+        e.stopPropagation();
+        safeAlert(
+          "ระบบถูกล็อก",
+          "ไม่อนุญาตให้ทำรายการอื่นขณะเปิดโหมดลบกล่องค้างไว้ กรุณาปิดโหมดลบของรายการนั้นก่อนครับ",
+        );
+      }
     }
-}, true); // ใช้ Capture Phase ชิงตัดหน้าอีเวนต์อื่นทั้งหมด
-
-
-
+  },
+  true,
+); // ใช้ Capture Phase ชิงตัดหน้าอีเวนต์อื่นทั้งหมด
 
 // 🌟 ตัวท่อรอรับรหัสสาขาจริง (Real Branch Code Wiring)
 function getRealBranchCode(branchId) {
@@ -399,7 +434,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // ID พรางตัวจนกว่าจะ Export
-      const finalShipmentID = `${selectShipmentReason.value}-${getFormattedDate()}-XXXX-XXXX-XXXX`;
+      const finalShipmentID = `${
+        selectShipmentReason.value
+      }-${getFormattedDate()}-XXXX-XXXX-XXXX`;
       if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
@@ -504,7 +541,9 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
           `;
         boxListContainer.appendChild(boxItem);
-        boxCountDisplay.innerText = `Boxes (${card.querySelectorAll(".box-item").length})`;
+        boxCountDisplay.innerText = `Boxes (${
+          card.querySelectorAll(".box-item").length
+        })`;
 
         const childCb = boxItem.querySelector(".box-select-cb");
 
@@ -530,7 +569,9 @@ document.addEventListener("DOMContentLoaded", () => {
               `แน่ใจหรือไม่ว่าต้องการลบ BOX-${boxId} ?`,
               () => {
                 boxItem.remove();
-                boxCountDisplay.innerText = `Boxes (${card.querySelectorAll(".box-item").length})`;
+                boxCountDisplay.innerText = `Boxes (${
+                  card.querySelectorAll(".box-item").length
+                })`;
                 if (
                   card.querySelectorAll('.box-item[data-status="closed"]')
                     .length === 0
@@ -585,18 +626,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("boxDetailsView").classList.remove("hide");
   }
 
-
-
-  
   // ผูกปุ่มย้อนกลับจากหน้าจอดีเทล (Footer ฝั่งซ้าย)
   document.getElementById("btnBackToLobby").addEventListener("click", () => {
     document.getElementById("boxDetailsView").classList.add("hide");
     evaluateExportButton();
   });
-
-
-
-
 
   /* 📍 [END: MASTER INTEGRATION] */
 
@@ -869,4 +903,4 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-};); // 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
+}); // 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
