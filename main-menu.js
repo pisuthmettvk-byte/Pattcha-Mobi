@@ -32,31 +32,61 @@ function navigationTo(hideView, showView) {
   }
 }
 
-function safeAlert(title, message) {
-  const modal = document.getElementById("customAlertModal");
-  if (modal) {
-    const titleElement = document.getElementById("modalAlertTitle");
-    const messageElement = document.getElementById("modalAlertMessage");
-    if (titleElement) titleElement.innerText = title;
-    if (messageElement) messageElement.innerHTML = message;
-    modal.style.zIndex = "1000005";
-    modal.classList.remove("hide");
-  } else {
-    alert(title + "\n\n" + message);
+
+
+
+/* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeAlert (Dynamic)  ผลลัพธ์ : แจ้งเตือน 3 สี (แดง=ค่าเริ่มต้น, เขียว=สำเร็จ, เหลือง=เตือน) */
+function safeAlert(title, message, type = 'error') {
+  const overlay = document.createElement('div');
+  overlay.className = "sys-alert-element";
+  overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+
+  let headerBg, iconClass, btnBg, btnText;
+  if (type === 'success') {
+      headerBg = '#28a745'; iconClass = 'fas fa-check-circle'; btnBg = '#28a745'; btnText = 'white';
+  } else if (type === 'warning' || type === 'question') {
+      headerBg = '#ffc107'; iconClass = 'fas fa-exclamation-circle'; btnBg = '#ffc107'; btnText = '#000';
+  } else { 
+      // ค่าเริ่มต้น (Error / ล็อก / ผิดเงื่อนไข) -> สีแดง
+      headerBg = '#dc3545'; iconClass = 'fas fa-exclamation-triangle'; btnBg = '#dc3545'; btnText = 'white';
   }
+
+  overlay.innerHTML = `
+      <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; animation: popIn 0.3s ease-out;">
+          <div style="background: ${headerBg}; padding: 20px; text-align: center;">
+              <i class="${iconClass}" style="font-size: 40px; color: white;"></i>
+          </div>
+          <div style="padding: 25px 20px; text-align: center;">
+              <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${title}</h3>
+              <p style="margin: 0; font-size: 14px; color: #666; line-height: 1.5;">${message}</p>
+          </div>
+          <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: center;">
+              <button class="btn-ok" style="background: ${btnBg}; color: ${btnText}; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%;">รับทราบ</button>
+          </div>
+      </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.btn-ok').addEventListener('click', () => document.body.removeChild(overlay));
 }
 
-
-/* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeConfirm  ผลลัพธ์ : แสดงหน้าต่างยืนยัน สีเหลืองทองทั้งส่วนหัวและปุ่มตกลง */
-function safeConfirm(title, message, onConfirm) {
+/* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeConfirm (Dynamic)  ผลลัพธ์ : หน้าต่างยืนยันแยกสี (แดง=ลบ/ตกใจ, เหลือง=คำถามทั่วไป) */
+function safeConfirm(title, message, onConfirm, type = 'question') {
   const overlay = document.createElement('div');
-  // 📍 เพิ่มคลาส sys-alert-element เพื่อให้ระบบรู้ว่านี่คือกล่องแจ้งเตือน ห้ามโดนบล็อก
   overlay.className = "sys-alert-element"; 
   overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+  
+  let headerBg, iconClass, btnBg, btnText;
+  if (type === 'delete' || type === 'error') {
+      headerBg = '#dc3545'; iconClass = 'fas fa-exclamation-triangle'; btnBg = '#dc3545'; btnText = 'white';
+  } else { 
+      // ค่าเริ่มต้น (Question) -> สีเหลือง เครื่องหมายคำถาม
+      headerBg = '#ffc107'; iconClass = 'fas fa-question-circle'; btnBg = '#ffc107'; btnText = '#000';
+  }
+
   overlay.innerHTML = `
       <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column;">
-          <div style="background: #ffc107; padding: 20px; text-align: center;">
-              <i class="fas fa-exclamation-triangle" style="font-size: 40px; color: #333;"></i>
+          <div style="background: ${headerBg}; padding: 20px; text-align: center;">
+              <i class="${iconClass}" style="font-size: 40px; color: white;"></i>
           </div>
           <div style="padding: 25px 20px; text-align: center;">
               <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${title}</h3>
@@ -64,7 +94,7 @@ function safeConfirm(title, message, onConfirm) {
           </div>
           <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: space-between; gap: 10px;">
               <button class="btn-cancel" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1;">ยกเลิก</button>
-              <button class="btn-confirm" style="background: #ffc107; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">ตกลง</button>
+              <button class="btn-confirm" style="background: ${btnBg}; color: ${btnText}; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">ตกลง</button>
           </div>
       </div>
   `;
@@ -302,11 +332,16 @@ document.addEventListener("DOMContentLoaded", () => {
   let temporaryShipmentID = "";
   let selectedOriginRealCode = "CKC01"; // ต้นทางสมมติ
 
-  if (btnSubmitLobby) {
-    btnSubmitLobby.addEventListener("click", () => {
-      safeAlert("เสร็จสิ้น", "ระบบทำการบันทึกและส่งออกข้อมูลเรียบร้อยแล้ว");
-    });
-  }
+if (btnSubmitLobby) {
+  btnSubmitLobby.addEventListener("click", () => {
+    safeAlert(
+      "เสร็จสิ้น",
+      "ระบบทำการบันทึกและส่งออกข้อมูลเรียบร้อยแล้ว",
+      "success",
+    );
+  });
+}
+
 
   if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener("click", () => {
@@ -505,30 +540,21 @@ document.addEventListener("DOMContentLoaded", () => {
               },
             );
           });
-
-        /* 📍 ลอจิก: จำลองแอดสินค้าปิดกล่อง */
-        boxItem
-          .querySelector(".btn-add-item")
-          .addEventListener("click", function () {
-            safeConfirm(
-              "ยืนยัน",
-              "เพิ่มสินค้าเสร็จสิ้น ปิดกล่องนี้เลยหรือไม่?",
-              () => {
-                boxItem.setAttribute("data-status", "closed");
-                boxItem.querySelector(".box-status-icon").className =
-                  "fas fa-box box-status-icon";
-                boxItem.querySelector(".box-status-icon").style.color =
-                  "#28a745";
-                childCb.disabled = false;
-                mainCheckbox.disabled = false; // ปลดล็อกแม่
-                this.style.display = "none";
-                evaluateExportButton();
-              },
-            );
+/* ประเภท : ฟังก์ชัน  ชื่อ : ลบกล่องย่อย (Custom Confirm สีแดง) */
+          boxItem.querySelector(".btn-delete-box").addEventListener("click", function() {
+              safeConfirm("ลบกล่อง", `แน่ใจหรือไม่ว่าต้องการลบ BOX-${boxId} ?`, () => {
+                  boxItem.remove();
+                  boxCountDisplay.innerText = `Boxes (${card.querySelectorAll('.box-item').length})`;
+                  if (card.querySelectorAll('.box-item[data-status="closed"]').length === 0) {
+                      mainCheckbox.checked = false; mainCheckbox.disabled = true;
+                  }
+                  evaluateExportButton();
+              }, "delete"); // 📍 ใส่ "delete" ตรงนี้เพื่อให้เป็นสีแดง
+          });
           });
       });
     });
-  }
+
   // 📍 [END: บล็อกสร้างการ์ด Shipment]
 
 
