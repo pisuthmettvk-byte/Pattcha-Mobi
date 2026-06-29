@@ -46,6 +46,35 @@ function safeAlert(title, message) {
   }
 }
 
+
+/* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeConfirm  ผลลัพธ์ : แสดงหน้าต่างยืนยัน (ตกลง/ยกเลิก) ดีไซน์ Custom แทน confirm() ของระบบ */
+function safeConfirm(title, message, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+  overlay.innerHTML = `
+      <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; animation: popIn 0.3s ease-out;">
+          <div style="background: #ffc107; padding: 20px; text-align: center;">
+              <i class="fas fa-question-circle" style="font-size: 40px; color: white;"></i>
+          </div>
+          <div style="padding: 25px 20px; text-align: center;">
+              <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${title}</h3>
+              <p style="margin: 0; font-size: 14px; color: #666; line-height: 1.5;">${message}</p>
+          </div>
+          <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: space-between; gap: 10px;">
+              <button class="btn-cancel" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1;">ยกเลิก</button>
+              <button class="btn-confirm" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1;">ตกลง</button>
+          </div>
+      </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('.btn-cancel').addEventListener('click', () => document.body.removeChild(overlay));
+  overlay.querySelector('.btn-confirm').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      onConfirm(); // ทำงานต่อเมื่อกดยืนยัน
+  });
+}
+
 // 🌟 ตัวท่อรอรับรหัสสาขาจริง (Real Branch Code Wiring)
 function getRealBranchCode(branchId) {
   const branchCodeMap = {
@@ -317,16 +346,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
-      // 1. สร้างโครงสร้างการ์ด Shipment
       const card = document.createElement("div");
       card.className = "shipment-card";
       card.setAttribute("data-shipment-type", selectShipmentReason.value);
       card.setAttribute("data-status", "open");
       card.style.cssText =
-        "background: white; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 10px; width: 100%;";
+        "background: white; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 10px; width: 100%; transition: all 0.3s ease;";
 
       card.innerHTML = `
-          <div style="background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); padding: 12px 15px; border-bottom: 1px solid #ccc; display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #111;">
+          <div class="shipment-header-bg" style="background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); padding: 12px 15px; border-bottom: 1px solid #ccc; display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #111; transition: all 0.3s ease;">
               <div style="display: flex; align-items: center; flex: 1;">
                   <input type="checkbox" class="shipment-select-cb" disabled style="transform: scale(1.4); margin-right: 15px; cursor: pointer;">
                   <div class="shipment-barcode-trigger" style="cursor: pointer; display: flex; align-items: center; color: #333;" title="คลิกเพื่อแสดง QR/Barcode">
@@ -336,7 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
               <div style="display: flex; align-items: center; gap: 12px;">
                   <span class="shipment-box-count" style="font-size: 12px; color: #555; background: #eee; padding: 3px 8px; border-radius: 12px; border: 1px solid #ddd;">Boxes (0)</span>
-                  <button class="btn-add-box" title="เพิ่มกล่อง" style="background: transparent; border: none; color: #28a745; font-size: 18px; cursor: pointer; padding: 0;"><i class="fas fa-box"></i><i class="fas fa-plus" style="font-size: 10px; margin-left: 2px; vertical-align: top;"></i></button>
+                  <button class="btn-add-box" title="เพิ่มกล่อง" style="background: transparent; border: none; color: #28a745; font-size: 18px; cursor: pointer; padding: 0; transition: 0.2s;"><i class="fas fa-box"></i><i class="fas fa-plus" style="font-size: 10px; margin-left: 2px; vertical-align: top;"></i></button>
                   <button class="btn-toggle-delete" title="เปิด/ปิด โหมดลบกล่อง" style="background: transparent; border: none; color: #dc3545; font-size: 16px; cursor: pointer; padding: 0;"><i class="fas fa-trash-alt"></i></button>
               </div>
           </div>
@@ -349,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const boxListContainer = card.querySelector(".box-list-container");
       const boxCountDisplay = card.querySelector(".shipment-box-count");
 
-      // ลอจิก: Barcode Trigger
+      /* ประเภท : ฟังก์ชัน  ชื่อ : แสดง Barcode Trigger */
       card
         .querySelector(".shipment-barcode-trigger")
         .addEventListener("click", () => {
@@ -359,26 +387,50 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         });
 
-      // ลอจิก: เปิดโหมดลบกล่อง
+      /* ประเภท : ฟังก์ชัน  ชื่อ : เปิดโหมดลบกล่อง (Dimming Effect & Block Actions) */
       let deleteMode = false;
       card.querySelector(".btn-toggle-delete").addEventListener("click", () => {
         deleteMode = !deleteMode;
+
+        const headerBg = card.querySelector(".shipment-header-bg");
+        const addBoxBtn = card.querySelector(".btn-add-box");
+        const shipCb = card.querySelector(".shipment-select-cb");
         const deleteBtns = card.querySelectorAll(".btn-delete-box");
-        deleteBtns.forEach((btn) => {
-          if (deleteMode) btn.classList.remove("hide");
-          else btn.classList.add("hide");
-        });
+        const addItemsBtns = card.querySelectorAll(".btn-add-item");
+
+        if (deleteMode) {
+          // 📍 ลอจิกทำแถบเทาและล็อกปุ่ม (Delete Mode Block)
+          headerBg.style.filter = "grayscale(100%) opacity(0.7)";
+          addBoxBtn.style.pointerEvents = "none";
+          addBoxBtn.style.opacity = "0.3";
+          shipCb.style.pointerEvents = "none";
+          addItemsBtns.forEach((btn) => {
+            btn.style.pointerEvents = "none";
+            btn.style.opacity = "0.3";
+          });
+          deleteBtns.forEach((btn) => btn.classList.remove("hide"));
+        } else {
+          // ปลดล็อกกลับสู่สภาพเดิม
+          headerBg.style.filter = "none";
+          addBoxBtn.style.pointerEvents = "auto";
+          addBoxBtn.style.opacity = "1";
+          shipCb.style.pointerEvents = "auto";
+          addItemsBtns.forEach((btn) => {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+          });
+          deleteBtns.forEach((btn) => btn.classList.add("hide"));
+        }
       });
 
-      // 2. ลอจิก: ปุ่มเพิ่มกล่อง (Strict Lock)
+      /* ประเภท : ฟังก์ชัน  ชื่อ : สร้างกล่องย่อย (Add Box) */
       let boxCounter = 0;
       card.querySelector(".btn-add-box").addEventListener("click", () => {
-        // ตรวจสอบ: ถ้ามีกล่องไหนกำลัง "เปิด" อยู่ ห้ามเพิ่มกล่องใหม่!
         const openBox = card.querySelector('.box-item[data-status="open"]');
         if (openBox) {
           safeAlert(
             "ไม่อนุญาตให้สร้างกล่อง",
-            "มีกล่องที่กำลังเปิดอยู่ กรุณาแอดสินค้าและปิดกล่องเดิมให้เสร็จก่อนครับ",
+            "มีกล่องที่กำลังเปิดอยู่ กรุณาเพิ่มสินค้าและปิดกล่องเดิมให้เสร็จก่อนครับ",
           );
           return;
         }
@@ -402,7 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   <span title="สินค้ายิงบาร์โค้ด"><i class="fas fa-barcode" style="color: #17a2b8; margin-right: 4px;"></i> 0</span>
               </div>
               <div style="display: flex; align-items: center; justify-content: flex-end; width: 30%; min-height: 26px;">
-                  <button class="btn-add-item" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; margin-right: 8px;">
+                  <button class="btn-add-item" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; margin-right: 8px; transition: 0.2s;">
                       <i class="fas fa-plus"></i> เพิ่มสินค้า
                   </button>
                   <button class="btn-delete-box ${deleteMode ? "" : "hide"}" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
@@ -413,37 +465,54 @@ document.addEventListener("DOMContentLoaded", () => {
         boxListContainer.appendChild(boxItem);
         boxCountDisplay.innerText = `Boxes (${card.querySelectorAll(".box-item").length})`;
 
-        // ลอจิก: ลบกล่องย่อย
+        /* ประเภท : ฟังก์ชัน  ชื่อ : ลบกล่องย่อย (Custom Confirm) */
         boxItem
           .querySelector(".btn-delete-box")
           .addEventListener("click", function () {
-            if (
-              confirm(
-                "คุณแน่ใจหรือไม่ว่าต้องการลบกล่องหมายเลข BOX-" + boxId + " ?",
-              )
-            ) {
-              boxItem.remove();
-              boxCountDisplay.innerText = `Boxes (${card.querySelectorAll(".box-item").length})`;
-              evaluateExportButton();
-            }
+            // 📍 เรียกใช้ Custom Modal สีเหลืองสวยงาม แทน confirm() ระบบ
+            safeConfirm(
+              "ยืนยันการลบกล่อง",
+              `คุณแน่ใจหรือไม่ว่าต้องการลบหมายเลข BOX-${boxId} ?`,
+              () => {
+                boxItem.remove();
+                boxCountDisplay.innerText = `Boxes (${card.querySelectorAll(".box-item").length})`;
+
+                // เช็คว่าถ้าลบกล่องจนไม่เหลือกล่องที่ปิดเลย ต้องบล็อก Checkbox หน้าสุดกลับด้วย
+                const closedBoxes = card.querySelectorAll(
+                  '.box-item[data-status="closed"]',
+                ).length;
+                if (closedBoxes === 0) {
+                  const mainCb = card.querySelector(".shipment-select-cb");
+                  mainCb.checked = false;
+                  mainCb.disabled = true;
+                }
+                evaluateExportButton();
+              },
+            );
           });
 
-        // ลอจิก: ปุ่มเพิ่มสินค้า (Mock เปลี่ยนสถานะเป็นปิดกล่อง เพื่อให้เจเลอร์เทสต์ได้)
+        /* ประเภท : ฟังก์ชัน  ชื่อ : จำลองการเพิ่มสินค้าและปิดกล่อง (Custom Confirm + ปลดล็อก Checkbox) */
         boxItem
           .querySelector(".btn-add-item")
           .addEventListener("click", function () {
-            if (
-              confirm(
-                "จำลองการแอดสินค้าเสร็จสิ้น: ต้องการ 'ปิดกล่อง' นี้เลยไหม?",
-              )
-            ) {
-              boxItem.setAttribute("data-status", "closed");
-              boxItem.querySelector(".box-status-icon").className =
-                "fas fa-box box-status-icon";
-              boxItem.querySelector(".box-status-icon").style.color = "#28a745";
-              this.style.display = "none"; // ซ่อนปุ่มเพิ่มสินค้า ป้องกันการแก้
-              evaluateExportButton(); // แจ้งให้ปุ่ม EXPORT รู้ว่ามีกล่องปิดแล้ว
-            }
+            safeConfirm(
+              "ยืนยันปิดกล่อง",
+              "คุณได้แอดสินค้าเสร็จสิ้นแล้ว: ต้องการปิดกล่องนี้เลยหรือไม่?",
+              () => {
+                boxItem.setAttribute("data-status", "closed");
+                boxItem.querySelector(".box-status-icon").className =
+                  "fas fa-box box-status-icon";
+                boxItem.querySelector(".box-status-icon").style.color =
+                  "#28a745";
+                boxItem.querySelector(".box-select-cb").disabled = false;
+                this.style.display = "none";
+
+                // 📍 กุญแจสำคัญที่หายไป: ปลดล็อก Checkbox ของ Shipment ให้ใช้งานได้!
+                card.querySelector(".shipment-select-cb").disabled = false;
+
+                evaluateExportButton();
+              },
+            );
           });
       });
     });
