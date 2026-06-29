@@ -472,7 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      /* 📍 [START: ซ่อมแซม Syntax Error (ลอจิกเพิ่มกล่องย่อย)] */
+      /* 📍 ลอจิก: สร้างกล่องย่อย */
       let boxCounter = 0;
       card.querySelector(".btn-add-box").addEventListener("click", () => {
         const openBox = card.querySelector('.box-item[data-status="open"]');
@@ -544,33 +544,18 @@ document.addEventListener("DOMContentLoaded", () => {
             );
           });
 
-        /* ประเภท : ฟังก์ชัน | ชื่อ : จำลองปิดกล่อง | ผลลัพธ์ : ยืนยันแอดสินค้าปิดกล่อง (ธีมสีเหลือง question) */
+        /* 📍 [จุดที่แก้ไข!] ประเภท: ฟังก์ชัน | ชื่อ: เปิดหน้าต่างเพิ่มสินค้า | ผลลัพธ์: สับรางเปิดหน้า Full View 18-72-10 ทันที */
         boxItem
           .querySelector(".btn-add-item")
           .addEventListener("click", function () {
-            safeConfirm(
-              "ยืนยัน",
-              "เพิ่มสินค้าเสร็จสิ้น ปิดกล่องนี้เลยหรือไม่?",
-              () => {
-                boxItem.setAttribute("data-status", "closed");
-                boxItem.querySelector(".box-status-icon").className =
-                  "fas fa-box box-status-icon";
-                boxItem.querySelector(".box-status-icon").style.color =
-                  "#28a745";
-                childCb.disabled = false;
-                mainCheckbox.disabled = false;
-                this.style.display = "none";
-                evaluateExportButton();
-              },
-              "question",
-            );
+            initBoxDetailsTransition(card, boxItem, boxId);
           });
       });
     });
   }
   // 📍 [END: บล็อกสร้างการ์ด Shipment]
 
-  /* 📍 [START: ระบบควบคุมหน้าจอรายละเอียดกล่อง (Box Details Controller)] */
+ 
 
   /* 📍 [START: MASTER INTEGRATION - BOX DETAILS & SCANNING] */
 
