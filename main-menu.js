@@ -570,6 +570,216 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   // 📍 [END: บล็อกสร้างการ์ด Shipment]
 
+  /* 📍 [START: ระบบควบคุมหน้าจอรายละเอียดกล่อง (Box Details Controller)] */
+
+  /* 📍 [START: MASTER INTEGRATION - BOX DETAILS & SCANNING] */
+
+  // ตัวแปรควบคุมสถานะปัจจุบัน
+  let currentActiveShipmentCard = null;
+  let currentActiveBoxItemNode = null;
+  let currentActiveBoxId = "";
+  let currentActiveShipmentId = "";
+
+  /* ประเภท: Function | ชื่อ: initBoxDetailsTransition | ผลลัพธ์: สับรางเข้าหน้าจอ Full View พร้อมโอน Context */
+  function initBoxDetailsTransition(cardNode, boxItemNode, boxId) {
+    currentActiveShipmentCard = cardNode;
+    currentActiveBoxItemNode = boxItemNode;
+    currentActiveBoxId = boxId;
+    currentActiveShipmentId = cardNode
+      .querySelector(".shipment-barcode-trigger span")
+      .innerText.replace("ID: ", "");
+
+    // อัปเดต UI หน้า Full View
+    document.getElementById("txtActiveBoxTitle").innerText = `BOX-${boxId}`;
+    document.getElementById("txtActiveShipmentID").innerText =
+      currentActiveShipmentId;
+
+    document.getElementById("inputBoxMagicSearch").value = "";
+    document.getElementById("magicSearchPreviewSlot").classList.add("hide");
+    document.getElementById("boxItemsListWrapper").innerHTML = "";
+
+    // เปิดหน้าจอ
+    document.getElementById("boxDetailsView").classList.remove("hide");
+  }
+
+  // ผูกปุ่มย้อนกลับให้กลับไป Lobby หลัก
+  document.getElementById("btnBackToLobby").addEventListener("click", () => {
+    document.getElementById("boxDetailsView").classList.add("hide");
+    evaluateExportButton(); // อัปเดตสถานะปุ่ม Export ใหม่หลังจากออกจากหน้าจอ
+  });
+
+  /* 📍 [END: MASTER INTEGRATION] */
+
+  /* 📍 [START: อัปเกรดสมองกล Magic Search & คุมกำเนิดสต็อก (Box Details)] */
+
+  // 🗄️ จำลองฐานข้อมูล Master File (อ้างอิงโครงสร้างที่สมบูรณ์แบบของ Stock In House)
+  const mockMasterStockDatabase = [
+    {
+      sku: "FER-SHOE-091",
+      barcode: "805123456091",
+      name: "Ferragamo Loafer Black",
+      lastThree: "091",
+      available: 5,
+      image: "https://via.placeholder.com/40",
+    },
+    {
+      sku: "FER-BAG-112",
+      barcode: "805123456112",
+      name: "Studio Box Bag Gold",
+      lastThree: "112",
+      available: 0,
+      image: "https://via.placeholder.com/40",
+    }, // ❌ สต็อกหมด (เทสต์บล็อก)
+    {
+      sku: "FER-BELT-888",
+      barcode: "805123456888",
+      name: "Gancini Reversible Belt",
+      lastThree: "888",
+      available: 2,
+      image: "https://via.placeholder.com/40",
+    },
+  ];
+
+  /* ประเภท: Event Listener | ชื่อ: Magic Search Engine (Full Spec) | ผลลัพธ์: ค้นหาครอบจักรวาล + เช็คสต็อก Available */
+  document
+    .getElementById("inputBoxMagicSearch")
+    .addEventListener("input", function (e) {
+      const value = e.target.value.trim().toUpperCase();
+      const previewSlot = document.getElementById("magicSearchPreviewSlot");
+
+      // เริ่มทำงานเมื่อพิมพ์ครบ 3 ตัวอักษรขึ้นไป
+      if (value.length >= 3) {
+        // 🧠 ลอจิก Magic Search: กวาดหาข้อมูลจาก SKU, บาร์โค้ดเต็ม, ชื่อรุ่น, หรือรหัส 3 ตัวท้าย
+        const matchedProduct = mockMasterStockDatabase.find(
+          (item) =>
+            item.sku.toUpperCase().includes(value) ||
+            item.barcode.includes(value) ||
+            item.name.toUpperCase().includes(value) ||
+            item.lastThree === value,
+        );
+
+        if (matchedProduct) {
+          // 🛡️ ลอจิกผู้คุมกฎ: เช็คยอด Available Stock ว่ามีของให้โอนหรือไม่
+          const isAvailable = matchedProduct.available > 0;
+
+          // แสดงสถานะสีตามสต็อก (เขียว = พร้อมโอน, แดง = หมด)
+          const stockStatusHtml = isAvailable
+            ? `<span style="color: #28a745; font-weight:bold;"><i class="fas fa-check-circle"></i> พร้อมโอน: ${matchedProduct.available} ชิ้น</span>`
+            : `<span style="color: #dc3545; font-weight:bold;"><i class="fas fa-times-circle"></i> สต็อกเป็น 0 (โอนไม่ได้)</span>`;
+
+          // เปลี่ยนปุ่ม: ถ้าสต็อกหมด ให้ล็อกปุ่มเป็นสีเทา กดไม่ได้
+          const btnHtml = isAvailable
+            ? `<button class="btn-trigger-add-item" data-sku="${matchedProduct.sku}" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">เพิ่ม</button>`
+            : `<button disabled style="background: #e9ecef; color: #adb5bd; border: 1px solid #ced4da; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: not-allowed;">หมด</button>`;
+
+          // ประกอบร่าง UI หน้าต่างพรีวิว
+          previewSlot.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <img src="${matchedProduct.image}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid #eee;">
+                    <div style="text-align: left; line-height: 1.3;">
+                        <div style="font-size: 13px; font-weight: bold; color: #222;">${matchedProduct.sku}</div>
+                        <div style="font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${matchedProduct.name}</div>
+                        <div style="font-size: 11px; margin-top: 4px;">${stockStatusHtml}</div>
+                    </div>
+                </div>
+                <div>${btnHtml}</div>
+            `;
+          previewSlot.classList.remove("hide");
+
+          // ผูกสายไฟปุ่มเพิ่ม (เฉพาะกรณีที่สต็อก > 0 เท่านั้น)
+          if (isAvailable) {
+            previewSlot
+              .querySelector(".btn-trigger-add-item")
+              .addEventListener("click", function () {
+                const targetSku = this.getAttribute("data-sku");
+
+                // ถามยืนยันด้วย Modal ธีมสีเหลือง (Question)
+                safeConfirm(
+                  "ยืนยันเพิ่มสินค้า",
+                  `คุณต้องการโอนสินค้า ${targetSku} เข้ากล่องนี้ใช่หรือไม่?`,
+                  () => {
+                    executeAddItemToBoxContainer(targetSku);
+                    previewSlot.classList.add("hide"); // ปิดหน้าต่างพรีวิว
+                    document.getElementById("inputBoxMagicSearch").value = ""; // ล้างช่องค้นหา
+                  },
+                  "question",
+                );
+              });
+          }
+        } else {
+          // แจ้งเตือนเมื่อหาสินค้าไม่เจอเลย
+          previewSlot.innerHTML = `<div style="text-align:center; width:100%; font-size: 13px; color: #dc3545; padding: 8px; font-weight: bold;"><i class="fas fa-search-minus"></i> ไม่พบข้อมูลสินค้าในระบบ</div>`;
+          previewSlot.classList.remove("hide");
+        }
+      } else {
+        // ซ่อนหน้าต่างพรีวิวถ้าพิมพ์ไม่ถึง 3 ตัว
+        previewSlot.classList.add("hide");
+      }
+    });
+  /* 📍 [END: อัปเกรดสมองกล Magic Search & คุมกำเนิดสต็อก] */
+
+  /* ประเภท: ฟังก์ชันหลัก | ชื่อ: บรรจุสินค้าและย้ายสต็อกไปที่ Hold | ผลลัพธ์: สร้างแถวสินค้าสไตล์ Stock In House และสับเปลี่ยนสต็อก */
+  function executeAddItemToBoxContainer(skuCode) {
+    const wrapper = document.getElementById("boxItemsListWrapper");
+
+    // ตรวจสอบข้อมูลสินค้าซ้ำในการ์ด
+    const existingItem = wrapper.querySelector(
+      `.scanned-item-row[data-sku="${skuCode}"]`,
+    );
+    if (existingItem) {
+      safeAlert(
+        "ข้อมูลซ้ำซ้อน",
+        "สินค้ารหัสนี้ถูกบรรจุอยู่ในกล่องเรียบร้อยแล้ว หากต้องการเพิ่มจำนวน ให้ใช้ฟังก์ชันในอนาคตครับ",
+        "error",
+      );
+      return;
+    }
+
+    const itemRow = document.createElement("div");
+    itemRow.className = "scanned-item-row";
+    itemRow.setAttribute("data-sku", skuCode);
+    itemRow.style.cssText =
+      "background: white; border-radius: 10px; border: 1px solid #eee; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.02);";
+
+    itemRow.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; width: 70%;">
+            <i class="fas fa-tag" style="color: #dc3545; font-size: 16px;"></i>
+            <div style="text-align: left;">
+                <div style="font-size: 13px; font-weight: bold; color: #222;">${skuCode}</div>
+                <div style="font-size: 11px; color: #777;">คอลัมน์ระบบ: <span style="color: #e67e22; font-weight:bold;">Moved to Hold Stock</span></div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; width: 30%; justify-content: flex-end;">
+            <button class="btn-remove-item-from-box" style="background: transparent; border: none; color: #dc3545; font-size: 16px; cursor: pointer; padding: 5px;"><i class="fas fa-minus-circle"></i></button>
+        </div>
+    `;
+    wrapper.appendChild(itemRow);
+
+    // 📡 [BACKEND CONNECT合约 LOGIC]: ย้ายยอดสต็อกของสาขาปัจจุบันจาก Available -> ไปพักไว้ที่คอลัมน์ Hold ในตาราง Master File
+
+    // ผูกคำสั่งปุ่มลบสินค้าออกจากการ์ดดีเทล
+    itemRow
+      .querySelector(".btn-remove-item-from-box")
+      .addEventListener("click", function () {
+        safeConfirm(
+          "ลบรายการสินค้า",
+          `คุณต้องการยกเลิกการบรรจุสินค้า ${skuCode} และคืนสต็อกกลับระบบใช่หรือไม่?`,
+          () => {
+            itemRow.remove();
+            // 📡 [BACKEND ROLLBACK LOGIC]: ดึงยอดสินค้าออกจาก Hold -> โอนกลับคืนเข้าไปใน Available Stock ของ Master File
+            safeAlert(
+              "สำเร็จ",
+              "ระบบดึงสินค้าออกจากกล่อง และคืนยอดสต็อกกลับคอลัมน์พร้อมขายเรียบร้อยแล้ว",
+              "success",
+            );
+          },
+          "delete",
+        ); // ธีมลบสีแดงเครื่องหมายตกใจ
+      });
+  }
+
+  /* 📍 [END: ระบบควบคุมหน้าจอรายละเอียดกล่อง] */
+
   /* 📍 [START: สมองกลปุ่มส่งออก และ โค้ดส่วนท้ายของไฟล์] */
 
   /* ประเภท : ฟังก์ชัน Core Logic  ชื่อ : evaluateExportButton  ผลลัพธ์ : เช็คการติ๊กถูก และเช็คให้ชัวร์ว่าทุกกล่องปิดสนิทแล้ว ถึงจะโชว์ปุ่ม EXPORT */
