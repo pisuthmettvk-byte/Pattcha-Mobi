@@ -332,16 +332,15 @@ document.addEventListener("DOMContentLoaded", () => {
   let temporaryShipmentID = "";
   let selectedOriginRealCode = "CKC01"; // ต้นทางสมมติ
 
-if (btnSubmitLobby) {
-  btnSubmitLobby.addEventListener("click", () => {
-    safeAlert(
-      "เสร็จสิ้น",
-      "ระบบทำการบันทึกและส่งออกข้อมูลเรียบร้อยแล้ว",
-      "success",
-    );
-  });
-}
-
+  if (btnSubmitLobby) {
+    btnSubmitLobby.addEventListener("click", () => {
+      safeAlert(
+        "เสร็จสิ้น",
+        "ระบบทำการบันทึกและส่งออกข้อมูลเรียบร้อยแล้ว",
+        "success",
+      );
+    });
+  }
 
   if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener("click", () => {
@@ -473,7 +472,7 @@ if (btnSubmitLobby) {
         }
       });
 
-      /* 📍 ลอจิก: เพิ่มกล่องย่อย */
+      /* 📍 [START: ซ่อมแซม Syntax Error (ลอจิกเพิ่มกล่องย่อย)] */
       let boxCounter = 0;
       card.querySelector(".btn-add-box").addEventListener("click", () => {
         const openBox = card.querySelector('.box-item[data-status="open"]');
@@ -481,6 +480,7 @@ if (btnSubmitLobby) {
           safeAlert(
             "ไม่อนุญาต",
             "มีกล่องค้างเปิดอยู่ กรุณาเพิ่มสินค้าให้เสร็จก่อนครับ",
+            "error",
           );
           return;
         }
@@ -508,18 +508,20 @@ if (btnSubmitLobby) {
 
         const childCb = boxItem.querySelector(".box-select-cb");
 
-        /* 📍 ลอจิก: ลูกน้องเช็คตัวเอง (ถ้าลูกติ๊กครบ แม่จะติ๊กตามอัตโนมัติ) */
+        /* ประเภท : ฟังก์ชัน | ชื่อ : ลูกสะท้อนแม่ | ผลลัพธ์ : เช็ค Checkbox อัตโนมัติ */
         childCb.addEventListener("change", () => {
-          const allUnlocked = card.querySelectorAll(
-            ".box-select-cb:not([disabled])",
+          const allClosed = card.querySelectorAll(
+            '.box-item[data-status="closed"] .box-select-cb',
           );
-          const allChecked = card.querySelectorAll(".box-select-cb:checked");
+          const allChecked = card.querySelectorAll(
+            '.box-item[data-status="closed"] .box-select-cb:checked',
+          );
           mainCheckbox.checked =
-            allUnlocked.length > 0 && allUnlocked.length === allChecked.length;
+            allClosed.length > 0 && allClosed.length === allChecked.length;
           evaluateExportButton();
         });
 
-        /* 📍 ลอจิก: ลบกล่องย่อย */
+        /* ประเภท : ฟังก์ชัน | ชื่อ : ลบกล่องย่อย | ผลลัพธ์ : ลบกล่องด้วย Custom Confirm (ธีมสีแดง delete) */
         boxItem
           .querySelector(".btn-delete-box")
           .addEventListener("click", function () {
@@ -538,38 +540,46 @@ if (btnSubmitLobby) {
                 }
                 evaluateExportButton();
               },
+              "delete",
             );
           });
-/* ประเภท : ฟังก์ชัน  ชื่อ : ลบกล่องย่อย (Custom Confirm สีแดง) */
-          boxItem.querySelector(".btn-delete-box").addEventListener("click", function() {
-              safeConfirm("ลบกล่อง", `แน่ใจหรือไม่ว่าต้องการลบ BOX-${boxId} ?`, () => {
-                  boxItem.remove();
-                  boxCountDisplay.innerText = `Boxes (${card.querySelectorAll('.box-item').length})`;
-                  if (card.querySelectorAll('.box-item[data-status="closed"]').length === 0) {
-                      mainCheckbox.checked = false; mainCheckbox.disabled = true;
-                  }
-                  evaluateExportButton();
-              }, "delete"); // 📍 ใส่ "delete" ตรงนี้เพื่อให้เป็นสีแดง
-          });
-          });
- 
 
+        /* ประเภท : ฟังก์ชัน | ชื่อ : จำลองปิดกล่อง | ผลลัพธ์ : ยืนยันแอดสินค้าปิดกล่อง (ธีมสีเหลือง question) */
+        boxItem
+          .querySelector(".btn-add-item")
+          .addEventListener("click", function () {
+            safeConfirm(
+              "ยืนยัน",
+              "เพิ่มสินค้าเสร็จสิ้น ปิดกล่องนี้เลยหรือไม่?",
+              () => {
+                boxItem.setAttribute("data-status", "closed");
+                boxItem.querySelector(".box-status-icon").className =
+                  "fas fa-box box-status-icon";
+                boxItem.querySelector(".box-status-icon").style.color =
+                  "#28a745";
+                childCb.disabled = false;
+                mainCheckbox.disabled = false;
+                this.style.display = "none";
+                evaluateExportButton();
+              },
+              "question",
+            );
+          });
+      });
+    });
+  }
   // 📍 [END: บล็อกสร้างการ์ด Shipment]
 
+  /* 📍 [START: สมองกลปุ่มส่งออก และ โค้ดส่วนท้ายของไฟล์] */
 
-
-
-
-
-
-/* 📍 [START: สมองกลปุ่มส่งออก และ โค้ดส่วนท้ายของไฟล์] */
-  
   /* ประเภท : ฟังก์ชัน Core Logic  ชื่อ : evaluateExportButton  ผลลัพธ์ : เช็คการติ๊กถูก และเช็คให้ชัวร์ว่าทุกกล่องปิดสนิทแล้ว ถึงจะโชว์ปุ่ม EXPORT */
   function evaluateExportButton() {
     const btnSubmitLobby = document.getElementById("btnSubmitLobby");
     if (!btnSubmitLobby) return;
 
-    const checkedShipments = document.querySelectorAll(".shipment-select-cb:checked");
+    const checkedShipments = document.querySelectorAll(
+      ".shipment-select-cb:checked",
+    );
     let isReadyToExport = false;
 
     if (checkedShipments.length > 0) {
@@ -577,9 +587,11 @@ if (btnSubmitLobby) {
       checkedShipments.forEach((cb) => {
         const card = cb.closest(".shipment-card");
         const boxes = card.querySelectorAll(".box-item");
-        const openBoxes = card.querySelectorAll('.box-item[data-status="open"]');
-        
-        // กฎ: Shipment ต้องมีกล่องอย่างน้อย 1 ใบ และต้อง "ไม่มีกล่องใดเปิดอยู่เลย" 
+        const openBoxes = card.querySelectorAll(
+          '.box-item[data-status="open"]',
+        );
+
+        // กฎ: Shipment ต้องมีกล่องอย่างน้อย 1 ใบ และต้อง "ไม่มีกล่องใดเปิดอยู่เลย"
         if (boxes.length === 0 || openBoxes.length > 0) {
           allValid = false;
         }
@@ -594,7 +606,8 @@ if (btnSubmitLobby) {
       btnSubmitLobby.style.color = "#ffffff";
       btnSubmitLobby.style.textShadow = "1px 1px 2px rgba(0,0,0,0.5)";
       btnSubmitLobby.style.cursor = "pointer";
-      btnSubmitLobby.innerHTML = 'EXPORT <i class="fas fa-paper-plane" style="margin-left: 8px;"></i>';
+      btnSubmitLobby.innerHTML =
+        'EXPORT <i class="fas fa-paper-plane" style="margin-left: 8px;"></i>';
     } else {
       btnSubmitLobby.disabled = true;
       btnSubmitLobby.style.background = "rgba(0,0,0,0.4)";
@@ -656,5 +669,4 @@ if (btnSubmitLobby) {
       });
     });
   }
-
 }); // 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
