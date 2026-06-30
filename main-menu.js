@@ -265,9 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 2. Transfer Out Forward Flow (เดินหน้า) ---
   const btnTransferOut = document.getElementById("btnTransferOut");
   if (btnTransferOut) {
-    btnTransferOut.addEventListener("click", () =>
-      navigationTo(productMovementView, viewTaskHub),
-    );
+    btnTransferOut.addEventListener("click", () => {
+      navigationTo(productMovementView, viewTaskHub)
+  });
   }
 
   // --- สร้าง ลอบบี้ สาขา ใหม่(เดินหน้า) ---
@@ -424,16 +424,38 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---     ปุ่มกดตกลงในหน้าต่างเลือกประเภทการโอน ---
-  if (btnConfirmBox) {
-    btnConfirmBox.addEventListener("click", () => {
-      if (!selectShipmentReason || !selectShipmentReason.value) {
-        safeAlert(
-          "ข้อมูลไม่ครบถ้วน",
-          "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ",
-        );
-        return;
-      }
+// --- ปุ่มกดตกลงในหน้าต่างเลือกประเภทการโอน ---
+    if (btnConfirmBox) {
+        btnConfirmBox.addEventListener("click", () => {
+            if (!selectShipmentReason || !selectShipmentReason.value) {
+                safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ");
+                return;
+            }
+            
+            // ลอจิกสร้าง ID พรางตัว
+            const p_type = selectShipmentReason.value;
+            const p_date = getFormattedDate();
+            const p_origin = obfuscateBranchCode(selectedOriginRealCode);
+            const p_dest = obfuscateBranchCode(getRealBranchCode(document.getElementById("selectDestination")?.value));
+            const mockSeq = "000X";
+
+            temporaryShipmentID = `${p_type}-${p_date}-${p_origin}-${mockSeq}-${p_dest}`;
+            if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
+            
+            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+            // ต่อด้วยลอจิกสร้าง Card Shipment...
+        });
+    }
+
+    // --- ปุ่มกดยกเลิก ---
+    if (btnCancelBox) {
+        btnCancelBox.addEventListener("click", () => {
+            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+        });
+    }
+
+
+
 
       // --- ตัวโครงสร้างหน้าต่าง ประเภทการโอน---
       const existingCardType = document.querySelector(
@@ -542,19 +564,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const boxItem = document.createElement("div");
         boxItem.className = "box-item";
         boxItem.setAttribute("data-status", "open");
-        boxItem.innerHTML = `
-              <div style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; background: #fff;">
-                  <div style="display: flex; align-items: center; width: 35%;">
-                      <input type="checkbox" class="box-select-cb" disabled style="transform: scale(1.2); margin-right: 18px; margin-left: 2px; cursor: pointer;">
-                      <i class="fas fa-box-open box-status-icon" style="color: #dc3545; margin-right: 8px;"></i>
-                      <span style="font-size: 13px; font-weight: bold;">BOX-${boxId}</span>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                      <button class="btn-add-item" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">เพิ่มสินค้า</button>
-                      <button class="btn-delete-box hide" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">ลบกล่อง</button>
-                  </div>
-              </div>
-          `;
+        // ✅ CORRECT
+        boxItem.innerHTML = `xxx
+  <div style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; background: #fff;">
+    <div style="display: flex; align-items: center; width: 35%;">
+      <input type="checkbox" class="box-select-cb" disabled style="transform: scale(1.2); margin-right: 18px; margin-left: 2px; cursor: pointer;">
+      <i class="fas fa-box-open box-status-icon" style="color: #dc3545; margin-right: 8px;"></i>
+      <span style="font-size: 13px; font-weight: bold;">BOX-${boxId}</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button class="btn-add-item" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">เพิ่มสินค้า</button>
+      <button class="btn-delete-box hide" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">ลบกล่อง</button>
+    </div>
+  </div>
+`; // ✅ Correct: backtick followed by semicolon (no extra parenthesis)
+
         boxListContainer.appendChild(boxItem);
         boxCountDisplay.innerText = `Boxes (${
           card.querySelectorAll(".box-item").length
@@ -584,6 +608,7 @@ document.addEventListener("DOMContentLoaded", () => {
               `แน่ใจหรือไม่ว่าต้องการลบ BOX-${boxId} ?`,
               () => {
                 boxItem.remove();
+                // ✅ แก้ไข: ปิดวงเล็บและปีกกาให้ครบถ้วน
                 boxCountDisplay.innerText = `Boxes (${
                   card.querySelectorAll(".box-item").length
                 })`;
@@ -598,17 +623,16 @@ document.addEventListener("DOMContentLoaded", () => {
               },
               "delete",
             );
-          });
 
-        /* 📍 [จุดที่แก้ไข!] ประเภท: ฟังก์ชัน | ชื่อ: เปิดหน้าต่างเพิ่มสินค้า | ผลลัพธ์: สับรางเปิดหน้า Full View 18-72-10 ทันที */
-        boxItem
-          .querySelector(".btn-add-item")
-          .addEventListener("click", function () {
-            initBoxDetailsTransition(card, boxItem, boxId);
+            /* 📍 [จุดที่แก้ไข!] ประเภท: ฟังก์ชัน | ชื่อ: เปิดหน้าต่างเพิ่มสินค้า | ผลลัพธ์: สับรางเปิดหน้า Full View 18-72-10 ทันที */
+            boxItem
+              .querySelector(".btn-add-item")
+              .addEventListener("click", function () {
+                initBoxDetailsTransition(card, boxItem, boxId);
+              });
           });
       });
-    });
-  }
+  
   // 📍 [END: บล็อกสร้างการ์ด Shipment]
 
   /* 📍 [START: MASTER INTEGRATION - BOX DETAILS & SCANNING] */
