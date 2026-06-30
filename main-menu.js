@@ -546,17 +546,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      /* 📍 ลอจิก: สร้างกล่องย่อย */
-      let boxCounter = 0;
-      card.querySelector(".btn-add-box").addEventListener("click", () => {
+
+
+// [MODULE: SHIPMENT LOBBY - การจัดการกล่องย่อย]
+// ใช้ Event Delegation ที่ระดับ card เพื่อให้มั่นใจว่าปุ่มจะทำงานได้เสมอแม้มีการสร้างกล่องใหม่
+card.addEventListener("click", function(e) {
+    if (e.target.closest(".btn-add-box")) {
         const openBox = card.querySelector('.box-item[data-status="open"]');
         if (openBox) {
-          safeAlert(
-            "ไม่อนุญาต",
-            "มีกล่องค้างเปิดอยู่ กรุณาเพิ่มสินค้าให้เสร็จก่อนครับ",
-            "error",
-          );
-          return;
+            safeAlert("ไม่อนุญาต", "มีกล่องค้างเปิดอยู่ กรุณาเพิ่มสินค้าให้เสร็จก่อนครับ", "error");
+            return;
         }
 
         boxCounter++;
@@ -564,25 +563,35 @@ document.addEventListener("DOMContentLoaded", () => {
         const boxItem = document.createElement("div");
         boxItem.className = "box-item";
         boxItem.setAttribute("data-status", "open");
-        // ✅ CORRECT
-        boxItem.innerHTML = `xxx
-  <div style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; background: #fff;">
-    <div style="display: flex; align-items: center; width: 35%;">
-      <input type="checkbox" class="box-select-cb" disabled style="transform: scale(1.2); margin-right: 18px; margin-left: 2px; cursor: pointer;">
-      <i class="fas fa-box-open box-status-icon" style="color: #dc3545; margin-right: 8px;"></i>
-      <span style="font-size: 13px; font-weight: bold;">BOX-${boxId}</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <button class="btn-add-item" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">เพิ่มสินค้า</button>
-      <button class="btn-delete-box hide" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">ลบกล่อง</button>
-    </div>
-  </div>
-`; // ✅ Correct: backtick followed by semicolon (no extra parenthesis)
-
+        
+        // โครงสร้างกล่องย่อยที่สะอาดและสมบูรณ์
+        boxItem.innerHTML = `
+            <div style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; background: #fff;">
+                <div style="display: flex; align-items: center; width: 35%;">
+                    <input type="checkbox" class="box-select-cb" disabled style="transform: scale(1.2); margin-right: 18px; margin-left: 2px; cursor: pointer;">
+                    <i class="fas fa-box-open box-status-icon" style="color: #dc3545; margin-right: 8px;"></i>
+                    <span style="font-size: 13px; font-weight: bold;">BOX-${boxId}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="btn-add-item" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">เพิ่มสินค้า</button>
+                    <button class="btn-delete-box hide" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">ลบกล่อง</button>
+                </div>
+            </div>
+        `;
         boxListContainer.appendChild(boxItem);
-        boxCountDisplay.innerText = `Boxes (${
-          card.querySelectorAll(".box-item").length
-        })`;
+        boxCountDisplay.innerText = `Boxes (${card.querySelectorAll(".box-item").length})`;
+        
+        // ผูก Event ให้ปุ่มที่เพิ่งสร้างใหม่ทำงานได้ทันที
+        boxItem.querySelector(".btn-add-item").addEventListener("click", () => initBoxDetailsTransition(card, boxItem, boxId));
+    }
+});
+
+
+
+
+
+
+
 
         const childCb = boxItem.querySelector(".box-select-cb");
 
