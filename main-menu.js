@@ -951,4 +951,4 @@ card.addEventListener("click", function(e) {
       });
     });
   }
-}); // 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
+// 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
