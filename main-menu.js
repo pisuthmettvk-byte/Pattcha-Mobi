@@ -1,12 +1,20 @@
 // ==========================================
-// MODULE 1: CORE FUNCTIONS & UTILITIES
+// [Core Utilities / Global State Management]
 // ==========================================
+//[Mock Receive Signal Utility] START
+  //========================================
+
+
+
+//📍 [Notification Badge UI Update]
 
 function mockReceiveSignal(hasPendingDelivery, qty = 0) {
   const badge = document.getElementById("badgeInbound");
   if (!badge) return;
   const countDisplay = badge.querySelector(".badge-count");
   if (!countDisplay) return;
+
+  // ---🔍 [Check pending delivery and update badge count]
   if (hasPendingDelivery) {
     badge.classList.remove("hide");
     countDisplay.innerText = qty;
@@ -14,8 +22,20 @@ function mockReceiveSignal(hasPendingDelivery, qty = 0) {
     badge.classList.add("hide");
   }
 }
+// [Mock Receive Signal Utility] END
 
+
+
+
+
+
+  //========================================
+// [Navigation Transition Utility] START
+  //========================================
+//📍 [View Transition UI Component]
 function navigationTo(hideView, showView) {
+
+  // ---🔍 [Apply opacity transitions between DOM elements]
   if (hideView) {
     hideView.style.opacity = "0";
     setTimeout(() => {
@@ -31,8 +51,18 @@ function navigationTo(hideView, showView) {
     }, 150);
   }
 }
+// [Navigation Transition Utility] END
 
-/* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeAlert (Dynamic)  ผลลัพธ์ : แจ้งเตือน 3 สี (แดง=ค่าเริ่มต้น, เขียว=สำเร็จ, เหลือง=เตือน) */
+
+
+
+
+  //========================================
+// [Dynamic Safe Alert Utility] START
+  //========================================
+
+
+//📍 [Custom Alert Modal Window UI]
 function safeAlert(title, message, type = "error") {
   const overlay = document.createElement("div");
   overlay.className = "sys-alert-element";
@@ -40,6 +70,8 @@ function safeAlert(title, message, type = "error") {
     "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
 
   let headerBg, iconClass, btnBg, btnText;
+
+  // ---🔍 [Determine alert theme based on type]
   if (type === "success") {
     headerBg = "#28a745";
     iconClass = "fas fa-check-circle";
@@ -51,7 +83,6 @@ function safeAlert(title, message, type = "error") {
     btnBg = "#ffc107";
     btnText = "#000";
   } else {
-    // ค่าเริ่มต้น (Error / ล็อก / ผิดเงื่อนไข) -> สีแดง
     headerBg = "#dc3545";
     iconClass = "fas fa-exclamation-triangle";
     btnBg = "#dc3545";
@@ -77,8 +108,20 @@ function safeAlert(title, message, type = "error") {
     .querySelector(".btn-ok")
     .addEventListener("click", () => document.body.removeChild(overlay));
 }
+// [Dynamic Safe Alert Utility] END
 
-/* ประเภท : ฟังก์ชัน Utility  ชื่อ : safeConfirm (Dynamic)  ผลลัพธ์ : หน้าต่างยืนยันแยกสี (แดง=ลบ/ตกใจ, เหลือง=คำถามทั่วไป) */
+
+
+
+
+
+
+ //========================================
+// [Dynamic Safe Confirm Utility] START
+//========================================
+
+
+//📍 [Custom Confirm Modal Window UI]
 function safeConfirm(title, message, onConfirm, type = "question") {
   const overlay = document.createElement("div");
   overlay.className = "sys-alert-element";
@@ -86,13 +129,14 @@ function safeConfirm(title, message, onConfirm, type = "question") {
     "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
 
   let headerBg, iconClass, btnBg, btnText;
+
+  // ---🔍 [Determine confirm theme based on type]
   if (type === "delete" || type === "error") {
     headerBg = "#dc3545";
     iconClass = "fas fa-exclamation-triangle";
     btnBg = "#dc3545";
     btnText = "white";
   } else {
-    // ค่าเริ่มต้น (Question) -> สีเหลือง เครื่องหมายคำถาม
     headerBg = "#ffc107";
     iconClass = "fas fa-question-circle";
     btnBg = "#ffc107";
@@ -124,64 +168,65 @@ function safeConfirm(title, message, onConfirm, type = "question") {
     onConfirm();
   });
 }
+// [Dynamic Safe Confirm Utility] END
 
-/* ประเภท : ฟังก์ชัน Event ดักจับการคลิกสูงสุด  ชื่อ : Global Delete Mode Blocker  ผลลัพธ์ : บล็อกการคลิกปุ่มทุกชนิดในหน้าจอถ้ามีถังขยะเปิดอยู่ พร้อมแจ้งเตือน */
-document.addEventListener(
-  "click",
-  function (e) {
-    const activeDeleteCard = document.querySelector(
-      ".shipment-card.is-delete-mode",
-    );
 
-    // ถ้ามีโหมดลบกล่องเปิดอยู่
-    if (activeDeleteCard) {
-      // ยกเว้น: ไม่บล็อกหน้าต่าง Alert ของระบบ และกล่อง Confirm
-      if (
-        e.target.closest("#customAlertModal") ||
-        e.target.closest(".sys-alert-element")
-      ) {
-        return;
-      }
 
-      // ถ้าคลิก "ภายใน" การ์ดที่เปิดโหมดถังขยะ
-      if (activeDeleteCard.contains(e.target)) {
-        // อนุญาตแค่ปุ่มถังขยะบนหัว (เพื่อปิดโหมด) และปุ่มลบย่อย เท่านั้น
-        if (
-          !e.target.closest(".btn-toggle-delete") &&
-          !e.target.closest(".btn-delete-box")
-        ) {
-          e.preventDefault();
-          e.stopPropagation();
-          safeAlert(
-            "ระบบถูกล็อก",
-            "โหมดลบกล่องกำลังทำงานอยู่ กรุณากดปุ่มลบ หรือกดปุ่มถังขยะที่ส่วนหัวเพื่อปิดโหมดก่อนครับ",
-          );
-        }
-      } else {
-        // ถ้าไปคลิก "นอกการ์ด" (เช่น ไปกด Export, กด Cancel, หรือกดการ์ดใบอื่น) -> บล็อกทิ้ง!
+
+
+  //========================================
+// [Global Delete Mode Blocker] START
+  //========================================
+
+
+//📍 [Global Window Click Interception]
+document.addEventListener("click", function (e) {
+  const activeDeleteCard = document.querySelector(".shipment-card.is-delete-mode");
+
+  // ---🔍 [Check if delete mode is active and block outside clicks]
+  if (activeDeleteCard) {
+    if (e.target.closest("#customAlertModal") || e.target.closest(".sys-alert-element")) {
+      return;
+    }
+    if (activeDeleteCard.contains(e.target)) {
+      if (!e.target.closest(".btn-toggle-delete") && !e.target.closest(".btn-delete-box")) {
         e.preventDefault();
         e.stopPropagation();
-        safeAlert(
-          "ระบบถูกล็อก",
-          "ไม่อนุญาตให้ทำรายการอื่นขณะเปิดโหมดลบกล่องค้างไว้ กรุณาปิดโหมดลบของรายการนั้นก่อนครับ",
-        );
+        safeAlert("ระบบถูกล็อก", "โหมดลบกล่องกำลังทำงานอยู่ กรุณากดปุ่มลบ หรือกดปุ่มถังขยะที่ส่วนหัวเพื่อปิดโหมดก่อนครับ");
       }
+    } else {
+      e.preventDefault();
+      e.stopPropagation();
+      safeAlert("ระบบถูกล็อก", "ไม่อนุญาตให้ทำรายการอื่นขณะเปิดโหมดลบกล่องค้างไว้ กรุณาปิดโหมดลบของรายการนั้นก่อนครับ");
     }
-  },
-  true,
-); // ใช้ Capture Phase ชิงตัดหน้าอีเวนต์อื่นทั้งหมด
+  }
+}, true);
+// [Global Delete Mode Blocker] END
 
-// 🌟 ตัวท่อรอรับรหัสสาขาจริง (Real Branch Code Wiring)
+
+
+
+
+  //========================================
+  // [Branch Code Mapping Utility] START
+  //========================================
+
+
+// ---🔍 [Map branch ID to real branch code]
 function getRealBranchCode(branchId) {
   const branchCodeMap = {
-    B001: "CKC01", // เซ็นทรัลเวิลด์
-    B002: "KKN02", // สยามพารากอน
-    B003: "ICS03", // ไอคอนสยาม
+    B001: "CKC01",
+    B002: "KKN02",
+    B003: "ICS03",
   };
   return branchCodeMap[branchId] || "UNKN";
 }
+// [Branch Code Mapping Utility] END
 
-// 🌟 ลอจิกพรางรหัสความปลอดภัย (Security Obfuscation)
+
+
+// [Security Obfuscation Utility] START
+// ---🔍 [Obfuscate branch code for security]
 function obfuscateBranchCode(code) {
   if (!code || code === "UNKN") return "00XX";
   const clean = code.replace(/[^a-zA-Z0-9]/g, "");
@@ -190,8 +235,12 @@ function obfuscateBranchCode(code) {
   const numeric = clean.substring(clean.length - 2);
   return numeric + alpha;
 }
+// [Security Obfuscation Utility] END
 
-// 🌟 ระบบรันเลข Audit อมตะ (Immutable Sequence)
+
+
+// [Audit Sequence Generator] START
+// ---🔍 [Generate immutable audit sequence number]
 function generateAuditSequence(type, branch) {
   const storageKey = `ledger_seq_${branch}_${type}`;
   let currentSeq = parseInt(localStorage.getItem(storageKey)) || 0;
@@ -199,8 +248,12 @@ function generateAuditSequence(type, branch) {
   localStorage.setItem(storageKey, currentSeq);
   return String(currentSeq).padStart(4, "0");
 }
+// [Audit Sequence Generator] END
 
-// 🌟 ฟังก์ชันดึงฟอร์แมตวันที่ YYMMDD
+
+
+// [Date Formatter Utility] START
+// ---🔍 [Format current date to YYMMDD]
 function getFormattedDate() {
   const d = new Date();
   const yy = String(d.getFullYear()).substring(2);
@@ -209,15 +262,27 @@ function getFormattedDate() {
   return yy + mm + dd;
 }
 
+//========================================
+// [Date Formatter Utility] END
+//========================================
+
 
 
 
 
 // ==========================================
-// MODULE 2: INITIALIZATION & EVENT LISTENERS
+// [Main Application Initialization & DOM Elements]
 // ==========================================
+
+
+//========================================
+// [DOM Content Loaded Initialization] START
+//========================================
+
+
+//📍 [Application Bootstrapping UI]
 document.addEventListener("DOMContentLoaded", () => {
-  // --- 1. Main Menu Navigation (ระบบเก่าด่านหน้า) ---
+  // ---🔍 [Cache DOM elements for navigation and views]
   const mainMenuView = document.getElementById("mainMenuView");
   const productMovementView = document.getElementById("productMovementView");
   const viewTaskHub = document.getElementById("transferOutTaskHubView");
@@ -228,9 +293,48 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnMenuStock = document.getElementById("btnMenuStock");
   const btnMenuMovement = document.getElementById("btnMenuMovement");
   const btnBackToMain = document.getElementById("btnBackToMain");
+  const btnTransferOut = document.getElementById("btnTransferOut");
+  const btnCreateNewTask =
+    document.getElementById("btnCreateNewTask") ||
+    document.getElementById("btnNewTask");
+  const btnSubmitDest =
+    document.getElementById("btnSubmitDest") ||
+    document.getElementById("btnNextDest");
+  const btnBackFromTaskHub =
+    document.getElementById("btnBackToMovement") ||
+    document.getElementById("btnBackFromTaskHub");
+  const btnBackFromDest =
+    document.getElementById("btnCancelDest") ||
+    document.getElementById("btnBackFromDest");
+  const btnCancelFromLobby =
+    document.getElementById("btnCancelFromLobby") ||
+    document.getElementById("btnBackToDest");
+  const btnModalAlertOk = document.getElementById("btnModalAlertOk");
 
+  const btnSubmitLobby = document.getElementById("btnSubmitLobby");
+  const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+  const shipmentBoxModal = document.getElementById("shipmentBoxModal");
+  const btnCancelBox = document.getElementById("btnCancelBox");
+  const btnConfirmBox = document.getElementById("btnConfirmBox");
+  const selectShipmentReason = document.getElementById("selectShipmentReason");
+  const inputBoxNumber = document.getElementById("inputBoxNumber");
+  const lobbyContentContainer =
+    document.getElementById("lobbyContentContainer") ||
+    document.querySelector("#transferOutLobbyView .master-content");
+  const lobbyEmptyState = document.getElementById("lobbyEmptyState");
+
+  let temporaryShipmentID = "";
+  let selectedOriginRealCode = "CKC01";
+  let boxCounter = 0;
+
+  //========================================
+  // [Main Menu Movement Button] START
+  //========================================
+
+  //📍 [Product Movement Menu Button Trigger]
   if (btnMenuMovement) {
     btnMenuMovement.addEventListener("click", () => {
+      // ---🔍 [Animate and navigate to Product Movement view]
       if (btnMenuStock) btnMenuStock.classList.add("anim-shrink-fade");
       if (sharedHeader) sharedHeader.classList.add("anim-shrink-fade");
       btnMenuMovement.classList.add("anim-move-up");
@@ -251,9 +355,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 400);
     });
   }
+  // [Main Menu Movement Button] END
 
+  //========================================
+  // [Back to Main Menu Button] START
+  //========================================
+
+  //📍 [Main Menu Back Button Trigger]
   if (btnBackToMain) {
     btnBackToMain.addEventListener("click", () => {
+      // ---🔍 [Revert animation and navigate to Main Menu view]
       if (productMovementView) productMovementView.classList.add("hide");
       if (mainMenuView) mainMenuView.classList.remove("hide");
       if (sharedHeader) sharedHeader.classList.remove("hide");
@@ -262,18 +373,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 2. Transfer Out Forward Flow (เดินหน้า) ---
-  const btnTransferOut = document.getElementById("btnTransferOut");
+  //========================================
+  // [Back to Main Menu Button] END
+ 
+
+  //========================================
+  // [Transfer Out Button] START
+  //========================================
+
+  //📍 [Transfer Out Menu Item Trigger]
   if (btnTransferOut) {
     btnTransferOut.addEventListener("click", () => {
-      navigationTo(productMovementView, viewTaskHub)
-  });
+      navigationTo(productMovementView, viewTaskHub);
+    });
   }
+  // [Transfer Out Button] END
 
-  // --- สร้าง ลอบบี้ สาขา ใหม่(เดินหน้า) ---
-  const btnCreateNewTask =
-    document.getElementById("btnCreateNewTask") ||
-    document.getElementById("btnNewTask");
+  // [Create New Task Button] START
+  //📍 [New Task Creation Button Trigger]
   if (btnCreateNewTask) {
     btnCreateNewTask.addEventListener("click", () => {
       const selectDest = document.getElementById("selectDestination");
@@ -281,12 +398,18 @@ document.addEventListener("DOMContentLoaded", () => {
       navigationTo(viewTaskHub, viewDest);
     });
   }
+  // [Create New Task Button] END
 
-  // --- ปุ่มตกลงสร้าง ลอบบี้สาขา Tranfer OUT(เดินหน้า) ---
+  //========================================
+  // [Task List Item Navigation] START
+  //========================================
+
+  //📍 [Task List Items Row Trigger]
   document
     .querySelectorAll(".task-list-item, .pending-task-row")
     .forEach((row) => {
       row.addEventListener("click", function () {
+        // ---🔍 [Extract branch info and navigate to Lobby view]
         const textContainer = this.querySelector("div");
         if (textContainer) {
           const branchInfo =
@@ -297,13 +420,18 @@ document.addEventListener("DOMContentLoaded", () => {
         navigationTo(viewTaskHub, viewLobby);
       });
     });
+  // [Task List Item Navigation] END
 
-  const btnSubmitDest =
-    document.getElementById("btnSubmitDest") ||
-    document.getElementById("btnNextDest");
+  //========================================
+  // [Submit Destination Button] START
+  //========================================
+
+  //📍 [Destination Selection Confirm Button Trigger]
   if (btnSubmitDest) {
     btnSubmitDest.addEventListener("click", () => {
       const destDropdown = document.getElementById("selectDestination");
+
+      // ---🔍 [Validate destination and navigate to Lobby view]
       if (!destDropdown || !destDropdown.value) {
         safeAlert(
           "ข้อมูลไม่ครบถ้วน",
@@ -318,64 +446,59 @@ document.addEventListener("DOMContentLoaded", () => {
       navigationTo(viewDest, viewLobby);
     });
   }
+  // [Submit Destination Button] END
 
-  // --- 3. ออกไปหน้า PRODUCT MOVEMENT (ถอยหลัง) ---
-  const btnBackFromTaskHub =
-    document.getElementById("btnBackToMovement") ||
-    document.getElementById("btnBackFromTaskHub");
+  // [Back From Task Hub Button] START
+  //📍 [Task Hub Return Button Trigger]
   if (btnBackFromTaskHub) {
     btnBackFromTaskHub.addEventListener("click", () =>
       navigationTo(viewTaskHub, productMovementView),
     );
   }
+  // [Back From Task Hub Button] END
 
-  // --- ออกไปหน้า TRANFER OUT LOBBY (ถอยหลัง) ---
-  const btnBackFromDest =
-    document.getElementById("btnCancelDest") ||
-    document.getElementById("btnBackFromDest");
+  //========================================
+  // [Back From Destination Button] START
+  //========================================
+
+  //📍 [Destination View Return Button Trigger]
   if (btnBackFromDest) {
     btnBackFromDest.addEventListener("click", () =>
       navigationTo(viewDest, viewTaskHub),
     );
   }
+  // [Back From Destination Button] END
 
-  // --- ออกไปหน้า TRANFER OUT LOBBY (ถอยหลัง) ---
-  const btnCancelFromLobby =
-    document.getElementById("btnCancelFromLobby") ||
-    document.getElementById("btnBackToDest");
+  //========================================
+  // [Cancel From Lobby Button] START
+  //========================================
+  //📍 [Lobby View Cancel Button Trigger]
   if (btnCancelFromLobby) {
     btnCancelFromLobby.addEventListener("click", () =>
       navigationTo(viewLobby, viewTaskHub),
     );
   }
+  // [Cancel From Lobby Button] END
 
-  // --- 4. Global Alert  หน้าต่างแจ้งเตือน ---
-  const btnModalAlertOk = document.getElementById("btnModalAlertOk");
+  //========================================
+  // [Global Alert Modal OK Button] START
+  //========================================
+
+  //📍 [Alert Modal Acknowledge Button Trigger]
   if (btnModalAlertOk) {
     btnModalAlertOk.addEventListener("click", () => {
       const alertModal = document.getElementById("customAlertModal");
       if (alertModal) alertModal.classList.add("hide");
     });
   }
+  // [Global Alert Modal OK Button] END
 
-  // --- 5. PHASE 2 ENGINE:ภายในห้องล็อบบี้สาขา Shipment Lobby & Generation ---
-  const btnSubmitLobby = document.getElementById("btnSubmitLobby");
-  const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
-  const shipmentBoxModal = document.getElementById("shipmentBoxModal");
-  const btnCancelBox = document.getElementById("btnCancelBox");
-  const btnConfirmBox = document.getElementById("btnConfirmBox");
-  const selectShipmentReason = document.getElementById("selectShipmentReason");
-  const inputBoxNumber = document.getElementById("inputBoxNumber");
+  // ==========================================
+  // [Shipment Lobby & Generation Phase]
+  // ==========================================
 
-  const lobbyContentContainer =
-    document.getElementById("lobbyContentContainer") ||
-    document.querySelector("#transferOutLobbyView .master-content");
-  const lobbyEmptyState = document.getElementById("lobbyEmptyState");
-
-  let temporaryShipmentID = "";
-  let selectedOriginRealCode = "CKC01"; // ต้นทางสมมติ
-
-  // ---  กดส่งออก  ---
+  // [Submit Lobby Export Button] START
+  //📍 [Lobby Export Action Button Trigger]
   if (btnSubmitLobby) {
     btnSubmitLobby.addEventListener("click", () => {
       safeAlert(
@@ -385,30 +508,34 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     });
   }
+  // [Submit Lobby Export Button] END
 
-  
-  // ---   ปุ่มรูปรถบรรทุก  ---
+  //========================================
+  // [Add Shipment Truck Button] START
+  //========================================
+
+  //📍 [Shipment Truck Icon Button Trigger]
   if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener("click", () => {
-      // RESET ค่าก่อนเริ่มทุกครั้ง
+      // ---🔍 [Reset form values and show shipment creation modal]
       if (selectShipmentReason) selectShipmentReason.selectedIndex = 0;
       if (inputBoxNumber) inputBoxNumber.value = "";
-
-      // เผยโฉม Modal
       if (shipmentBoxModal) shipmentBoxModal.classList.remove("hide");
     });
   }
+  // [Add Shipment Truck Button] END
 
-
-  // ---   หน้าต่างดาวเลือกประเภทการส่ง  ---
+  //========================================
+  // [Shipment Reason Selection] START
+  //========================================
+  //📍 [Shipment Type Dropdown Trigger]
   if (selectShipmentReason) {
     selectShipmentReason.addEventListener("change", () => {
+      // ---🔍 [Generate temporary shipment ID based on reason and destination]
       const type = selectShipmentReason.value;
       const destDropdown = document.getElementById("selectDestination");
       const destRaw = destDropdown ? destDropdown.value : "";
-
       const destRealCode = getRealBranchCode(destRaw);
-
       const p_type = type;
       const p_date = getFormattedDate();
       const p_origin = obfuscateBranchCode(selectedOriginRealCode);
@@ -419,248 +546,89 @@ document.addEventListener("DOMContentLoaded", () => {
       if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
     });
   }
+  // [Shipment Reason Selection] END
 
-  // ---    ปุ่มกดยกเลิก  นายหน้าล็อบบี้สาขา ---
+  //========================================
+  // [Cancel Shipment Modal Button] START
+  //========================================
+
+  //📍 [Shipment Modal Cancel Button Trigger]
   if (btnCancelBox) {
     btnCancelBox.addEventListener("click", () => {
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
     });
   }
+  // [Cancel Shipment Modal Button] END
 
-          // --- ปุ่มกดตกลงในหน้าต่างเลือกประเภทการโอน ---
-          if (btnConfirmBox) {
-            btnConfirmBox.addEventListener("click", () => {
-              const selectedType = selectShipmentReason.value;
-              if (!selectedType) {
-                safeAlert(
-                  "เลือกประเภทก่อนครับ",
-                  "กรุณาเลือกประเภทการจัดส่ง เพื่อกำหนดรหัสรอบส่งให้ถูกต้อง",
-                );
-                return; // หยุดทำงานถ้ายังไม่เลือกประเภท
-              }
-    // ลอจิกสร้าง ID พรางตัว
-    const p_type = selectShipmentReason.value;
-    const p_date = getFormattedDate();
-    const p_origin = obfuscateBranchCode(selectedOriginRealCode);
-    const p_dest = obfuscateBranchCode(
-      getRealBranchCode(document.getElementById("selectDestination")?.value),
-    );
-    const mockSeq = "000X";
+  //========================================
+  // [Confirm Shipment Creation Button] START
+  //========================================
 
-    temporaryShipmentID = `${p_type}-${p_date}-${p_origin}-${mockSeq}-${p_dest}`;
-    if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
-
-    if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-    // ต่อด้วยลอจิกสร้าง Card Shipment...
-  });
-}
-
-    // --- ปุ่มกดยกเลิก ---
-    if (btnCancelBox) {
-        btnCancelBox.addEventListener("click", () => {
-            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-        });
-    }
-
-
-
-
-      // --- ตัวโครงสร้างหน้าต่าง ประเภทการโอน---
-      const existingCardType = document.querySelector(
-        `.shipment-card[data-shipment-type="${selectShipmentReason.value}"]`,
-      );
-      if (existingCardType) {
+  //📍 [Shipment Modal Confirm Button Trigger]
+  if (btnConfirmBox) {
+    btnConfirmBox.addEventListener("click", () => {
+      // ---🔍 [Validate shipment reason and display corresponding shipment card]
+      const selectedType = selectShipmentReason
+        ? selectShipmentReason.value
+        : "";
+      if (!selectedType) {
         safeAlert(
-          "ไม่อนุญาตให้สร้างซ้ำ",
-          `มีรอบจัดส่งประเภทนี้ค้างอยู่ กรุณาดำเนินการใบเดิมให้เสร็จสิ้นก่อนครับ`,
+          "ข้อมูลไม่ครบถ้วน",
+          "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ",
         );
         return;
       }
 
-      //  ปุ่มส่งออกที่ถูกลอค
-      const finalShipmentID = `${
-        selectShipmentReason.value
-      }-${getFormattedDate()}-XXXX-XXXX-XXXX`;
-      if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
+      const p_date = getFormattedDate();
+      const p_origin =
+        typeof selectedOriginRealCode !== "undefined"
+          ? obfuscateBranchCode(selectedOriginRealCode)
+          : "000";
+      const selectDest = document.getElementById("selectDestination");
+      const p_dest = selectDest
+        ? obfuscateBranchCode(getRealBranchCode(selectDest.value))
+        : "000";
+      const mockSeq = "000X";
+
+      temporaryShipmentID = `${selectedType}-${p_date}-${p_origin}-${mockSeq}-${p_dest}`;
+      if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
       if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
-      //   สร้างแถบ Ship เมนต์
-      const card = document.createElement("div");
-      card.className = "shipment-card";
-      card.setAttribute("data-shipment-type", selectShipmentReason.value);
-      card.style.cssText =
-        "background: white; border-radius: 12px; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 10px; width: 100%; transition: all 0.3s ease;";
-
-      card.innerHTML = `
-          <div class="shipment-header-bg" style="background: linear-gradient(to bottom, #d6d6d6 0%, #ffffff 50%, #d6d6d6 100%); padding: 12px 15px; border-bottom: 1px solid #ccc; display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #111;">
-              <div style="display: flex; align-items: center; flex: 1;">
-                  <input type="checkbox" class="shipment-select-cb" disabled style="transform: scale(1.4); margin-right: 15px; cursor: pointer;">
-                  <div class="shipment-barcode-trigger" style="cursor: pointer; display: flex; align-items: center; color: #333;">
-                      <i class="fas fa-qrcode" style="margin-right: 8px; font-size: 16px; color: #555;"></i> 
-                      <span>ID: ${finalShipmentID}</span>
-                  </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 12px;">
-                  <span class="shipment-box-count" style="font-size: 12px; color: #555; background: #eee; padding: 3px 8px; border-radius: 12px; border: 1px solid #ddd;">Boxes (0)</span>
-                  <button class="btn-add-box" title="เพิ่มกล่อง" style="background: transparent; border: none; color: #28a745; font-size: 18px; cursor: pointer; padding: 0;"><i class="fas fa-box"></i><i class="fas fa-plus" style="font-size: 10px; margin-left: 2px; vertical-align: top;"></i></button>
-                  <button class="btn-toggle-delete" title="เปิด/ปิด โหมดลบกล่อง" style="background: transparent; border: none; color: #dc3545; font-size: 16px; cursor: pointer; padding: 0;"><i class="fas fa-trash-alt"></i></button>
-              </div>
-          </div>
-          <div class="box-list-container" style="display: flex; flex-direction: column; background: #fdfdfd; width: 100%;"></div>
-      `;
-      if (lobbyContentContainer) lobbyContentContainer.appendChild(card);
-
-      const mainCheckbox = card.querySelector(".shipment-select-cb");
-      const boxListContainer = card.querySelector(".box-list-container");
-      const boxCountDisplay = card.querySelector(".shipment-box-count");
-
-      /* 📍 ลอจิก: Barcode Trigger */
-      card
-        .querySelector(".shipment-barcode-trigger")
-        .addEventListener("click", () => {
-          safeAlert(
-            "QR / Barcode",
-            "Barcode จะถูกคำนวณและแสดงผลก็ต่อเมื่อกดส่งออกสำเร็จแล้วครับ",
-          );
-        });
-
-      /* 📍 ลอจิก: Select All (หัวหน้าติ๊ก ลูกน้องติ๊กตาม) */
-      mainCheckbox.addEventListener("change", (e) => {
-        const isChecked = e.target.checked;
-        const childCbs = card.querySelectorAll(
-          ".box-select-cb:not([disabled])",
-        );
-        childCbs.forEach((cb) => (cb.checked = isChecked));
-        evaluateExportButton();
+      const allShipmentCards = document.querySelectorAll(".shipment-card");
+      allShipmentCards.forEach((card) => {
+        card.style.display = "block";
+        const idText = card.querySelector(".shipment-id-text");
+        if (idText) idText.innerText = temporaryShipmentID;
       });
+    });
+  }
+  // [Confirm Shipment Creation Button] END
 
-      /* 📍 ลอจิก: เปิด/ปิด โหมดลบกล่อง (ทำแถบเทา) */
-      card.querySelector(".btn-toggle-delete").addEventListener("click", () => {
-        const isDeleting = card.classList.toggle("is-delete-mode");
-        const allCards = document.querySelectorAll(".shipment-card");
-        const deleteBtns = card.querySelectorAll(".btn-delete-box");
+  //========================================
+  // [Shipment Card Initialization UI] START
+  //========================================
 
-        if (isDeleting) {
-          allCards.forEach((c) => {
-            if (c !== card) c.style.filter = "grayscale(100%) opacity(0.4)"; // พรางการ์ดอื่น
-          });
-          card.querySelector(".shipment-header-bg").style.filter =
-            "grayscale(100%) opacity(0.8)";
-          deleteBtns.forEach((btn) => btn.classList.remove("hide"));
-        } else {
-          allCards.forEach((c) => (c.style.filter = "none"));
-          card.querySelector(".shipment-header-bg").style.filter = "none";
-          deleteBtns.forEach((btn) => btn.classList.add("hide"));
-        }
-      });
-
-
-
-// [MODULE: SHIPMENT LOBBY - การจัดการกล่องย่อย]
-// ใช้ Event Delegation ที่ระดับ card เพื่อให้มั่นใจว่าปุ่มจะทำงานได้เสมอแม้มีการสร้างกล่องใหม่
-card.addEventListener("click", function(e) {
-    if (e.target.closest(".btn-add-box")) {
-        const openBox = card.querySelector('.box-item[data-status="open"]');
-        if (openBox) {
-            safeAlert("ไม่อนุญาต", "มีกล่องค้างเปิดอยู่ กรุณาเพิ่มสินค้าให้เสร็จก่อนครับ", "error");
-            return;
-        }
-
-        boxCounter++;
-        const boxId = String(boxCounter).padStart(3, "0");
-        const boxItem = document.createElement("div");
-        boxItem.className = "box-item";
-        boxItem.setAttribute("data-status", "open");
-        
-        // โครงสร้างกล่องย่อยที่สะอาดและสมบูรณ์
-        boxItem.innerHTML = `
-            <div style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; background: #fff;">
-                <div style="display: flex; align-items: center; width: 35%;">
-                    <input type="checkbox" class="box-select-cb" disabled style="transform: scale(1.2); margin-right: 18px; margin-left: 2px; cursor: pointer;">
-                    <i class="fas fa-box-open box-status-icon" style="color: #dc3545; margin-right: 8px;"></i>
-                    <span style="font-size: 13px; font-weight: bold;">BOX-${boxId}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <button class="btn-add-item" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">เพิ่มสินค้า</button>
-                    <button class="btn-delete-box hide" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;">ลบกล่อง</button>
-                </div>
-            </div>
-        `;
-        boxListContainer.appendChild(boxItem);
-        boxCountDisplay.innerText = `Boxes (${card.querySelectorAll(".box-item").length})`;
-        
-        // ผูก Event ให้ปุ่มที่เพิ่งสร้างใหม่ทำงานได้ทันที
-        boxItem.querySelector(".btn-add-item").addEventListener("click", () => initBoxDetailsTransition(card, boxItem, boxId));
+  // ---🔍 [Hide default shipment cards if ID is not yet generated]
+  const defaultCards = document.querySelectorAll(".shipment-card");
+  defaultCards.forEach((card) => {
+    if (!temporaryShipmentID) {
+      card.style.display = "none";
     }
-});
+  });
+  // [Shipment Card Initialization UI] END
 
+  // ==========================================
+  // [Master Integration: Box Details & Scanning]
+  // ==========================================
 
-
-
-
-
-
-
-        const childCb = boxItem.querySelector(".box-select-cb");
-
-        /* ประเภท : ฟังก์ชัน | ชื่อ : ลูกสะท้อนแม่ | ผลลัพธ์ : เช็ค Checkbox อัตโนมัติ */
-        childCb.addEventListener("change", () => {
-          const allClosed = card.querySelectorAll(
-            '.box-item[data-status="closed"] .box-select-cb',
-          );
-          const allChecked = card.querySelectorAll(
-            '.box-item[data-status="closed"] .box-select-cb:checked',
-          );
-          mainCheckbox.checked =
-            allClosed.length > 0 && allClosed.length === allChecked.length;
-          evaluateExportButton();
-        });
-
-        /* ประเภท : ฟังก์ชัน | ชื่อ : ลบกล่องย่อย | ผลลัพธ์ : ลบกล่องด้วย Custom Confirm (ธีมสีแดง delete) */
-        boxItem
-          .querySelector(".btn-delete-box")
-          .addEventListener("click", function () {
-            safeConfirm(
-              "ลบกล่อง",
-              `แน่ใจหรือไม่ว่าต้องการลบ BOX-${boxId} ?`,
-              () => {
-                boxItem.remove();
-                // ✅ แก้ไข: ปิดวงเล็บและปีกกาให้ครบถ้วน
-                boxCountDisplay.innerText = `Boxes (${
-                  card.querySelectorAll(".box-item").length
-                })`;
-                if (
-                  card.querySelectorAll('.box-item[data-status="closed"]')
-                    .length === 0
-                ) {
-                  mainCheckbox.checked = false;
-                  mainCheckbox.disabled = true;
-                }
-                evaluateExportButton();
-              },
-              "delete",
-            );
-
-            /* 📍 [จุดที่แก้ไข!] ประเภท: ฟังก์ชัน | ชื่อ: เปิดหน้าต่างเพิ่มสินค้า | ผลลัพธ์: สับรางเปิดหน้า Full View 18-72-10 ทันที */
-            boxItem
-              .querySelector(".btn-add-item")
-              .addEventListener("click", function () {
-                initBoxDetailsTransition(card, boxItem, boxId);
-              });
-          });
-      });
-  
-  // 📍 [END: บล็อกสร้างการ์ด Shipment]
-
-  /* 📍 [START: MASTER INTEGRATION - BOX DETAILS & SCANNING] */
-
-  // ตัวแปรควบคุมสถานะปัจจุบัน
+  // [Box Details Transition Initialization] START
+  // ---🔍 [Initialize state variables for active shipment box]
   let currentActiveShipmentCard = null;
   let currentActiveBoxItemNode = null;
   let currentActiveBoxId = "";
   let currentActiveShipmentId = "";
 
-  /* ประเภท: Function | ชื่อ: initBoxDetailsTransition | ผลลัพธ์: สับรางเข้าหน้าจอ Full View พร้อมโอน Context */
+  //📍 [Transition to Full View Box Details]
   function initBoxDetailsTransition(cardNode, boxItemNode, boxId) {
     currentActiveShipmentCard = cardNode;
     currentActiveBoxItemNode = boxItemNode;
@@ -669,30 +637,36 @@ card.addEventListener("click", function(e) {
       .querySelector(".shipment-barcode-trigger span")
       .innerText.replace("ID: ", "");
 
-    // อัปเดต UI หน้า Full View
     document.getElementById("txtActiveBoxTitle").innerText = `BOX-${boxId}`;
     document.getElementById("txtActiveShipmentID").innerText =
       currentActiveShipmentId;
-
     document.getElementById("inputBoxMagicSearch").value = "";
     document.getElementById("magicSearchPreviewSlot").classList.add("hide");
     document.getElementById("boxItemsListWrapper").innerHTML = "";
 
-    // เปิดหน้าจอ
     document.getElementById("boxDetailsView").classList.remove("hide");
   }
+  // [Box Details Transition Initialization] END
 
-  // ผูกปุ่มย้อนกลับจากหน้าจอดีเทล (Footer ฝั่งซ้าย)
-  document.getElementById("btnBackToLobby").addEventListener("click", () => {
-    document.getElementById("boxDetailsView").classList.add("hide");
-    evaluateExportButton();
-  });
+  //==============================================
+  // [Back To Lobby From Box Details Button] START
+  //==============================================
 
-  /* 📍 [END: MASTER INTEGRATION] */
+  //📍 [Return Button from Box Details View]
+  const btnBackToLobby = document.getElementById("btnBackToLobby");
+  if (btnBackToLobby) {
+    btnBackToLobby.addEventListener("click", () => {
+      document.getElementById("boxDetailsView").classList.add("hide");
+      evaluateExportButton();
+    });
+  }
+  // [Back To Lobby From Box Details Button] END
 
-  /* 📍 [START: อัปเกรดสมองกล Magic Search & คุมกำเนิดสต็อก (Box Details)] */
+  //==================================
+  // [Magic Search Engine Input] START
+  //==================================
 
-  // 🗄️ จำลองฐานข้อมูล Master File (อ้างอิงโครงสร้างที่สมบูรณ์แบบของ Stock In House)
+  // ---🔍 [Mock Master Stock Database]
   const mockMasterStockDatabase = [
     {
       sku: "FER-SHOE-091",
@@ -709,7 +683,7 @@ card.addEventListener("click", function(e) {
       lastThree: "112",
       available: 0,
       image: "https://via.placeholder.com/40",
-    }, // ❌ สต็อกหมด (เทสต์บล็อก)
+    },
     {
       sku: "FER-BELT-888",
       barcode: "805123456888",
@@ -720,16 +694,15 @@ card.addEventListener("click", function(e) {
     },
   ];
 
-  /* ประเภท: Event Listener | ชื่อ: Magic Search Engine (Full Spec) | ผลลัพธ์: ค้นหาครอบจักรวาล + เช็คสต็อก Available */
-  document
-    .getElementById("inputBoxMagicSearch")
-    .addEventListener("input", function (e) {
+  //📍 [Search Input Field Trigger]
+  const inputBoxMagicSearch = document.getElementById("inputBoxMagicSearch");
+  if (inputBoxMagicSearch) {
+    inputBoxMagicSearch.addEventListener("input", function (e) {
       const value = e.target.value.trim().toUpperCase();
       const previewSlot = document.getElementById("magicSearchPreviewSlot");
 
-      // เริ่มทำงานเมื่อพิมพ์ครบ 3 ตัวอักษรขึ้นไป
+      // ---🔍 [Process search string when length is at least 3]
       if (value.length >= 3) {
-        // 🧠 ลอจิก Magic Search: กวาดหาข้อมูลจาก SKU, บาร์โค้ดเต็ม, ชื่อรุ่น, หรือรหัส 3 ตัวท้าย
         const matchedProduct = mockMasterStockDatabase.find(
           (item) =>
             item.sku.toUpperCase().includes(value) ||
@@ -739,70 +712,62 @@ card.addEventListener("click", function(e) {
         );
 
         if (matchedProduct) {
-          // 🛡️ ลอจิกผู้คุมกฎ: เช็คยอด Available Stock ว่ามีของให้โอนหรือไม่
           const isAvailable = matchedProduct.available > 0;
-
-          // แสดงสถานะสีตามสต็อก (เขียว = พร้อมโอน, แดง = หมด)
           const stockStatusHtml = isAvailable
             ? `<span style="color: #28a745; font-weight:bold;"><i class="fas fa-check-circle"></i> พร้อมโอน: ${matchedProduct.available} ชิ้น</span>`
             : `<span style="color: #dc3545; font-weight:bold;"><i class="fas fa-times-circle"></i> สต็อกเป็น 0 (โอนไม่ได้)</span>`;
 
-          // เปลี่ยนปุ่ม: ถ้าสต็อกหมด ให้ล็อกปุ่มเป็นสีเทา กดไม่ได้
           const btnHtml = isAvailable
             ? `<button class="btn-trigger-add-item" data-sku="${matchedProduct.sku}" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">เพิ่ม</button>`
             : `<button disabled style="background: #e9ecef; color: #adb5bd; border: 1px solid #ced4da; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: not-allowed;">หมด</button>`;
 
-          // ประกอบร่าง UI หน้าต่างพรีวิว
           previewSlot.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                    <img src="${matchedProduct.image}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid #eee;">
-                    <div style="text-align: left; line-height: 1.3;">
-                        <div style="font-size: 13px; font-weight: bold; color: #222;">${matchedProduct.sku}</div>
-                        <div style="font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${matchedProduct.name}</div>
-                        <div style="font-size: 11px; margin-top: 4px;">${stockStatusHtml}</div>
-                    </div>
-                </div>
-                <div>${btnHtml}</div>
-            `;
+              <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                  <img src="${matchedProduct.image}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid #eee;">
+                  <div style="text-align: left; line-height: 1.3;">
+                      <div style="font-size: 13px; font-weight: bold; color: #222;">${matchedProduct.sku}</div>
+                      <div style="font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${matchedProduct.name}</div>
+                      <div style="font-size: 11px; margin-top: 4px;">${stockStatusHtml}</div>
+                  </div>
+              </div>
+              <div>${btnHtml}</div>
+          `;
           previewSlot.classList.remove("hide");
 
-          // ผูกสายไฟปุ่มเพิ่ม (เฉพาะกรณีที่สต็อก > 0 เท่านั้น)
           if (isAvailable) {
             previewSlot
               .querySelector(".btn-trigger-add-item")
               .addEventListener("click", function () {
                 const targetSku = this.getAttribute("data-sku");
-
-                // ถามยืนยันด้วย Modal ธีมสีเหลือง (Question)
                 safeConfirm(
                   "ยืนยันเพิ่มสินค้า",
                   `คุณต้องการโอนสินค้า ${targetSku} เข้ากล่องนี้ใช่หรือไม่?`,
                   () => {
                     executeAddItemToBoxContainer(targetSku);
-                    previewSlot.classList.add("hide"); // ปิดหน้าต่างพรีวิว
-                    document.getElementById("inputBoxMagicSearch").value = ""; // ล้างช่องค้นหา
+                    previewSlot.classList.add("hide");
+                    document.getElementById("inputBoxMagicSearch").value = "";
                   },
                   "question",
                 );
               });
           }
         } else {
-          // แจ้งเตือนเมื่อหาสินค้าไม่เจอเลย
           previewSlot.innerHTML = `<div style="text-align:center; width:100%; font-size: 13px; color: #dc3545; padding: 8px; font-weight: bold;"><i class="fas fa-search-minus"></i> ไม่พบข้อมูลสินค้าในระบบ</div>`;
           previewSlot.classList.remove("hide");
         }
       } else {
-        // ซ่อนหน้าต่างพรีวิวถ้าพิมพ์ไม่ถึง 3 ตัว
         previewSlot.classList.add("hide");
       }
     });
-  /* 📍 [END: อัปเกรดสมองกล Magic Search & คุมกำเนิดสต็อก] */
+  }
+  // [Magic Search Engine Input] END
 
-  /* ประเภท: ฟังก์ชันหลัก | ชื่อ: บรรจุสินค้าและย้ายสต็อกไปที่ Hold | ผลลัพธ์: สร้างแถวสินค้าสไตล์ Stock In House และสับเปลี่ยนสต็อก */
+  // [Add Item To Box Execution Engine] START
+  //📍 [Item Append to Box UI and Logic]
   function executeAddItemToBoxContainer(skuCode) {
     const wrapper = document.getElementById("boxItemsListWrapper");
 
-    // ตรวจสอบข้อมูลสินค้าซ้ำในการ์ด
+    // ---🔍 [Check for existing item to prevent duplicates]
     const existingItem = wrapper.querySelector(
       `.scanned-item-row[data-sku="${skuCode}"]`,
     );
@@ -835,9 +800,7 @@ card.addEventListener("click", function(e) {
     `;
     wrapper.appendChild(itemRow);
 
-    // 📡 [BACKEND CONNECT合约 LOGIC]: ย้ายยอดสต็อกของสาขาปัจจุบันจาก Available -> ไปพักไว้ที่คอลัมน์ Hold ในตาราง Master File
-
-    // ผูกคำสั่งปุ่มลบสินค้าออกจากการ์ดดีเทล
+    // ---🔍 [Attach event listener to newly created remove button]
     itemRow
       .querySelector(".btn-remove-item-from-box")
       .addEventListener("click", function () {
@@ -846,7 +809,6 @@ card.addEventListener("click", function(e) {
           `คุณต้องการยกเลิกการบรรจุสินค้า ${skuCode} และคืนสต็อกกลับระบบใช่หรือไม่?`,
           () => {
             itemRow.remove();
-            // 📡 [BACKEND ROLLBACK LOGIC]: ดึงยอดสินค้าออกจาก Hold -> โอนกลับคืนเข้าไปใน Available Stock ของ Master File
             safeAlert(
               "สำเร็จ",
               "ระบบดึงสินค้าออกจากกล่อง และคืนยอดสต็อกกลับคอลัมน์พร้อมขายเรียบร้อยแล้ว",
@@ -854,19 +816,21 @@ card.addEventListener("click", function(e) {
             );
           },
           "delete",
-        ); // ธีมลบสีแดงเครื่องหมายตกใจ
+        );
       });
   }
+  // [Add Item To Box Execution Engine] END
 
-  /* 📍 [END: ระบบควบคุมหน้าจอรายละเอียดกล่อง] */
+  // ==========================================
+  // [Export Evaluation & Legacy System]
+  // ==========================================
 
-  /* 📍 [START: สมองกลปุ่มส่งออก และ โค้ดส่วนท้ายของไฟล์] */
-
-  /* ประเภท : ฟังก์ชัน Core Logic  ชื่อ : evaluateExportButton  ผลลัพธ์ : เช็คการติ๊กถูก และเช็คให้ชัวร์ว่าทุกกล่องปิดสนิทแล้ว ถึงจะโชว์ปุ่ม EXPORT */
+  //📍 [Export Button State Controller START]
   function evaluateExportButton() {
     const btnSubmitLobby = document.getElementById("btnSubmitLobby");
     if (!btnSubmitLobby) return;
 
+    // ---🔍 [Verify if any shipments are checked and boxes are all closed]
     const checkedShipments = document.querySelectorAll(
       ".shipment-select-cb:checked",
     );
@@ -881,7 +845,6 @@ card.addEventListener("click", function(e) {
           '.box-item[data-status="open"]',
         );
 
-        // กฎ: Shipment ต้องมีกล่องอย่างน้อย 1 ใบ และต้อง "ไม่มีกล่องใดเปิดอยู่เลย"
         if (boxes.length === 0 || openBoxes.length > 0) {
           allValid = false;
         }
@@ -907,10 +870,10 @@ card.addEventListener("click", function(e) {
       btnSubmitLobby.innerText = "EXPORT";
     }
   }
+  // [Export Button Evaluation Engine] END
 
-  // ==========================================
-  // --- 6. Checkbox Logic (ระบบกล่องติ๊กของหน้าจอเก่า คงไว้เพื่อป้องกันหน้าอื่นพัง) ---
-  // ==========================================
+  // [Legacy Checkbox Synchronization Logic] START
+  //📍 [Main Checkbox and Child Checkbox Triggers]
   const mainShipmentCheckbox = document.getElementById(
     "selectAllBoxesInShipment",
   );
@@ -922,6 +885,8 @@ card.addEventListener("click", function(e) {
       ".box-select-checkbox:checked",
     ).length;
     if (!exportBtn) return;
+
+    // ---🔍 [Determine export button state based on selected legacy checkboxes]
     if (checkedCount > 0) {
       exportBtn.disabled = false;
       exportBtn.style.background = "#007bff";
@@ -959,4 +924,6 @@ card.addEventListener("click", function(e) {
       });
     });
   }
-// 📍 [END: ปิดหน้าต่าง DOMContentLoaded (บรรทัดสุดท้ายของไฟล์)]
+  // [Legacy Checkbox Synchronization Logic] END
+});
+//📍 [END OF DOMContentLoaded]
