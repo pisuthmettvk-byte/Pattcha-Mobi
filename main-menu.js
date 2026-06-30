@@ -386,16 +386,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  
   // ---   ปุ่มรูปรถบรรทุก  ---
   if (btnAddShipmentTruck) {
     btnAddShipmentTruck.addEventListener("click", () => {
+      // RESET ค่าก่อนเริ่มทุกครั้ง
       if (selectShipmentReason) selectShipmentReason.selectedIndex = 0;
-      if (inputBoxNumber)
-        inputBoxNumber.value = "กรุณาเลือกประเภทระบบเพื่อคำนวณรหัส...";
-      temporaryShipmentID = "";
+      if (inputBoxNumber) inputBoxNumber.value = "";
+
+      // เผยโฉม Modal
       if (shipmentBoxModal) shipmentBoxModal.classList.remove("hide");
     });
   }
+
 
   // ---   หน้าต่างดาวเลือกประเภทการส่ง  ---
   if (selectShipmentReason) {
@@ -424,28 +427,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-// --- ปุ่มกดตกลงในหน้าต่างเลือกประเภทการโอน ---
-    if (btnConfirmBox) {
-        btnConfirmBox.addEventListener("click", () => {
-            if (!selectShipmentReason || !selectShipmentReason.value) {
-                safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ");
-                return;
-            }
-            
-            // ลอจิกสร้าง ID พรางตัว
-            const p_type = selectShipmentReason.value;
-            const p_date = getFormattedDate();
-            const p_origin = obfuscateBranchCode(selectedOriginRealCode);
-            const p_dest = obfuscateBranchCode(getRealBranchCode(document.getElementById("selectDestination")?.value));
-            const mockSeq = "000X";
+          // --- ปุ่มกดตกลงในหน้าต่างเลือกประเภทการโอน ---
+          if (btnConfirmBox) {
+            btnConfirmBox.addEventListener("click", () => {
+              const selectedType = selectShipmentReason.value;
+              if (!selectedType) {
+                safeAlert(
+                  "เลือกประเภทก่อนครับ",
+                  "กรุณาเลือกประเภทการจัดส่ง เพื่อกำหนดรหัสรอบส่งให้ถูกต้อง",
+                );
+                return; // หยุดทำงานถ้ายังไม่เลือกประเภท
+              }
+    // ลอจิกสร้าง ID พรางตัว
+    const p_type = selectShipmentReason.value;
+    const p_date = getFormattedDate();
+    const p_origin = obfuscateBranchCode(selectedOriginRealCode);
+    const p_dest = obfuscateBranchCode(
+      getRealBranchCode(document.getElementById("selectDestination")?.value),
+    );
+    const mockSeq = "000X";
 
-            temporaryShipmentID = `${p_type}-${p_date}-${p_origin}-${mockSeq}-${p_dest}`;
-            if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
-            
-            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-            // ต่อด้วยลอจิกสร้าง Card Shipment...
-        });
-    }
+    temporaryShipmentID = `${p_type}-${p_date}-${p_origin}-${mockSeq}-${p_dest}`;
+    if (inputBoxNumber) inputBoxNumber.value = temporaryShipmentID;
+
+    if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+    // ต่อด้วยลอจิกสร้าง Card Shipment...
+  });
+}
 
     // --- ปุ่มกดยกเลิก ---
     if (btnCancelBox) {
