@@ -364,46 +364,71 @@ document.addEventListener("click", function (e) {
 document.addEventListener("click", function (e) {
   //📍 [ปุ่มตกลงในหน้าต่างเลือกรอบส่ง - ยืนยันการสร้างรอบส่ง]
   const btnConfirmBox = e.target.closest("#btnConfirmBox");
-
+  
   if (btnConfirmBox) {
     e.preventDefault();
-    const selectShipmentReason = document.getElementById(
-      "selectShipmentReason",
-    );
+    const selectShipmentReason = document.getElementById("selectShipmentReason");
 
     if (!selectShipmentReason || !selectShipmentReason.value) {
-      window.safeAlert(
-        "ข้อมูลไม่ครบถ้วน",
-        "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ",
-      );
+      window.safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกประเภทการส่งออกก่อนดำเนินการครับ");
       return;
     }
 
-    const existingCardType = document.querySelector(
-      `.shipment-card[data-shipment-type="${selectShipmentReason.value}"]`,
-    );
+    // ---🔍 [ประมวลผลคำนวณรหัส ID ทับอีกครั้ง เพื่อความชัวร์ (แก้บั๊กกรณีไม่ได้กดเปลี่ยน Dropdown)]
+    const destDropdown = document.getElementById("selectDestination");
+    const destRealCode = typeof window.getRealBranchCode === "function" ? window.getRealBranchCode(destDropdown ? destDropdown.value : "") : "000";
+    const p_date = typeof window.getFormattedDate === "function" ? window.getFormattedDate() : "000000";
+    const p_origin = typeof window.selectedOriginRealCode !== "undefined" ? window.selectedOriginRealCode : "CKC01";
+    
+    window.temporaryShipmentID = `${selectShipmentReason.value}-${p_date}-${typeof window.obfuscateBranchCode === "function" ? window.obfuscateBranchCode(p_origin) : "000"}-000X-${typeof window.obfuscateBranchCode === "function" ? window.obfuscateBranchCode(destRealCode) : "000"}`;
+
+    const existingCardType = document.querySelector(`.shipment-card[data-shipment-type="${selectShipmentReason.value}"]`);
     if (existingCardType && existingCardType.style.display !== "none") {
-      window.safeAlert(
-        "ไม่อนุญาตให้สร้างซ้ำ",
-        "มีรอบจัดส่งประเภทนี้ค้างอยู่ กรุณาดำเนินการใบเดิมให้เสร็จสิ้นก่อนครับ",
-      );
+      window.safeAlert("ไม่อนุญาตให้สร้างซ้ำ", "มีรอบจัดส่งประเภทนี้ค้างอยู่ กรุณาดำเนินการใบเดิมให้เสร็จสิ้นก่อนครับ");
       return;
     }
 
-    // ---🔍 [ซ่อนสถานะว่างเปล่า และเปิดแสดงการ์ด Shipment พร้อมยัดรหัส ID ลงไป]
+    // ---🔍 [ซ่อนสถานะว่างเปล่า และปิดหน้าต่าง Modal]
     const lobbyEmptyState = document.getElementById("lobbyEmptyState");
     const shipmentBoxModal = document.getElementById("shipmentBoxModal");
     if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
     if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
-    const allShipmentCards = document.querySelectorAll(".shipment-card");
-    allShipmentCards.forEach((card) => {
-      card.style.display = "block";
-      const idText =
-        card.querySelector(".shipment-barcode-trigger span") ||
-        card.querySelector(".shipment-id-text");
-      if (idText) idText.innerText = `ID: ${window.temporaryShipmentID}`;
-    });
+    // ---🔍 [สร้างคอลัมน์ Shipment No. ขึ้นมาใหม่แบบ Dynamic Injection (แก้ปัญหา HTML ไม่มี Mockup การ์ด)]
+    const shipmentCard = document.createElement("div");
+    shipmentCard.className = "shipment-card";
+    shipmentCard.setAttribute("data-shipment-type", selectShipmentReason.value);
+    shipmentCard.style.cssText = "background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee;";
+
+    shipmentCard.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <input type="checkbox" class="shipment-select-cb" disabled style="transform: scale(1.3); cursor: pointer;">
+          <div>
+            <div style="font-weight: bold; color: #222; font-size: 15px;">Shipment No.</div>
+            <div class="shipment-id-text shipment-barcode-trigger" style="color: #007bff; font-size: 13px; font-weight: bold; margin-top: 4px;">
+              <span>ID: ${window.temporaryShipmentID}</span>
+            </div>
+          </div>
+        </div>
+        <div class="shipment-box-count" style="background: #e9ecef; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #555;">
+          กล่อง (Boxes): 0
+        </div>
+      </div>
+      <div class="box-list-container" style="margin-bottom: 12px;"></div>
+      <button class="btn-add-box" style="width: 100%; background: #f8f9fa; border: 2px dashed #ccc; padding: 12px; border-radius: 8px; color: #007bff; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s;">
+        <i class="fas fa-plus-circle"></i> เพิ่มกล่อง
+      </button>
+    `;
+
+    // ---🔍 [นำการ์ดที่สร้างเสร็จไปแปะไว้ในหน้าล็อบบี้]
+    if (lobbyEmptyState && lobbyEmptyState.parentNode) {
+      lobbyEmptyState.parentNode.appendChild(shipmentCard);
+    } else {
+      // Fallback เผื่อโครงสร้าง Empty State ถูกลบ
+      const fallbackContainer = document.querySelector("#transferOutLobbyView .content") || document.querySelector("#transferOutLobbyView");
+      if (fallbackContainer) fallbackContainer.appendChild(shipmentCard);
+    }
   }
 });
 
@@ -623,6 +648,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // [Box Details UI Transition] END
 //===============
+
+
+
+
 
 //===============
 // [Magic Search Engine Input] START
