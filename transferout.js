@@ -1,56 +1,36 @@
-//======================
-//TRANSFER OUT TASK
-//======================
+// =================================================================
+// 🚀 Drop Down ของหน้าต่างเลือกสาขา (Dynamic Branch Loader)
+// =================================================================
+async function loadBranchesIntoDropdown() {
+  const select = document.getElementById("selectDestination");
+  const SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbx0yi_782xbohnzTxXrUoWztD-LUfZygzH_l8yLHS0dZeeGzVkWZ7Km9vP6BVhJrU3SNg/exec";
 
-// [START] TRANSFER OUT TASK - INITIALIZATION
-window.to_task_init = function () {
-  // [START] TRANSFER OUT TASK - VIEW VARIABLES
-  // ระบุตัวแปรหน้าจอที่ต้องใช้งานใน Flow นี้
-  const viewMovement = document.getElementById("productMovementView"); // หน้าเมนูก่อนหน้า
-  const viewTaskHub = document.getElementById("transferOutTaskHubView"); // หน้าปัจจุบัน (Task Hub)
-  const viewDest = document.getElementById("transferOutDestView"); // หน้าเลือกสาขาปลายทาง
-  // [END] TRANSFER OUT TASK - VIEW VARIABLES
+  if (!select) return; // ถ้าไม่เจอ Dropdown ให้ข้ามไป
 
-  // [START] TRANSFER OUT TASK - BUTTON VARIABLES
-  // ระบุตัวแปรปุ่มกด
-  const btnBackToMovement = document.getElementById("btnBackToMovement");
-  const btnCreateNewTask = document.getElementById("btnCreateNewTask");
-  // [END] TRANSFER OUT TASK - BUTTON VARIABLES
+  try {
+    // ยิงคำสั่งไปดึงข้อมูลจาก GAS
+    const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
+    const branches = await response.json();
 
-  // [START] TRANSFER OUT TASK - BACK BUTTON LOGIC
-  // ลอจิกปุ่ม BACK: ถอยกลับไปยังหน้าเมนู Movement
-  if (btnBackToMovement) {
-    btnBackToMovement.addEventListener("click", () => {
-      if (typeof window.navigationTo === "function") {
-        window.navigationTo(viewTaskHub, viewMovement);
-      }
+    // เคลียร์รายการเก่า (เก็บอันแรกไว้เป็น Placeholder)
+    select.innerHTML =
+      '<option value="" disabled selected>-- SELECT BRANCH --</option>';
+
+    // วนลูปสร้างรายการใหม่จากฐานข้อมูล
+    branches.forEach((branch) => {
+      const option = document.createElement("option");
+      option.value = branch.id;
+      option.textContent = `${branch.id} - ${branch.name}`;
+      select.appendChild(option);
     });
-  }
-  // [END] TRANSFER OUT TASK - BACK BUTTON LOGIC
 
-  // [START] TRANSFER OUT TASK - NEW TASK BUTTON LOGIC
-  // ลอจิกปุ่ม NEW TASK: เดินหน้าเข้าสู่หน้าจอเลือกสาขา
-  if (btnCreateNewTask) {
-    btnCreateNewTask.addEventListener("click", () => {
-      // รีเซ็ตค่า Dropdown เลือกสาขา (ถ้ามี) ให้กลับเป็นค่าเริ่มต้น (Index 0)
-      const selectDest = document.getElementById("selectDestination");
-      if (selectDest) selectDest.selectedIndex = 0;
-
-      // สลับหน้าจอไปยังหน้าเลือกสาขา
-      if (typeof window.navigationTo === "function") {
-        window.navigationTo(viewTaskHub, viewDest);
-      }
-    });
+    console.log("Branch dropdown loaded successfully.");
+  } catch (error) {
+    console.error("Error loading branches:", error);
   }
-  // [END] TRANSFER OUT TASK - NEW TASK BUTTON LOGIC
-};
-// [END] TRANSFER OUT TASK - INITIALIZATION
+}
 
-// [START] TRANSFER OUT TASK - DOM CONTENT LOADED EVENT
-// สั่งให้ลอจิกทั้งหมดของ TRANSFER OUT TASK ทำงานเมื่อโหลดหน้าจอเสร็จ
-document.addEventListener("DOMContentLoaded", () => {
-  if (typeof window.to_task_init === "function") {
-    window.to_task_init();
-  }
-});
-// [END] TRANSFER OUT TASK - DOM CONTENT LOADED EVENT
+// เรียกใช้ฟังก์ชันทันทีที่หน้าเว็บโหลดเสร็จ
+document.addEventListener("DOMContentLoaded", loadBranchesIntoDropdown);
+// =================================================================
