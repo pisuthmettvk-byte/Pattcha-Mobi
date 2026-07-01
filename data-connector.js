@@ -41,4 +41,3 @@ export async function testSendData() {
     console.error("ส่งไม่ผ่าน:", e);
   }
 }
-testSendData();
