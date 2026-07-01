@@ -358,6 +358,8 @@ document.addEventListener("click", function (e) {
 // [Cancel Shipment Modal Button] END
 //===============
 
+
+
 //===============
 // [Confirm Shipment Creation Button] START
 
@@ -434,6 +436,10 @@ document.addEventListener("click", function (e) {
 
 // [Confirm Shipment Creation Button] END
 //===============
+
+
+
+
 
 //===============
 // [Global Box Controller] START
