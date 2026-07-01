@@ -219,11 +219,6 @@
         </div>
       </div>
 
-
-
-
-
-
           <div id="stockInHouseView" class="view-screen hide"
             style="
               justify-content: flex-start;
@@ -476,70 +471,70 @@
                   </div>
                 </div>
 
-                <div id="productDetailModal" class="hide">
-                      <div class="detail-image-section">
-                        <button id="btnCloseModal" class="btn-close-modal">
-                          <i class="fas fa-times"></i>
-                        </button>
-                        <img
-                          id="detailImage"
-                          src="https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"
-                          loading="lazy"
-                          onerror="
-                            this.src =
-                              'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg'
-                          "
-                        />
-                      </div>
-                      <div class="detail-content-section">
-                        <div class="barcode-box">
-                          <svg
-                            id="detailBarcode"
-                            style="max-height: 45px; max-width: 100%"
-                          ></svg>
-                        </div>
-                        <div class="product-header-row">
-                          <div class="product-info-left">
-                            <div id="detailCategory" class="lbl-category"></div>
-                            <div id="detailSku" class="lbl-sku"></div>
-                            <div id="detailName" class="lbl-name"></div>
+                    <div id="productDetailModal" class="hide">
+                          <div class="detail-image-section">
+                            <button id="btnCloseModal" class="btn-close-modal">
+                              <i class="fas fa-times"></i>
+                            </button>
+                            <img
+                              id="detailImage"
+                              src="https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg"
+                              loading="lazy"
+                              onerror="
+                                this.src =
+                                  'https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg'
+                              "
+                            />
                           </div>
-                          <div class="product-info-right">
-                            <div id="detailPrice" class="lbl-price"></div>
-                          </div>
-                        </div>
-                        <div class="section-title">
-                          <i class="fas fa-box-open"></i> INVENTORY STATUS
-                        </div>
-                        <div class="stock-grid">
-                          <div class="stat-card main-card" style="position: relative">
-                            <div class="stat-lbl">Available Stock</div>
-                            <div class="stat-val">
-                              <i class="fas fa-check-circle"></i><span id="detailAvail">0</span>
+                          <div class="detail-content-section">
+                            <div class="barcode-box">
+                              <svg
+                                id="detailBarcode"
+                                style="max-height: 45px; max-width: 100%"
+                              ></svg>
                             </div>
-                            <div id="btnCrossBranch" class="btn-cross-branch hide">
-                              <i class="fas fa-store-alt"></i>
+                            <div class="product-header-row">
+                              <div class="product-info-left">
+                                <div id="detailCategory" class="lbl-category"></div>
+                                <div id="detailSku" class="lbl-sku"></div>
+                                <div id="detailName" class="lbl-name"></div>
+                              </div>
+                              <div class="product-info-right">
+                                <div id="detailPrice" class="lbl-price"></div>
+                              </div>
+                            </div>
+                            <div class="section-title">
+                              <i class="fas fa-box-open"></i> INVENTORY STATUS
+                            </div>
+                            <div class="stock-grid">
+                              <div class="stat-card main-card" style="position: relative">
+                                <div class="stat-lbl">Available Stock</div>
+                                <div class="stat-val">
+                                  <i class="fas fa-check-circle"></i><span id="detailAvail">0</span>
+                                </div>
+                                <div id="btnCrossBranch" class="btn-cross-branch hide">
+                                  <i class="fas fa-store-alt"></i>
+                                </div>
+                              </div>
+                              <div class="stat-card">
+                                <div class="stat-lbl">Current Stock</div>
+                                <div class="stat-val val-current" id="detailCurrent">0</div>
+                              </div>
+                              <div class="stat-card">
+                                <div class="stat-lbl">Hold Qty</div>
+                                <div class="stat-val val-hold" id="detailHold">0</div>
+                              </div>
+                              <div class="stat-card">
+                                <div class="stat-lbl">Defective Qty</div>
+                                <div class="stat-val val-defect" id="detailDefect">0</div>
+                              </div>
+                              <div class="stat-card">
+                                <div class="stat-lbl">Sale Stock</div>
+                                <div class="stat-val val-sold" id="detailSold">0</div>
+                              </div>
                             </div>
                           </div>
-                          <div class="stat-card">
-                            <div class="stat-lbl">Current Stock</div>
-                            <div class="stat-val val-current" id="detailCurrent">0</div>
-                          </div>
-                          <div class="stat-card">
-                            <div class="stat-lbl">Hold Qty</div>
-                            <div class="stat-val val-hold" id="detailHold">0</div>
-                          </div>
-                          <div class="stat-card">
-                            <div class="stat-lbl">Defective Qty</div>
-                            <div class="stat-val val-defect" id="detailDefect">0</div>
-                          </div>
-                          <div class="stat-card">
-                            <div class="stat-lbl">Sale Stock</div>
-                            <div class="stat-val val-sold" id="detailSold">0</div>
-                          </div>
-                        </div>
-                      </div>
-                </div>
+                    </div>
 
                     <div id="customAlertOverlay" class="custom-alert-overlay hide">
                       <div class="custom-alert-box">
@@ -566,8 +561,6 @@
                             </div>
                           </div>
 
-
-                          
 
 
           <div id="productMovementView" class="view-screen hide master-layout">
@@ -703,7 +696,6 @@
           </div>
 
 
-
                   <div id="transferOutTaskHubView" class="view-screen hide master-layout">
                     
                     <div class="master-header" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); box-shadow: 0 4px 15px rgba(220,53,69,0.3); z-index: 20;">
@@ -823,15 +815,47 @@
 
                     <div id="lobbyContentContainer" class="master-content" style="padding: 15px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; background: #f5f4f0; gap: 12px;">
                       <div id="lobbyEmptyState" style="text-align: center; padding: 40px 20px; margin: auto;">
+                        
+                        
                         <i class="fas fa-truck-loading" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
                         <p style="color: #888; font-weight: bold;">ยังไม่มีข้อมูลการส่งออกในสาขานี้</p>
                         <p style="color: #aaa; font-size: 14px;">กดปุ่ม + เพื่อสร้างรายการ</p>
                       </div>
+                          <div class="shipment-card hide" style="display: none; background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee;">
+        
+                          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px;">
+                              <div style="display: flex; align-items: center; gap: 12px;">
+                                  <input type="checkbox" class="shipment-select-cb" disabled style="transform: scale(1.3); cursor: pointer;">
+                                  <div>
+                                      <div style="font-weight: bold; color: #222; font-size: 15px;">Shipment No.</div>
+                                      <div class="shipment-id-text" style="color: #007bff; font-size: 13px; font-weight: bold; margin-top: 4px;">
+                                          <span>ID: รอกำหนด...</span>
+                                      </div>
+                                  </div>
+                              </div>
+                              <div class="shipment-box-count" style="background: #e9ecef; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #555;">
+                                  กล่อง (Boxes): 0
+                              </div>
+                          </div>
+                          
+                          <div class="box-list-container" style="margin-bottom: 12px;"></div>
+                          
+                          <button class="btn-add-box" style="width: 100%; background: #f8f9fa; border: 2px dashed #ccc; padding: 12px; border-radius: 8px; color: #007bff; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s;">
+                              <i class="fas fa-plus-circle"></i> เพิ่มกล่อง
+                          </button></div>
+
                     </div>
 
+            
                     <button id="btnAddShipmentTruck" style="position: absolute; bottom: calc(10vh + 20px); right: 20px; width: 68px; height: 68px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #669cff 0%, #0044ff 40%, #002f85 100%); color: white; border: none; box-shadow: 0 8px 15px rgba(0,0,0,0.4), inset 0 -5px 10px rgba(0,0,0,0.5), inset 0 5px 10px rgba(255,255,255,0.6); font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 50; transition: transform 0.1s;">
                       <i class="fas fa-truck"></i><i class="fas fa-plus" style="font-size: 12px; margin-left: 2px; margin-top: -10px;"></i>
                     </button>
+
+
+
+
+
+
                     
                     <div class="master-footer" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99;">
                       <button id="btnCancelFromLobby" class="master-btn-half" style="background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; font-weight: bold; font-size: 16px; border-top: 1px solid #ccc;">CANCEL</button>
@@ -875,7 +899,6 @@
                               </div>
                             </div>
                           </div>
-
 
                                   <div id="boxDetailsView" class="master-view hide" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background-color: #f4f6f9; z-index: 3000; display: flex; flex-direction: column;">
                                       
