@@ -359,7 +359,6 @@ document.addEventListener("click", function (e) {
 //===============
 
 
-
 //===============
 // [Confirm Shipment Creation Button] START
 
@@ -376,7 +375,6 @@ document.addEventListener("click", function (e) {
       return;
     }
 
-    // ---🔍 [ประมวลผลคำนวณรหัส ID ทับอีกครั้ง เพื่อความชัวร์ (แก้บั๊กกรณีไม่ได้กดเปลี่ยน Dropdown)]
     const destDropdown = document.getElementById("selectDestination");
     const destRealCode = typeof window.getRealBranchCode === "function" ? window.getRealBranchCode(destDropdown ? destDropdown.value : "") : "000";
     const p_date = typeof window.getFormattedDate === "function" ? window.getFormattedDate() : "000000";
@@ -390,54 +388,28 @@ document.addEventListener("click", function (e) {
       return;
     }
 
-    // ---🔍 [ซ่อนสถานะว่างเปล่า และปิดหน้าต่าง Modal]
     const lobbyEmptyState = document.getElementById("lobbyEmptyState");
     const shipmentBoxModal = document.getElementById("shipmentBoxModal");
     if (lobbyEmptyState) lobbyEmptyState.classList.add("hide");
     if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
 
-    // ---🔍 [สร้างคอลัมน์ Shipment No. ขึ้นมาใหม่แบบ Dynamic Injection (แก้ปัญหา HTML ไม่มี Mockup การ์ด)]
-    const shipmentCard = document.createElement("div");
-    shipmentCard.className = "shipment-card";
-    shipmentCard.setAttribute("data-shipment-type", selectShipmentReason.value);
-    shipmentCard.style.cssText = "background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee;";
-
-    shipmentCard.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <input type="checkbox" class="shipment-select-cb" disabled style="transform: scale(1.3); cursor: pointer;">
-          <div>
-            <div style="font-weight: bold; color: #222; font-size: 15px;">Shipment No.</div>
-            <div class="shipment-id-text shipment-barcode-trigger" style="color: #007bff; font-size: 13px; font-weight: bold; margin-top: 4px;">
-              <span>ID: ${window.temporaryShipmentID}</span>
-            </div>
-          </div>
-        </div>
-        <div class="shipment-box-count" style="background: #e9ecef; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: #555;">
-          กล่อง (Boxes): 0
-        </div>
-      </div>
-      <div class="box-list-container" style="margin-bottom: 12px;"></div>
-      <button class="btn-add-box" style="width: 100%; background: #f8f9fa; border: 2px dashed #ccc; padding: 12px; border-radius: 8px; color: #007bff; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s;">
-        <i class="fas fa-plus-circle"></i> เพิ่มกล่อง
-      </button>
-    `;
-
-    // ---🔍 [นำการ์ดที่สร้างเสร็จไปแปะไว้ในหน้าล็อบบี้]
-    if (lobbyEmptyState && lobbyEmptyState.parentNode) {
-      lobbyEmptyState.parentNode.appendChild(shipmentCard);
+    // ---🔍 [แก้ปัญหา Layout: กลับไปใช้โครงสร้างการ์ดเดิม (Golden Standard) ที่เจเลอร์วาดไว้ใน HTML]
+    const allShipmentCards = document.querySelectorAll(".shipment-card");
+    if (allShipmentCards.length > 0) {
+      allShipmentCards.forEach((card) => {
+        card.style.display = "block"; // เปิดเผยการ์ดที่ซ่อนอยู่
+        card.setAttribute("data-shipment-type", selectShipmentReason.value);
+        const idText = card.querySelector(".shipment-id-text") || card.querySelector(".shipment-barcode-trigger span");
+        if (idText) idText.innerText = `ID: ${window.temporaryShipmentID}`;
+      });
     } else {
-      // Fallback เผื่อโครงสร้าง Empty State ถูกลบ
-      const fallbackContainer = document.querySelector("#transferOutLobbyView .content") || document.querySelector("#transferOutLobbyView");
-      if (fallbackContainer) fallbackContainer.appendChild(shipmentCard);
+       window.safeAlert("System Error", "ไม่พบโครงสร้าง .shipment-card ในไฟล์ HTML ครับ");
     }
   }
 });
 
 // [Confirm Shipment Creation Button] END
 //===============
-
-
 
 
 
@@ -540,11 +512,15 @@ document.addEventListener("click", function (e) {
 
 /* [Global Box Controller] END */
 
+
+
+
+
 // ==========================================
 // [MODULE 5: PACKING PAGE & MAGIC SEARCH ENGINE]
-// หน้าที่: ระบบค้นหาสินค้า คุมสต็อก และ "หน้าบรรจุสินค้า" แบบลิสต์รายการ (Scrollable)
-// ต้นแบบ Layout อ้างอิง: stockInHouseView (Golden Standard)
+// หน้าที่: ระบบค้นหาสินค้าและ "หน้าบรรจุสินค้า" (เชื่อมต่อกับ HTML 18-72-10 Golden Standard)
 // ==========================================
+
 
 //===============
 // [Box Details UI Transition] START
@@ -555,100 +531,52 @@ document.addEventListener("DOMContentLoaded", () => {
   window.currentActiveBoxId = "";
   window.currentActiveShipmentId = "";
 
-  // ---🔍 [Mock ฐานข้อมูลระบุตัวตนสินค้าตามขนาดเพื่อเลือกสัญลักษณ์และปุ่มควบคุม]
   window.mockMasterStockDatabase = [
-    {
-      sku: "FER-SHOE-091",
-      barcode: "805123456091",
-      name: "Ferragamo Loafer Black",
-      lastThree: "091",
-      available: 5,
-      image: "https://via.placeholder.com/40",
-      isManualCount: true,
-    },
-    {
-      sku: "FER-BAG-112",
-      barcode: "805123456112",
-      name: "Studio Box Bag Gold",
-      lastThree: "112",
-      available: 0,
-      image: "https://via.placeholder.com/40",
-      isManualCount: false,
-    },
-    {
-      sku: "FER-BELT-888",
-      barcode: "805123456888",
-      name: "Gancini Reversible Belt",
-      lastThree: "888",
-      available: 2,
-      image: "https://via.placeholder.com/40",
-      isManualCount: true,
-    },
-    {
-      sku: "FER-LUGGAGE-999",
-      barcode: "805123456999",
-      name: "Large Travel Trunk",
-      lastThree: "999",
-      available: 10,
-      image: "https://via.placeholder.com/40",
-      isManualCount: false,
-    },
+    { sku: "FER-SHOE-091", barcode: "805123456091", name: "Ferragamo Loafer Black", lastThree: "091", available: 5, image: "https://via.placeholder.com/40", isManualCount: true },
+    { sku: "FER-BAG-112", barcode: "805123456112", name: "Studio Box Bag Gold", lastThree: "112", available: 0, image: "https://via.placeholder.com/40", isManualCount: false },
+    { sku: "FER-BELT-888", barcode: "805123456888", name: "Gancini Reversible Belt", lastThree: "888", available: 2, image: "https://via.placeholder.com/40", isManualCount: true },
+    { sku: "FER-LUGGAGE-999", barcode: "805123456999", name: "Large Travel Trunk", lastThree: "999", available: 10, image: "https://via.placeholder.com/40", isManualCount: false }
   ];
 
-  //📍 [ฟังก์ชันเปลี่ยนหน้าจอเข้าสู่หน้าบรรจุสินค้าสีแดงเต็มหน้าจอ]
   window.initBoxDetailsTransition = function (cardNode, boxItemNode, boxId) {
-    const appContainer = document.getElementById("appContainer");
-    if (!appContainer) return;
-    const previousHTML = appContainer.innerHTML;
+    const boxDetailsView = document.getElementById("boxDetailsView");
+    const lobbyView = document.getElementById("transferOutLobbyView");
 
     window.currentActiveShipmentCard = cardNode;
     window.currentActiveBoxItemNode = boxItemNode;
     window.currentActiveBoxId = boxId;
-    window.currentActiveShipmentId = cardNode
-      .querySelector(".shipment-barcode-trigger span")
-      .innerText.replace("ID: ", "");
 
-    // บังคับ Render Layout โครงสร้างหน้าบรรจุสินค้า
-    appContainer.innerHTML = `
-      <div class="box-details-fullscreen" style="background-color: #f8f9fa; height: 100vh; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000000;">
-          
-          <div style="background-color: #dc3545; padding: 15px; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <div style="color: white;">
-                      <h3 style="margin: 0; font-size: 16px;">หน้าบรรจุสินค้า: BOX-${boxId}</h3>
-                      <p style="margin: 2px 0 0; font-size: 12px; opacity: 0.9;">${window.currentActiveShipmentId}</p>
-                  </div>
-                  <button id="btnCloseBoxAction" style="background: white; color: #dc3545; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                      <i class="fas fa-box"></i> ปิดกล่อง
-                  </button>
-              </div>
-              
-              <div style="position: relative;">
-                  <input type="text" id="inputBoxMagicSearch" placeholder="ค้นหาหรือสแกนสินค้า..." style="width: 100%; padding: 12px 15px; border-radius: 8px; border: none; outline: none; font-size: 14px; color: #333;">
-                  <i class="fas fa-search" style="position: absolute; right: 15px; top: 14px; color: #aaa;"></i>
-              </div>
-              <div id="magicSearchPreviewSlot" class="hide" style="background: white; margin-top: 5px; border-radius: 8px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
-          </div>
+    const idSpan = cardNode.querySelector(".shipment-barcode-trigger span") || cardNode.querySelector(".shipment-id-text");
+    window.currentActiveShipmentId = idSpan ? idSpan.innerText.replace("ID: ", "") : window.temporaryShipmentID;
 
-          <div id="boxItemsListWrapper" style="flex: 1; overflow-y: auto; padding: 15px;">
-              <div id="emptyBoxState" style="text-align: center; color: #999; margin-top: 50px;">
-                  <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
-                  <p>ยังไม่มีสินค้าในกล่องนี้<br>ค้นหาหรือสแกนเพื่อเริ่มบรรจุ</p>
-              </div>
-          </div>
+    // ---🔍 [ดันข้อมูลเข้าไปใน HTML เดิมของเจเลอร์]
+    const txtBoxTitle = document.getElementById("txtActiveBoxTitle");
+    const txtShipmentID = document.getElementById("txtActiveShipmentID");
+    const searchInput = document.getElementById("inputBoxMagicSearch");
+    const previewSlot = document.getElementById("magicSearchPreviewSlot");
+    const listWrapper = document.getElementById("boxItemsListWrapper");
 
-          <div style="display: flex; height: 60px; flex-shrink: 0; background: white; border-top: 1px solid #ddd;">
-              <button id="btnExitPacking" style="flex: 1; background: #343a40; color: white; border: none; font-weight: bold; font-size: 15px; border-right: 1px solid #555;">
-                  <i class="fas fa-arrow-left"></i> ย้อนกลับ
-              </button>
-              <button id="btnCameraScan" style="flex: 1; background: #007bff; color: white; border: none; font-weight: bold; font-size: 15px;">
-                  <i class="fas fa-camera"></i> สแกน
-              </button>
-          </div>
-      </div>
-    `;
+    if (txtBoxTitle) txtBoxTitle.innerText = `BOX-${boxId}`;
+    if (txtShipmentID) txtShipmentID.innerText = `ID: ${window.currentActiveShipmentId}`;
+    if (searchInput) searchInput.value = "";
+    if (previewSlot) previewSlot.classList.add("hide");
+    
+    if (listWrapper) {
+      listWrapper.innerHTML = `
+        <div id="emptyBoxState" style="text-align: center; color: #999; margin-top: 50px;">
+            <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
+            <p>ยังไม่มีสินค้าในกล่องนี้<br>ค้นหาหรือสแกนเพื่อเริ่มบรรจุ</p>
+        </div>
+      `;
+    }
 
-    window.bindPackingPageEvents(previousHTML);
+    // ---🔍 [สับรางหน้าจอ]
+    if (typeof window.navigationTo === "function" && lobbyView) {
+      window.navigationTo(lobbyView, boxDetailsView);
+    } else {
+      if (lobbyView) lobbyView.classList.add("hide");
+      boxDetailsView.classList.remove("hide");
+    }
   };
 });
 
@@ -658,73 +586,74 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
 //===============
 // [Magic Search Engine Input] START
 
-window.bindPackingPageEvents = function (previousHTML) {
-  const appContainer = document.getElementById("appContainer");
-  const inputBox = document.getElementById("inputBoxMagicSearch");
-  const previewSlot = document.getElementById("magicSearchPreviewSlot");
+document.addEventListener("DOMContentLoaded", () => {
+  const boxDetailsView = document.getElementById("boxDetailsView");
+  const lobbyView = document.getElementById("transferOutLobbyView");
 
-  // ---🔍 [ลอจิกปุ่มย้อนกลับ: ออกโดยกล่องเปิดอยู่]
-  document.getElementById("btnExitPacking").addEventListener("click", () => {
-    window.safeConfirm(
-      "ยืนยันการออก",
-      "ต้องการออกจากหน้าบรรจุสินค้าใช่หรือไม่?\n(กล่องนี้จะยังคงสถานะ 'เปิดอยู่' ในหน้าล็อบบี้สาขา)",
-      () => {
-        appContainer.innerHTML = previousHTML;
-        if (typeof window.evaluateExportButton === "function")
-          window.evaluateExportButton();
-      },
-      "question",
-    );
-  });
+  //📍 [ลอจิกปุ่มย้อนกลับ (ใช้ ID จาก HTML เจเลอร์)]
+  const btnBackToLobby = document.getElementById("btnBackToLobby");
+  if (btnBackToLobby) {
+    btnBackToLobby.addEventListener("click", () => {
+      window.safeConfirm("ยืนยันการออก", "ต้องการออกจากหน้าบรรจุสินค้าใช่หรือไม่?\n(กล่องนี้จะยังคงสถานะ 'เปิดอยู่' ในหน้าล็อบบี้สาขา)", () => {
+        if (typeof window.navigationTo === "function" && lobbyView) {
+          window.navigationTo(boxDetailsView, lobbyView);
+        } else {
+          boxDetailsView.classList.add("hide");
+          if (lobbyView) lobbyView.classList.remove("hide");
+        }
+        if (typeof window.evaluateExportButton === "function") window.evaluateExportButton();
+      }, "question");
+    });
+  }
 
-  // ---🔍 [ลอจิกปุ่มปิดกล่องเฉพาะกิจ]
-  document.getElementById("btnCloseBoxAction").addEventListener("click", () => {
-    window.safeConfirm(
-      "ยืนยันปิดกล่อง",
-      "คุณต้องการ 'ปิดกล่อง' นี้ใช่หรือไม่?\n(ระบบจะพากลับไปหน้าล็อบบี้สาขาและเปลี่ยนสถานะเป็นปิด)",
-      () => {
+  //📍 [ลอจิกปุ่มปิดกล่องเฉพาะกิจ]
+  const btnCloseBoxAction = document.getElementById("btnCloseBoxAction");
+  if (btnCloseBoxAction) {
+    btnCloseBoxAction.addEventListener("click", () => {
+      window.safeConfirm("ยืนยันปิดกล่อง", "คุณต้องการ 'ปิดกล่อง' นี้ใช่หรือไม่?\n(ระบบจะพากลับไปหน้าล็อบบี้สาขาและเปลี่ยนสถานะเป็นปิด)", () => {
         if (window.currentActiveBoxItemNode) {
           window.currentActiveBoxItemNode.setAttribute("data-status", "closed");
-          const statusIcon =
-            window.currentActiveBoxItemNode.querySelector(".box-status-icon");
+          const statusIcon = window.currentActiveBoxItemNode.querySelector(".box-status-icon");
           if (statusIcon) {
             statusIcon.classList.remove("fa-box-open");
             statusIcon.classList.add("fa-box");
             statusIcon.style.color = "#28a745";
           }
         }
-        appContainer.innerHTML = previousHTML;
-        if (typeof window.evaluateExportButton === "function")
-          window.evaluateExportButton();
-      },
-      "question",
-    );
-  });
+        if (typeof window.navigationTo === "function" && lobbyView) {
+          window.navigationTo(boxDetailsView, lobbyView);
+        } else {
+          boxDetailsView.classList.add("hide");
+          if (lobbyView) lobbyView.classList.remove("hide");
+        }
+        if (typeof window.evaluateExportButton === "function") window.evaluateExportButton();
+      }, "question");
+    });
+  }
 
-  // ---🔍 [ลอจิกกลไก Magic Search]
+  //📍 [ลอจิก Magic Search]
+  const inputBox = document.getElementById("inputBoxMagicSearch");
+  const previewSlot = document.getElementById("magicSearchPreviewSlot");
+  
   if (inputBox) {
     inputBox.addEventListener("input", function (e) {
       const value = e.target.value.trim().toUpperCase();
       if (value.length >= 3) {
-        const product = window.mockMasterStockDatabase.find(
-          (item) =>
-            item.sku.toUpperCase().includes(value) ||
-            item.barcode.includes(value) ||
-            item.lastThree === value,
+        const product = window.mockMasterStockDatabase.find(item => 
+          item.sku.toUpperCase().includes(value) || item.barcode.includes(value) || item.lastThree === value
         );
 
         if (product) {
           const isAvailable = product.available > 0;
-          const btnHtml = isAvailable
-            ? `<button class="btn-add-to-box" data-sku="${product.sku}" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">เพิ่มลงกล่อง</button>`
+          const btnHtml = isAvailable 
+            ? `<button class="btn-add-to-box" data-sku="${product.sku}" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">เพิ่มลงกล่อง</button>` 
             : `<button disabled style="background:#e9ecef; color:#adb5bd; border:1px solid #ced4da; padding:8px 15px; border-radius:6px; font-weight:bold;">หมด</button>`;
-
+          
           previewSlot.innerHTML = `
-            <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; justify-content:space-between; width: 100%;">
               <div style="display:flex; gap:10px; align-items:center;">
                 <img src="${product.image}" style="width:40px; height:40px; border-radius:6px; border:1px solid #eee;">
                 <div style="line-height:1.2;">
@@ -747,7 +676,7 @@ window.bindPackingPageEvents = function (previousHTML) {
             });
           }
         } else {
-          previewSlot.innerHTML = `<div style="text-align:center; color:#dc3545; font-size:13px; font-weight:bold;">ไม่พบข้อมูลสินค้า</div>`;
+          previewSlot.innerHTML = `<div style="text-align:center; width: 100%; color:#dc3545; font-size:13px; font-weight:bold;">ไม่พบข้อมูลสินค้า</div>`;
           previewSlot.classList.remove("hide");
         }
       } else {
@@ -756,20 +685,22 @@ window.bindPackingPageEvents = function (previousHTML) {
     });
   }
 
-  // ---🔍 [ลอจิกปุ่มกล้อง (จำลอง)]
-  document.getElementById("btnCameraScan").addEventListener("click", () => {
-    const mockScanProduct = window.mockMasterStockDatabase[3];
-    window.executeAddItemToBoxContainer(mockScanProduct);
-    window.safeAlert(
-      "สแกนสำเร็จ (Success)",
-      `นำสินค้า ${mockScanProduct.sku} เข้าสู่ลิสต์รายการทันที`,
-      "success",
-    );
-  });
-};
+  //📍 [ลอจิกปุ่มสแกนกล้อง (ใช้ ID จาก HTML เจเลอร์)]
+  const btnToggleCamera = document.getElementById("btnToggleBoxDetailsCamera");
+  if (btnToggleCamera) {
+    btnToggleCamera.addEventListener("click", () => {
+      const mockScanProduct = window.mockMasterStockDatabase[3]; 
+      window.executeAddItemToBoxContainer(mockScanProduct);
+      window.safeAlert("สแกนสำเร็จ (Success)", `นำสินค้า ${mockScanProduct.sku} เข้าสู่ลิสต์รายการทันที`, "success");
+    });
+  }
+});
 
 // [Magic Search Engine Input] END
 //===============
+
+
+
 
 //===============
 // [Add Item To Box Execution Engine] START
@@ -779,17 +710,11 @@ window.executeAddItemToBoxContainer = function (product) {
   const emptyState = document.getElementById("emptyBoxState");
   if (emptyState) emptyState.remove();
 
-  const existingItem = wrapper.querySelector(
-    `.scanned-item-row[data-sku="${product.sku}"]`,
-  );
-
+  const existingItem = wrapper.querySelector(`.scanned-item-row[data-sku="${product.sku}"]`);
+  
   if (existingItem) {
     if (product.isManualCount) {
-      window.safeAlert(
-        "สินค้าซ้ำ",
-        "สินค้านี้อยู่ในกล่องแล้ว สามารถกดปุ่ม [+] ในลิสต์เพื่อเพิ่มจำนวนแบบแมนนวลได้เลยครับ",
-        "info",
-      );
+      window.safeAlert("สินค้าซ้ำ", "สินค้านี้อยู่ในกล่องแล้ว สามารถกดปุ่ม [+] ในลิสต์เพื่อเพิ่มจำนวนแบบแมนนวลได้เลยครับ", "info");
     } else {
       const qtySpan = existingItem.querySelector(".item-qty");
       qtySpan.innerText = parseInt(qtySpan.innerText) + 1;
@@ -797,12 +722,10 @@ window.executeAddItemToBoxContainer = function (product) {
     return;
   }
 
-  // ---🔍 [คัดกรองการแสดงสัญลักษณ์สิทธิ์นับสินค้า: รูปมือ ✋ หรือ บาร์โค้ด 🏷️]
-  const modeIcon = product.isManualCount
-    ? `<i class="fas fa-hand-paper" style="color:#17a2b8;" title="นับจำนวนด้วยมือ (Manual Count)"></i>`
+  const modeIcon = product.isManualCount 
+    ? `<i class="fas fa-hand-paper" style="color:#17a2b8;" title="นับจำนวนด้วยมือ (Manual Count)"></i>` 
     : `<i class="fas fa-barcode" style="color:#6c757d;" title="ต้องสแกนเท่านั้น (Scan Required)"></i>`;
 
-  // ---🔍 [แยกโครงสร้างปุ่มควบคุม]
   const controlButtons = product.isManualCount
     ? `
       <button class="btn-decrease-qty" style="background:#f8f9fa; border:1px solid #ddd; padding:5px 10px; border-radius:4px; color:#dc3545;"><i class="fas fa-minus"></i></button>
@@ -817,9 +740,8 @@ window.executeAddItemToBoxContainer = function (product) {
   const itemRow = document.createElement("div");
   itemRow.className = "scanned-item-row";
   itemRow.setAttribute("data-sku", product.sku);
-  itemRow.style.cssText =
-    "background:white; border-radius:10px; border:1px solid #eee; padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.02);";
-
+  itemRow.style.cssText = "background:white; border-radius:10px; border:1px solid #eee; padding:12px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.02);";
+  
   itemRow.innerHTML = `
     <div style="display:flex; align-items:center; gap:12px; width:65%;">
       <div style="font-size:18px; width:20px; text-align:center;">${modeIcon}</div>
@@ -841,36 +763,34 @@ window.executeAddItemToBoxContainer = function (product) {
     });
   }
 
-  // ---🔍 [ลอจิกปุ่มลบรายการสินค้า]
   itemRow.querySelector(".btn-decrease-qty").addEventListener("click", () => {
-    window.safeConfirm(
-      "ยืนยันการลบ",
-      `ต้องการลบรายการ ${product.sku} จำนวน 1 ชิ้น ใช่หรือไม่?`,
-      () => {
-        const qtySpan = itemRow.querySelector(".item-qty");
-        let currentQty = parseInt(qtySpan.innerText);
-
-        if (currentQty > 1) {
-          qtySpan.innerText = currentQty - 1;
-        } else {
-          itemRow.remove();
-          if (wrapper.querySelectorAll(".scanned-item-row").length === 0) {
-            wrapper.innerHTML = `
+    window.safeConfirm("ยืนยันการลบ", `ต้องการลบรายการ ${product.sku} จำนวน 1 ชิ้น ใช่หรือไม่?`, () => {
+      const qtySpan = itemRow.querySelector(".item-qty");
+      let currentQty = parseInt(qtySpan.innerText);
+      
+      if (currentQty > 1) {
+        qtySpan.innerText = currentQty - 1;
+      } else {
+        itemRow.remove();
+        if (wrapper.querySelectorAll(".scanned-item-row").length === 0) {
+          wrapper.innerHTML = `
             <div id="emptyBoxState" style="text-align: center; color: #999; margin-top: 50px;">
                 <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
                 <p>ยังไม่มีสินค้าในกล่องนี้<br>ค้นหาหรือสแกนเพื่อเริ่มบรรจุ</p>
             </div>
           `;
-          }
         }
-      },
-      "delete",
-    );
+      }
+    }, "delete");
   });
 };
 
 // [Add Item To Box Execution Engine] END
 //===============
+
+
+
+
 
 // ==========================================
 // [MODULE 6: EXPORT & CHECKBOX LOGIC]
