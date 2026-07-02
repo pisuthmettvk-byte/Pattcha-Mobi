@@ -1,7 +1,6 @@
 // =================================================================
 // 🚀 START Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
 // =================================================================
-
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
   const SCRIPT_URL =
@@ -13,44 +12,27 @@ async function loadBranchesIntoDropdown() {
     const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
     const data = await response.json();
 
-    // ป้องกัน Error forEach: ตรวจสอบว่ามันเป็น Array จริงๆ
-    let branches = [];
-    if (Array.isArray(data)) {
-      branches = data;
-    } else if (data && Array.isArray(data.data)) {
-      branches = data.data; // เผื่อ GAS ห่อข้อมูลมาใน object
-    } else {
-      throw new Error(
-        "ข้อมูลไม่ใช่ Array (ลองเช็ก Google Apps Script ว่า Deploy ล่าสุดหรือยัง)",
-      );
-    }
+    // จัดการข้อมูลให้เป็น Array (ใช้ชื่อตัวแปร branches ให้ตรงกันทั้งฟังก์ชัน)
+    let branches = Array.isArray(data) ? data : data.data || [];
 
-    const myBranchID = sessionStorage.getItem("myBranchID"); // ดึง ID สาขาเรามาเทียบ
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
+      .trim()
+      .toUpperCase();
 
     select.innerHTML =
       '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
-
-
-    // ในฟังก์ชันโหลด Dropdown ของเจเลอร์
-    allBranches.forEach((branch) => {
-
-        console.log("เช็กข้อมูลสาขา:", branch);
-      // 1. แปลงรหัสสาขาให้เป็นตัวใหญ่เพื่อเช็กว่าเป็นสาขาตัวเองไหม
+    // ใช้ตัวแปร branches ที่เราเตรียมไว้
+    branches.forEach((branch) => {
       const branchId = String(branch.id || "")
         .trim()
         .toUpperCase();
-      const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-        .trim()
-        .toUpperCase();
-
-      // 2. แปลงสถานะให้เป็นตัวใหญ่ แล้วเช็กว่ามีคำว่า "ACTIVE" อยู่ข้างในไหม
       const status = String(branch.status || "")
         .trim()
         .toUpperCase();
       const isActive = status.includes("ACTIVE");
 
-      // 3. กรอง: ต้องไม่ใช่สาขาตัวเอง AND ต้องมีคำว่า ACTIVE
+      // กรอง: ต้องไม่ใช่สาขาตัวเอง AND ต้องมีคำว่า ACTIVE
       if (branchId !== myBranch && isActive) {
         const option = document.createElement("option");
         option.value = branch.id;
@@ -58,14 +40,13 @@ async function loadBranchesIntoDropdown() {
         select.appendChild(option);
       }
     });
-
-
   } catch (error) {
-    console.error("Error loading branches:", error);
+    console.error("🚨 Error loading branches:", error);
     select.innerHTML =
       '<option value="" disabled selected>-- โหลดข้อมูลล้มเหลว --</option>';
   }
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   loadBranchesIntoDropdown();
