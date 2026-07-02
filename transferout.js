@@ -276,6 +276,9 @@ function formatShipmentNoHTML(shipmentNo) {
               //===============================================================
 
 
+
+
+              
 //==============================================================
 // ดึงข้อมูลผ่าน Fetch API ลิงก์ตรงกับ Web App ตัวใหม่ล่าสุดของเจเลอร์
 //===============================================================
@@ -286,7 +289,10 @@ function loadTransferTypesIntoDropdown() {
     selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
 
     // อัปเดตเป็น URL ตัวใหม่ล่าสุดที่เจเลอร์เพิ่ง Deploy มาครับ
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbxz_Biwtm1h7XBXGijhATsIcqeA0liDjbXTIQT3UT53H077RWBASmOok2EeTp_T3GGg0A/exec?action=get_transfer_types";
+const webAppUrl = "https://script.google.com/macros/s/AKfycbxz_Biwtm1h7XBXGijhATsIcqeA0liDjbXTIQT3UT53H077RWBASmOok2EeTp_T3GGg0A/exec?action=get_transfer_types";
+
+
+
 
     fetch(webAppUrl)
         .then(response => response.json())
@@ -304,8 +310,6 @@ function loadTransferTypesIntoDropdown() {
             console.error("Fetch error:", err);
         });
 }
-
-
 
 document.addEventListener('DOMContentLoaded', () => {
     loadTransferTypesIntoDropdown();
