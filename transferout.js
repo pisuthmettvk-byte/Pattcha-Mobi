@@ -12,7 +12,6 @@ async function loadBranchesIntoDropdown() {
     const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
     const data = await response.json();
 
-    // กำหนดตัวแปรชื่อ branches
     let branches = [];
     if (Array.isArray(data)) {
       branches = data;
@@ -29,17 +28,11 @@ async function loadBranchesIntoDropdown() {
     select.innerHTML =
       '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
-    // 🟢 แก้ตรงนี้แล้ว! ใช้คำว่า branches.forEach แทน allBranches
     branches.forEach((branch) => {
-      const branchId = String(branch.id || "")
-        .trim()
-        .toUpperCase();
-      const status = String(branch.status || "")
-        .trim()
-        .toUpperCase();
-      const isActive = status.includes("ACTIVE");
-
-      if (branchId !== myBranch && isActive) {
+      const branchId = String(branch.id || "").trim().toUpperCase();
+      
+      // 🟢 แก้ไข: เช็กแค่ว่า "ต้องไม่ใช่สาขาตัวเอง" (เพราะหลังบ้านคัด Active มาให้แล้ว)
+      if (branchId !== myBranch && branchId !== "") {
         const option = document.createElement("option");
         option.value = branch.id;
         option.textContent = `${branch.id} - ${branch.name}`;
@@ -52,6 +45,7 @@ async function loadBranchesIntoDropdown() {
       '<option value="" disabled selected>-- โหลดข้อมูลล้มเหลว --</option>';
   }
 }
+
 
 
 
