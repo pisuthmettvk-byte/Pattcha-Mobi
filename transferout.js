@@ -87,10 +87,11 @@ if (btnCancel) {
         showView("transferOutTaskHubView");
     });
 }
-// END ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
 
 });
      
+// END ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
+
 // =================================================================
 // 🚀 END Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
 // =================================================================
@@ -248,12 +249,13 @@ function getNextRunNumber() {
 
 
 //======================================================
-// START ฟังก์ชัน  สร้างSHIPMENTคอลัมน์ (SHIPMENT COLUMN GENERATE )
+// START: ระบบหน้า Lobby (ปุ่มเปิด Modal + สร้าง Shipment)
 //====================================================== 
 
 function createShipmentColumn(shipmentNo) {
     const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
     const col = document.createElement('div');
+    col.className = 'shipment-column';
     col.style.cssText = "width: 100%; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff; overflow: hidden;";
     col.innerHTML = `
         <div style="background: linear-gradient(to bottom, #e0e0e0 0%, #f5f5f5 100%); padding: 12px; display: flex; align-items: center; border-bottom: 1px solid #ccc;">
@@ -271,25 +273,32 @@ function createShipmentColumn(shipmentNo) {
     return col;
 }
 
-// --- สั่งให้ปุ่มยืนยันสร้างงาน ไปเรียกฟังก์ชันนี้ทันที ---
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. ปุ่มเปิดหน้าต่าง Modal (+)
+    const btnTruck = document.getElementById("btnAddShipmentTruck");
+    const modal = document.getElementById("shipmentBoxModal");
+    if (btnTruck && modal) {
+        btnTruck.addEventListener("click", () => {
+            modal.classList.remove("hide");
+        });
+    }
+
+    // 2. ปุ่มยืนยันสร้างงาน
     const btnConfirm = document.getElementById("btnConfirmBox");
-    if(btnConfirm) {
+    if (btnConfirm) {
         btnConfirm.addEventListener("click", () => {
             const shipmentNo = document.getElementById("inputBoxNumber").value;
             const container = document.getElementById("lobbyContentContainer");
             
-            // สร้างและแปะลงไป
-            const newCol = createShipmentColumn(shipmentNo);
-            container.appendChild(newCol);
-            
-            // ซ่อน Modal
-            document.getElementById("shipmentBoxModal").classList.add("hide");
-            document.getElementById("lobbyEmptyState").style.display = "none";
-    });
+            if (container && shipmentNo) {
+                container.appendChild(createShipmentColumn(shipmentNo));
+                if (modal) modal.classList.add("hide");
+                const emptyState = document.getElementById("lobbyEmptyState");
+                if (emptyState) emptyState.style.display = "none";
+            }
+        });
     }
 });
-
 //======================================================
-// END ฟังก์ชัน  สร้างSHIPMENTคอลัมน์ (SHIPMENT COLUMN GENERATE )
-//====================================================== 
+// END: ระบบหน้า Lobby
+//======================================================
