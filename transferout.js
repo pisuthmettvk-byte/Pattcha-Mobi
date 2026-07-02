@@ -48,13 +48,28 @@ function createNewLobbyCard(branchID, branchName) {
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
   const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbx0yi_782xbohnzTxXrUoWztD-LUfZygzH_l8yLHS0dZeeGzVkWZ7Km9vP6BVhJrU3SNg/exec";
+    "https://script.google.com/macros/s/AKfycbwQ0BGX1vUVs6iRkRacx60Th-ytxScDOJh00w9yDjT6JNfwC-2n2fTI1_MSvwgLQJYDtA/exec";
 
   if (!select) return;
 
   try {
     const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
-    const branches = await response.json();
+    const data = await response.json();
+
+    console.log("ข้อมูลที่ได้จาก GAS:", data); // ดูใน Console ว่ามันส่งอะไรมา
+
+    // ป้องกัน Error forEach: ตรวจสอบว่ามันเป็น Array จริงๆ
+    let branches = [];
+    if (Array.isArray(data)) {
+      branches = data;
+    } else if (data && Array.isArray(data.data)) {
+      branches = data.data; // เผื่อ GAS ห่อข้อมูลมาใน object
+    } else {
+      throw new Error(
+        "ข้อมูลไม่ใช่ Array (ลองเช็ก Google Apps Script ว่า Deploy ล่าสุดหรือยัง)",
+      );
+    }
+
     select.innerHTML =
       '<option value="" disabled selected>-- SELECT BRANCH --</option>';
     branches.forEach((branch) => {
@@ -65,6 +80,8 @@ async function loadBranchesIntoDropdown() {
     });
   } catch (error) {
     console.error("Error loading branches:", error);
+    select.innerHTML =
+      '<option value="" disabled selected>-- โหลดข้อมูลล้มเหลว --</option>';
   }
 }
 
@@ -117,7 +134,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+// =================================================================
+// 🚀 ฟังก์ชันสำหรับสลับหน้าจอ (แก้ปัญหา showView is not defined)
+// =================================================================
+function showView(viewId) {
+    // 1. ซ่อนทุกหน้าที่มี class 'view-screen'
+    const allViews = document.querySelectorAll('.view-screen');
+    allViews.forEach(view => {
+        view.classList.add('hide'); // สมมติว่าเจเลอร์ใช้ class 'hide' ในการซ่อน
+    });
 
+    // 2. โชว์หน้าที่ต้องการ
+    const targetView = document.getElementById(viewId);
+    if (targetView) {
+        targetView.classList.remove('hide');
+    } else {
+        console.error("ไม่พบหน้าจอ ID:", viewId);
+    }
+}
 
 
 
