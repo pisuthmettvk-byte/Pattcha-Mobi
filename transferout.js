@@ -30,10 +30,14 @@ async function loadBranchesIntoDropdown() {
     select.innerHTML =
       '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
-    // ในฟังก์ชัน loadBranchesIntoDropdown ของเจเลอร์
+    // ในไฟล์ที่เจเลอร์ใช้โหลด Dropdown สาขา
     branches.forEach((branch) => {
-      // เปลี่ยนจาก sessionStorage เป็นตัวแปร currentBranch ที่ระบบมีอยู่แล้ว
-      if (branch.id !== currentBranch) {
+      // ปรับตัวพิมพ์ใหญ่/เล็ก และตัดช่องว่างให้เหมือนกันก่อนเทียบ
+      const branchIdClean = String(branch.id).trim().toUpperCase();
+      const currentBranchClean = String(currentBranch).trim().toUpperCase();
+
+      // กรองเอาเฉพาะสาขาที่ไม่ใช่ตัวเอง
+      if (branchIdClean !== currentBranchClean) {
         const option = document.createElement("option");
         option.value = branch.id;
         option.textContent = `${branch.id} - ${branch.name}`;
