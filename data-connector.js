@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBcDzLla0xp2lyAft2KbUPneBIj6_UgrSg",
+  apiKey: "",
   authDomain: "pattcha-project.firebaseapp.com",
   projectId: "pattcha-project",
   storageBucket: "pattcha-project.firebasestorage.app",
