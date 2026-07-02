@@ -124,6 +124,8 @@ function showView(viewId) {
 
 
 
+
+
 // =================================================================
 // 🚀START Branch Lobby HEADERล็อบบีสาขา   
 // =================================================================
@@ -205,98 +207,84 @@ function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
 
 
 
-
 //======================================================
-// START ฟังก์ชัน  สร้างรหัส  SHIPMENT (SHIPMENT ID GENERATE )
+// START FRONTEND: ระบบหน้า Lobby และจัดเลเยอร์ Shipment (เวอร์ชันยกเครื่องระดับ 3)
 //====================================================== 
 
-function generateSmartShipmentID(transferType, sourceBranchCode, destBranchCode) {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, ''); 
-    const src = sourceBranchCode.substring(0, 2).toUpperCase();
-    const dst = destBranchCode.substring(0, 2).toUpperCase();
-
-    // ส่วนของเลขรันที่เจเลอร์ต้องการให้เป็น 0001 เสมอ
-    let runNumber = getNextRunNumber(); 
-    
-    // 🟢 แก้ไขตรงนี้ครับ: .padStart(4, '0') คือหัวใจสำคัญ
-    // มันจะบังคับให้เป็น 4 หลักเสมอ (1 -> 0001, 12 -> 0012, 123 -> 0123)
-    const runStr = runNumber.toString().padStart(4, '0');
-
-    // ประกอบร่างตาม Format ที่เจเลอร์กำหนด
-    const shipmentID = `${transferType}-${dateStr}-01${src}-${runStr}-02${dst}`;
-
-    return shipmentID;
+// ฟังก์ชันดึงเลขรันนิ่งถาวร (0001 - 9999) ไม่ซ้ำเลขที่ลบ รีเซ็ตเมื่อชน 9999
+function getNextRunningNumber() {
+    let currentNum = parseInt(localStorage.getItem('shipment_running_counter') || '0');
+    currentNum++;
+    if (currentNum > 9999) currentNum = 1;
+    localStorage.setItem('shipment_running_counter', currentNum.toString());
+    return currentNum.toString().padStart(4, '0');
 }
 
-function getNextRunNumber() {
-    let lastRun = parseInt(localStorage.getItem('last_shipment_run') || '0');
-    let nextRun = lastRun + 1;
+// ฟังก์ชันจัดเลเยอร์ตัวอักษรของเลข Shipment ให้สวยงามอ่านง่าย
+function formatShipmentNoHTML(shipmentNo) {
+    const parts = shipmentNo.split('-');
+    if (parts.length < 5) return `<span style="font-weight:bold; color:#0044ff;">${shipmentNo}</span>`;
     
-    if (nextRun > 9999) {
-        nextRun = 1; 
-    }
+    const type = parts[0];
+    const dateStr = parts[1];
+    const origin = parts[2];
+    const runNum = parts[3];
+    const dest = parts[4];
     
-    localStorage.setItem('last_shipment_run', nextRun);
-    return nextRun;
+    return `
+        <strong style="color:#222; font-size:14px;">${type}</strong> 
+        <small style="color:#999; font-size:11px; margin:0 2px;">${dateStr}</small> - 
+        <span style="color:#666; font-size:13px;">${origin}</span> - 
+        <strong style="font-size:16px; color:#0044ff; background:#e6f0ff; padding:2px 6px; border-radius:4px; margin:0 4px; display:inline-block; border:1px solid #b3d4ff;">${runNum}</strong> - 
+        <strong style="color:#222; font-size:14px;">${dest}</strong>
+    `;
 }
 
-//======================================================
-// END ฟังก์ชัน  สร้างรหัส  SHIPMENT (SHIPMENT ID GENERATE )
-//====================================================== 
-
-
-
-
-//======================================================
-// START: ระบบหน้า Lobby (เวอร์ชันรวบยอด - มีดึง Dropdown + สร้างเลข + แสดง Status)
-//====================================================== 
-
-// 1. ฟังก์ชันสร้างคอลัมน์ Shipment (มีแถบ Status เปลี่ยนสีได้)
-function createShipmentColumn(shipmentNo) {
+// ฟังก์ชันสร้างคอลัมน์ Shipment (คุมเลเยอร์ UI ล่าสุด)
+function createShipmentColumn(shipmentNo, originType = "Store") {
     const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
     const col = document.createElement('div');
     col.className = 'shipment-column';
+    col.dataset.destination = shipmentNo.split('-')[4]; // เก็บค่าสาขาปลายทางไว้เช็กซ้ำ
+    col.dataset.originType = originType;
     col.style.cssText = "width: 100%; box-sizing: border-box; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff; overflow: hidden;";
     
     col.innerHTML = `
         <div style="background: linear-gradient(to bottom, #e0e0e0 0%, #f5f5f5 100%); padding: 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ccc; box-sizing: border-box; flex-wrap: wrap;">
             <input type="checkbox" style="margin: 0; cursor: pointer;">
-            <span style="font-weight: bold; color: #555;">${today}</span>
-            <span style="font-weight: bold; color: #0044ff; min-width: 120px;">${shipmentNo}</span>
+            <span style="font-weight: bold; color: #555; font-size:13px;">${today}</span>
             
-            <div style="display: flex; gap: 15px; margin-left: auto; align-items: center; color: #495057; font-size: 14px;">
-                <span><i class="fas fa-truck"></i> (0)</span>
-                <span><i class="fas fa-barcode"></i> (0)</span>
-                <span><i class="fas fa-hand-paper"></i> (0)</span>
+            <!-- รหัส Shipment ที่จัด Layer ความหนาบางแล้ว -->
+            <div style="display: inline-flex; align-items: center;">${formatShipmentNoHTML(shipmentNo)}</div>
+            
+            <!-- ขยับมาด้านขวา: ป้ายระบุที่มางาน -->
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+                <span style="background: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da;">${originType}</span>
+                
+                <!-- กลุ่มไอคอนนับจำนวนชิ้น -->
+                <div style="display: flex; gap: 12px; align-items: center; color: #495057; font-size: 13px;">
+                    <span><i class="fas fa-truck"></i> (0)</span>
+                    <span><i class="fas fa-barcode"></i> (0)</span>
+                    <span><i class="fas fa-hand-paper"></i> (0)</span>
+                </div>
             </div>
             
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button style="border:none; background:none; color:#007bff; cursor:pointer; font-size: 16px;" title="เพิ่มกล่อง"><i class="fas fa-box"></i>+</button>
-                <button style="border:none; background:none; color:red; cursor:pointer; font-size: 16px;" title="ลบ" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
+            <!-- กลุ่มปุ่มควบคุม และป้ายสถานะออโต้ด้านหลังสุด -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-left: 10px;">
+                <button class="btn-open-box" style="border:none; background:none; color:#28a745; cursor:pointer; font-size: 18px;" title="เปิดกล่อง"><i class="fas fa-box-open"></i></button>
+                <button style="border:none; background:none; color:#dc3545; cursor:pointer; font-size: 16px;" title="ลบ" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
                 
-                <select onchange="this.style.background = this.value === 'Assign' ? '#ffc107' : this.value === 'Pending' ? '#17a2b8' : '#28a745'; this.style.color = this.value === 'Assign' ? '#000' : '#fff';" 
-                        style="padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: none; background: #ffc107; color: #000; cursor: pointer; outline: none; text-align: center; transition: all 0.2s;">
-                    <option value="Assign" style="background: white; color: #333;">Assign</option>
-                    <option value="Pending" style="background: white; color: #333;">Pending</option>
-                    <option value="Complete" style="background: white; color: #333;">Complete</option>
-                </select>
+                <!-- แถบสถานะระบบจัดการอัตโนมัติ (ไม่ใช่ Dropdown) -->
+                <span class="status-label" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #ffc107; color: #000; text-align: center; min-width: 60px; display: inline-block;">Assign</span>
             </div>
         </div>`;
     return col;
 }
 
-// 2. ฟังก์ชันดึงประเภทการโอนจากชีต (เริ่มแถว 2 รองรับรหัสแปลกปลอม)
+// ฟังก์ชันดึงประเภทการโอนเข้าสู่ Dropdown หน้างาน
 function loadTransferTypesIntoDropdown() {
     const selectType = document.getElementById("selectTransferType");
     if (!selectType) return;
-
-    const defaultTypes = [
-        { key: "TS", desc: "Transfer Between Store" },
-        { key: "DF", desc: "Defective Damage Item" },
-        { key: "WH", desc: "Warehouse Transfer" },
-        { key: "VM", desc: "VM Prop and Tools" }
-    ];
 
     selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
 
@@ -310,16 +298,20 @@ function loadTransferTypesIntoDropdown() {
                     selectType.appendChild(option);
                 });
             } else {
-                fallbackDropdown(selectType, defaultTypes);
+                fallbackDropdown(selectType);
             }
         }).getTransferTypesFromSheet("1p4D3Fd7iwZnmq2pzJPziMYzNo6wnhNgJxeAS7sTz3c4");
     } else {
-        fallbackDropdown(selectType, defaultTypes);
+        fallbackDropdown(selectType);
     }
 }
 
-function fallbackDropdown(selectElement, types) {
-    types.forEach(item => {
+function fallbackDropdown(selectElement) {
+    const defaults = [
+        { key: "TS", desc: "Transfer Between Store" }, { key: "DF", desc: "Defective Damage Item" },
+        { key: "WH", desc: "Warehouse Transfer" }, { key: "VM", desc: "VM Prop and Tools" }
+    ];
+    defaults.forEach(item => {
         const option = document.createElement("option");
         option.value = item.key;
         option.textContent = `[${item.key}] ${item.desc}`;
@@ -327,7 +319,7 @@ function fallbackDropdown(selectElement, types) {
     });
 }
 
-// 3. ผูกเหตุการณ์ควบคุมหน้าจอทั้งหมด
+// ผูกการทำงานปุ่มและ Logic ในหน้าจอ
 document.addEventListener('DOMContentLoaded', () => {
     loadTransferTypesIntoDropdown();
 
@@ -339,14 +331,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById("lobbyContentContainer");
     const emptyState = document.getElementById("lobbyEmptyState");
 
-    // เลือกประเภทการโอนแล้วจะ Generate เลข Shipment ทันที (YYMMDD-สุ่มรหัส)
+    // ดึงรหัสต้นทางและปลายทางปัจจุบันจากหน้าเว็บหน้างานของเจเลอร์ (สมมุติตัวแปรกลางของระบบ)
+    const currentOriginCode = (window.currentOriginBranch || "CKC01").substring(0, 2).toUpperCase();
+    const currentDestCode = (window.currentDestBranch || "CTW03").substring(0, 2).toUpperCase();
+
+    // เมื่อเลือกประเภท -> ทำการทดลองเจนเลขฟอร์แมตล่าสุดแสดงในกล่องทันที
     if (selectType && inputShipmentNo) {
         selectType.addEventListener("change", () => {
             const selectedVal = selectType.value;
             if (selectedVal) {
-                const todayStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
-                const randomId = Math.floor(100 + Math.random() * 900);
-                inputShipmentNo.value = `${selectedVal}-${todayStr}-${randomId}`;
+                const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "").split('').reverse().join(''); // ฟอร์แมต DDMMYYYY ล่าสุด
+                const formattedDate = new Date().toLocaleDateString('en-GB').replace(/\//g, ""); // ดึง DDMMYYYY ตรงๆ
+                
+                // แอบดึงคิวจำลองโชว์ให้เจเลอร์เห็นความสวยงามก่อนกดตกลงสร้างจริง
+                const tempCounter = (parseInt(localStorage.getItem('shipment_running_counter') || '0') + 1).toString().padStart(4, '0');
+                inputShipmentNo.value = `${selectedVal}-${formattedDate}-01${currentOriginCode}-${tempCounter}-02${currentDestCode}`;
             } else {
                 inputShipmentNo.value = "กรุณาเลือกประเภท...";
             }
@@ -363,21 +362,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnConfirm) {
         btnConfirm.addEventListener("click", () => {
-            const shipmentNo = inputShipmentNo ? inputShipmentNo.value : "";
-            
             if (!selectType || !selectType.value) {
                 alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
                 return;
             }
 
-            if (container && shipmentNo && shipmentNo !== "กรุณาเลือกประเภท...") {
-                container.appendChild(createShipmentColumn(shipmentNo));
+            // เช็กระบบป้องกันสาขาปลายทางซ้ำสำหรับเคสที่เปิดเอง (Store)
+            if (container) {
+                const existingColumns = container.querySelectorAll('.shipment-column');
+                let isDuplicate = false;
+                existingColumns.forEach(col => {
+                    if (col.dataset.destination === currentDestCode && col.dataset.originType === "Store") {
+                        isDuplicate = true;
+                    }
+                });
+
+                if (isDuplicate) {
+                    alert(`ปฏิเสธการสร้าง! มีใบงานส่งไปสาขาปลายทาง [02${currentDestCode}] ค้างอยู่ในระบบล็อบบี้แล้วครับโว้ย`);
+                    return;
+                }
+            }
+
+            // เจนเลขวิ่งจริงขั้นสุดท้ายแบบไม่ย้อนเลขซ้ำ
+            const finalType = selectType.value;
+            const finalDate = new Date().toLocaleDateString('en-GB').replace(/\//g, "");
+            const finalRunningNum = getNextRunningNumber();
+            const finalShipmentNo = `${finalType}-${finalDate}-01${currentOriginCode}-${finalRunningNum}-02${currentDestCode}`;
+
+            if (container) {
+                container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
                 if (modal) modal.classList.add("hide");
                 if (emptyState) emptyState.style.display = "none";
+                
+                // สั่ง Sync สเตตัสและส่งข้อมูลกลับไปตั้ง Card หน้าแรก (Transfer Out Task Hub)
+                if (typeof window.syncToTransferOutTaskHub === "function") {
+                    window.syncToTransferOutTaskHub(finalShipmentNo, "Assign");
+                }
             }
         });
     }
 });
+
 //======================================================
-// END: ระบบหน้า Lobby
-//======================================================
+// END ofFRONTEND: ระบบหน้า Lobby และจัดเลเยอร์ Shipment (เวอร์ชันยกเครื่องระดับ 3)
+//====================================================== 
