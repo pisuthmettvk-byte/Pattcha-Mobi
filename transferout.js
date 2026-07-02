@@ -229,50 +229,64 @@ function formatShipmentNoHTML(shipmentNo) {
     return `<span style="font-weight: bold; font-size: 14px; color: #0044ff; font-family: sans-serif; letter-spacing: 0.5px;">${shipmentNo}</span>`;
 }
 
-function createShipmentColumn(shipmentNo, originType = "Store") {
-    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
-    const col = document.createElement('div');
-    col.className = 'shipment-column';
-    col.dataset.destination = shipmentNo.split('-')[4]; 
-    col.dataset.originType = originType;
-    col.style.cssText = "width: 100%; box-sizing: border-box; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff; overflow: hidden;";
-    
-    col.innerHTML = `
-        <div style="background: linear-gradient(to bottom, #e0e0e0 0%, #f5f5f5 100%); padding: 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ccc; box-sizing: border-box; flex-wrap: wrap;">
-            <input type="checkbox" style="margin: 0; cursor: pointer;">
-            <span style="font-weight: bold; color: #555; font-size:13px;">${today}</span>
-            
-            <div style="display: inline-flex; align-items: center;">${formatShipmentNoHTML(shipmentNo)}</div>
-            
-            <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
-                <span style="background: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da;">${originType}</span>
-                
-                <div style="display: flex; gap: 12px; align-items: center; color: #495057; font-size: 13px;">
-                    <span><i class="fas fa-truck"></i> (0)</span>
-                    <span><i class="fas fa-barcode"></i> (0)</span>
-                    <span><i class="fas fa-hand-paper"></i> (0)</span>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 10px; align-items: center; margin-left: 10px;">
-                <button class="btn-open-box" style="border:none; background:none; color:#28a745; cursor:pointer; font-size: 16px; font-weight:bold;" title="เปิดกล่อง"><i class="fas fa-box-open"></i>+</button>
-                <button style="border:none; background:none; color:#dc3545; cursor:pointer; font-size: 16px;" title="ลบ" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
-                
-                <span class="status-label" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #dc3545; color: #fff; text-align: center; min-width: 65px; display: inline-block;">Assign</span>
-            </div>
-        </div>`;
-    return col;
-}
 
-// รื้อระบบใหม่: ดึงข้อมูลผ่าน Fetch API ลิงก์ตรงกับเครือข่ายของเจเลอร์
+
+              //==============================================================
+              // START ฟังก์ชันสร้างคอลัมน์ Shipment (อัปเดตแสงเงาและ Gradient แบบมีมิติตามสั่ง)
+              //===============================================================
+
+              function createShipmentColumn(shipmentNo, originType = "Store") {
+                  const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                  const col = document.createElement('div');
+                  col.className = 'shipment-column';
+                  col.dataset.destination = shipmentNo.split('-')[4]; 
+                  col.dataset.originType = originType;
+                  // เพิ่ม box-shadow รอบนอกให้เข้ากับความนูนของ Gradient ด้านใน
+                  col.style.cssText = "width: 100%; box-sizing: border-box; margin-bottom: 10px; border-radius: 8px; background: #ffffff; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05);";
+                  
+                  col.innerHTML = `
+                      <div style="background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%); border-top: 1px solid #fff; border-bottom: 1px solid #bbb; padding: 15px 20px; display: flex; align-items: center; gap: 12px; box-sizing: border-box; flex-wrap: wrap;">
+                          <input type="checkbox" style="margin: 0; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                          <span style="font-weight: bold; color: #333; font-size:13px; text-shadow: 1px 1px 0 #fff;">${today}</span>
+                          
+                          <div style="display: inline-flex; align-items: center;">${formatShipmentNoHTML(shipmentNo)}</div>
+                          
+                          <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+                              <span style="background: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">${originType}</span>
+                              
+                              <div style="display: flex; gap: 12px; align-items: center; color: #333; font-size: 13px; text-shadow: 1px 1px 0 #fff;">
+                                  <span><i class="fas fa-truck"></i> (0)</span>
+                                  <span><i class="fas fa-barcode"></i> (0)</span>
+                                  <span><i class="fas fa-hand-paper"></i> (0)</span>
+                              </div>
+                          </div>
+                          
+                          <div style="display: flex; gap: 10px; align-items: center; margin-left: 10px;">
+                              <button class="btn-open-box" style="border:none; background:none; color:#28a745; cursor:pointer; font-size: 16px; font-weight:bold; filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.8));" title="เปิดกล่อง"><i class="fas fa-box-open"></i>+</button>
+                              <button style="border:none; background:none; color:#dc3545; cursor:pointer; font-size: 16px; filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.8));" title="ลบ" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
+                              
+                              <span class="status-label" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #dc3545; color: #fff; text-align: center; min-width: 65px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">Assign</span>
+                          </div>
+                      </div>`;
+                  return col;
+              }
+
+              //==============================================================
+              // END ฟังก์ชันสร้างคอลัมน์ Shipment (อัปเดตแสงเงาและ Gradient แบบมีมิติตามสั่ง)
+              //===============================================================
+
+
+//==============================================================
+// ดึงข้อมูลผ่าน Fetch API ลิงก์ตรงกับ Web App ตัวใหม่ล่าสุดของเจเลอร์
+//===============================================================
 function loadTransferTypesIntoDropdown() {
     const selectType = document.getElementById("selectTransferType");
     if (!selectType) return;
 
     selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
 
-    // ใช้ Base URL เดียวกันกับระบบดึงสาขาของเจเลอร์เป๊ะๆ
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbwQ0BGX1vUVs6iRkRacx60Th-ytxScDOJh00w9yDjT6JNfwC-2n2fTI1_MSvwgLQJYDtA/exec?action=get_transfer_types";
+    // อัปเดตเป็น URL ตัวใหม่ล่าสุดที่เจเลอร์เพิ่ง Deploy มาครับ
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbxz_Biwtm1h7XBXGijhATsIcqeA0liDjbXTIQT3UT53H077RWBASmOok2EeTp_T3GGg0A/exec?action=get_transfer_types";
 
     fetch(webAppUrl)
         .then(response => response.json())
@@ -287,9 +301,11 @@ function loadTransferTypesIntoDropdown() {
             }
         })
         .catch(err => {
-            console.error("Fetch error, using default layout:", err);
+            console.error("Fetch error:", err);
         });
 }
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
     loadTransferTypesIntoDropdown();
