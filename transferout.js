@@ -77,22 +77,19 @@ if (btnNext) {
         loadLobbyHeader();
     });
 }
+
+// START ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
+if (btnCancel) {
+    btnCancel.addEventListener("click", () => {
+        const select = document.getElementById("selectDestination");
+        if (select) select.selectedIndex = 0;
+        // กลับไปด่าน 1 (Task List) หน้าจอจะว่างเปล่าตามเดิมเพราะเราไม่ได้สร้างการ์ดทิ้งไว้
+        showView("transferOutTaskHubView");
+    });
+}
+// END ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
+
 });
-
-
-
-
-
-          // START ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
-          if (btnCancel) {
-              btnCancel.addEventListener("click", () => {
-                  const select = document.getElementById("selectDestination");
-                  if (select) select.selectedIndex = 0;
-                  // กลับไปด่าน 1 (Task List) หน้าจอจะว่างเปล่าตามเดิมเพราะเราไม่ได้สร้างการ์ดทิ้งไว้
-                  showView("transferOutTaskHubView");
-              });
-          }
-          // END ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
      
 // =================================================================
 // 🚀 END Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
@@ -126,25 +123,21 @@ function showView(viewId) {
 
 
 
+// =================================================================
+// 🚀START Branch Lobby HEADERล็อบบีสาขา   
+// =================================================================
+function loadLobbyHeader() {
+    const branchID = sessionStorage.getItem("selectedBranchID");
+    const branchName = sessionStorage.getItem("selectedBranchName");
+    const headerElement = document.getElementById("lobbyBranchHeaderName"); // แก้ ID ให้ตรงกับ HTML ของเจเลอร์
 
-
-
-
-        // =================================================================
-        // 🚀START Branch Lobby HEADERล็อบบีสาขา   
-        // =================================================================
-        function loadLobbyHeader() {
-        const branchID = sessionStorage.getItem("selectedBranchID");
-        const branchName = sessionStorage.getItem("selectedBranchName");
-        const headerElement = document.getElementById("lobbyBranchHeaderName"); // แก้ ID ให้ตรงกับ HTML ของเจเลอร์
-
-        if (headerElement && branchID && branchName) {
-            headerElement.textContent = `[${branchID}] - ${branchName}`;
-        }
-        }
-        // =================================================================
-        // 🚀 END Branch Lobby HEADERล็อบบีสาขา   
-        // =================================================================
+    if (headerElement && branchID && branchName) {
+        headerElement.textContent = `[${branchID}] - ${branchName}`;
+    }
+}
+// =================================================================
+// 🚀 END Branch Lobby HEADERล็อบบีสาขา   
+// =================================================================
 
 
 
@@ -193,14 +186,14 @@ function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
         <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
     `;
 
-        // 4. เพิ่มลูกเล่นให้คลิกได้
+    // 4. เพิ่มลูกเล่นให้คลิกได้
     card.addEventListener('click', () => {
-    console.log(`Clicked on: ${docNo}`);
-    // เจเลอร์สามารถใส่คำสั่งเรียก showView หรือเก็บข้อมูลลง SessionStorage ตรงนี้ได้เลยครับ
-    sessionStorage.setItem("selectedBranchID", branchID);
-    showView("transferOutLobbyView");
-    loadLobbyHeader();
-});
+        console.log(`Clicked on: ${docNo}`);
+        // เจเลอร์สามารถใส่คำสั่งเรียก showView หรือเก็บข้อมูลลง SessionStorage ตรงนี้ได้เลยครับ
+        sessionStorage.setItem("selectedBranchID", branchID);
+        showView("transferOutLobbyView");
+        loadLobbyHeader();
+    });
     return card;
 }
 
@@ -208,8 +201,6 @@ function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
    ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
    ใช้ได้ทุกหน้าในระบบ END
    ====================================================== */
-
-
 
 
 
@@ -252,11 +243,6 @@ function getNextRunNumber() {
 //======================================================
 // END ฟังก์ชัน  สร้างรหัส  SHIPMENT (SHIPMENT ID GENERATE )
 //====================================================== 
-
-
-
-
-
 
 
 
@@ -307,5 +293,3 @@ document.addEventListener('DOMContentLoaded', () => {
 //======================================================
 // END ฟังก์ชัน  สร้างSHIPMENTคอลัมน์ (SHIPMENT COLUMN GENERATE )
 //====================================================== 
-
-
