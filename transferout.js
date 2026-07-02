@@ -44,15 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-  
-
-
-// ฟังก์ชันปุ่ม NEXT ในหน้าเลือกสาขา (ฉบับสมบูรณ์)
+// ฟังก์ชันปุ่ม NEXT ในหน้าเลือกสาขา (ฉบับแก้ไข: ด่าน 2 ส่งแค่เข้าด่าน 3 ไม่สร้างการ์ด)
 if (btnNext) {
     btnNext.addEventListener("click", () => {
         const select = document.getElementById("selectDestination");
         const branchID = select.value;
-        // ใช้ textContent หรือ innerText เพื่อดึงชื่อสาขาที่ถูกต้อง
         const branchName = select.options[select.selectedIndex].text;
 
         if (!branchID) {
@@ -60,55 +56,39 @@ if (btnNext) {
             return;
         }
 
-        // 1. ตรวจสอบว่าสาขานี้ถูกสร้างไว้หรือยัง
+        // 1. ตรวจสอบว่าสาขานี้ถูกเปิดห้องไว้หรือยัง (ใน Lobby)
+        // เราเช็กจากรหัสสาขา ถ้ามีแล้วก็แค่พาเข้าห้อง ไม่ต้องสร้างใหม่
         const existingLobby = document.querySelector(`.shipment-card[data-branch-id="${branchID}"]`);
 
         if (existingLobby) {
-            alert("สาขานี้ถูกสร้างล็อบบี้ไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ");
-        } else {
-            // 2. ล้างการ์ดเก่าออกก่อน เพื่อให้หน้าจอสะอาด (ตามลอจิก Zero State ของเจเลอร์)
-            const lobbyWrapper = document.querySelector(".task-list-wrapper");
-            if (lobbyWrapper) {
-                lobbyWrapper.innerHTML = ''; 
-            }
+            alert("ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ");
+        } 
+        
+        // หมายเหตุ: เราเอาโค้ดสร้างการ์ด (createUniversalCard) ออกจากตรงนี้
+        // เพื่อให้ด่าน 1 (Task List) ว่างเปล่าตามเงื่อนไขที่เจเลอร์ต้องการ
+        // การ์ดจะถูกสร้างก็ต่อเมื่อเจเลอร์ไปกดปุ่มรูปรถบรรทุกในด่าน 3 เท่านั้น!
 
-            // 3. สร้างรหัส Doc No
-            const newDocNo = "#TO-" + new Date().getTime().toString().slice(-7);
-
-            // 4. สร้างการ์ด (ส่ง branchID เข้าไปเป็น parameter ที่ 3 เพื่อฝัง Attribute อัตโนมัติ)
-            const newCard = createUniversalCard(branchName, newDocNo, branchID, "pending");
-
-            // 5. แปะการ์ดใหม่
-            if (lobbyWrapper) {
-                lobbyWrapper.appendChild(newCard);
-            }
-        }
-
-        // 6. บันทึกข้อมูลลง Session
+        // 2. บันทึกข้อมูลสาขาที่เลือก
         sessionStorage.setItem("selectedBranchID", branchID);
         sessionStorage.setItem("selectedBranchName", branchName);
 
-        // 7. เปลี่ยนหน้า
+        // 3. เปลี่ยนหน้าไปด่าน 3
         showView("transferOutLobbyView");
         loadLobbyHeader();
     });
 }
-        // END ฟังก์ชันปุ่ม NEXT ในหน้าเลือสาขา
 
-
-
-
-        //START ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
-        if (btnCancel) {
-            btnCancel.addEventListener("click", () => {
-            const select = document.getElementById("selectDestination");
-            if (select) select.selectedIndex = 0;
-            showView("transferOutTaskHubView");
-            });
-        }
-        });
-        // END ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
-
+          // START ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
+          if (btnCancel) {
+              btnCancel.addEventListener("click", () => {
+                  const select = document.getElementById("selectDestination");
+                  if (select) select.selectedIndex = 0;
+                  // กลับไปด่าน 1 (Task List) หน้าจอจะว่างเปล่าตามเดิมเพราะเราไม่ได้สร้างการ์ดทิ้งไว้
+                  showView("transferOutTaskHubView");
+              });
+          }
+          // END ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
+     
 // =================================================================
 // 🚀 END Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
 // =================================================================
@@ -233,23 +213,35 @@ function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
 // START ฟังก์ชัน  สร้างรหัส  SHIPMENT (SHIPMENT ID GENERATE )
 //====================================================== 
 
-async function generateSmartShipmentID(typeKey, targetBranchID) {
-    // 1. ดึงวันที่ (YYMMDD)
-    const dateStamp = new Date().toISOString().slice(2, 10).replace(/-/g, ''); 
+function generateSmartShipmentID(transferType, sourceBranchCode, destBranchCode) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, ''); 
+    const src = sourceBranchCode.substring(0, 2).toUpperCase();
+    const dst = destBranchCode.substring(0, 2).toUpperCase();
+
+    // ส่วนของเลขรันที่เจเลอร์ต้องการให้เป็น 0001 เสมอ
+    let runNumber = getNextRunNumber(); 
     
-    // 2. ดึงประเภท (ถ้า typeKey คือ 'TO' จะได้รหัสอย่างเช่น 'TO')
-    // เจเลอร์สามารถดึงค่าจาก Object Config ที่โหลดมาได้เลย
-    const typeCode = Config.transferTypes[typeKey] || "TO"; 
+    // 🟢 แก้ไขตรงนี้ครับ: .padStart(4, '0') คือหัวใจสำคัญ
+    // มันจะบังคับให้เป็น 4 หลักเสมอ (1 -> 0001, 12 -> 0012, 123 -> 0123)
+    const runStr = runNumber.toString().padStart(4, '0');
+
+    // ประกอบร่างตาม Format ที่เจเลอร์กำหนด
+    const shipmentID = `${transferType}-${dateStr}-01${src}-${runStr}-02${dst}`;
+
+    return shipmentID;
+}
+
+function getNextRunNumber() {
+    let lastRun = parseInt(localStorage.getItem('last_shipment_run') || '0');
+    let nextRun = lastRun + 1;
     
-    // 3. กำหนด Source และ Target ตาม Pattern ที่ต้องการ
-    const sourcePart = `01${currentBranch}`;
-    const targetPart = `02${targetBranchID}`;
+    if (nextRun > 9999) {
+        nextRun = 1; 
+    }
     
-    // 4. Sequence (แนะนำให้บวกเพิ่มในอนาคต: ดึงเลขจาก Sheets)
-    const sequence = "001"; 
-    
-    // ประกอบร่าง
-    return `${dateStamp}-${sourcePart}-${targetPart}-${typeCode}-${sequence}`;
+    localStorage.setItem('last_shipment_run', nextRun);
+    return nextRun;
 }
 
 //======================================================
@@ -259,6 +251,58 @@ async function generateSmartShipmentID(typeKey, targetBranchID) {
 
 
 
+
+
+
+
+
+//======================================================
+// START ฟังก์ชัน  สร้างSHIPMENTคอลัมน์ (SHIPMENT COLUMN GENERATE )
+//====================================================== 
+
+function createShipmentColumn(shipmentNo) {
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const col = document.createElement('div');
+    col.style.cssText = "width: 100%; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff; overflow: hidden;";
+    col.innerHTML = `
+        <div style="background: linear-gradient(to bottom, #e0e0e0 0%, #f5f5f5 100%); padding: 12px; display: flex; align-items: center; border-bottom: 1px solid #ccc;">
+            <input type="checkbox" style="margin-right: 10px;">
+            <span style="font-weight: bold; margin-right: 10px;">${today}</span>
+            <span style="font-weight: bold; margin-right: 10px;">${shipmentNo}</span>
+            <div style="display: flex; gap: 10px; margin-left: auto;">
+                <span><i class="fas fa-truck"></i>(0)</span>
+                <span><i class="fas fa-barcode"></i>(0)</span>
+                <span><i class="fas fa-hand-paper"></i>(0)</span>
+            </div>
+            <button style="border:none; background:none; margin-left: 10px; color:#007bff;"><i class="fas fa-box"></i>+</button>
+            <button style="border:none; background:none; color:red;" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
+        </div>`;
+    return col;
+}
+
+// --- สั่งให้ปุ่มยืนยันสร้างงาน ไปเรียกฟังก์ชันนี้ทันที ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnConfirm = document.getElementById("btnConfirmBox");
+    if(btnConfirm) {
+        btnConfirm.addEventListener("click", () => {
+            const shipmentNo = document.getElementById("inputBoxNumber").value;
+            const container = document.getElementById("lobbyContentContainer");
+            
+            // สร้างและแปะลงไป
+            const newCol = createShipmentColumn(shipmentNo);
+            container.appendChild(newCol);
+            
+            // ซ่อน Modal
+            document.getElementById("shipmentBoxModal").classList.add("hide");
+            document.getElementById("lobbyEmptyState").style.display = "none";
+        });
+    }
+});
+
+
+//======================================================
+// END ฟังก์ชัน  สร้างSHIPMENTคอลัมน์ (SHIPMENT COLUMN GENERATE )
+//====================================================== 
 
 
 
