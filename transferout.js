@@ -12,8 +12,15 @@ async function loadBranchesIntoDropdown() {
     const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
     const data = await response.json();
 
-    // จัดการข้อมูลให้เป็น Array (ใช้ชื่อตัวแปร branches ให้ตรงกันทั้งฟังก์ชัน)
-    let branches = Array.isArray(data) ? data : data.data || [];
+    // กำหนดตัวแปรชื่อ branches
+    let branches = [];
+    if (Array.isArray(data)) {
+      branches = data;
+    } else if (data && Array.isArray(data.data)) {
+      branches = data.data;
+    } else {
+      throw new Error("ข้อมูลไม่ใช่ Array");
+    }
 
     const myBranch = String(localStorage.getItem("pattcha_branch") || "")
       .trim()
@@ -22,7 +29,7 @@ async function loadBranchesIntoDropdown() {
     select.innerHTML =
       '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
-    // ใช้ตัวแปร branches ที่เราเตรียมไว้
+    // 🟢 แก้ตรงนี้แล้ว! ใช้คำว่า branches.forEach แทน allBranches
     branches.forEach((branch) => {
       const branchId = String(branch.id || "")
         .trim()
@@ -32,7 +39,6 @@ async function loadBranchesIntoDropdown() {
         .toUpperCase();
       const isActive = status.includes("ACTIVE");
 
-      // กรอง: ต้องไม่ใช่สาขาตัวเอง AND ต้องมีคำว่า ACTIVE
       if (branchId !== myBranch && isActive) {
         const option = document.createElement("option");
         option.value = branch.id;
@@ -41,11 +47,12 @@ async function loadBranchesIntoDropdown() {
       }
     });
   } catch (error) {
-    console.error("🚨 Error loading branches:", error);
+    console.error("Error loading branches:", error);
     select.innerHTML =
       '<option value="" disabled selected>-- โหลดข้อมูลล้มเหลว --</option>';
   }
 }
+
 
 
 document.addEventListener("DOMContentLoaded", () => {
