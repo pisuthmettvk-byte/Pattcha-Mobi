@@ -77,6 +77,11 @@ if (btnNext) {
         loadLobbyHeader();
     });
 }
+});
+
+
+
+
 
           // START ฟังก์ชันปุ่ม CANCEL หน้าเลือกสาขา
           if (btnCancel) {
@@ -295,16 +300,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // ซ่อน Modal
             document.getElementById("shipmentBoxModal").classList.add("hide");
             document.getElementById("lobbyEmptyState").style.display = "none";
-        });
+    });
     }
 });
-
 
 //======================================================
 // END ฟังก์ชัน  สร้างSHIPMENTคอลัมน์ (SHIPMENT COLUMN GENERATE )
 //====================================================== 
-
-
-
 
 
