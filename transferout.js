@@ -524,12 +524,22 @@ async function loadExistingTasks() {
     if (emptyState) emptyState.style.display = "none";
     const loadingId = "tempLoadingTask";
     if (!document.getElementById(loadingId)) {
-      container.insertAdjacentHTML("beforeend", `<div id="${loadingId}" style="text-align:center; padding:20px; color:#666;"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>`);
+      container.insertAdjacentHTML(
+        "beforeend",
+        `<div id="${loadingId}" style="text-align:center; padding:20px; color:#666;"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>`,
+      );
     }
-
     // ยิง API ไปขอดึงข้อมูล
     const response = await fetch(fetchUrl);
     const tasks = await response.json();
+
+    // 🚀 เพิ่ม 4 บรรทัดนี้เข้าไปครับ เพื่อเช็กว่าข้อมูลที่ได้คืออะไร
+    console.log("ข้อมูลที่ได้จาก Google:", tasks);
+    if (!Array.isArray(tasks)) {
+      console.error("ระบบตีกลับเป็น Error แทนที่จะเป็นข้อมูลครับ:", tasks);
+      if (emptyState) emptyState.style.display = "flex";
+      return; // หยุดการทำงานตรงนี้ forEach จะได้ไม่พัง
+    }
 
     // เอาป้าย Loading ออก
     const loadingEl = document.getElementById(loadingId);
@@ -542,11 +552,11 @@ async function loadExistingTasks() {
     }
 
     // เคลียร์เฉพาะการ์ดเก่าออก (เพื่อไม่ให้ไปลบปุ่มสร้างงานด้านบน)
-    const existingCards = container.querySelectorAll('.task-card');
-    existingCards.forEach(card => card.remove());
+    const existingCards = container.querySelectorAll(".task-card");
+    existingCards.forEach((card) => card.remove());
 
     // วนลูปข้อมูล แล้วสร้างการ์ดทีละใบ
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       // แมปคีย์ข้อมูลให้ตรงกับที่เจเลอร์ส่งมาเป๊ะๆ
       const date = task.Date;
       const shipmentNo = task.Shipment_No;
@@ -558,17 +568,16 @@ async function loadExistingTasks() {
 
       // เอาข้อมูลยัดใส่แม่พิมพ์ แล้วแปะลง Container
       const card = createTransferOutTaskCard(
-        date, 
-        shipmentNo, 
-        originType, 
-        destBranch, 
-        totalBox, 
-        totalItem, 
-        status
+        date,
+        shipmentNo,
+        originType,
+        destBranch,
+        totalBox,
+        totalItem,
+        status,
       );
       container.appendChild(card);
     });
-
   } catch (error) {
     console.error("Error loading tasks:", error);
     if (emptyState) emptyState.style.display = "flex";
