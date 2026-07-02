@@ -249,51 +249,130 @@ function getNextRunNumber() {
 
 
 //======================================================
-// START: ระบบหน้า Lobby (ปุ่มเปิด Modal + สร้าง Shipment)
+// START: ระบบหน้า Lobby (เวอร์ชันรวบยอด - มีดึง Dropdown + สร้างเลข + แสดง Status)
 //====================================================== 
 
+// 1. ฟังก์ชันสร้างคอลัมน์ Shipment (มีแถบ Status เปลี่ยนสีได้)
 function createShipmentColumn(shipmentNo) {
     const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
     const col = document.createElement('div');
     col.className = 'shipment-column';
-    col.style.cssText = "width: 100%; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff; overflow: hidden;";
+    col.style.cssText = "width: 100%; box-sizing: border-box; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; background: #ffffff; overflow: hidden;";
+    
     col.innerHTML = `
-        <div style="background: linear-gradient(to bottom, #e0e0e0 0%, #f5f5f5 100%); padding: 12px; display: flex; align-items: center; border-bottom: 1px solid #ccc;">
-            <input type="checkbox" style="margin-right: 10px;">
-            <span style="font-weight: bold; margin-right: 10px;">${today}</span>
-            <span style="font-weight: bold; margin-right: 10px;">${shipmentNo}</span>
-            <div style="display: flex; gap: 10px; margin-left: auto;">
-                <span><i class="fas fa-truck"></i>(0)</span>
-                <span><i class="fas fa-barcode"></i>(0)</span>
-                <span><i class="fas fa-hand-paper"></i>(0)</span>
+        <div style="background: linear-gradient(to bottom, #e0e0e0 0%, #f5f5f5 100%); padding: 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #ccc; box-sizing: border-box; flex-wrap: wrap;">
+            <input type="checkbox" style="margin: 0; cursor: pointer;">
+            <span style="font-weight: bold; color: #555;">${today}</span>
+            <span style="font-weight: bold; color: #0044ff; min-width: 120px;">${shipmentNo}</span>
+            
+            <div style="display: flex; gap: 15px; margin-left: auto; align-items: center; color: #495057; font-size: 14px;">
+                <span><i class="fas fa-truck"></i> (0)</span>
+                <span><i class="fas fa-barcode"></i> (0)</span>
+                <span><i class="fas fa-hand-paper"></i> (0)</span>
             </div>
-            <button style="border:none; background:none; margin-left: 10px; color:#007bff;"><i class="fas fa-box"></i>+</button>
-            <button style="border:none; background:none; color:red;" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button style="border:none; background:none; color:#007bff; cursor:pointer; font-size: 16px;" title="เพิ่มกล่อง"><i class="fas fa-box"></i>+</button>
+                <button style="border:none; background:none; color:red; cursor:pointer; font-size: 16px;" title="ลบ" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
+                
+                <select onchange="this.style.background = this.value === 'Assign' ? '#ffc107' : this.value === 'Pending' ? '#17a2b8' : '#28a745'; this.style.color = this.value === 'Assign' ? '#000' : '#fff';" 
+                        style="padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: none; background: #ffc107; color: #000; cursor: pointer; outline: none; text-align: center; transition: all 0.2s;">
+                    <option value="Assign" style="background: white; color: #333;">Assign</option>
+                    <option value="Pending" style="background: white; color: #333;">Pending</option>
+                    <option value="Complete" style="background: white; color: #333;">Complete</option>
+                </select>
+            </div>
         </div>`;
     return col;
 }
 
+// 2. ฟังก์ชันดึงประเภทการโอนจากชีต (เริ่มแถว 2 รองรับรหัสแปลกปลอม)
+function loadTransferTypesIntoDropdown() {
+    const selectType = document.getElementById("selectTransferType");
+    if (!selectType) return;
+
+    const defaultTypes = [
+        { key: "TS", desc: "Transfer Between Store" },
+        { key: "DF", desc: "Defective Damage Item" },
+        { key: "WH", desc: "Warehouse Transfer" },
+        { key: "VM", desc: "VM Prop and Tools" }
+    ];
+
+    selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
+
+    if (typeof google !== "undefined" && google.script && google.script.run) {
+        google.script.run.withSuccessHandler((sheetTypes) => {
+            if (sheetTypes && sheetTypes.length > 0) {
+                sheetTypes.forEach((item) => {
+                    const option = document.createElement("option");
+                    option.value = item.Type_Key.toUpperCase().trim();
+                    option.textContent = `[${item.Type_Key}] ${item.Description}`;
+                    selectType.appendChild(option);
+                });
+            } else {
+                fallbackDropdown(selectType, defaultTypes);
+            }
+        }).getTransferTypesFromSheet("1p4D3Fd7iwZnmq2pzJPziMYzNo6wnhNgJxeAS7sTz3c4");
+    } else {
+        fallbackDropdown(selectType, defaultTypes);
+    }
+}
+
+function fallbackDropdown(selectElement, types) {
+    types.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.key;
+        option.textContent = `[${item.key}] ${item.desc}`;
+        selectElement.appendChild(option);
+    });
+}
+
+// 3. ผูกเหตุการณ์ควบคุมหน้าจอทั้งหมด
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. ปุ่มเปิดหน้าต่าง Modal (+)
+    loadTransferTypesIntoDropdown();
+
     const btnTruck = document.getElementById("btnAddShipmentTruck");
+    const btnConfirm = document.getElementById("btnConfirmBox");
     const modal = document.getElementById("shipmentBoxModal");
+    const selectType = document.getElementById("selectTransferType");
+    const inputShipmentNo = document.getElementById("inputBoxNumber");
+    const container = document.getElementById("lobbyContentContainer");
+    const emptyState = document.getElementById("lobbyEmptyState");
+
+    // เลือกประเภทการโอนแล้วจะ Generate เลข Shipment ทันที (YYMMDD-สุ่มรหัส)
+    if (selectType && inputShipmentNo) {
+        selectType.addEventListener("change", () => {
+            const selectedVal = selectType.value;
+            if (selectedVal) {
+                const todayStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+                const randomId = Math.floor(100 + Math.random() * 900);
+                inputShipmentNo.value = `${selectedVal}-${todayStr}-${randomId}`;
+            } else {
+                inputShipmentNo.value = "กรุณาเลือกประเภท...";
+            }
+        });
+    }
+
     if (btnTruck && modal) {
         btnTruck.addEventListener("click", () => {
+            if (selectType) selectType.selectedIndex = 0;
+            if (inputShipmentNo) inputShipmentNo.value = "กรุณาเลือกประเภท...";
             modal.classList.remove("hide");
         });
     }
 
-    // 2. ปุ่มยืนยันสร้างงาน
-    const btnConfirm = document.getElementById("btnConfirmBox");
     if (btnConfirm) {
         btnConfirm.addEventListener("click", () => {
-            const shipmentNo = document.getElementById("inputBoxNumber").value;
-            const container = document.getElementById("lobbyContentContainer");
+            const shipmentNo = inputShipmentNo ? inputShipmentNo.value : "";
             
-            if (container && shipmentNo) {
+            if (!selectType || !selectType.value) {
+                alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+                return;
+            }
+
+            if (container && shipmentNo && shipmentNo !== "กรุณาเลือกประเภท...") {
                 container.appendChild(createShipmentColumn(shipmentNo));
                 if (modal) modal.classList.add("hide");
-                const emptyState = document.getElementById("lobbyEmptyState");
                 if (emptyState) emptyState.style.display = "none";
             }
         });

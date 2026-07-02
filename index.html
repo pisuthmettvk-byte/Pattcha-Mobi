@@ -856,26 +856,24 @@
                             </div>
                           </div>
 
-                          <div id="shipmentBoxModal" class="custom-alert-overlay hide" style="z-index: 100000;">
-                            <div class="custom-alert-box" style="text-align: left; padding: 25px; width: 85%;">
-                              <h3 style="text-align: center; margin-bottom: 20px; color: #dc3545;">
-                                <i class="fas fa-truck-loading"></i> สร้างรอบการจัดส่ง
-                              </h3>
-                              <label for="selectShipmentReason" style="font-size: medium; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">Transfer Type: </label>
-                              <select id="selectShipmentReason" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; outline: none; background: #f9fafb;">
-                                <option value="" disabled selected>-- เลือกประเภท --</option>
-                                <option value="TF">TF - Between Store</option>
-                                <option value="RT">RT - Return to Warehouse</option>
-                                <option value="DF">DF - Defective</option>
-                                <option value="VM">VN - Visual Prop</option>
-                                <option value="MT">MT - Made to Order</option>
-                              </select>
-                              <label for="inputBoxNumber" style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 8px; display: block;">หมายเลข Shipment</label>
-                              <input type="text" id="inputBoxNumber" value="กรุณาเลือกประเภท..." disabled style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; margin-bottom: 25px; background: #e9ecef; color: #495057; font-weight: bold; text-align: center;">
-                              <div class="custom-alert-buttons">
-                                <button id="btnCancelBox" class="btn-alert-cancel" style="color: #6c757d; border-color: #6c757d;">ยกเลิก</button>
-                                <button id="btnConfirmBox" class="btn-alert-ok" style="background: linear-gradient(135deg, #ff3c00 0%, #8d1c00 100%); color: white;">ยืนยันสร้าง</button>
+                          <div id="shipmentBoxModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; display: flex; justify-content: center; align-items: center;">
+                            <div style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); box-sizing: border-box;">
+                              
+                              <h3 style="margin-top: 0; margin-bottom: 20px; text-align: center; color: #333; font-family: sans-serif;">สร้างรอบจัดส่งสินค้า</h3>
+                              
+                              <label style="display: block; font-size: 13px; font-weight: bold; color: #666; margin-bottom: 6px; text-align: left;">ประเภทการโอน</label>
+                              <select id="selectTransferType" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; background: white; color: #333;">
+                                <option value="">กรุณาเลือกประเภท...</option>
+                                </select>
+                              
+                              <label style="display: block; font-size: 13px; font-weight: bold; color: #666; margin-bottom: 6px; text-align: left;">หมายเลข Shipment</label>
+                              <input type="text" id="inputBoxNumber" value="กรุณาเลือกประเภท..." disabled="" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid #eee; font-size: 14px; margin-bottom: 25px; background: #e9ecef; color: #495057; font-weight: bold; text-align: center;">
+                              
+                              <div style="display: flex; gap: 10px; justify-content: flex-end; box-sizing: border-box;">
+                                <button id="btnCancelBox" type="button" onclick="document.getElementById('shipmentBoxModal').classList.add('hide')" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #ccc; background: white; color: #333; cursor: pointer; font-size: 14px;">ยกเลิก</button>
+                                <button id="btnConfirmBox" type="button" style="padding: 10px 20px; border-radius: 8px; border: none; background: linear-gradient(45deg, #0044ff, #002f85); color: white; cursor: pointer; font-weight: bold; font-size: 14px;">ยืนยันสร้าง</button>
                               </div>
+
                             </div>
                           </div>
 
