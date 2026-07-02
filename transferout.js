@@ -7,9 +7,7 @@ const webAppUrl ="https://script.google.com/macros/s/AKfycbxz_Biwtm1h7XBXGijhATs
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
   // URL เดิมของเจเลอร์ (Deployment เดิมที่อัปเดต Code.gs แล้ว)
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbwQ0BGX1vUVs6iRkRacx60Th-ytxScDOJh00w9yDjT6JNfwC-2n2fTI1_MSvwgLQJYDtA/exec";
-
+const SCRIPT_URL = CONFIG.API_URL;
   if (!select) return;
 
   try {
