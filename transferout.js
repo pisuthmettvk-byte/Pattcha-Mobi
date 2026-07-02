@@ -103,7 +103,7 @@ if (btnCancel) {
 
 
 // =================================================================
-// 🚀 ฟังก์ชันสำหรับสลับหน้าจอ (แก้ปัญหา showView is not defined)
+// 🚀START ฟังก์ชันสำหรับสลับหน้าจอ (แก้ปัญหา showView is not defined)
 // =================================================================
 function showView(viewId) {
     // 1. ซ่อนทุกหน้าที่มี class 'view-screen'
@@ -120,6 +120,14 @@ function showView(viewId) {
         console.error("ไม่พบหน้าจอ ID:", viewId);
     }
 }
+
+// =================================================================
+// 🚀 END ฟังก์ชันสำหรับสลับหน้าจอ (แก้ปัญหา showView is not defined)
+// =================================================================
+
+
+
+
 
 
 
@@ -144,10 +152,17 @@ function loadLobbyHeader() {
 
 
 
-/* ======================================================
-   ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
-   ใช้ได้ทุกหน้าในระบบ START
-   ====================================================== */
+
+
+
+
+
+
+
+// ======================================================
+// ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
+// ใช้ได้ทุกหน้าในระบบ START
+// ======================================================
 function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
     
     // 1. ตั้งค่าสีตามสถานะ
@@ -200,10 +215,17 @@ function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
     return card;
 }
 
-/* ======================================================
-   ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
-   ใช้ได้ทุกหน้าในระบบ END
-   ====================================================== */
+// ======================================================
+// ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
+// ใช้ได้ทุกหน้าในระบบ END
+// ======================================================
+
+
+
+
+
+
+
 
 
 
@@ -321,56 +343,95 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (btnConfirm) {
-        btnConfirm.addEventListener("click", () => {
-            if (!selectType || !selectType.value) {
-                alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+if (btnConfirm) {
+    btnConfirm.addEventListener("click", () => {
+        if (!selectType || !selectType.value) {
+            alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+            return;
+        }
+
+        const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
+        const currentDestCode = selectedBranchID.substring(0, 2).toUpperCase();
+        const targetDestination = `02${currentDestCode}`;
+
+        // 1. ตรวจสอบงานซ้ำ
+        if (container) {
+            const existingColumns = container.querySelectorAll('.shipment-column');
+            let isDuplicate = false;
+            existingColumns.forEach(col => {
+                if (col.dataset.destination === targetDestination && col.dataset.originType === "Store") {
+                    isDuplicate = true;
+                }
+            });
+
+            if (isDuplicate) {
+                alert(`ปฏิเสธการสร้าง! มีใบงานส่งไปสาขาปลายทาง [${targetDestination}] ค้างอยู่ในระบบล็อบบี้แล้วครับ`);
                 return;
             }
+        }
 
-            const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
-            const currentDestCode = selectedBranchID.substring(0, 2).toUpperCase();
-            const targetDestination = `02${currentDestCode}`; 
+        // 2. เตรียมข้อมูล
+        const finalType = selectType.value;
+        const finalDate = new Date().toLocaleDateString('en-GB').replace(/\//g, "");
+        const displayDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        const finalRunningNum = getNextRunningNumber();
+        const finalShipmentNo = `${finalType}-${finalDate}-01${currentOriginCode}-${finalRunningNum}-${targetDestination}`;
 
-            if (container) {
-                const existingColumns = container.querySelectorAll('.shipment-column');
-                let isDuplicate = false;
-                existingColumns.forEach(col => {
-                    if (col.dataset.destination === targetDestination && col.dataset.originType === "Store") {
-                        isDuplicate = true;
+        const payload = {
+            Date: displayDate,
+            Shipment_No: finalShipmentNo,
+            Origin_Branch: currentOriginCode,
+            Destination: targetDestination,
+            Origin_Type: "Store",
+            Total_Box: 0,
+            Total_Item: 0,
+            Status: "Assign"
+        };
+
+        // 3. เริ่มยิง API ไปยัง Google Sheets
+        btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+        btnConfirm.disabled = true;
+
+        const saveUrl = webAppUrl + "?action=save_new_task";
+
+        fetch(saveUrl, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === "success") {
+                // บันทึกสำเร็จ ถึงค่อยโชว์หน้าจอ
+                if (container) {
+                    container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+                    if (modal) modal.classList.add("hide");
+                    if (emptyState) emptyState.style.display = "none";
+
+                    const assignContainer = document.getElementById("assignTaskContainer");
+                    if (assignContainer) {
+                        const taskCard = document.createElement("div");
+                        taskCard.className = "task-card";
+                        taskCard.style.cssText = "background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;";
+                        taskCard.innerHTML = `
+                            <span style="font-weight: bold; font-size: 13px; color: #0044ff;">${finalShipmentNo}</span>
+                            <span style="background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: bold;">Assign</span>
+                        `;
+                        assignContainer.appendChild(taskCard);
                     }
-                });
-
-                if (isDuplicate) {
-                    alert(`ปฏิเสธการสร้าง! มีใบงานส่งไปสาขาปลายทาง [${targetDestination}] ค้างอยู่ในระบบล็อบบี้แล้วครับ`);
-                    return;
                 }
+            } else {
+                alert("เกิดข้อผิดพลาด: " + result.message);
             }
-
-            const finalType = selectType.value;
-            const finalDate = new Date().toLocaleDateString('en-GB').replace(/\//g, "");
-            const finalRunningNum = getNextRunningNumber();
-            const finalShipmentNo = `${finalType}-${finalDate}-01${currentOriginCode}-${finalRunningNum}-${targetDestination}`;
-
-            if (container) {
-                container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
-                if (modal) modal.classList.add("hide");
-                if (emptyState) emptyState.style.display = "none";
-                
-                // ระบบ Sync สร้าง Task Card โยนไปหน้า Assign
-                const assignContainer = document.getElementById("assignTaskContainer"); 
-                if (assignContainer) {
-                    const taskCard = document.createElement("div");
-                    taskCard.className = "task-card";
-                    taskCard.style.cssText = "background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;";
-                    taskCard.innerHTML = `
-                        <span style="font-weight: bold; font-size: 13px; color: #0044ff;">${finalShipmentNo}</span>
-                        <span style="background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: bold;">Assign</span>
-                    `;
-                    assignContainer.appendChild(taskCard);
-                }
-            }
+        })
+        .catch(error => {
+            console.error("Save Error:", error);
+            alert("ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ตครับ");
+        })
+        .finally(() => {
+            btnConfirm.innerHTML = "ยืนยันสร้าง";
+            btnConfirm.disabled = false;
         });
+    });
     }
 });
 
@@ -378,3 +439,73 @@ document.addEventListener('DOMContentLoaded', () => {
 // END FRONTEND: ระบบหน้า Lobby (เวอร์ชันรวมระบบแจ้งเตือนและ Task Card สมบูรณ์)
 //====================================================== 
 
+
+
+
+
+
+//======================================================
+// START ฟังก์ชันสร้าง Task Card หน้าแรก (ดีไซน์ Responsive ยืดหยุ่นตามจอ)
+//====================================================== 
+function createTransferOutTaskCard(shipmentNo, destBranch = "KKN02", status = 'Assign') {
+    // 1. กำหนดสีตามสถานะ
+    const colorMap = {
+        'assign': '#dc3545',
+        'pending': '#e0a800', 
+        'complete': '#28a745'
+    };
+    const statusKey = status.toLowerCase();
+    const leftBorderColor = colorMap[statusKey] || '#ccc';
+
+    const targetDestination = shipmentNo.split('-')[4] || destBranch;
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const totalBox = 0;
+    const totalItem = 0;
+
+    // 2. สร้างการ์ดหลัก
+    const card = document.createElement('div');
+    card.className = 'task-card';
+    card.dataset.destination = targetDestination; 
+    
+    card.style.cssText = `
+        width: 100%; 
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-left: 6px solid ${leftBorderColor}; 
+        border-radius: 8px; 
+        padding: 10px 15px; 
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-sizing: border-box;
+    `;
+
+    // 3. ยัดข้อมูล (ใช้ flex-wrap เพื่อให้ปัดบรรทัดเองในจอมือถือ)
+    card.innerHTML = `
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+            
+            <!-- กลุ่มที่ 1 (ซ้าย): ป้าย Store + วันที่ -->
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
+                <span style="background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Store</span>
+                <span style="font-size: 12px; color: #333; font-weight: 500;">${today}</span>
+            </div>
+            
+            <!-- กลุ่มที่ 2 (กลาง): เลข Shipment (จะกินพื้นที่ส่วนที่เหลือ) -->
+            <div style="flex-grow: 1; text-align: center; min-width: 220px;">
+                <span style="font-weight: bold; font-size: 13px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo}</span>
+            </div>
+            
+            <!-- กลุ่มที่ 3 (ขวา): รหัสสาขา + สรุปยอด + ป้าย Status -->
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-grow: 1; min-width: 250px;">
+                <span style="font-size: 12px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${destBranch}</span>
+                <span style="font-size: 11px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox}) TOTAL (${totalItem})</span>
+                <span style="background: ${leftBorderColor}; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase;">${status}</span>
+            </div>
+
+        </div>
+    `;
+    return card;
+}
+
+//======================================================
+// END ฟังก์ชันสร้าง Task Card หน้าแรก (ดีไซน์ Responsive ยืดหยุ่นตามจอ)
+//====================================================== 
