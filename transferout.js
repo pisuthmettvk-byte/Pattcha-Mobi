@@ -441,76 +441,143 @@ document.addEventListener("DOMContentLoaded", () => {
 // END FRONTEND: ระบบหน้า Lobby (เวอร์ชันรวมระบบแจ้งเตือนและ Task Card สมบูรณ์)
 //======================================================
 
+
+
+
+
+
+
 //======================================================
-// START ฟังก์ชันสร้าง Task Card หน้าแรก (ดีไซน์ Responsive ยืดหยุ่นตามจอ)
+// 1. แม่พิมพ์สร้าง Task Card (ผูกข้อมูลจริงจาก Google Sheets 100%)
 //======================================================
 function createTransferOutTaskCard(
+  date,
   shipmentNo,
-  destBranch = "KKN02",
-  status = "Assign",
+  originType,
+  destBranch,
+  totalBox,
+  totalItem,
+  status
 ) {
-  // 1. กำหนดสีตามสถานะ
+  // กำหนดสีตามสถานะ
   const colorMap = {
     assign: "#dc3545",
     pending: "#e0a800",
     complete: "#28a745",
   };
-  const statusKey = status.toLowerCase();
+  const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
 
-  const targetDestination = shipmentNo.split("-")[4] || destBranch;
-  const today = new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-  const totalBox = 0;
-  const totalItem = 0;
-
-  // 2. สร้างการ์ดหลัก
+  // สร้างการ์ดหลัก
   const card = document.createElement("div");
   card.className = "task-card";
-  card.dataset.destination = targetDestination;
+  card.dataset.destination = destBranch;
 
   card.style.cssText = `
-        width: 100%; 
-        background: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-left: 6px solid ${leftBorderColor}; 
-        border-radius: 8px; 
-        padding: 10px 15px; 
-        margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        box-sizing: border-box;
-    `;
+    width: 100%; 
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-left: 6px solid ${leftBorderColor}; 
+    border-radius: 8px; 
+    padding: 10px 15px; 
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-sizing: border-box;
+  `;
 
-  // 3. ยัดข้อมูล (ใช้ flex-wrap เพื่อให้ปัดบรรทัดเองในจอมือถือ)
+  // ยัดข้อมูลจริงลงไปในการ์ด
   card.innerHTML = `
-        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
-            
-            <!-- กลุ่มที่ 1 (ซ้าย): ป้าย Store + วันที่ -->
-            <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
-                <span style="background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">Store</span>
-                <span style="font-size: 12px; color: #333; font-weight: 500;">${today}</span>
-            </div>
-            
-            <!-- กลุ่มที่ 2 (กลาง): เลข Shipment (จะกินพื้นที่ส่วนที่เหลือ) -->
-            <div style="flex-grow: 1; text-align: center; min-width: 220px;">
-                <span style="font-weight: bold; font-size: 13px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo}</span>
-            </div>
-            
-            <!-- กลุ่มที่ 3 (ขวา): รหัสสาขา + สรุปยอด + ป้าย Status -->
-            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-grow: 1; min-width: 250px;">
-                <span style="font-size: 12px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${destBranch}</span>
-                <span style="font-size: 11px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox}) TOTAL (${totalItem})</span>
-                <span style="background: ${leftBorderColor}; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase;">${status}</span>
-            </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+      
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
+        <span style="background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">${originType || "Store"}</span>
+        <span style="font-size: 12px; color: #333; font-weight: 500;">${date || "-"}</span>
+      </div>
+      
+      <div style="flex-grow: 1; text-align: center; min-width: 220px;">
+        <span style="font-weight: bold; font-size: 13px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo || "-"}</span>
+      </div>
+      
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-grow: 1; min-width: 250px;">
+        <span style="font-size: 12px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${destBranch || "-"}</span>
+        <span style="font-size: 11px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox || 0}) TOTAL (${totalItem || 0})</span>
+        <span style="background: ${leftBorderColor}; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase;">${status || "Assign"}</span>
+      </div>
 
-        </div>
-    `;
+    </div>
+  `;
   return card;
 }
 
 //======================================================
-// END ฟังก์ชันสร้าง Task Card หน้าแรก (ดีไซน์ Responsive ยืดหยุ่นตามจอ)
+// 2. ระบบดึงข้อมูลจาก Google Sheets (Fetch API)
 //======================================================
+async function loadExistingTasks() {
+  const container = document.getElementById("lobbyContentContainer");
+  const emptyState = document.getElementById("lobbyEmptyState");
+  if (!container) return;
+
+  const fetchUrl = `${CONFIG.API_URL}?action=get_tasks`;
+
+  try {
+    // ซ่อน Empty State และแสดง Loading
+    if (emptyState) emptyState.style.display = "none";
+    const loadingId = "tempLoadingTask";
+    if (!document.getElementById(loadingId)) {
+      container.insertAdjacentHTML("beforeend", `<div id="${loadingId}" style="text-align:center; padding:20px; color:#666;"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>`);
+    }
+
+    // ยิง API ไปขอดึงข้อมูล
+    const response = await fetch(fetchUrl);
+    const tasks = await response.json();
+
+    // เอาป้าย Loading ออก
+    const loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.remove();
+
+    // เช็กว่ามีข้อมูลไหม
+    if (!tasks || tasks.length === 0) {
+      if (emptyState) emptyState.style.display = "flex";
+      return;
+    }
+
+    // เคลียร์เฉพาะการ์ดเก่าออก (เพื่อไม่ให้ไปลบปุ่มสร้างงานด้านบน)
+    const existingCards = container.querySelectorAll('.task-card');
+    existingCards.forEach(card => card.remove());
+
+    // วนลูปข้อมูล แล้วสร้างการ์ดทีละใบ
+    tasks.forEach(task => {
+      // แมปคีย์ข้อมูลให้ตรงกับที่เจเลอร์ส่งมาเป๊ะๆ
+      const date = task.Date;
+      const shipmentNo = task.Shipment_No;
+      const originType = task.Origin_Type;
+      const destBranch = task.Destination;
+      const totalBox = task.Total_Box;
+      const totalItem = task.Total_Item;
+      const status = task.Status;
+
+      // เอาข้อมูลยัดใส่แม่พิมพ์ แล้วแปะลง Container
+      const card = createTransferOutTaskCard(
+        date, 
+        shipmentNo, 
+        originType, 
+        destBranch, 
+        totalBox, 
+        totalItem, 
+        status
+      );
+      container.appendChild(card);
+    });
+
+  } catch (error) {
+    console.error("Error loading tasks:", error);
+    if (emptyState) emptyState.style.display = "flex";
+  }
+}
+
+//======================================================
+// 3. ตัวกระตุ้นให้โหลดข้อมูลทันทีที่เปิดหน้าเว็บ
+//======================================================
+document.addEventListener("DOMContentLoaded", () => {
+  loadExistingTasks();
+});
