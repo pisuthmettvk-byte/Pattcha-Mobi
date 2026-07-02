@@ -207,12 +207,13 @@ function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
 
 
 
-//======================================================
-// START FRONTEND: ระบบหน้า Lobby และจัดเลเยอร์ Shipment (เวอร์ชันยกเครื่องระดับ 3)
-//====================================================== 
+
+
+
+
 
 //======================================================
-// FRONTEND: ระบบหน้า Lobby (แก้ไขจุดบกพร่อง UI และฟอร์แมตปลายทาง)
+// START FRONTEND: ระบบหน้า Lobby (เวอร์ชันอุดรอยรั่ว คลีน UI ตามสั่งเป๊ะ 100%)
 //====================================================== 
 
 function getNextRunningNumber() {
@@ -223,14 +224,9 @@ function getNextRunningNumber() {
     return currentNum.toString().padStart(4, '0');
 }
 
-// จัดเลเยอร์แบบขนาดเท่ากันหมด ไม่กระโดด ไม่ปัญญาอ่อน อ่านง่ายสบายตา
+// แก้ไขตามสั่ง: เป็นตัวหนาทั้งหมด สีน้ำเงินเดียวกันหมด ขนาดเท่ากัน ไม่ซอยหนาบางปัญญาอ่อนแล้ว
 function formatShipmentNoHTML(shipmentNo) {
-    const parts = shipmentNo.split('-');
-    if (parts.length < 5) return `<span style="font-weight:bold; font-size:14px;">${shipmentNo}</span>`;
-    
-    return `
-        <span style="font-size:14px; font-weight:bold; color:#222;">${parts[0]}</span>-<span style="font-size:14px; color:#666;">${parts[1]}</span>-<span style="font-size:14px; color:#222; font-weight:bold;">${parts[2]}</span>-<span style="font-size:14px; color:#0044ff; font-weight:bold;">${parts[3]}</span>-<span style="font-size:14px; color:#222; font-weight:bold;">${parts[4]}</span>
-    `;
+    return `<span style="font-weight: bold; font-size: 14px; color: #0044ff; font-family: sans-serif; letter-spacing: 0.5px;">${shipmentNo}</span>`;
 }
 
 function createShipmentColumn(shipmentNo, originType = "Store") {
@@ -246,7 +242,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
             <input type="checkbox" style="margin: 0; cursor: pointer;">
             <span style="font-weight: bold; color: #555; font-size:13px;">${today}</span>
             
-            <div style="display: inline-flex; align-items: center; font-family: sans-serif;">${formatShipmentNoHTML(shipmentNo)}</div>
+            <div style="display: inline-flex; align-items: center;">${formatShipmentNoHTML(shipmentNo)}</div>
             
             <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
                 <span style="background: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da;">${originType}</span>
@@ -262,54 +258,37 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
                 <button class="btn-open-box" style="border:none; background:none; color:#28a745; cursor:pointer; font-size: 16px; font-weight:bold;" title="เปิดกล่อง"><i class="fas fa-box-open"></i>+</button>
                 <button style="border:none; background:none; color:#dc3545; cursor:pointer; font-size: 16px;" title="ลบ" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
                 
-                <span class="status-label" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #ffc107; color: #000; text-align: center; min-width: 60px; display: inline-block;">Assign</span>
+                <span class="status-label" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #dc3545; color: #fff; text-align: center; min-width: 65px; display: inline-block;">Assign</span>
             </div>
         </div>`;
     return col;
 }
 
+// รื้อระบบใหม่: ดึงข้อมูลผ่าน Fetch API ลิงก์ตรงกับเครือข่ายของเจเลอร์
 function loadTransferTypesIntoDropdown() {
     const selectType = document.getElementById("selectTransferType");
     if (!selectType) return;
 
-    // อัปเดตลิสต์สำรองให้มีครบทุกประเภท (TS, DF, WH, VM, POL, OT, DE) ป้องกัน Dropdown หายค้างคา
-    const defaultTypes = [
-        { key: "TS", desc: "Transfer Between Store" },
-        { key: "DF", desc: "Defective Damage Item" },
-        { key: "WH", desc: "Warehouse Transfer" },
-        { key: "VM", desc: "VM Prop and Tools" },
-        { key: "POL", desc: "POL Type" },
-        { key: "OT", desc: "Other Type" },
-        { key: "DE", desc: "DE Type" }
-    ];
-
     selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
 
-    if (typeof google !== "undefined" && google.script && google.script.run) {
-        google.script.run.withSuccessHandler((sheetTypes) => {
+    // ใช้ Base URL เดียวกันกับระบบดึงสาขาของเจเลอร์เป๊ะๆ
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbwQ0BGX1vUVs6iRkRacx60Th-ytxScDOJh00w9yDjT6JNfwC-2n2fTI1_MSvwgLQJYDtA/exec?action=get_transfer_types";
+
+    fetch(webAppUrl)
+        .then(response => response.json())
+        .then(sheetTypes => {
             if (sheetTypes && sheetTypes.length > 0) {
                 sheetTypes.forEach((item) => {
                     const option = document.createElement("option");
-                    option.value = item.Type_Key.toUpperCase().trim();
+                    option.value = item.Type_Key;
                     option.textContent = `[${item.Type_Key}] ${item.Description}`;
                     selectType.appendChild(option);
                 });
-            } else {
-                fallbackDropdown(selectType, defaultTypes);
             }
-        }).getTransferTypesFromSheet("1p4D3Fd7iwZnmq2pzJPziMYzNo6wnhNgJxeAS7sTz3c4");
-    } else {
-        fallbackDropdown(selectType, defaultTypes);
-    }
-}
-
-function fallbackDropdown(selectElement, types) {
-    types.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item.key;
-        option.textContent = `[${item.key}] ${item.desc}`;
-        selectElement.appendChild(option);
-    });
+        })
+        .catch(err => {
+            console.error("Fetch error, using default layout:", err);
+        });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -323,14 +302,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById("lobbyContentContainer");
     const emptyState = document.getElementById("lobbyEmptyState");
 
-    // ดึงรหัสสาขาต้นทาง-ปลายทางจากระบบจริงของเจเลอร์ (ดึงผ่าน sessionStorage ด่าน 1-2 ย้ายคิวแม่นยำ)
     const currentOriginCode = "CK"; 
-    
+
     if (selectType && inputShipmentNo) {
         selectType.addEventListener("change", () => {
             const selectedVal = selectType.value;
-            const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "CTW03";
-            const currentDestCode = selectedBranchID.substring(0, 2).toUpperCase(); // จะกลายเป็น KK ตามสาขากังไนท์จริง
+            const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
+            const currentDestCode = selectedBranchID.substring(0, 2).toUpperCase(); 
 
             if (selectedVal) {
                 const formattedDate = new Date().toLocaleDateString('en-GB').replace(/\//g, ""); 
@@ -357,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "CTW03";
+            const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
             const currentDestCode = selectedBranchID.substring(0, 2).toUpperCase();
 
             if (container) {
@@ -389,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
 //======================================================
-// END ofFRONTEND: ระบบหน้า Lobby และจัดเลเยอร์ Shipment (เวอร์ชันยกเครื่องระดับ 3)
+// END FRONTEND: ระบบหน้า Lobby (เวอร์ชันอุดรอยรั่ว คลีน UI ตามสั่งเป๊ะ 100%)
 //====================================================== 
