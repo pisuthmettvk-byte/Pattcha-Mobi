@@ -30,21 +30,36 @@ async function loadBranchesIntoDropdown() {
     select.innerHTML =
       '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
-    // ในไฟล์ที่เจเลอร์ใช้โหลด Dropdown สาขา
-    branches.forEach((branch) => {
-      // ปรับตัวพิมพ์ใหญ่/เล็ก และตัดช่องว่างให้เหมือนกันก่อนเทียบ
-      const branchIdClean = String(branch.id).trim().toUpperCase();
-      const currentBranchClean = String(currentBranch).trim().toUpperCase();
 
-      // กรองเอาเฉพาะสาขาที่ไม่ใช่ตัวเอง
-      if (branchIdClean !== currentBranchClean) {
+
+    // ในฟังก์ชันโหลด Dropdown ของเจเลอร์
+    allBranches.forEach((branch) => {
+
+        console.log("เช็กข้อมูลสาขา:", branch);
+      // 1. แปลงรหัสสาขาให้เป็นตัวใหญ่เพื่อเช็กว่าเป็นสาขาตัวเองไหม
+      const branchId = String(branch.id || "")
+        .trim()
+        .toUpperCase();
+      const myBranch = String(localStorage.getItem("pattcha_branch") || "")
+        .trim()
+        .toUpperCase();
+
+      // 2. แปลงสถานะให้เป็นตัวใหญ่ แล้วเช็กว่ามีคำว่า "ACTIVE" อยู่ข้างในไหม
+      const status = String(branch.status || "")
+        .trim()
+        .toUpperCase();
+      const isActive = status.includes("ACTIVE");
+
+      // 3. กรอง: ต้องไม่ใช่สาขาตัวเอง AND ต้องมีคำว่า ACTIVE
+      if (branchId !== myBranch && isActive) {
         const option = document.createElement("option");
         option.value = branch.id;
         option.textContent = `${branch.id} - ${branch.name}`;
         select.appendChild(option);
       }
     });
-    
+
+
   } catch (error) {
     console.error("Error loading branches:", error);
     select.innerHTML =
