@@ -3,49 +3,36 @@
 // =================================================================
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbwQ0BGX1vUVs6iRkRacx60Th-ytxScDOJh00w9yDjT6JNfwC-2n2fTI1_MSvwgLQJYDtA/exec";
+  // URL เดิมของเจเลอร์ (Deployment เดิมที่อัปเดต Code.gs แล้ว)
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQ0BGX1vUVs6iRkRacx60Th-ytxScDOJh00w9yDjT6JNfwC-2n2fTI1_MSvwgLQJYDtA/exec";
 
   if (!select) return;
 
   try {
     const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
-    const data = await response.json();
+    const branches = await response.json(); // รับค่ามาเป็น Array โดยตรง
 
-    let branches = [];
-    if (Array.isArray(data)) {
-      branches = data;
-    } else if (data && Array.isArray(data.data)) {
-      branches = data.data;
-    } else {
-      throw new Error("ข้อมูลไม่ใช่ Array");
-    }
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
 
-    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-      .trim()
-      .toUpperCase();
+    select.innerHTML = '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
-    select.innerHTML =
-      '<option value="" disabled selected>-- SELECT BRANCH --</option>';
-
+    // วนลูปแสดงผล
     branches.forEach((branch) => {
       const branchId = String(branch.id || "").trim().toUpperCase();
       
-      // 🟢 แก้ไข: เช็กแค่ว่า "ต้องไม่ใช่สาขาตัวเอง" (เพราะหลังบ้านคัด Active มาให้แล้ว)
+      // กรองแค่ "ไม่ใช่สาขาตัวเอง" (เพราะหลังบ้านกรอง Active มาให้แล้ว)
       if (branchId !== myBranch && branchId !== "") {
         const option = document.createElement("option");
         option.value = branch.id;
-        option.textContent = `${branch.id} - ${branch.name}`;
+        option.textContent = `${branch.id} - ${branch.name}`; // ใช้ ID และ Name ที่ได้จากชีทใหม่
         select.appendChild(option);
       }
     });
   } catch (error) {
     console.error("Error loading branches:", error);
-    select.innerHTML =
-      '<option value="" disabled selected>-- โหลดข้อมูลล้มเหลว --</option>';
+    select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
   }
 }
-
 
 
 
