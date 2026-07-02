@@ -45,46 +45,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   
-        // ฟังก์ชันปุ่ม NEXT ในหน้าเลือสาขา
-        if (btnNext) {
-            btnNext.addEventListener("click", () => {
-            const select = document.getElementById("selectDestination");
-            const branchID = select.value;
-            const branchName = select.options[select.selectedIndex].text;
 
-            if (!branchID) {
-                alert("กรุณาเลือกสาขาที่ต้องการก่อนครับ!");
-                return;
-            }
 
-            const existingLobby = document.querySelector(
-                `.shipment-card[data-branch-id="${branchID}"]`,
-            );
+// ฟังก์ชันปุ่ม NEXT ในหน้าเลือกสาขา (ฉบับสมบูรณ์)
+if (btnNext) {
+    btnNext.addEventListener("click", () => {
+        const select = document.getElementById("selectDestination");
+        const branchID = select.value;
+        // ใช้ textContent หรือ innerText เพื่อดึงชื่อสาขาที่ถูกต้อง
+        const branchName = select.options[select.selectedIndex].text;
 
-            if (existingLobby) {
-                alert("สาขานี้ถูกสร้างล็อบบี้ไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ");
-            } else {
-                // --- ส่วนที่เปลี่ยน: เรียกใช้ฟังก์ชันกลางจาก main-menu.js ---
-                // เรากำหนด Doc No สดๆ ตรงนี้ได้เลยครับ
-                const newDocNo = "#TO-" + new Date().getTime().toString().slice(-7);
-
-                // สร้างการ์ดด้วยฟังก์ชันกลาง
-                const newCard = createUniversalCard(branchName, newDocNo, "pending");
-
-                // เอาการ์ดไปแปะใน wrapper ของหน้า Hub
-                const lobbyWrapper = document.querySelector(".task-list-wrapper");
-                if (lobbyWrapper) {
-                lobbyWrapper.appendChild(newCard);
-                }
-            }
-
-            sessionStorage.setItem("selectedBranchID", branchID);
-            sessionStorage.setItem("selectedBranchName", branchName);
-
-            showView("transferOutLobbyView");
-            loadLobbyHeader(); // เรียกให้ Header อัปเดตทันที
-            });
+        if (!branchID) {
+            alert("กรุณาเลือกสาขาที่ต้องการก่อนครับ!");
+            return;
         }
+
+        // 1. ตรวจสอบว่าสาขานี้ถูกสร้างไว้หรือยัง
+        const existingLobby = document.querySelector(`.shipment-card[data-branch-id="${branchID}"]`);
+
+        if (existingLobby) {
+            alert("สาขานี้ถูกสร้างล็อบบี้ไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ");
+        } else {
+            // 2. ล้างการ์ดเก่าออกก่อน เพื่อให้หน้าจอสะอาด (ตามลอจิก Zero State ของเจเลอร์)
+            const lobbyWrapper = document.querySelector(".task-list-wrapper");
+            if (lobbyWrapper) {
+                lobbyWrapper.innerHTML = ''; 
+            }
+
+            // 3. สร้างรหัส Doc No
+            const newDocNo = "#TO-" + new Date().getTime().toString().slice(-7);
+
+            // 4. สร้างการ์ด (ส่ง branchID เข้าไปเป็น parameter ที่ 3 เพื่อฝัง Attribute อัตโนมัติ)
+            const newCard = createUniversalCard(branchName, newDocNo, branchID, "pending");
+
+            // 5. แปะการ์ดใหม่
+            if (lobbyWrapper) {
+                lobbyWrapper.appendChild(newCard);
+            }
+        }
+
+        // 6. บันทึกข้อมูลลง Session
+        sessionStorage.setItem("selectedBranchID", branchID);
+        sessionStorage.setItem("selectedBranchName", branchName);
+
+        // 7. เปลี่ยนหน้า
+        showView("transferOutLobbyView");
+        loadLobbyHeader();
+    });
+}
         // END ฟังก์ชันปุ่ม NEXT ในหน้าเลือสาขา
 
 
@@ -159,7 +167,7 @@ function showView(viewId) {
    ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
    ใช้ได้ทุกหน้าในระบบ START
    ====================================================== */
-function createUniversalCard(branchName, docNo, status = 'pending') {
+function createUniversalCard(branchName, docNo, branchID, status = 'pending') {
     
     // 1. ตั้งค่าสีตามสถานะ
     const colorMap = {
@@ -170,9 +178,15 @@ function createUniversalCard(branchName, docNo, status = 'pending') {
 
     const borderColor = colorMap[status] || '#ccc';
 
+
+
+
     // 2. สร้างโครงสร้าง Card
     const card = document.createElement('div');
-    card.className = 'task-list-item';
+    card.className = 'task-list-item shipment-card';
+    card.setAttribute("data-branch-id", branchID);
+
+    
     card.style.cssText = `
         width: 100%; 
         border-left: 6px solid ${borderColor}; 
@@ -194,11 +208,14 @@ function createUniversalCard(branchName, docNo, status = 'pending') {
         <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
     `;
 
-    // 4. เพิ่มลูกเล่นให้คลิกได้
+        // 4. เพิ่มลูกเล่นให้คลิกได้
     card.addEventListener('click', () => {
-        console.log(`Clicked on: ${docNo}`);
-    });
-
+    console.log(`Clicked on: ${docNo}`);
+    // เจเลอร์สามารถใส่คำสั่งเรียก showView หรือเก็บข้อมูลลง SessionStorage ตรงนี้ได้เลยครับ
+    sessionStorage.setItem("selectedBranchID", branchID);
+    showView("transferOutLobbyView");
+    loadLobbyHeader();
+});
     return card;
 }
 
