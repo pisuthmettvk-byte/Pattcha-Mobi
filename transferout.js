@@ -253,13 +253,17 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   return col;
 }
 
+
 function loadTransferTypesIntoDropdown() {
   const selectType = document.getElementById("selectTransferType");
   if (!selectType) return;
   selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
 
-  // ใช้ลิงก์จาก CONFIG (ป้องกันลิงก์หาย)
-  fetch(CONFIG.API_URL)
+  // ใช้ลิงก์ตรงๆ ป้องกันปัญหาหาตัวแปร CONFIG ไม่เจอ
+  const apiLink =
+    "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+
+  fetch(apiLink)
     .then((response) => response.json())
     .then((sheetTypes) => {
       if (sheetTypes && sheetTypes.length > 0) {
@@ -273,6 +277,7 @@ function loadTransferTypesIntoDropdown() {
     })
     .catch((err) => console.error("Fetch error:", err));
 }
+
 
 function focusShipmentInLobby(shipmentNo) {
   // ค้นหา Shipment Column ทั้งหมดที่มีอยู่ในหน้าจอ Lobby ปัจจุบัน
@@ -479,7 +484,7 @@ card.innerHTML = `
       </div>
     </div>
   `;
-  
+
   card.addEventListener("click", () => {
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
     if (typeof focusShipmentInLobby === "function") {
