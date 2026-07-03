@@ -2,12 +2,11 @@
 // CONFIGURATION & CONSTANTS
 // ==========================================
 const CONFIG = {
-  API_URL:
-    "https://script.google.com/macros/s/AKfycbxz_Biwtm1h7XBXGijhATsIcqeA0liDjbXTIQT3UT53H077RWBASmOok2EeTp_T3GGg0A/exec",
-  CROSS_BRANCH_URL:
-    "https://script.google.com/macros/s/AKfycbzPJweCC9wgdKzqnWV5kuPWMiUbM9uNgjaO3rfCRaXtTW80nLflLORQIizxay9LbTkbHg/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec",
+  CROSS_BRANCH_URL: "https://script.google.com/macros/s/AKfycbzPJweCC9wgdKzqnWV5kuPWMiUbM9uNgjaO3rfCRaXtTW80nLflLORQIizxay9LbTkbHg/exec",
   SEARCH_DELAY: 250,
 };
+
 
 const ICON_MAP = {
   bag: "fa-shopping-bag",
