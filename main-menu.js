@@ -6,12 +6,16 @@
 //===============
 // [Global System Utilities] START
 
+
+
 //📍 [แจ้งเตือนแบบป๊อปอัป 3 สี]
 window.safeAlert = function (title, message, type = "error") {
   const overlay = document.createElement("div");
   overlay.className = "sys-alert-element";
   overlay.style.cssText =
     "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+
+
 
   let headerBg, iconClass, btnBg, btnText;
   if (type === "success") {
@@ -50,6 +54,9 @@ window.safeAlert = function (title, message, type = "error") {
     .querySelector(".btn-ok")
     .addEventListener("click", () => document.body.removeChild(overlay));
 };
+
+
+
 
 //📍 [หน้าต่างยืนยันการทำรายการ]
 window.safeConfirm = function (title, message, onConfirm, type = "question") {
@@ -96,6 +103,7 @@ window.safeConfirm = function (title, message, onConfirm, type = "question") {
   });
 };
 
+
 // ---🔍 [ลอจิกรันเลข Audit วันที่]
 window.getFormattedDate = function () {
   const d = new Date();
@@ -105,11 +113,13 @@ window.getFormattedDate = function () {
   return yy + mm + dd;
 };
 
+
 // ---🔍 [ลอจิกรับรหัสสาขาจริงและพรางตัวรหัส]
 window.getRealBranchCode = function (branchId) {
   const branchCodeMap = { B001: "CKC01", B002: "KKN02", B003: "ICS03" };
   return branchCodeMap[branchId] || "UNKN";
 };
+
 
 // ---🔍 [ลอจิกพรางตัวรหัสสาขา]
 window.obfuscateBranchCode = function (code) {
@@ -150,6 +160,10 @@ window.navigationTo = function (hideView, showView) {
     }, 150);
   }
 };
+
+
+
+
 
 // ---🔍 [ผูก Event การกดปุ่มเมนูเข้าออกหน้าต่างๆ ทั้งระบบ]
 document.addEventListener("DOMContentLoaded", () => {

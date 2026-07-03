@@ -1,4 +1,5 @@
-const webAppUrl ="https://script.google.com/macros/s/AKfycbxz_Biwtm1h7XBXGijhATsIcqeA0liDjbXTIQT3UT53H077RWBASmOok2EeTp_T3GGg0A/exec";
+const webAppUrl =
+  "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
 
 // =================================================================
@@ -198,14 +199,14 @@ function createUniversalCard(branchName, docNo, branchID, status = "pending") {
 // ใช้ได้ทุกหน้าในระบบ END
 // ======================================================
 
-//======================================================
-// START FRONTEND: ระบบหน้า Lobby (เวอร์ชันรวมระบบแจ้งเตือนและ Task Card สมบูรณ์)
-//======================================================
+
+
+// ======================================================
+// START FRONTEND: ระบบหน้า Lobby (เวอร์ชันคลีน ทำงานตรงตามหน้าที่ 100%)
+// ======================================================
 
 function getNextRunningNumber() {
-  let currentNum = parseInt(
-    localStorage.getItem("shipment_running_counter") || "0",
-  );
+  let currentNum = parseInt(localStorage.getItem("shipment_running_counter") || "0");
   currentNum++;
   if (currentNum > 9999) currentNum = 1;
   localStorage.setItem("shipment_running_counter", currentNum.toString());
@@ -218,9 +219,7 @@ function formatShipmentNoHTML(shipmentNo) {
 
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const today = new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
+    day: "2-digit", month: "2-digit", year: "2-digit",
   });
   const col = document.createElement("div");
   col.className = "shipment-column";
@@ -234,12 +233,10 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
         <div style="background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%); border-top: 1px solid #fff; border-bottom: 1px solid #bbb; padding: 15px 20px; display: flex; align-items: center; gap: 12px; box-sizing: border-box; flex-wrap: wrap;">
             <input type="checkbox" style="margin: 0; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
             <span style="font-weight: bold; color: #333; font-size:13px; text-shadow: 1px 1px 0 #fff;">${today}</span>
-            
             <div style="display: inline-flex; align-items: center;">${formatShipmentNoHTML(shipmentNo)}</div>
             
             <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
                 <span style="background: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">${originType}</span>
-                
                 <div style="display: flex; gap: 12px; align-items: center; color: #333; font-size: 13px; text-shadow: 1px 1px 0 #fff;">
                     <span><i class="fas fa-truck"></i> (0)</span>
                     <span><i class="fas fa-barcode"></i> (0)</span>
@@ -250,7 +247,6 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
             <div style="display: flex; gap: 10px; align-items: center; margin-left: 10px;">
                 <button class="btn-open-box" style="border:none; background:none; color:#28a745; cursor:pointer; font-size: 16px; font-weight:bold; filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.8));" title="เปิดกล่อง"><i class="fas fa-box-open"></i>+</button>
                 <button style="border:none; background:none; color:#dc3545; cursor:pointer; font-size: 16px; filter: drop-shadow(1px 1px 1px rgba(255,255,255,0.8));" title="ลบ" onclick="this.closest('.shipment-column').remove()"><i class="fas fa-trash-alt"></i></button>
-                
                 <span class="status-label" style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #dc3545; color: #fff; text-align: center; min-width: 65px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">Assign</span>
             </div>
         </div>`;
@@ -260,13 +256,10 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 function loadTransferTypesIntoDropdown() {
   const selectType = document.getElementById("selectTransferType");
   if (!selectType) return;
-
   selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
 
-  const webAppUrl =
-    "https://script.google.com/macros/s/AKfycbxz_Biwtm1h7XBXGijhATsIcqeA0liDjbXTIQT3UT53H077RWBASmOok2EeTp_T3GGg0A/exec?action=get_transfer_types";
-
-  fetch(webAppUrl)
+  // ใช้ลิงก์จาก CONFIG (ป้องกันลิงก์หาย)
+  fetch(CONFIG.API_URL)
     .then((response) => response.json())
     .then((sheetTypes) => {
       if (sheetTypes && sheetTypes.length > 0) {
@@ -278,9 +271,7 @@ function loadTransferTypesIntoDropdown() {
         });
       }
     })
-    .catch((err) => {
-      console.error("Fetch error:", err);
-    });
+    .catch((err) => console.error("Fetch error:", err));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -293,25 +284,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const inputShipmentNo = document.getElementById("inputBoxNumber");
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
-
   const currentOriginCode = "CK";
 
   if (selectType && inputShipmentNo) {
     selectType.addEventListener("change", () => {
       const selectedVal = selectType.value;
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
       const currentDestCode = selectedBranchID.substring(0, 2).toUpperCase();
 
       if (selectedVal) {
-        const formattedDate = new Date()
-          .toLocaleDateString("en-GB")
-          .replace(/\//g, "");
-        const tempCounter = (
-          parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1
-        )
-          .toString()
-          .padStart(4, "0");
+        const formattedDate = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+        const tempCounter = (parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1).toString().padStart(4, "0");
         inputShipmentNo.value = `${selectedVal}-${formattedDate}-01${currentOriginCode}-${tempCounter}-02${currentDestCode}`;
       } else {
         inputShipmentNo.value = "กรุณาเลือกประเภท...";
@@ -334,8 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
       const currentDestCode = selectedBranchID.substring(0, 2).toUpperCase();
       const targetDestination = `02${currentDestCode}`;
 
@@ -344,32 +326,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const existingColumns = container.querySelectorAll(".shipment-column");
         let isDuplicate = false;
         existingColumns.forEach((col) => {
-          if (
-            col.dataset.destination === targetDestination &&
-            col.dataset.originType === "Store"
-          ) {
+          if (col.dataset.destination === targetDestination && col.dataset.originType === "Store") {
             isDuplicate = true;
           }
         });
-
         if (isDuplicate) {
-          alert(
-            `ปฏิเสธการสร้าง! มีใบงานส่งไปสาขาปลายทาง [${targetDestination}] ค้างอยู่ในระบบล็อบบี้แล้วครับ`,
-          );
+          alert(`ปฏิเสธการสร้าง! มีใบงานส่งไปสาขาปลายทาง [${targetDestination}] ค้างอยู่ในระบบล็อบบี้แล้วครับ`);
           return;
         }
       }
 
       // 2. เตรียมข้อมูล
       const finalType = selectType.value;
-      const finalDate = new Date()
-        .toLocaleDateString("en-GB")
-        .replace(/\//g, "");
-      const displayDate = new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-      });
+      const finalDate = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+      const displayDate = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" });
       const finalRunningNum = getNextRunningNumber();
       const finalShipmentNo = `${finalType}-${finalDate}-01${currentOriginCode}-${finalRunningNum}-${targetDestination}`;
 
@@ -385,11 +355,11 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       // 3. เริ่มยิง API ไปยัง Google Sheets
-      btnConfirm.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+      btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
       btnConfirm.disabled = true;
 
-      const saveUrl = webAppUrl + "?action=save_new_task";
+      // ใช้ CONFIG.API_URL ตรงนี้ถึงจะถูกต้องครับ!
+      const saveUrl = CONFIG.API_URL + "?action=save_new_task";
 
       fetch(saveUrl, {
         method: "POST",
@@ -398,28 +368,11 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((response) => response.json())
         .then((result) => {
           if (result.status === "success") {
-            // บันทึกสำเร็จ ถึงค่อยโชว์หน้าจอ
+            // บันทึกสำเร็จ: สร้างเฉพาะการ์ด Lobby เท่านั้น 
             if (container) {
-              container.appendChild(
-                createShipmentColumn(finalShipmentNo, "Store"),
-              );
+              container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
               if (modal) modal.classList.add("hide");
               if (emptyState) emptyState.style.display = "none";
-
-              const assignContainer = document.getElementById(
-                "assignTaskContainer",
-              );
-              if (assignContainer) {
-                const taskCard = document.createElement("div");
-                taskCard.className = "task-card";
-                taskCard.style.cssText =
-                  "background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;";
-                taskCard.innerHTML = `
-                            <span style="font-weight: bold; font-size: 13px; color: #0044ff;">${finalShipmentNo}</span>
-                            <span style="background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: bold;">Assign</span>
-                        `;
-                assignContainer.appendChild(taskCard);
-              }
             }
           } else {
             alert("เกิดข้อผิดพลาด: " + result.message);
@@ -437,19 +390,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-//======================================================
-// END FRONTEND: ระบบหน้า Lobby (เวอร์ชันรวมระบบแจ้งเตือนและ Task Card สมบูรณ์)
-//======================================================
-
-
-
+// ======================================================
+// END FRONTEND: ระบบหน้า Lobby (คลีน 100%)
+// ======================================================
 
 
 
 
 //======================================================
-// 1. แม่พิมพ์สร้าง Task Card (ผูกข้อมูลจริงจาก Google Sheets 100%)
+// START BACKEND: โซนที่ 3 ระบบหน้า TRANSFER OUT TASKS
 //======================================================
+
+// 1. แม่พิมพ์สร้าง Task Card (ขอบสีตามสถานะ)
 function createTransferOutTaskCard(
   date,
   shipmentNo,
@@ -459,7 +411,6 @@ function createTransferOutTaskCard(
   totalItem,
   status
 ) {
-  // กำหนดสีตามสถานะ
   const colorMap = {
     assign: "#dc3545",
     pending: "#e0a800",
@@ -468,7 +419,6 @@ function createTransferOutTaskCard(
   const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
 
-  // สร้างการ์ดหลัก
   const card = document.createElement("div");
   card.className = "task-card";
   card.dataset.destination = destBranch;
@@ -485,7 +435,6 @@ function createTransferOutTaskCard(
     box-sizing: border-box;
   `;
 
-  // ยัดข้อมูลจริงลงไปในการ์ด
   card.innerHTML = `
     <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
       
@@ -509,84 +458,71 @@ function createTransferOutTaskCard(
   return card;
 }
 
-//======================================================
-// 2. ระบบดึงข้อมูลจาก Google Sheets (Fetch API)
-//======================================================
+// 2. ระบบดึงข้อมูลจาก Google Sheets แล้วแยกจับลง 3 กล่อง
 async function loadExistingTasks() {
-  const container = document.getElementById("lobbyContentContainer");
-  const emptyState = document.getElementById("lobbyEmptyState");
-  if (!container) return;
+  // ชี้เป้าไปที่ 3 กล่องในหน้า TRANSFER OUT TASK 
+  const assignContainer = document.getElementById("assignContainer");
+  const pendingContainer = document.getElementById("pendingContainer");
+  const completeContainer = document.getElementById("completeContainer");
+
+  // ถ้าไม่ได้เปิดหน้า Transfer Out อยู่ ให้ข้ามการทำงานไปเลย เว็บจะได้ไม่พัง
+  if (!assignContainer) return; 
 
   const fetchUrl = `${CONFIG.API_URL}?action=get_tasks`;
 
   try {
-    // ซ่อน Empty State และแสดง Loading
-    if (emptyState) emptyState.style.display = "none";
-    const loadingId = "tempLoadingTask";
-    if (!document.getElementById(loadingId)) {
-      container.insertAdjacentHTML(
-        "beforeend",
-        `<div id="${loadingId}" style="text-align:center; padding:20px; color:#666;"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>`,
-      );
-    }
-    // ยิง API ไปขอดึงข้อมูล
     const response = await fetch(fetchUrl);
     const tasks = await response.json();
 
-    // 🚀 เพิ่ม 4 บรรทัดนี้เข้าไปครับ เพื่อเช็กว่าข้อมูลที่ได้คืออะไร
-    console.log("ข้อมูลที่ได้จาก Google:", tasks);
     if (!Array.isArray(tasks)) {
       console.error("ระบบตีกลับเป็น Error แทนที่จะเป็นข้อมูลครับ:", tasks);
-      if (emptyState) emptyState.style.display = "flex";
-      return; // หยุดการทำงานตรงนี้ forEach จะได้ไม่พัง
-    }
-
-    // เอาป้าย Loading ออก
-    const loadingEl = document.getElementById(loadingId);
-    if (loadingEl) loadingEl.remove();
-
-    // เช็กว่ามีข้อมูลไหม
-    if (!tasks || tasks.length === 0) {
-      if (emptyState) emptyState.style.display = "flex";
       return;
     }
 
-    // เคลียร์เฉพาะการ์ดเก่าออก (เพื่อไม่ให้ไปลบปุ่มสร้างงานด้านบน)
-    const existingCards = container.querySelectorAll(".task-card");
-    existingCards.forEach((card) => card.remove());
+    // เคลียร์กล่องให้ว่างก่อนใส่ของใหม่
+    assignContainer.innerHTML = '';
+    if (pendingContainer) pendingContainer.innerHTML = '';
+    if (completeContainer) completeContainer.innerHTML = '';
 
-    // วนลูปข้อมูล แล้วสร้างการ์ดทีละใบ
-    tasks.forEach((task) => {
-      // แมปคีย์ข้อมูลให้ตรงกับที่เจเลอร์ส่งมาเป๊ะๆ
-      const date = task.Date;
-      const shipmentNo = task.Shipment_No;
-      const originType = task.Origin_Type;
-      const destBranch = task.Destination;
-      const totalBox = task.Total_Box;
-      const totalItem = task.Total_Item;
-      const status = task.Status;
+    let assignCount = 0;
+    let pendingCount = 0;
+    let completeCount = 0;
 
-      // เอาข้อมูลยัดใส่แม่พิมพ์ แล้วแปะลง Container
+    tasks.forEach(task => {
+      const statusKey = (task.Status || "").toLowerCase();
+      
       const card = createTransferOutTaskCard(
-        date,
-        shipmentNo,
-        originType,
-        destBranch,
-        totalBox,
-        totalItem,
-        status,
+        task.Date, task.Shipment_No, task.Origin_Type, task.Destination, 
+        task.Total_Box, task.Total_Item, task.Status
       );
-      container.appendChild(card);
+
+      // โยนการ์ดลงกล่องให้ตรงกับ Status
+      if (statusKey === 'assign') {
+        assignContainer.appendChild(card);
+        assignCount++;
+      } else if (statusKey === 'pending' && pendingContainer) {
+        pendingContainer.appendChild(card);
+        pendingCount++;
+      } else if (statusKey === 'complete' && completeContainer) {
+        completeContainer.appendChild(card);
+        completeCount++;
+      }
     });
+
+    // อัปเดตตัวเลขจำนวน Task ตรงหัวข้อ
+    const assignText = document.getElementById("assignTaskCount");
+    if (assignText) assignText.innerHTML = `Task (${assignCount}) <i class="fas fa-chevron-down"></i>`;
+
   } catch (error) {
     console.error("Error loading tasks:", error);
-    if (emptyState) emptyState.style.display = "flex";
   }
 }
 
-//======================================================
 // 3. ตัวกระตุ้นให้โหลดข้อมูลทันทีที่เปิดหน้าเว็บ
-//======================================================
 document.addEventListener("DOMContentLoaded", () => {
   loadExistingTasks();
 });
+
+//======================================================
+// END BACKEND: โซนที่ 3 ระบบหน้า TRANSFER OUT TASKS
+//======================================================
