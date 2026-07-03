@@ -425,19 +425,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-
-
-
-// ======================================================
-// END FRONTEND: ระบบหน้า Lobby (คลีน 100%)
-// ======================================================
-
-
+/*END FRONTEND: ระบบหน้า Lobby (คลีน 100%)*/
 
 //======================================================
 // START BACKEND: โซนที่ 3 ระบบหน้า TRANSFER OUT TASKS (เวอร์ชันสมบูรณ์)
 //======================================================
-
 function createTransferOutTaskCard (
   date,
   shipmentNo,
@@ -471,7 +463,7 @@ function createTransferOutTaskCard (
     cursor: pointer; 
   `;
 
-  card.innerHTML = `
+card.innerHTML = `
     <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
       <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
         <span style="background: #e9ecef; color: #495057; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; border: 1px solid #ced4da;">${originType || "Store"}</span>
@@ -487,10 +479,9 @@ function createTransferOutTaskCard (
       </div>
     </div>
   `;
-
+  
   card.addEventListener("click", () => {
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
-    // วาร์ปหน้าจอ (ถ้ามี)
     if (typeof focusShipmentInLobby === "function") {
       focusShipmentInLobby(shipmentNo);
     }
@@ -498,6 +489,7 @@ function createTransferOutTaskCard (
 
   return card;
 }
+
 
 async function loadExistingTasks() {
   const assignContainer = document.getElementById("assignContainer");
