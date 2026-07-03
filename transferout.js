@@ -278,15 +278,21 @@ function loadTransferTypesIntoDropdown() {
   if (!selectType) return;
   selectType.innerHTML = '<option value="">กำลังโหลดประเภท...</option>';
 
-  fetch(CONFIG.API_URL + "?action=get_types")
+  // ✅ เปลี่ยนให้ตรงกับหลังบ้าน 100% แล้วครับ
+  fetch(CONFIG.API_URL + "?action=get_transfer_types")
     .then((res) => res.json())
     .then((data) => {
       selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
       if (Array.isArray(data)) {
         data.forEach((item) => {
           const option = document.createElement("option");
-          option.value = item.Type_Key;
-          option.textContent = `[${item.Type_Key}] ${item.Description}`;
+          
+          // ดึงค่าตาม Key ที่ API ส่งมา (เผื่อตัวพิมพ์เล็ก/ใหญ่)
+          const key = item.Type_Key || item.type_key || item.id || item.Key || "";
+          const desc = item.Description || item.description || item.name || item.Desc || "";
+          
+          option.value = key;
+          option.textContent = `[${key}] ${desc}`;
           selectType.appendChild(option);
         });
       }
