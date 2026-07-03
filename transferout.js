@@ -431,9 +431,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-
-
-
   // ==========================================
   // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
   // ==========================================
@@ -541,7 +538,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sessionStorage.removeItem("jump_to_shipment");
     }, 500);
   }
-};);
+});
 
 // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
