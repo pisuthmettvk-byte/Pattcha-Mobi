@@ -5,13 +5,17 @@ const webAppUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVs
 // =================================================================
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
-  // URL เดิมของเจเลอร์ (Deployment เดิมที่อัปเดต Code.gs แล้ว)
-  const SCRIPT_URL = CONFIG.API_URL;
   if (!select) return;
 
   try {
+    // เอา URL ตรงๆ ไปแปะเทสต์เลยครับ
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+    
     const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
-    const branches = await response.json(); // รับค่ามาเป็น Array โดยตรง
+    const branches = await response.json();
+    
+    // ... (โค้ดส่วนที่เหลือ)
+
 
     const myBranch = String(localStorage.getItem("pattcha_branch") || "")
       .trim()
