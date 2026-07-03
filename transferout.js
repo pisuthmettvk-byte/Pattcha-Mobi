@@ -396,12 +396,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   // 5. ลอจิกปุ่ม บันทึกงาน API (หน้า Lobby)
   // ==========================================
+  const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+  const shipmentBoxModal = document.getElementById("shipmentBoxModal");
+
+  if (btnAddShipmentTruck && shipmentBoxModal) {
+    btnAddShipmentTruck.addEventListener("click", () => {
+      // สั่งให้เอาคลาส 'hide' ออก หน้าต่างจะได้เด้งขึ้นมา
+      shipmentBoxModal.classList.remove("hide");
+    });
+  }
+
   const btnConfirm = document.getElementById("btnConfirmBox");
   const modal = document.getElementById("shipmentBoxModal");
   const selectType = document.getElementById("selectTransferType");
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
 
+  
   if (btnConfirm) {
     btnConfirm.addEventListener("click", () => {
       if (!selectType || !selectType.value) {
