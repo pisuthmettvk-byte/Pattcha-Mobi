@@ -56,43 +56,7 @@ async function loadBranchesIntoDropdown() {
 // 🚀 กลุ่มที่ 2: ระบบปุ่มควบคุม (หน้าเลือกสาขา) & ฟังก์ชันสลับหน้าจอ
 // =================================================================
 
-  // ฟังก์ชันปุ่ม NEXT
-  if (btnNext) {
-    btnNext.addEventListener("click", () => {
-      const select = document.getElementById("selectDestination");
-      const branchID = select.value;
-      const branchName = select.options[select.selectedIndex].text;
-
-      if (!branchID) {
-        alert("กรุณาเลือกสาขาที่ต้องการก่อนครับ!");
-        return;
-      }
-
-      const existingLobby = document.querySelector(
-        `.shipment-card[data-branch-id="${branchID}"]`
-      );
-
-      if (existingLobby) {
-        alert("ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ");
-      }
-
-      sessionStorage.setItem("selectedBranchID", branchID);
-      sessionStorage.setItem("selectedBranchName", branchName);
-
-      showView("transferOutLobbyView");
-      loadLobbyHeader();
-    });
-  }
-
-  // ฟังก์ชันปุ่ม CANCEL
-  if (btnCancel) {
-    btnCancel.addEventListener("click", () => {
-      const select = document.getElementById("selectDestination");
-      if (select) select.selectedIndex = 0;
-      showView("transferOutTaskHubView");
-    });
-  }
-
+  
 // ฟังก์ชันสลับหน้าจอ (Switch View)
 function showView(viewId) {
   const allViews = document.querySelectorAll(".view-screen");
@@ -335,62 +299,146 @@ function loadTransferTypesIntoDropdown() {
 
 
 // ======================================================
-// MASTER INITIALIZER: ก้อนเดียวจบ รวมร่างครบ 1-6
+// MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
 // ======================================================
+
 document.addEventListener("DOMContentLoaded", () => {
-  // 0. ประกาศตัวแปรทั้งหมดไว้ตรงนี้ (เจ้านายรู้จักลูกน้องก่อนสั่งงาน)
-  const btnNext = document.getElementById("btnSubmitDest");
-  const btnCancel = document.getElementById("btnBackFromDest");
-  const btnConfirm = document.getElementById("btnConfirmBox");
-  const btnTruck = document.getElementById("btnAddShipmentTruck");
+  // 1. ประกาศตัวแปรหน้าจอ (View Containers)
+  const productMovementView = document.getElementById("productMovementView");
+  const viewTaskHub = document.getElementById("transferOutTaskHubView");
+  const viewDest = document.getElementById("transferOutDestView");
+  const viewLobby = document.getElementById("transferOutLobbyView");
 
-  // 1. เรียกฟังก์ชันเริ่มต้น
-  loadExistingTasks();
-  loadBranchesIntoDropdown();
-  loadTransferTypesIntoDropdown();
+  // 2. โหลดข้อมูลเริ่มต้น (กลุ่ม 1, 5, 6)
+  loadExistingTasks();             
+  loadBranchesIntoDropdown();      
+  loadTransferTypesIntoDropdown(); 
 
-  // 2. ผูก Event ปุ่มหน้าเลือกสาขา
-  if (btnNext) {
-    btnNext.addEventListener("click", () => {
-      const select = document.getElementById("selectDestination");
-      const branchID = select.value;
-      const branchName = select.options[select.selectedIndex].text;
-      if (!branchID) return alert("กรุณาเลือกสาขาที่ต้องการก่อนครับ!");
+  // ==========================================
+  // 3. ผูก Event ปุ่ม นำทาง (Navigation) ของ Transfer Out
+  // ==========================================
+
+  // เข้า-ออก ระบบ Transfer Out
+  document.getElementById("btnTransferOut")?.addEventListener("click", () => navigationTo(productMovementView, viewTaskHub));
+  document.getElementById("btnBackToMovement")?.addEventListener("click", () => navigationTo(viewTaskHub, productMovementView));
+  document.getElementById("btnBackFromTaskHub")?.addEventListener("click", () => navigationTo(viewTaskHub, productMovementView));
+
+  // ปุ่ม + สร้างงานใหม่ (ไปหน้าเลือกสาขา)
+  const btnCreateNewTask = document.getElementById("btnCreateNewTask") || document.getElementById("btnNewTask");
+  if (btnCreateNewTask) {
+    btnCreateNewTask.addEventListener("click", () => {
+      const selectDest = document.getElementById("selectDestination");
+      if (selectDest) selectDest.selectedIndex = 0; // เคลียร์ค่าเดิม
+      navigationTo(viewTaskHub, viewDest);
+    });
+  }
+
+  // ปุ่ม Cancel กลับจากหน้าเลือกสาขา และ หน้า Lobby
+  document.getElementById("btnCancelDest")?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+  document.getElementById("btnBackFromDest")?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+  document.getElementById("btnCancelFromLobby")?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+  document.getElementById("btnBackToDest")?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+
+  // ==========================================
+  // 4. ลอจิกปุ่ม Next (เลือกสาขา -> ไป Lobby)
+  // ==========================================
+  const btnSubmitDest = document.getElementById("btnSubmitDest") || document.getElementById("btnNextDest");
+  if (btnSubmitDest) {
+    btnSubmitDest.addEventListener("click", () => {
+      const destDropdown = document.getElementById("selectDestination");
+      
+      // เช็กการเลือกข้อมูล
+      if (!destDropdown || !destDropdown.value) {
+        if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ", "warning");
+        else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
+        return;
+      }
+
+      const branchID = destDropdown.value;
+      const branchName = destDropdown.options[destDropdown.selectedIndex].text;
+
+      // เช็ก Lobby เดิมที่อาจเปิดค้างไว้
+      const existingLobby = document.querySelector(`.shipment-card[data-branch-id="${branchID}"]`);
+      if (existingLobby) {
+        if (typeof safeAlert === "function") safeAlert("แจ้งเตือน", "ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ", "warning");
+        else alert("ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว");
+      }
+
+      // บันทึก SessionStorage
       sessionStorage.setItem("selectedBranchID", branchID);
       sessionStorage.setItem("selectedBranchName", branchName);
-      showView("transferOutLobbyView");
-      loadLobbyHeader();
+
+      // เปลี่ยนชื่อหัว Lobby
+      const lobbyHeader = document.getElementById("lobbyBranchHeaderName");
+      if (lobbyHeader) lobbyHeader.innerText = branchName; 
+
+      // วาร์ปไปหน้า Lobby
+      navigationTo(viewDest, viewLobby);
     });
   }
 
-  if (btnCancel) {
-    btnCancel.addEventListener("click", () => {
-      const select = document.getElementById("selectDestination");
-      if (select) select.selectedIndex = 0;
-      showView("transferOutTaskHubView");
-    });
-  }
+  // ==========================================
+  // 5. ลอจิกปุ่ม บันทึกงาน API (หน้า Lobby)
+  // ==========================================
+  const btnConfirm = document.getElementById("btnConfirmBox");
+  const modal = document.getElementById("shipmentBoxModal");
+  const selectType = document.getElementById("selectTransferType");
+  const container = document.getElementById("lobbyContentContainer");
+  const emptyState = document.getElementById("lobbyEmptyState");
 
-  // 3. ผูก Event ปุ่มหน้า Lobby
   if (btnConfirm) {
     btnConfirm.addEventListener("click", () => {
-      // โค้ดบันทึกงานเดิมของเจเลอร์ (เอามาใส่ตรงนี้ได้เลยครับ)
-      alert("กำลังบันทึก...");
+      if (!selectType || !selectType.value) {
+         if(typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
+         else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+         return;
+      }
+      
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
+      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
+      const finalShipmentNo = `${selectType.value}-${new Date().toLocaleDateString("en-GB").replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
+
+      const payload = {
+        Date: new Date().toLocaleDateString("en-GB"),
+        Shipment_No: finalShipmentNo,
+        Origin_Branch: "CK",
+        Destination: targetDestination,
+        Origin_Type: "Store",
+        Status: "Assign"
+      };
+
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+      fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success" && container) {
+            container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+            if (modal) modal.classList.add("hide");
+            if (emptyState) emptyState.style.display = "none";
+          }
+        })
+        .finally(() => { 
+            btnConfirm.disabled = false; 
+            btnConfirm.innerHTML = "ยืนยันสร้าง"; 
+        });
     });
   }
 
-  // 4. เช็กคำสั่งวาร์ปค้าง
+  // ==========================================
+  // 6. ระบบวาร์ปหน้าจอ (เมื่อกดมาจากการ์ด Task Hub)
+  // ==========================================
   const pendingJump = sessionStorage.getItem("jump_to_shipment");
   if (pendingJump) {
-    setTimeout(() => {
-      focusShipmentInLobby(pendingJump);
-      sessionStorage.removeItem("jump_to_shipment");
+    setTimeout(() => { 
+        focusShipmentInLobby(pendingJump); 
+        sessionStorage.removeItem("jump_to_shipment"); 
     }, 500);
   }
 });
 
 // ======================================================
-// MASTER INITIALIZER: ก้อนเดียวจบ รวมร่างครบ 1-6
+// MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
 // ======================================================
-
 

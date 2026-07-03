@@ -165,23 +165,19 @@ window.navigationTo = function (hideView, showView) {
 
 
 
-// ---🔍 [ผูก Event การกดปุ่มเมนูเข้าออกหน้าต่างๆ ทั้งระบบ]
+// ไปวางในไฟล์ เมนูกลาง (menu.js หรือ app.js)
 document.addEventListener("DOMContentLoaded", () => {
   const mainMenuView = document.getElementById("mainMenuView");
   const productMovementView = document.getElementById("productMovementView");
-  const viewTaskHub = document.getElementById("transferOutTaskHubView");
-  const viewDest = document.getElementById("transferOutDestView");
-  const viewLobby = document.getElementById("transferOutLobbyView");
   const sharedHeader = document.getElementById("sharedHeader");
 
   const btnMenuMovement = document.getElementById("btnMenuMovement");
   const btnBackToMain = document.getElementById("btnBackToMain");
 
+  // แอนิเมชันตอนกดเข้าเมนู Movement
   if (btnMenuMovement) {
     btnMenuMovement.addEventListener("click", () => {
-      document
-        .getElementById("btnMenuStock")
-        ?.classList.add("anim-shrink-fade");
+      document.getElementById("btnMenuStock")?.classList.add("anim-shrink-fade");
       sharedHeader?.classList.add("anim-shrink-fade");
       btnMenuMovement.classList.add("anim-move-up");
       setTimeout(() => {
@@ -192,97 +188,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // แอนิเมชันตอนกดย้อนกลับหน้าหลัก
   if (btnBackToMain) {
     btnBackToMain.addEventListener("click", () => {
       productMovementView?.classList.add("hide");
       mainMenuView?.classList.remove("hide");
       sharedHeader?.classList.remove("hide");
-      document
-        .getElementById("btnMenuStock")
-        ?.classList.remove("anim-shrink-fade");
+      document.getElementById("btnMenuStock")?.classList.remove("anim-shrink-fade");
       btnMenuMovement?.classList.remove("anim-move-up");
     });
   }
-
-  document
-    .getElementById("btnTransferOut")
-    ?.addEventListener("click", () =>
-      navigationTo(productMovementView, viewTaskHub),
-    );
-  document
-    .getElementById("btnBackToMovement")
-    ?.addEventListener("click", () =>
-      navigationTo(viewTaskHub, productMovementView),
-    );
-  document
-    .getElementById("btnBackFromTaskHub")
-    ?.addEventListener("click", () =>
-      navigationTo(viewTaskHub, productMovementView),
-    );
-  document
-    .getElementById("btnCancelDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnBackFromDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnCancelFromLobby")
-    ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
-  document
-    .getElementById("btnBackToDest")
-    ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
-
-  const btnCreateNewTask =
-    document.getElementById("btnCreateNewTask") ||
-    document.getElementById("btnNewTask");
-  if (btnCreateNewTask) {
-    btnCreateNewTask.addEventListener("click", () => {
-      const selectDest = document.getElementById("selectDestination");
-      if (selectDest) selectDest.selectedIndex = 0;
-      navigationTo(viewTaskHub, viewDest);
-    });
-  }
-
-  document
-    .querySelectorAll(".task-list-item, .pending-task-row")
-    .forEach((row) => {
-      row.addEventListener("click", function () {
-        const textContainer = this.querySelector("div");
-        if (textContainer) {
-          const branchInfo =
-            textContainer.innerText.split("\n")[1] || "สาขาปลายทาง";
-          const lobbyHeader = document.getElementById("lobbyBranchHeaderName");
-          if (lobbyHeader) lobbyHeader.innerText = branchInfo;
-        }
-        navigationTo(viewTaskHub, viewLobby);
-      });
-    });
-
-  const btnSubmitDest =
-    document.getElementById("btnSubmitDest") ||
-    document.getElementById("btnNextDest");
-  if (btnSubmitDest) {
-    btnSubmitDest.addEventListener("click", () => {
-      const destDropdown = document.getElementById("selectDestination");
-      if (!destDropdown || !destDropdown.value) {
-        safeAlert(
-          "ข้อมูลไม่ครบถ้วน",
-          "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ",
-        );
-        return;
-      }
-      const lobbyHeader = document.getElementById("lobbyBranchHeaderName");
-      if (lobbyHeader)
-        lobbyHeader.innerText =
-          destDropdown.options[destDropdown.selectedIndex].text;
-      navigationTo(viewDest, viewLobby);
-    });
-  }
 });
-
-// [System Navigation Controller] END
-//===============
-
-
-
 
