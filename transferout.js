@@ -274,6 +274,41 @@ function loadTransferTypesIntoDropdown() {
     .catch((err) => console.error("Fetch error:", err));
 }
 
+function focusShipmentInLobby(shipmentNo) {
+  // ค้นหา Shipment Column ทั้งหมดที่มีอยู่ในหน้าจอ Lobby ปัจจุบัน
+  const columns = document.querySelectorAll(".shipment-column");
+
+  columns.forEach((col) => {
+    // เช็กว่าข้อความในการ์ดตรงกับเลขที่คลิกมาไหม
+    if (col.innerHTML.includes(shipmentNo)) {
+      // ใส่ไฮไลท์สีพื้นหลังชั่วคราวเพื่อให้รู้ว่าวาร์ปมาที่การ์ดใบนี้
+      col.style.transition = "background 0.5s";
+      col.style.background = "#fff3cd";
+
+      // สั่งให้หน้าจอเลื่อน (Scroll) มาที่ตำแหน่งของการ์ดใบนี้แบบสมูท
+      col.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // คืนค่าสีขาวตามเดิมหลังจากกะพริบเตือนเสร็จ 2 วินาที
+      setTimeout(() => {
+        col.style.background = "#ffffff";
+      }, 2000);
+    }
+  });
+}
+
+// ก้อนที่ 3: ตัวคอยเช็กว่ามีคำสั่งวาร์ปค้างอยู่ไหมตอนเปิดหน้าเว็บ
+document.addEventListener("DOMContentLoaded", () => {
+  const pendingJump = sessionStorage.getItem("jump_to_shipment");
+  if (pendingJump) {
+    // หน่วงเวลาเล็กน้อย 0.5 วินาที ให้หน้า Lobby โหลดเสร็จก่อนค่อยเลื่อนหา
+    setTimeout(() => {
+      focusShipmentInLobby(pendingJump);
+      sessionStorage.removeItem("jump_to_shipment"); // เคลียร์ทิ้ง
+    }, 500);
+  }
+});
+
+
 document.addEventListener("DOMContentLoaded", () => {
   loadTransferTypesIntoDropdown();
 
@@ -390,19 +425,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+
+
+
 // ======================================================
 // END FRONTEND: ระบบหน้า Lobby (คลีน 100%)
 // ======================================================
 
 
 
-
 //======================================================
-// START BACKEND: โซนที่ 3 ระบบหน้า TRANSFER OUT TASKS
+// START BACKEND: โซนที่ 3 ระบบหน้า TRANSFER OUT TASKS (เวอร์ชันสมบูรณ์)
 //======================================================
 
-// 1. แม่พิมพ์สร้าง Task Card (ขอบสีตามสถานะ)
-function createTransferOutTaskCard(
+function createTransferOutTaskCard (
   date,
   shipmentNo,
   originType,
@@ -427,62 +463,63 @@ function createTransferOutTaskCard(
     width: 100%; 
     background: #ffffff;
     border: 1px solid #e0e0e0;
+    border-bottom: none;
     border-left: 6px solid ${leftBorderColor}; 
-    border-radius: 8px; 
-    padding: 10px 15px; 
-    margin-bottom: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 16px 15px; 
+    margin-bottom: 0px;
     box-sizing: border-box;
+    cursor: pointer; 
   `;
 
   card.innerHTML = `
     <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
-      
       <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
-        <span style="background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid #ced4da; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">${originType || "Store"}</span>
-        <span style="font-size: 12px; color: #333; font-weight: 500;">${date || "-"}</span>
+        <span style="background: #e9ecef; color: #495057; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; border: 1px solid #ced4da;">${originType || "Store"}</span>
+        <span style="font-size: 14px; color: #333; font-weight: 500;">${date || "-"}</span>
       </div>
-      
       <div style="flex-grow: 1; text-align: center; min-width: 220px;">
-        <span style="font-weight: bold; font-size: 13px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo || "-"}</span>
+        <span style="font-weight: bold; font-size: 16px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo || "-"}</span>
       </div>
-      
-      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-grow: 1; min-width: 250px;">
-        <span style="font-size: 12px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${destBranch || "-"}</span>
-        <span style="font-size: 11px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox || 0}) TOTAL (${totalItem || 0})</span>
-        <span style="background: ${leftBorderColor}; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase;">${status || "Assign"}</span>
+      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 15px; flex-grow: 1; min-width: 250px;">
+        <span style="font-size: 14px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${destBranch || "-"}</span>
+        <span style="font-size: 13px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox || 0}) TOTAL (${totalItem || 0})</span>
+        <span style="background: ${leftBorderColor}; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${status || "Assign"}</span>
       </div>
-
     </div>
   `;
+
+  card.addEventListener("click", () => {
+    sessionStorage.setItem("jump_to_shipment", shipmentNo);
+    // วาร์ปหน้าจอ (ถ้ามี)
+    if (typeof focusShipmentInLobby === "function") {
+      focusShipmentInLobby(shipmentNo);
+    }
+  });
+
   return card;
 }
 
-// 2. ระบบดึงข้อมูลจาก Google Sheets แล้วแยกจับลง 3 กล่อง
 async function loadExistingTasks() {
-  // ชี้เป้าไปที่ 3 กล่องในหน้า TRANSFER OUT TASK 
   const assignContainer = document.getElementById("assignContainer");
   const pendingContainer = document.getElementById("pendingContainer");
   const completeContainer = document.getElementById("completeContainer");
 
-  // ถ้าไม่ได้เปิดหน้า Transfer Out อยู่ ให้ข้ามการทำงานไปเลย เว็บจะได้ไม่พัง
   if (!assignContainer) return; 
 
-  const fetchUrl = `${CONFIG.API_URL}?action=get_tasks`;
+  const fetchUrl = CONFIG.API_URL + "?action=get_tasks";
 
   try {
     const response = await fetch(fetchUrl);
     const tasks = await response.json();
 
     if (!Array.isArray(tasks)) {
-      console.error("ระบบตีกลับเป็น Error แทนที่จะเป็นข้อมูลครับ:", tasks);
+      console.error("Error from API:", tasks);
       return;
     }
 
-    // เคลียร์กล่องให้ว่างก่อนใส่ของใหม่
-    assignContainer.innerHTML = '';
-    if (pendingContainer) pendingContainer.innerHTML = '';
-    if (completeContainer) completeContainer.innerHTML = '';
+    assignContainer.innerHTML = "";
+    if (pendingContainer) pendingContainer.innerHTML = "";
+    if (completeContainer) completeContainer.innerHTML = "";
 
     let assignCount = 0;
     let pendingCount = 0;
@@ -496,7 +533,6 @@ async function loadExistingTasks() {
         task.Total_Box, task.Total_Item, task.Status
       );
 
-      // โยนการ์ดลงกล่องให้ตรงกับ Status
       if (statusKey === 'assign') {
         assignContainer.appendChild(card);
         assignCount++;
@@ -509,18 +545,46 @@ async function loadExistingTasks() {
       }
     });
 
-    // อัปเดตตัวเลขจำนวน Task ตรงหัวข้อ
     const assignText = document.getElementById("assignTaskCount");
-    if (assignText) assignText.innerHTML = `Task (${assignCount}) <i class="fas fa-chevron-down"></i>`;
+    if (assignText) assignText.innerHTML = "Task (" + assignCount + ") <i class=\"fas fa-chevron-down\"></i>";
+
+    const pendingText = document.getElementById("pendingTaskCount");
+    if (pendingText) pendingText.innerHTML = "Task (" + pendingCount + ") <i class=\"fas fa-chevron-down\"></i>";
+
+    const completeText = document.getElementById("completeTaskCount");
+    if (completeText) completeText.innerHTML = "Task (" + completeCount + ") <i class=\"fas fa-chevron-down\"></i>";
 
   } catch (error) {
     console.error("Error loading tasks:", error);
   }
 }
 
-// 3. ตัวกระตุ้นให้โหลดข้อมูลทันทีที่เปิดหน้าเว็บ
+// ==========================================
+// ส่วนเสริม: ระบบค้นหาและโฟกัสการ์ดในหน้า Lobby
+// ==========================================
+function focusShipmentInLobby(shipmentNo) {
+  const columns = document.querySelectorAll(".shipment-column");
+  columns.forEach(col => {
+    if (col.innerHTML.includes(shipmentNo)) {
+      col.style.transition = "background 0.5s";
+      col.style.background = "#fff3cd"; 
+      col.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => { col.style.background = "#ffffff"; }, 2000);
+    }
+  });
+}
+
+// ตัวกระตุ้นหลักตอนเปิดเว็บ (รวมฟังก์ชันไว้ที่เดียว)
 document.addEventListener("DOMContentLoaded", () => {
   loadExistingTasks();
+
+  const pendingJump = sessionStorage.getItem("jump_to_shipment");
+  if (pendingJump) {
+    setTimeout(() => {
+      focusShipmentInLobby(pendingJump);
+      sessionStorage.removeItem("jump_to_shipment");
+    }, 500);
+  }
 });
 
 //======================================================
