@@ -3,47 +3,57 @@ const webAppUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVs
 // =================================================================
 // 🚀 START Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
 // =================================================================
+
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
   if (!select) return;
+  
+  select.innerHTML = '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
 
   try {
-    // เอา URL ตรงๆ ไปแปะเทสต์เลยครับ
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+    // 🔴 เรียก API ด้วย action=get_branches
+    const response = await fetch(CONFIG.API_URL + "?action=get_branches");
     
-    const response = await fetch(`${SCRIPT_URL}?action=get_branches`);
-    const branches = await response.json();
+    // อ่านค่าที่ตอบกลับมาก่อนเพื่อเช็กว่าใช่ JSON จริงไหม
+    const rawText = await response.text();
+    let branches;
     
-    // ... (โค้ดส่วนที่เหลือ)
+    try {
+        branches = JSON.parse(rawText); // พยายามแปลงเป็น JSON
+    } catch (e) {
+        console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
+        select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+        return; // หยุดทำงานทันที
+    }
 
+    // ดึงรหัสสาขาตัวเองเพื่อเอามากรองออก (ไม่ให้โอนหาตัวเอง)
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
+    
+    select.innerHTML = '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
-    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-      .trim()
-      .toUpperCase();
-
-    select.innerHTML =
-      '<option value="" disabled selected>-- SELECT BRANCH --</option>';
-
-    // วนลูปแสดงผล
-    branches.forEach((branch) => {
-      const branchId = String(branch.id || "")
-        .trim()
-        .toUpperCase();
-
-      // กรองแค่ "ไม่ใช่สาขาตัวเอง"
-      if (branchId !== myBranch && branchId !== "") {
-        const option = document.createElement("option");
-        option.value = branch.id;
-        option.textContent = `${branch.id} - ${branch.name}`; 
-        select.appendChild(option);
-      }
-    });
+    if (Array.isArray(branches)) {
+      branches.forEach((branch) => {
+        // รองรับ Key จาก API หลายรูปแบบ (เผื่อตัวพิมพ์เล็ก/ใหญ่)
+        const branchId = String(branch.id || branch.Branch_ID || branch.BranchID || "").trim().toUpperCase();
+        const branchName = branch.name || branch.Branch_Name || branch.BranchName || "";
+        
+        if (branchId !== myBranch && branchId !== "") {
+          const option = document.createElement("option");
+          option.value = branchId;
+          option.textContent = `${branchId} - ${branchName}`;
+          select.appendChild(option);
+        }
+      });
+    }
   } catch (error) {
-    console.error("Error loading branches:", error);
-    select.innerHTML =
-      '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+    console.error("🚨 Error fetch branches:", error);
+    if (select) select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
   }
 }
+
+
+
+
 // =================================================================
 // 🚀 END กลุ่มที่ 1
 // =================================================================
