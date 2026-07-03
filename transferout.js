@@ -65,7 +65,92 @@ async function loadBranchesIntoDropdown() {
 // =================================================================
 // 🚀 กลุ่มที่ 2: ระบบปุ่มควบคุม (หน้าเลือกสาขา) & ฟังก์ชันสลับหน้าจอ
 // =================================================================
+// ======================================================
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (สไตล์สีเงิน จากหน้า Task Hub)
+// ======================================================
+function createShipmentColumn(shipmentNo, originType = "Store") {
+  // 1. สร้างกรอบใหญ่สีเงิน (Silver Container)
+  const col = document.createElement("div");
+  col.className = "shipment-column";
+  col.setAttribute("data-shipment", shipmentNo);
 
+  col.style.cssText = `
+    background: #f4f6f8; /* สีพื้นหลังโทนเงิน/เทาอ่อน แบบ Task Hub */
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  `;
+
+  // 2. โครงสร้าง HTML (มี Checkbox, ทรงเหมือนหน้า Task Hub)
+  col.innerHTML = `
+    <div style="background: #e9ecef; padding: 12px 15px; border-bottom: 1px solid #dcdfe6; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <input type="checkbox" class="shipment-checkbox" style="width: 20px; height: 20px; cursor: pointer; accent-color: #0044ff;">
+        <div>
+          <div style="font-weight: 900; font-size: 15px; color: #333; font-family: monospace;">${shipmentNo}</div>
+          <div style="font-size: 12px; color: #666;"><i class="fas fa-store"></i> Origin: ${originType}</div>
+        </div>
+      </div>
+      <span style="background: #fff; border: 1px solid #ccc; color: #555; font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: bold;">Assign</span>
+    </div>
+
+    <div style="background: #fff; padding: 10px 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; color: #555;">
+      <span><i class="fas fa-box" style="color: #8d6e63;"></i> TOTAL BOX: <span class="box-count">0</span></span>
+      <span><i class="fas fa-tshirt" style="color: #0044ff;"></i> TOTAL ITEM: <span class="item-count">0</span></span>
+    </div>
+
+    <div class="shipment-body" style="padding: 15px; min-height: 120px; background: #fdfdfd; display: flex; flex-direction: column; gap: 10px;">
+      <div class="empty-state" style="text-align: center; color: #bbb; padding: 15px 0; font-size: 13px;">
+        <i class="fas fa-box-open" style="font-size: 28px; margin-bottom: 8px;"></i><br>
+        ยังไม่มีข้อมูลแพ็คกิ้ง<br>เริ่มสแกนเพื่อบรรจุลงกล่อง
+      </div>
+    </div>
+
+    <div style="background: #e9ecef; padding: 12px 15px; border-top: 1px solid #dcdfe6; display: flex; gap: 10px;">
+      <button class="btn-delete" style="background: #fff; border: 1px solid #ff4d4f; color: #ff4d4f; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+      <button class="btn-scan" style="flex-grow: 1; background: #0044ff; border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 5px; font-size: 14px; box-shadow: 0 4px 6px rgba(0,68,255,0.2);">
+        <i class="fas fa-barcode"></i> สแกน / เพิ่มกล่อง
+      </button>
+    </div>
+  `;
+
+  // 3. ผูก Event ให้ปุ่มต่างๆ
+  
+  // ลอจิกปุ่มลบ (ลบทิ้ง พร้อมเช็กว่าถ้าไม่มีงานเหลือ ให้โชว์รูปรถบรรทุกโล่งๆ)
+  const btnDelete = col.querySelector(".btn-delete");
+  btnDelete.addEventListener("click", () => {
+    if (confirm(`ต้องการลบ Shipment: ${shipmentNo} ใช่หรือไม่?`)) {
+      col.remove();
+      
+      const container = document.getElementById("lobbyContentContainer");
+      const emptyState = document.getElementById("lobbyEmptyState");
+      // ถ้าคอลัมน์ใน Lobby หายไปหมดแล้ว ให้แสดง Empty State (หน้าโล่งๆ) กลับมา
+      if (container && container.querySelectorAll(".shipment-column").length === 0) {
+         if (emptyState) emptyState.style.display = "block";
+      }
+    }
+  });
+
+  // ลอจิกปุ่มสแกน
+  const btnScan = col.querySelector(".btn-scan");
+  btnScan.addEventListener("click", () => {
+     if (typeof safeAlert === "function") {
+         safeAlert("เตรียมแพ็คของ", `พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`, "info");
+     } else {
+         alert(`พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`);
+     }
+  });
+
+  return col;
+}
   
 // ฟังก์ชันสลับหน้าจอ (Switch View)
 function showView(viewId) {
