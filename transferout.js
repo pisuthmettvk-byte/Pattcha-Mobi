@@ -52,94 +52,86 @@ async function loadBranchesIntoDropdown() {
 }
 
 
-
-
 // =================================================================
 // 🚀 END กลุ่มที่ 1
 // =================================================================
 
 
 
-
-
-// =================================================================
-// 🚀 กลุ่มที่ 2: ระบบปุ่มควบคุม (หน้าเลือกสาขา) & ฟังก์ชันสลับหน้าจอ
-// =================================================================
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (สไตล์สีเงิน จากหน้า Task Hub)
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (สไตล์ Metallic แถบยาวแนวนอน)
 // ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
-  // 1. สร้างกรอบใหญ่สีเงิน (Silver Container)
   const col = document.createElement("div");
   col.className = "shipment-column";
   col.setAttribute("data-shipment", shipmentNo);
 
+  // สกัดวันที่จากเลข Shipment (สมมติเลขคือ TR-03072026-...)
+  const dateParts = shipmentNo.split("-")[1]; 
+  const displayDate = dateParts && dateParts.length === 8 
+        ? `${dateParts.substring(0,2)}/${dateParts.substring(2,4)}/${dateParts.substring(6,8)}` 
+        : new Date().toLocaleDateString("en-GB").substring(0, 8);
+
+  // 1. ปรับเป็นแถบแนวนอนยาว (flex-direction: row)
   col.style.cssText = `
-    background: #f4f6f8; /* สีพื้นหลังโทนเงิน/เทาอ่อน แบบ Task Hub */
-    border: 1px solid #dcdfe6;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 500px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 40%, #e0e0e0 80%, #d5d5d5 100%);
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    width: 100%; /* ให้กางเต็มจอคอม */
+    margin-bottom: 15px;
+    padding: 10px 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    flex-direction: row; /* เรียงซ้ายไปขวาบรรทัดเดียว */
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    box-sizing: border-box;
   `;
 
-  // 2. โครงสร้าง HTML (มี Checkbox, ทรงเหมือนหน้า Task Hub)
+  // 2. โครงสร้าง HTML (แบ่งเป็น 3 ท่อน: ซ้าย - กลาง - ขวา)
   col.innerHTML = `
-    <div style="background: #e9ecef; padding: 12px 15px; border-bottom: 1px solid #dcdfe6; display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <input type="checkbox" class="shipment-checkbox" style="width: 20px; height: 20px; cursor: pointer; accent-color: #0044ff;">
-        <div>
-          <div style="font-weight: 900; font-size: 15px; color: #333; font-family: monospace;">${shipmentNo}</div>
-          <div style="font-size: 12px; color: #666;"><i class="fas fa-store"></i> Origin: ${originType}</div>
-        </div>
-      </div>
-      <span style="background: #fff; border: 1px solid #ccc; color: #555; font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: bold;">Assign</span>
+    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+      <input type="checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
+      <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
+      <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${shipmentNo}</span>
     </div>
 
-    <div style="background: #fff; padding: 10px 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; color: #555;">
-      <span><i class="fas fa-box" style="color: #8d6e63;"></i> TOTAL BOX: <span class="box-count">0</span></span>
-      <span><i class="fas fa-tshirt" style="color: #0044ff;"></i> TOTAL ITEM: <span class="item-count">0</span></span>
-    </div>
-
-    <div class="shipment-body" style="padding: 15px; min-height: 120px; background: #fdfdfd; display: flex; flex-direction: column; gap: 10px;">
-      <div class="empty-state" style="text-align: center; color: #bbb; padding: 15px 0; font-size: 13px;">
-        <i class="fas fa-box-open" style="font-size: 28px; margin-bottom: 8px;"></i><br>
-        ยังไม่มีข้อมูลแพ็คกิ้ง<br>เริ่มสแกนเพื่อบรรจุลงกล่อง
+    <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1;">
+      <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444; box-shadow: inset 0 1px 2px rgba(255,255,255,1);">
+        ${originType}
+      </span>
+      <div style="display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #333; text-shadow: 1px 1px 0px #fff;">
+        <span><i class="fas fa-truck"></i> (0)</span>
+        <span><i class="fas fa-barcode"></i> (0)</span>
+        <span><i class="fas fa-hand-paper"></i> (0)</span>
       </div>
     </div>
 
-    <div style="background: #e9ecef; padding: 12px 15px; border-top: 1px solid #dcdfe6; display: flex; gap: 10px;">
-      <button class="btn-delete" style="background: #fff; border: 1px solid #ff4d4f; color: #ff4d4f; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">
-        <i class="fas fa-trash-alt"></i>
-      </button>
-      <button class="btn-scan" style="flex-grow: 1; background: #0044ff; border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 5px; font-size: 14px; box-shadow: 0 4px 6px rgba(0,68,255,0.2);">
-        <i class="fas fa-barcode"></i> สแกน / เพิ่มกล่อง
-      </button>
+    <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
+      <i class="fas fa-box-open btn-scan" style="color: #4CAF50; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สแกนเพิ่มกล่อง"></i>
+      <i class="fas fa-trash-alt btn-delete" style="color: #dc3545; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบงานนี้"></i>
+      
+      <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+        Assign
+      </span>
     </div>
   `;
 
-  // 3. ผูก Event ให้ปุ่มต่างๆ
-  
-  // ลอจิกปุ่มลบ (ลบทิ้ง พร้อมเช็กว่าถ้าไม่มีงานเหลือ ให้โชว์รูปรถบรรทุกโล่งๆ)
+  // 3. ผูก Event ลบ
   const btnDelete = col.querySelector(".btn-delete");
   btnDelete.addEventListener("click", () => {
     if (confirm(`ต้องการลบ Shipment: ${shipmentNo} ใช่หรือไม่?`)) {
       col.remove();
-      
       const container = document.getElementById("lobbyContentContainer");
       const emptyState = document.getElementById("lobbyEmptyState");
-      // ถ้าคอลัมน์ใน Lobby หายไปหมดแล้ว ให้แสดง Empty State (หน้าโล่งๆ) กลับมา
       if (container && container.querySelectorAll(".shipment-column").length === 0) {
          if (emptyState) emptyState.style.display = "block";
       }
     }
   });
 
-  // ลอจิกปุ่มสแกน
+  // 4. ผูก Event สแกน
   const btnScan = col.querySelector(".btn-scan");
   btnScan.addEventListener("click", () => {
      if (typeof safeAlert === "function") {
@@ -151,7 +143,11 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   return col;
 }
-  
+
+
+
+
+
 // ฟังก์ชันสลับหน้าจอ (Switch View)
 function showView(viewId) {
   const allViews = document.querySelectorAll(".view-screen");
