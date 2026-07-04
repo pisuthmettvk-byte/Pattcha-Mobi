@@ -58,38 +58,43 @@ async function loadBranchesIntoDropdown() {
 
 
 
+
+
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (สไตล์ Metallic แถบยาวแนวนอน)
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (สไตล์สีเงาจาก ASSIGN TASKS + เรียงซ้ายไปขวา)
 // ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
   col.className = "shipment-column";
   col.setAttribute("data-shipment", shipmentNo);
 
-  // สกัดวันที่จากเลข Shipment (สมมติเลขคือ TR-03072026-...)
+  // สกัดวันที่จากเลข Shipment 
   const dateParts = shipmentNo.split("-")[1]; 
   const displayDate = dateParts && dateParts.length === 8 
         ? `${dateParts.substring(0,2)}/${dateParts.substring(2,4)}/${dateParts.substring(6,8)}` 
         : new Date().toLocaleDateString("en-GB").substring(0, 8);
 
-  // 1. ปรับเป็นแถบแนวนอนยาว (flex-direction: row)
+  // 1. ดีไซน์สวมทับ (ดึงสีและเงามาจาก ASSIGN TASKS 100%)
   col.style.cssText = `
-    background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 40%, #e0e0e0 80%, #d5d5d5 100%);
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    width: 100%; /* ให้กางเต็มจอคอม */
+    background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #bbb;
+    border-left: 1px solid #ccc; /* เพิ่มเพื่อความเป็นกล่อง */
+    border-right: 1px solid #ccc;
+    border-radius: 8px; /* ลบมุมให้เป็น Card */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    width: 100%;
     margin-bottom: 15px;
     padding: 10px 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 2px 4px rgba(255,255,255,0.8);
     display: flex;
-    flex-direction: row; /* เรียงซ้ายไปขวาบรรทัดเดียว */
+    flex-direction: row; /* คงรูปแบบแนวนอนซ้ายไปขวา */
     align-items: center;
     justify-content: space-between;
     gap: 20px;
     box-sizing: border-box;
   `;
 
-  // 2. โครงสร้าง HTML (แบ่งเป็น 3 ท่อน: ซ้าย - กลาง - ขวา)
+  // 2. โครงข้อมูลด้านใน (เรียงซ้ายไปขวาแบบที่เจเลอร์ต้องการ)
   col.innerHTML = `
     <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
       <input type="checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
@@ -109,8 +114,8 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     </div>
 
     <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
-      <i class="fas fa-box-open btn-scan" style="color: #4CAF50; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สแกนเพิ่มกล่อง"></i>
-      <i class="fas fa-trash-alt btn-delete" style="color: #dc3545; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบงานนี้"></i>
+      <i class="fas fa-box-open btn-scan" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สแกนเพิ่มกล่อง"></i>
+      <i class="fas fa-trash-alt btn-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบงานนี้"></i>
       
       <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
         Assign
@@ -143,6 +148,11 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   return col;
 }
+
+
+
+
+
 
 
 
