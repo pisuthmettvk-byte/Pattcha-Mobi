@@ -592,29 +592,46 @@ document.addEventListener("DOMContentLoaded", () => {
         '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
       btnConfirm.style.opacity = "0.7";
 
-      fetch(CONFIG.API_URL + "?action=save_new_task", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      })
-        .then((res) => res.json())
-        .then((res) => {
-          if (res.status === "success" && container) {
-            if (typeof createShipmentColumn === "function") {
-              container.appendChild(
-                createShipmentColumn(finalShipmentNo, "Store"),
-              );
+            fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success") {
+            // 1. สร้าง Shipment Column ในหน้า Lobby
+            if (container) {
+              container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
             }
             if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
             if (emptyState) emptyState.style.display = "none";
+
+            // 2. 🟢 สร้าง Task Card ในหน้า Task Hub (หมวด Assign) ทันที
+            const taskHubAssignContainer = document.getElementById("taskContainerAssign"); // 📌 เปลี่ยน ID นี้ให้ตรงกับกล่อง Assign ในหน้า Task Hub ของเจเลอร์
+            if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
+               const newCardData = {
+                  Shipment_No: finalShipmentNo,
+                  Destination: targetDestination,
+                  Date: new Date().toLocaleDateString("en-GB"),
+                  Total_Box: 0,
+                  Total_Item: 0,
+                  Status: "Assign"
+               };
+               taskHubAssignContainer.appendChild(createTransferOutTaskCard(newCardData));
+            }
           }
         })
-        .finally(() => {
-          btnConfirm.disabled = false;
-          btnConfirm.innerHTML = "ยืนยันสร้าง";
-          btnConfirm.style.opacity = "1";
+        .finally(() => { 
+            btnConfirm.disabled = false; 
+            btnConfirm.innerHTML = "ยืนยันสร้าง"; 
+            btnConfirm.style.opacity = "1";
         });
-    });
-  }
+});
+}
+
+      
+      
+      
+      
+      
+      
 
   // ==========================================
   // 6. ระบบวาร์ปหน้าจอ (เมื่อกดมาจากการ์ด Task Hub)
