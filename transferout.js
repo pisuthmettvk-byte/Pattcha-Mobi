@@ -60,41 +60,40 @@ async function loadBranchesIntoDropdown() {
 
 
 
+
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (สไตล์สีเงาจาก ASSIGN TASKS + เรียงซ้ายไปขวา)
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (Responsive: ปัดบรรทัดเมื่อจอแคบ)
 // ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
   col.className = "shipment-column";
   col.setAttribute("data-shipment", shipmentNo);
 
-  // สกัดวันที่จากเลข Shipment 
   const dateParts = shipmentNo.split("-")[1]; 
   const displayDate = dateParts && dateParts.length === 8 
         ? `${dateParts.substring(0,2)}/${dateParts.substring(2,4)}/${dateParts.substring(6,8)}` 
         : new Date().toLocaleDateString("en-GB").substring(0, 8);
 
-  // 1. ดีไซน์สวมทับ (ดึงสีและเงามาจาก ASSIGN TASKS 100%)
   col.style.cssText = `
     background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
     border-top: 1px solid #fff;
     border-bottom: 1px solid #bbb;
-    border-left: 1px solid #ccc; /* เพิ่มเพื่อความเป็นกล่อง */
+    border-left: 1px solid #ccc;
     border-right: 1px solid #ccc;
-    border-radius: 8px; /* ลบมุมให้เป็น Card */
+    border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     width: 100%;
     margin-bottom: 15px;
     padding: 10px 20px;
     display: flex;
-    flex-direction: row; /* คงรูปแบบแนวนอนซ้ายไปขวา */
+    flex-direction: row;
+    flex-wrap: wrap; /* 🟢 จุดสำคัญ: สั่งให้ปัดบรรทัดตกเมื่อจอแคบ */
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 15px;
     box-sizing: border-box;
   `;
 
-  // 2. โครงข้อมูลด้านใน (เรียงซ้ายไปขวาแบบที่เจเลอร์ต้องการ)
   col.innerHTML = `
     <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
       <input type="checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
@@ -102,7 +101,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${shipmentNo}</span>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1;">
+    <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
       <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444; box-shadow: inset 0 1px 2px rgba(255,255,255,1);">
         ${originType}
       </span>
@@ -123,7 +122,6 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     </div>
   `;
 
-  // 3. ผูก Event ลบ
   const btnDelete = col.querySelector(".btn-delete");
   btnDelete.addEventListener("click", () => {
     if (confirm(`ต้องการลบ Shipment: ${shipmentNo} ใช่หรือไม่?`)) {
@@ -136,7 +134,6 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 4. ผูก Event สแกน
   const btnScan = col.querySelector(".btn-scan");
   btnScan.addEventListener("click", () => {
      if (typeof safeAlert === "function") {
