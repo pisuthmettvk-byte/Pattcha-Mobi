@@ -279,6 +279,10 @@ function formatShipmentNoHTML(shipmentNo) {
 
 
 
+
+
+
+
 // ======================================================
 // กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
 // ======================================================
@@ -315,30 +319,28 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     </div>
   `;
 
-  // 🟢 แก้ไข: เปลี่ยนจาก Card เป็น card (ตัวพิมพ์เล็ก) ให้แมตช์กับตัวแปรต้นทาง
   card.addEventListener("click", () => {
-    // 1. โค้ดเดิม: เก็บเลข Shipment ไว้
+    console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
+    
+    // 1. บันทึกรหัสสาขาและเลข Shipment ลงความจำ @Google Workspace (Session)
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
-
-    // 2. 🟢 แก้ไข: เปลี่ยนจาก cardData.Destination เป็น destBranch เพื่อบันทึกรหัสสาขาเข้าคลังความจำพารวมมิตรในหน้า Lobby
     sessionStorage.setItem("selectedBranchID", destBranch);
 
-    // 3. โค้ดเดิม: สลับไปหน้า Lobby
-    if (typeof focusShipmentInLobby === "function") {
-        focusShipmentInLobby(shipmentNo);
+    // 2. ลอจิกเดิม พร้อมเกราะป้องกันการ Crash
+    try {
+        if (typeof focusShipmentInLobby === "function") {
+            console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
+            focusShipmentInLobby(shipmentNo);
+        } else {
+            console.error("❌ หาฟังก์ชัน focusShipmentInLobby ไม่เจอ!");
+        }
+    } catch (error) {
+        console.error("🚨 ฟังก์ชัน focusShipmentInLobby ขัดข้องระหว่างรัน:", error);
     }
   });
 
-  // 🟢 แก้ไข: เปลี่ยนจาก Card เป็น card ตัวพิมพ์เล็กก่อนส่งออกไปใช้งาน
   return card;
 }
-
-
-
-
-
-
-
 
 async function loadExistingTasks() {
   const containers = ["assignContainer", "pendingContainer", "completeContainer"];
@@ -370,6 +372,12 @@ async function loadExistingTasks() {
 // ======================================================
 // 🚀 END กลุ่มที่ 5
 // ======================================================
+
+
+
+
+
+
 
 
 
