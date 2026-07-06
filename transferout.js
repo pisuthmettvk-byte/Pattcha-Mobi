@@ -312,13 +312,28 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     </div>
   `;
 
-  card.addEventListener("click", () => {
+  Card.addEventListener("click", () => {
+    // 1. โค้ดเดิม: เก็บเลข Shipment ไว้ (เผื่อเอาไว้ใช้กระพริบไฮไลต์แถบสีเงินตอนเข้า Lobby)
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
-    if (typeof focusShipmentInLobby === "function") focusShipmentInLobby(shipmentNo);
+
+    // 2. 🟢 โค้ดใหม่: บันทึก "สาขาปลายทาง" เพื่อสั่งให้หน้า Lobby ดึงงานทั้งหมดของสาขานี้มาโชว์รวมกัน
+    // (หมายเหตุ: หากตัวแปรข้อมูลการ์ดของเจเลอร์ไม่ได้ชื่อ cardData.Destination ให้เปลี่ยนชื่อให้ตรงกันครับ)
+    sessionStorage.setItem("selectedBranchID", cardData.Destination);
+
+    // 3. โค้ดเดิม: สลับไปหน้า Lobby ผ่านฟังก์ชันเดิมของเจเลอร์
+    if (typeof focusShipmentInLobby === "function") {
+        focusShipmentInLobby(shipmentNo);
+    }
   });
 
-  return card;
+  return Card;
 }
+
+
+
+
+
+
 
 async function loadExistingTasks() {
   const containers = ["assignContainer", "pendingContainer", "completeContainer"];
