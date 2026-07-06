@@ -276,6 +276,9 @@ function formatShipmentNoHTML(shipmentNo) {
 
 
 
+
+
+
 // ======================================================
 // กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
 // ======================================================
@@ -329,6 +332,10 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
   // 🟢 แก้ไข: เปลี่ยนจาก Card เป็น card ตัวพิมพ์เล็กก่อนส่งออกไปใช้งาน
   return card;
 }
+
+
+
+
 
 
 
