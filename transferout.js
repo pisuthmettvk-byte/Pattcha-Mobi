@@ -1,11 +1,21 @@
 const webAppUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
+// ==========================================
+// ⚙️ ตัวแปรตั้งค่าสถานะ (เปลี่ยนคำตรงนี้ จุดเดียวจบ!)
+// ==========================================
+const STATUS_CONFIG = {
+    NEW: "Assign",       // งานใหม่ที่เพิ่งสร้าง
+    PENDING: "Pending",  // งานที่ส่งออกแล้ว
+    COMPLETE: "Complete" // งานที่รับเสร็จสมบูรณ์
+};
+
 // =================================================================
 // 🚀 START Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
 // =================================================================
 
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
+
   if (!select) return;
   
   select.innerHTML = '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
@@ -592,37 +602,44 @@ document.addEventListener("DOMContentLoaded", () => {
         '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
       btnConfirm.style.opacity = "0.7";
 
-            fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === "success") {
-            // 1. สร้าง Shipment Column ในหน้า Lobby
-            if (container) {
-              container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
-            }
-            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-            if (emptyState) emptyState.style.display = "none";
 
-            // 2. 🟢 สร้าง Task Card ในหน้า Task Hub (หมวด Assign) ทันที
-            const taskHubAssignContainer = document.getElementById("taskContainerAssign"); // 📌 เปลี่ยน ID นี้ให้ตรงกับกล่อง Assign ในหน้า Task Hub ของเจเลอร์
-            if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
-               const newCardData = {
-                  Shipment_No: finalShipmentNo,
-                  Destination: targetDestination,
-                  Date: new Date().toLocaleDateString("en-GB"),
-                  Total_Box: 0,
-                  Total_Item: 0,
-                  Status: "Assign"
-               };
-               taskHubAssignContainer.appendChild(createTransferOutTaskCard(newCardData));
-            }
-          }
-        })
-        .finally(() => { 
-            btnConfirm.disabled = false; 
-            btnConfirm.innerHTML = "ยืนยันสร้าง"; 
-            btnConfirm.style.opacity = "1";
-        });
+fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
+  .then(res => res.json())
+  .then(res => {
+    if (res.status === "success") {
+      // 1. สร้างคอลัมน์ลงในหน้า Lobby
+      if (container) container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+      if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+      if (emptyState) emptyState.style.display = "none";
+
+      // 2. 🟢 สร้าง Task Card ส่งกลับไปหน้า Task Hub
+      const taskHubAssignContainer = document.getElementById("taskContainerAssign"); 
+      if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
+         const newCardData = {
+            Shipment_No: finalShipmentNo,
+            Destination: targetDestination,
+            Date: new Date().toLocaleDateString("en-GB"),
+            Total_Box: 0,
+            Total_Item: 0,
+            Status: STATUS_CONFIG.NEW // 🟢 ระบบจะมาดึงคำว่า "Assign" จากด้านบนสุดของไฟล์ให้เอง
+         };
+         
+         const newCard = createTransferOutTaskCard(newCardData);
+         if (typeof newCard === "string") {
+             taskHubAssignContainer.insertAdjacentHTML("beforeend", newCard);
+         } else {
+             taskHubAssignContainer.appendChild(newCard);
+         }
+         console.log(`✅ สร้าง Task Card (${STATUS_CONFIG.NEW}) สำเร็จ!`);
+      }
+    }
+  })
+  .finally(() => { 
+      btnConfirm.disabled = false; 
+      btnConfirm.innerHTML = "ยืนยันสร้าง"; 
+      btnConfirm.style.opacity = "1";
+  });
+
 });
 }
 
