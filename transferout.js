@@ -275,18 +275,6 @@ function formatShipmentNoHTML(shipmentNo) {
 // ======================================================
 
 
-
-
-
-
-
-
-
-
-// ======================================================
-// กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
-// ======================================================
-
 function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, totalBox, totalItem, status) {
   const colorMap = { assign: "#dc3545", pending: "#e0a800", complete: "#28a745" };
   const statusKey = (status || "").toLowerCase();
@@ -319,28 +307,51 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     </div>
   `;
 
+  // 🟢 ส่วนที่แก้ไข: เพิ่มคำสั่งสลับหน้าจอ (showView) และเปลี่ยนชื่อหัว Lobby (loadLobbyHeader)
   card.addEventListener("click", () => {
     console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
     
-    // 1. บันทึกรหัสสาขาและเลข Shipment ลงความจำ @Google Workspace (Session)
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
     sessionStorage.setItem("selectedBranchID", destBranch);
+    
+    if(!sessionStorage.getItem("selectedBranchName")) {
+        sessionStorage.setItem("selectedBranchName", ""); 
+    }
 
-    // 2. ลอจิกเดิม พร้อมเกราะป้องกันการ Crash
     try {
+        if (typeof showView === "function") {
+            showView("viewLobby"); 
+            console.log("🔄 สลับไปหน้า Lobby สำเร็จ!");
+        }
+
+        if (typeof loadLobbyHeader === "function") {
+            loadLobbyHeader();
+        }
+
         if (typeof focusShipmentInLobby === "function") {
             console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
             focusShipmentInLobby(shipmentNo);
-        } else {
-            console.error("❌ หาฟังก์ชัน focusShipmentInLobby ไม่เจอ!");
         }
     } catch (error) {
-        console.error("🚨 ฟังก์ชัน focusShipmentInLobby ขัดข้องระหว่างรัน:", error);
+        console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
     }
   });
 
   return card;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function loadExistingTasks() {
   const containers = ["assignContainer", "pendingContainer", "completeContainer"];
