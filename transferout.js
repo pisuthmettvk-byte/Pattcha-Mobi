@@ -333,10 +333,6 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
 
 
 
-
-
-
-
 async function loadExistingTasks() {
   const containers = ["assignContainer", "pendingContainer", "completeContainer"];
   const assignContainer = document.getElementById("assignContainer");
