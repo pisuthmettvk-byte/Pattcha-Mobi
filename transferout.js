@@ -1,14 +1,17 @@
-const webAppUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+const webAppUrl =
+  "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+
+// 🚨 หมายเหตุ: สมมติว่า CONFIG ถูกประกาศไว้ที่ไฟล์อื่นแล้ว หากยังไม่มี ให้เอา // ด้านล่างออกครับ
+// const CONFIG = { API_URL: webAppUrl };
 
 // ==========================================
 // ⚙️ ตัวแปรตั้งค่าสถานะ (เปลี่ยนคำตรงนี้ จุดเดียวจบ!)
 // ==========================================
 const STATUS_CONFIG = {
-    NEW: "Assign",       // งานใหม่ที่เพิ่งสร้าง
-    PENDING: "Pending",  // งานที่ส่งออกแล้ว
-    COMPLETE: "Complete" // งานที่รับเสร็จสมบูรณ์
+  NEW: "Assign",
+  PENDING: "Pending",
+  COMPLETE: "Complete",
 };
-
 // =================================================================
 // 🚀 START Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
 // =================================================================
@@ -17,36 +20,46 @@ async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
 
   if (!select) return;
-  
-  select.innerHTML = '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
+
+  select.innerHTML =
+    '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
 
   try {
     // 🔴 เรียก API ด้วย action=get_branches
     const response = await fetch(CONFIG.API_URL + "?action=get_branches");
-    
+
     // อ่านค่าที่ตอบกลับมาก่อนเพื่อเช็กว่าใช่ JSON จริงไหม
     const rawText = await response.text();
     let branches;
-    
+
     try {
-        branches = JSON.parse(rawText); // พยายามแปลงเป็น JSON
+      branches = JSON.parse(rawText); // พยายามแปลงเป็น JSON
     } catch (e) {
-        console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
-        select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
-        return; // หยุดทำงานทันที
+      console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
+      select.innerHTML =
+        '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+      return; // หยุดทำงานทันที
     }
 
     // ดึงรหัสสาขาตัวเองเพื่อเอามากรองออก (ไม่ให้โอนหาตัวเอง)
-    const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
-    
-    select.innerHTML = '<option value="" disabled selected>-- SELECT BRANCH --</option>';
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
+      .trim()
+      .toUpperCase();
+
+    select.innerHTML =
+      '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
     if (Array.isArray(branches)) {
       branches.forEach((branch) => {
         // รองรับ Key จาก API หลายรูปแบบ (เผื่อตัวพิมพ์เล็ก/ใหญ่)
-        const branchId = String(branch.id || branch.Branch_ID || branch.BranchID || "").trim().toUpperCase();
-        const branchName = branch.name || branch.Branch_Name || branch.BranchName || "";
-        
+        const branchId = String(
+          branch.id || branch.Branch_ID || branch.BranchID || "",
+        )
+          .trim()
+          .toUpperCase();
+        const branchName =
+          branch.name || branch.Branch_Name || branch.BranchName || "";
+
         if (branchId !== myBranch && branchId !== "") {
           const option = document.createElement("option");
           option.value = branchId;
@@ -57,19 +70,15 @@ async function loadBranchesIntoDropdown() {
     }
   } catch (error) {
     console.error("🚨 Error fetch branches:", error);
-    if (select) select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+    if (select)
+      select.innerHTML =
+        '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
   }
 }
-
 
 // =================================================================
 // 🚀 END กลุ่มที่ 1
 // =================================================================
-
-
-
-
-
 
 // ======================================================
 // 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (Responsive: ปัดบรรทัดเมื่อจอแคบ)
@@ -79,10 +88,11 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   col.className = "shipment-column";
   col.setAttribute("data-shipment", shipmentNo);
 
-  const dateParts = shipmentNo.split("-")[1]; 
-  const displayDate = dateParts && dateParts.length === 8 
-        ? `${dateParts.substring(0,2)}/${dateParts.substring(2,4)}/${dateParts.substring(6,8)}` 
-        : new Date().toLocaleDateString("en-GB").substring(0, 8);
+  const dateParts = shipmentNo.split("-")[1];
+  const displayDate =
+    dateParts && dateParts.length === 8
+      ? `${dateParts.substring(0, 2)}/${dateParts.substring(2, 4)}/${dateParts.substring(6, 8)}`
+      : new Date().toLocaleDateString("en-GB").substring(0, 8);
 
   col.style.cssText = `
     background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
@@ -138,64 +148,58 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       col.remove();
       const container = document.getElementById("lobbyContentContainer");
       const emptyState = document.getElementById("lobbyEmptyState");
-      if (container && container.querySelectorAll(".shipment-column").length === 0) {
-         if (emptyState) emptyState.style.display = "block";
+      if (
+        container &&
+        container.querySelectorAll(".shipment-column").length === 0
+      ) {
+        if (emptyState) emptyState.style.display = "block";
       }
     }
   });
 
   const btnScan = col.querySelector(".btn-scan");
   btnScan.addEventListener("click", () => {
-     if (typeof safeAlert === "function") {
-         safeAlert("เตรียมแพ็คของ", `พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`, "info");
-     } else {
-         alert(`พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`);
-     }
+    if (typeof safeAlert === "function") {
+      safeAlert(
+        "เตรียมแพ็คของ",
+        `พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`,
+        "info",
+      );
+    } else {
+      alert(`พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`);
+    }
   });
 
   return col;
 }
 
-
-
-
-
-
-
-
-
-
 // ฟังก์ชันสลับหน้าจอ (Switch View)
+
 function showView(viewId) {
   const allViews = document.querySelectorAll(".view-screen");
   allViews.forEach((view) => {
-    view.classList.add("hide"); 
+    view.classList.add("hide");
   });
-
   const targetView = document.getElementById(viewId);
   if (targetView) {
     targetView.classList.remove("hide");
   } else {
-    console.error("ไม่พบหน้าจอ ID:", viewId);
+    console.error("🚨 ไม่พบหน้าจอ ID:", viewId);
   }
 }
 
-// ฟังก์ชันโหลดชื่อสาขาบนหัว Lobby
 function loadLobbyHeader() {
   const branchID = sessionStorage.getItem("selectedBranchID");
   const branchName = sessionStorage.getItem("selectedBranchName");
-  const headerElement = document.getElementById("lobbyBranchHeaderName"); 
-
+  const headerElement = document.getElementById("lobbyBranchHeaderName");
   if (headerElement && branchID && branchName) {
     headerElement.textContent = `[${branchID}] - ${branchName}`;
   }
 }
+
 // =================================================================
 // 🚀 END กลุ่มที่ 2
 // =================================================================
-
-
-
 
 // ======================================================
 // กลุ่มที่ 3: ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
@@ -204,8 +208,8 @@ function createUniversalCard(branchName, docNo, branchID, status = "pending") {
   // 1. ตั้งค่าสีตามสถานะ
   const colorMap = {
     pending: "#dc3545", // สีแดง
-    done: "#28a745",    // สีเขียว
-    issue: "#ffc107",   // สีเหลือง/ส้ม
+    done: "#28a745", // สีเขียว
+    issue: "#ffc107", // สีเหลือง/ส้ม
   };
 
   const borderColor = colorMap[status] || "#ccc";
@@ -243,23 +247,21 @@ function createUniversalCard(branchName, docNo, branchID, status = "pending") {
     showView("transferOutLobbyView");
     loadLobbyHeader();
   });
-  
+
   return card;
 }
 // ======================================================
 // 🚀 END กลุ่มที่ 3
 // ======================================================
 
-
-
-
-
 // ======================================================
 // กลุ่มที่ 4: ระบบหน้า Lobby และการบันทึกข้อมูล (API POST)
 // ======================================================
 
 function getNextRunningNumber() {
-  let currentNum = parseInt(localStorage.getItem("shipment_running_counter") || "0");
+  let currentNum = parseInt(
+    localStorage.getItem("shipment_running_counter") || "0",
+  );
   currentNum++;
   if (currentNum > 9999) currentNum = 1;
   localStorage.setItem("shipment_running_counter", currentNum.toString());
@@ -274,9 +276,59 @@ function formatShipmentNoHTML(shipmentNo) {
 // 🚀 END กลุ่มที่ 4
 // ======================================================
 
+card.addEventListener("click", () => {
+  console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
 
-function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, totalBox, totalItem, status) {
-  const colorMap = { assign: "#dc3545", pending: "#e0a800", complete: "#28a745" };
+  // 1. บันทึกข้อมูลลงคลังความจำ (Session Storage)
+  sessionStorage.setItem("jump_to_shipment", shipmentNo);
+  sessionStorage.setItem("selectedBranchID", destBranch);
+
+  // (เพิ่มให้ครับ) ดักไว้เผื่อระบบถามหาชื่อสาขา จะได้ไม่โชว์คำว่า null บนนหัว Lobby
+  if (!sessionStorage.getItem("selectedBranchName")) {
+    sessionStorage.setItem("selectedBranchName", "");
+  }
+
+  try {
+    // 2. 🟢 สั่งสลับหน้าจอ (Switch View)
+    if (typeof showView === "function") {
+      // 🚨 หมายเหตุ: ถ้า ID หน้า Lobby ของเจเลอร์ไม่ได้ชื่อ "viewLobby" ให้เปลี่ยนคำในวงเล็บให้ตรงนะครับ
+      showView("viewLobby");
+      console.log("🔄 สลับไปหน้า Lobby สำเร็จ!");
+    }
+
+    // 3. 🟢 สั่งเปลี่ยนชื่อหัว Lobby
+    if (typeof loadLobbyHeader === "function") {
+      loadLobbyHeader();
+    }
+
+    // 4. 🟢 สั่งโฟกัสไฮไลต์แถบสีเงิน
+    if (typeof focusShipmentInLobby === "function") {
+      console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
+      focusShipmentInLobby(shipmentNo);
+    }
+  } catch (error) {
+    console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
+  }
+});
+
+// ======================================================
+// กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
+// ======================================================
+
+function createTransferOutTaskCard(
+  date,
+  shipmentNo,
+  originType,
+  destBranch,
+  totalBox,
+  totalItem,
+  status,
+) {
+  const colorMap = {
+    assign: "#dc3545",
+    pending: "#e0a800",
+    complete: "#28a745",
+  };
   const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
 
@@ -307,92 +359,92 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     </div>
   `;
 
-  // 🟢 ส่วนที่แก้ไข: เพิ่มคำสั่งสลับหน้าจอ (showView) และเปลี่ยนชื่อหัว Lobby (loadLobbyHeader)
   card.addEventListener("click", () => {
     console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
-    
+
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
     sessionStorage.setItem("selectedBranchID", destBranch);
-    
-    if(!sessionStorage.getItem("selectedBranchName")) {
-        sessionStorage.setItem("selectedBranchName", ""); 
+
+    if (!sessionStorage.getItem("selectedBranchName")) {
+      sessionStorage.setItem("selectedBranchName", "");
     }
 
     try {
-        if (typeof showView === "function") {
-            showView("viewLobby"); 
-            console.log("🔄 สลับไปหน้า Lobby สำเร็จ!");
-        }
+      const lobbyScreenId = "transferOutLobbyView"; // 🟢 แก้ให้ตรงกับ ID ใน Master Initializer
 
-        if (typeof loadLobbyHeader === "function") {
-            loadLobbyHeader();
-        }
-
-        if (typeof focusShipmentInLobby === "function") {
-            console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
-            focusShipmentInLobby(shipmentNo);
-        }
+      if (typeof showView === "function") {
+        showView(lobbyScreenId);
+        console.log(`🔄 สลับไปหน้า ${lobbyScreenId} สำเร็จ!`);
+      }
+      if (typeof loadLobbyHeader === "function") {
+        loadLobbyHeader();
+      }
+      if (typeof focusShipmentInLobby === "function") {
+        setTimeout(() => {
+          console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
+          focusShipmentInLobby(shipmentNo);
+        }, 300);
+      }
     } catch (error) {
-        console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
+      console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
     }
   });
 
   return card;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 async function loadExistingTasks() {
-  const containers = ["assignContainer", "pendingContainer", "completeContainer"];
+  const containers = [
+    "assignContainer",
+    "pendingContainer",
+    "completeContainer",
+  ];
   const assignContainer = document.getElementById("assignContainer");
-  if (!assignContainer) return; 
+  if (!assignContainer) return;
 
   try {
     const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
     const tasks = await response.json();
     if (!Array.isArray(tasks)) return;
 
-    containers.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ""; });
+    containers.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = "";
+    });
 
     let counts = { assign: 0, pending: 0, complete: 0 };
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       const statusKey = (task.Status || "").toLowerCase();
-      const card = createTransferOutTaskCard(task.Date, task.Shipment_No, task.Origin_Type, task.Destination, task.Total_Box, task.Total_Item, task.Status);
+      const card = createTransferOutTaskCard(
+        task.Date,
+        task.Shipment_No,
+        task.Origin_Type,
+        task.Destination,
+        task.Total_Box,
+        task.Total_Item,
+        task.Status,
+      );
       const target = document.getElementById(statusKey + "Container");
-      if (target) { target.appendChild(card); counts[statusKey]++; }
+      if (target) {
+        target.appendChild(card);
+        counts[statusKey]++;
+      }
     });
 
-    Object.keys(counts).forEach(key => {
+    Object.keys(counts).forEach((key) => {
       const el = document.getElementById(key + "TaskCount");
-      if (el) el.innerHTML = "Task (" + counts[key] + ") <i class=\"fas fa-chevron-down\"></i>";
+      if (el)
+        el.innerHTML =
+          "Task (" + counts[key] + ') <i class="fas fa-chevron-down"></i>';
     });
-  } catch (error) { console.error("Error loading tasks:", error); }
+  } catch (error) {
+    console.error("Error loading tasks:", error);
+  }
 }
 
 // ======================================================
 // 🚀 END กลุ่มที่ 5
 // ======================================================
-
-
-
-
-
-
-
-
-
-
 
 // ======================================================
 // กลุ่มที่ 6: Utility & Global Initializers (ส่วนเชื่อมประสาน)
@@ -401,35 +453,38 @@ async function loadExistingTasks() {
 // 1. ฟังก์ชันค้นหาและวาร์ป (ใช้ร่วมกันทั้งหน้า Lobby และ Task Hub)
 function focusShipmentInLobby(shipmentNo) {
   const columns = document.querySelectorAll(".shipment-column");
-  columns.forEach(col => {
+  columns.forEach((col) => {
     if (col.innerHTML.includes(shipmentNo)) {
       col.style.transition = "background 0.5s";
-      col.style.background = "#fff3cd"; 
+      col.style.background = "#fff3cd";
       col.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => { col.style.background = "#ffffff"; }, 2000);
+      setTimeout(() => {
+        col.style.background = "#ffffff";
+      }, 2000);
     }
   });
 }
 
-// 2. ฟังก์ชันโหลด Dropdown ประเภทการโอน (ใช้ใน Modal)
 function loadTransferTypesIntoDropdown() {
   const selectType = document.getElementById("selectTransferType");
   if (!selectType) return;
   selectType.innerHTML = '<option value="">กำลังโหลดประเภท...</option>';
 
-  // ✅ เปลี่ยนให้ตรงกับหลังบ้าน 100% แล้วครับ
   fetch(CONFIG.API_URL + "?action=get_transfer_types")
     .then((res) => res.json())
     .then((data) => {
       selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
       if (Array.isArray(data)) {
         data.forEach((item) => {
+          const key =
+            item.Type_Key || item.type_key || item.id || item.Key || "";
+          const desc =
+            item.Description ||
+            item.description ||
+            item.name ||
+            item.Desc ||
+            "";
           const option = document.createElement("option");
-          
-          // ดึงค่าตาม Key ที่ API ส่งมา (เผื่อตัวพิมพ์เล็ก/ใหญ่)
-          const key = item.Type_Key || item.type_key || item.id || item.Key || "";
-          const desc = item.Description || item.description || item.name || item.Desc || "";
-          
           option.value = key;
           option.textContent = `[${key}] ${desc}`;
           selectType.appendChild(option);
@@ -439,41 +494,26 @@ function loadTransferTypesIntoDropdown() {
     .catch((err) => console.error("Dropdown Load Error:", err));
 }
 
-  // เช็กว่ามีคำสั่งวาร์ปค้างอยู่ไหม
-  const pendingJump = sessionStorage.getItem("jump_to_shipment");
-  if (pendingJump) {
-    setTimeout(() => {
-      focusShipmentInLobby(pendingJump);
-      sessionStorage.removeItem("jump_to_shipment");
-    }, 500);
-  }
 // ======================================================
-// 🚀 END กลุ่มที่ 6: ระบบพร้อมใช้งาน 100%
+// 🚀 MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API
 // ======================================================
-
-
-
-// ======================================================
-// MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
-// ======================================================
-
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. ประกาศตัวแปรหน้าจอ (View Containers)
   const productMovementView = document.getElementById("productMovementView");
   const viewTaskHub = document.getElementById("transferOutTaskHubView");
   const viewDest = document.getElementById("transferOutDestView");
   const viewLobby = document.getElementById("transferOutLobbyView");
 
-  // 2. โหลดข้อมูลเริ่มต้น (กลุ่ม 1, 5, 6)
   loadExistingTasks();
   loadBranchesIntoDropdown();
   loadTransferTypesIntoDropdown();
 
-  // ==========================================
-  // 3. ผูก Event ปุ่ม นำทาง (Navigation) ของ Transfer Out
-  // ==========================================
+  // ฟังก์ชันนำทางแบบย่อ
+  const navigationTo = (hideView, showView) => {
+    if (hideView) hideView.classList.add("hide");
+    if (showView) showView.classList.remove("hide");
+  };
 
-  // เข้า-ออก ระบบ Transfer Out
+  // Event ปุ่ม นำทางต่างๆ
   document
     .getElementById("btnTransferOut")
     ?.addEventListener("click", () =>
@@ -490,19 +530,17 @@ document.addEventListener("DOMContentLoaded", () => {
       navigationTo(viewTaskHub, productMovementView),
     );
 
-  // ปุ่ม + สร้างงานใหม่ (ไปหน้าเลือกสาขา)
   const btnCreateNewTask =
     document.getElementById("btnCreateNewTask") ||
     document.getElementById("btnNewTask");
   if (btnCreateNewTask) {
     btnCreateNewTask.addEventListener("click", () => {
       const selectDest = document.getElementById("selectDestination");
-      if (selectDest) selectDest.selectedIndex = 0; // เคลียร์ค่าเดิม
+      if (selectDest) selectDest.selectedIndex = 0;
       navigationTo(viewTaskHub, viewDest);
     });
   }
 
-  // ปุ่ม Cancel กลับจากหน้าเลือกสาขา และ หน้า Lobby
   document
     .getElementById("btnCancelDest")
     ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
@@ -516,17 +554,12 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("btnBackToDest")
     ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
 
-  // ==========================================
-  // 4. ลอจิกปุ่ม Next (เลือกสาขา -> ไป Lobby)
-  // ==========================================
   const btnSubmitDest =
     document.getElementById("btnSubmitDest") ||
     document.getElementById("btnNextDest");
   if (btnSubmitDest) {
     btnSubmitDest.addEventListener("click", () => {
       const destDropdown = document.getElementById("selectDestination");
-
-      // เช็กการเลือกข้อมูล
       if (!destDropdown || !destDropdown.value) {
         if (typeof safeAlert === "function")
           safeAlert(
@@ -537,40 +570,19 @@ document.addEventListener("DOMContentLoaded", () => {
         else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
         return;
       }
-
       const branchID = destDropdown.value;
       const branchName = destDropdown.options[destDropdown.selectedIndex].text;
 
-      // เช็ก Lobby เดิมที่อาจเปิดค้างไว้
-      const existingLobby = document.querySelector(
-        `.shipment-card[data-branch-id="${branchID}"]`,
-      );
-      if (existingLobby) {
-        if (typeof safeAlert === "function")
-          safeAlert(
-            "แจ้งเตือน",
-            "ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ",
-            "warning",
-          );
-        else alert("ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว");
-      }
-
-      // บันทึก SessionStorage
       sessionStorage.setItem("selectedBranchID", branchID);
       sessionStorage.setItem("selectedBranchName", branchName);
 
-      // เปลี่ยนชื่อหัว Lobby
       const lobbyHeader = document.getElementById("lobbyBranchHeaderName");
       if (lobbyHeader) lobbyHeader.innerText = branchName;
-
-      // วาร์ปไปหน้า Lobby
       navigationTo(viewDest, viewLobby);
     });
   }
 
-  // ==========================================
-  // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
-  // ==========================================
+  // ระบบ Modal สร้างงาน (รถบรรทุก + ยืนยัน)
   const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
   const shipmentBoxModal = document.getElementById("shipmentBoxModal");
   const selectType = document.getElementById("selectTransferType");
@@ -579,7 +591,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
 
-  // 🎯 1. ดักจับการเปิดหน้าต่าง (Fresh Start)
   if (btnAddShipmentTruck && shipmentBoxModal) {
     btnAddShipmentTruck.addEventListener("click", () => {
       if (selectType) selectType.selectedIndex = 0;
@@ -588,7 +599,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🎯 2. ดักจับตอนเลือก Dropdown (Auto-Preview)
   if (selectType && inputBoxNumber) {
     selectType.addEventListener("change", () => {
       if (!selectType.value) {
@@ -603,12 +613,10 @@ document.addEventListener("DOMContentLoaded", () => {
         parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
       if (previewNum > 9999) previewNum = 1;
       const previewRunning = previewNum.toString().padStart(4, "0");
-
       inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
     });
   }
 
-  // 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
   if (btnConfirm) {
     btnConfirm.addEventListener("click", () => {
       if (!selectType || !selectType.value) {
@@ -626,14 +634,15 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionStorage.getItem("selectedBranchID") || "KKN02";
       const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
       const finalShipmentNo = `${selectType.value}-${new Date().toLocaleDateString("en-GB").replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
+      const dateStr = new Date().toLocaleDateString("en-GB");
 
       const payload = {
-        Date: new Date().toLocaleDateString("en-GB"),
+        Date: dateStr,
         Shipment_No: finalShipmentNo,
         Origin_Branch: "CK",
         Destination: targetDestination,
         Origin_Type: "Store",
-        Status: "Assign",
+        Status: STATUS_CONFIG.NEW,
       };
 
       btnConfirm.disabled = true;
@@ -641,57 +650,51 @@ document.addEventListener("DOMContentLoaded", () => {
         '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
       btnConfirm.style.opacity = "0.7";
 
+      fetch(CONFIG.API_URL + "?action=save_new_task", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === "success") {
+            if (container)
+              container.appendChild(
+                createShipmentColumn(finalShipmentNo, "Store"),
+              );
+            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+            if (emptyState) emptyState.style.display = "none";
 
-fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
-  .then(res => res.json())
-  .then(res => {
-    if (res.status === "success") {
-      // 1. สร้างคอลัมน์ลงในหน้า Lobby
-      if (container) container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
-      if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-      if (emptyState) emptyState.style.display = "none";
+            // 🟢 แก้ไข: ใช้ Container ชื่อให้ตรงกับตอนโหลดข้อมูล และส่งข้อมูลแบบ Argument แยกส่วนให้ถูกต้อง
+            const assignContainer = document.getElementById("assignContainer");
+            if (
+              assignContainer &&
+              typeof createTransferOutTaskCard === "function"
+            ) {
+              const newCard = createTransferOutTaskCard(
+                dateStr,
+                finalShipmentNo,
+                "Store",
+                targetDestination,
+                0,
+                0,
+                STATUS_CONFIG.NEW,
+              );
+              assignContainer.appendChild(newCard);
+              console.log(
+                `✅ สร้าง Task Card (${STATUS_CONFIG.NEW}) ลงกล่อง assignContainer สำเร็จ!`,
+              );
+            }
+          }
+        })
+        .finally(() => {
+          btnConfirm.disabled = false;
+          btnConfirm.innerHTML = "ยืนยันสร้าง";
+          btnConfirm.style.opacity = "1";
+        });
+    });
+  }
 
-      // 2. 🟢 สร้าง Task Card ส่งกลับไปหน้า Task Hub
-      const taskHubAssignContainer = document.getElementById("taskContainerAssign"); 
-      if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
-         const newCardData = {
-            Shipment_No: finalShipmentNo,
-            Destination: targetDestination,
-            Date: new Date().toLocaleDateString("en-GB"),
-            Total_Box: 0,
-            Total_Item: 0,
-            Status: STATUS_CONFIG.NEW // 🟢 ระบบจะมาดึงคำว่า "Assign" จากด้านบนสุดของไฟล์ให้เอง
-         };
-         
-         const newCard = createTransferOutTaskCard(newCardData);
-         if (typeof newCard === "string") {
-             taskHubAssignContainer.insertAdjacentHTML("beforeend", newCard);
-         } else {
-             taskHubAssignContainer.appendChild(newCard);
-         }
-         console.log(`✅ สร้าง Task Card (${STATUS_CONFIG.NEW}) สำเร็จ!`);
-      }
-    }
-  })
-  .finally(() => { 
-      btnConfirm.disabled = false; 
-      btnConfirm.innerHTML = "ยืนยันสร้าง"; 
-      btnConfirm.style.opacity = "1";
-  });
-
-});
-}
-
-      
-      
-      
-      
-      
-      
-
-  // ==========================================
-  // 6. ระบบวาร์ปหน้าจอ (เมื่อกดมาจากการ์ด Task Hub)
-  // ==========================================
+  // ระบบเช็กการวาร์ปเมื่อโหลดหน้าจอ
   const pendingJump = sessionStorage.getItem("jump_to_shipment");
   if (pendingJump) {
     setTimeout(() => {
@@ -704,4 +707,3 @@ fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.str
 // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
 // ======================================================
-
