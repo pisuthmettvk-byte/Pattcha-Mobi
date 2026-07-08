@@ -497,6 +497,7 @@ function loadTransferTypesIntoDropdown() {
 // ======================================================
 // 🚀 MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API
 // ======================================================
+
 document.addEventListener("DOMContentLoaded", () => {
   const productMovementView = document.getElementById("productMovementView");
   const viewTaskHub = document.getElementById("transferOutTaskHubView");
@@ -703,6 +704,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 500);
   }
 });
+
+
+
+
+
+
+
 
 // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
