@@ -315,6 +315,57 @@ card.addEventListener("click", () => {
 // กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
 // ======================================================
 
+
+// 🟢 ฟังก์ชันใหม่: ดึงงานทั้งหมดของสาขา (เฉพาะสถานะ Assign) มาวาดใน Lobby 
+
+
+
+async function renderLobbyTasks(branchID) {
+    const container = document.getElementById("lobbyContentContainer");
+    const emptyState = document.getElementById("lobbyEmptyState");
+    
+    if (!container) return;
+    
+    // เคลียร์หน้าจอเดิม และขึ้นสถานะกำลังโหลด
+    container.innerHTML = '<div style="text-align:center; padding: 20px; font-weight:bold; color:#666;">กำลังดึงข้อมูลงาน... <i class="fas fa-spinner fa-spin"></i></div>';
+
+    try {
+        const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
+        const tasks = await response.json();
+        
+        container.innerHTML = ""; // ล้างข้อความโหลด
+
+        if (!Array.isArray(tasks)) return;
+
+        // 🎯 กรองเอาเฉพาะ "สาขาที่เลือก" และ "สถานะ Assign (หรือใหม่)" ตามที่ตกลงแผนกันไว้
+        const branchTasks = tasks.filter(task => {
+            const isMatchBranch = task.Destination === branchID;
+            const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
+            return isMatchBranch && isAssignStatus;
+        });
+
+        if (branchTasks.length > 0) {
+            if (emptyState) emptyState.style.display = "none";
+            
+            // วนลูปสร้างแถบสีเงินทีละแถว
+            branchTasks.forEach(task => {
+                const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
+                container.appendChild(col);
+            });
+        } else {
+            // ถ้าไม่มีงานเลย ให้โชว์หน้าจอว่าง (Empty State)
+            if (emptyState) emptyState.style.display = "block";
+        }
+
+    } catch (error) {
+        console.error("🚨 Error loading lobby tasks:", error);
+        container.innerHTML = '<div style="text-align:center; color:#dc3545;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
+    }
+}
+
+
+
+
 function createTransferOutTaskCard(
   date,
   shipmentNo,
