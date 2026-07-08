@@ -315,75 +315,58 @@ card.addEventListener("click", () => {
 // กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
 // ======================================================
 
+// ======================================================
+// กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด ดึงข้อมูล และวาด Lobby)
+// ======================================================
 
-// 🟢 ฟังก์ชันใหม่: ดึงงานทั้งหมดของสาขา (เฉพาะสถานะ Assign) มาวาดใน Lobby 
-
-
-
+// 🟢 1. ฟังก์ชันใหม่: ดึงงานทั้งหมดของสาขา (เฉพาะสถานะ Assign) มาวาดใน Lobby
 async function renderLobbyTasks(branchID) {
-    const container = document.getElementById("lobbyContentContainer");
-    const emptyState = document.getElementById("lobbyEmptyState");
+  const container = document.getElementById("lobbyContentContainer");
+  const emptyState = document.getElementById("lobbyEmptyState");
+  
+  if (!container) return;
+  
+  container.innerHTML = '<div style="text-align:center; padding: 20px; font-weight:bold; color:#666;">กำลังดึงข้อมูลงาน... <i class="fas fa-spinner fa-spin"></i></div>';
+
+  try {
+    const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
+    const tasks = await response.json();
     
-    if (!container) return;
-    
-    // เคลียร์หน้าจอเดิม และขึ้นสถานะกำลังโหลด
-    container.innerHTML = '<div style="text-align:center; padding: 20px; font-weight:bold; color:#666;">กำลังดึงข้อมูลงาน... <i class="fas fa-spinner fa-spin"></i></div>';
+    container.innerHTML = ""; 
 
-    try {
-        const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
-        const tasks = await response.json();
-        
-        container.innerHTML = ""; // ล้างข้อความโหลด
+    if (!Array.isArray(tasks)) return;
 
-        if (!Array.isArray(tasks)) return;
+    // กรองเฉพาะ "สาขาที่เลือก" และ "สถานะ Assign"
+    const branchTasks = tasks.filter(task => {
+      const isMatchBranch = task.Destination === branchID;
+      const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
+      return isMatchBranch && isAssignStatus;
+    });
 
-        // 🎯 กรองเอาเฉพาะ "สาขาที่เลือก" และ "สถานะ Assign (หรือใหม่)" ตามที่ตกลงแผนกันไว้
-        const branchTasks = tasks.filter(task => {
-            const isMatchBranch = task.Destination === branchID;
-            const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
-            return isMatchBranch && isAssignStatus;
-        });
-
-        if (branchTasks.length > 0) {
-            if (emptyState) emptyState.style.display = "none";
-            
-            // วนลูปสร้างแถบสีเงินทีละแถว
-            branchTasks.forEach(task => {
-                const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
-                container.appendChild(col);
-            });
-        } else {
-            // ถ้าไม่มีงานเลย ให้โชว์หน้าจอว่าง (Empty State)
-            if (emptyState) emptyState.style.display = "block";
+    if (branchTasks.length > 0) {
+      if (emptyState) emptyState.style.display = "none";
+      branchTasks.forEach(task => {
+        if (typeof createShipmentColumn === "function") {
+            const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
+            container.appendChild(col);
         }
-
-    } catch (error) {
-        console.error("🚨 Error loading lobby tasks:", error);
-        container.innerHTML = '<div style="text-align:center; color:#dc3545;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
+      });
+    } else {
+      if (emptyState) emptyState.style.display = "block";
     }
+  } catch (error) {
+    console.error("🚨 Error loading lobby tasks:", error);
+    container.innerHTML = '<div style="text-align:center; color:#dc3545;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
+  }
 }
 
-
-
-
-function createTransferOutTaskCard(
-  date,
-  shipmentNo,
-  originType,
-  destBranch,
-  totalBox,
-  totalItem,
-  status,
-) {
-  const colorMap = {
-    assign: "#dc3545",
-    pending: "#e0a800",
-    complete: "#28a745",
-  };
+// 🟢 2. ฟังก์ชันสร้างการ์ด (อัปเดตการดึงข้อมูลเข้า Lobby)
+function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, totalBox, totalItem, status) {
+  const colorMap = { assign: "#dc3545", pending: "#e0a800", complete: "#28a745" };
   const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
 
-  const card = document.createElement("div");
+  const card = document.createElement("div"); // ใช้ c เล็ก
   card.className = "task-card";
   card.dataset.destination = destBranch;
 
@@ -410,7 +393,8 @@ function createTransferOutTaskCard(
     </div>
   `;
 
-  card.addEventListener("click", () => {
+  // 🟢 3. แก้ไข Card เป็น card (ตัวเล็ก) และทำงานแบบรอโหลดให้เสร็จ (async)
+  card.addEventListener("click", async () => {
     console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
 
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
@@ -421,7 +405,7 @@ function createTransferOutTaskCard(
     }
 
     try {
-      const lobbyScreenId = "transferOutLobbyView"; // 🟢 แก้ให้ตรงกับ ID ใน Master Initializer
+      const lobbyScreenId = "transferOutLobbyView"; 
 
       if (typeof showView === "function") {
         showView(lobbyScreenId);
@@ -430,20 +414,28 @@ function createTransferOutTaskCard(
       if (typeof loadLobbyHeader === "function") {
         loadLobbyHeader();
       }
+
+      // 🟢 จิ๊กซอว์สำคัญ: ดึงงานมาวาดใน Lobby รอให้เสร็จก่อน
+      if (typeof renderLobbyTasks === "function") {
+         await renderLobbyTasks(destBranch);
+         console.log(`✅ โหลดข้อมูลงาน Assign ของสาขา ${destBranch} เข้า Lobby สำเร็จ!`);
+      }
+
       if (typeof focusShipmentInLobby === "function") {
         setTimeout(() => {
           console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
           focusShipmentInLobby(shipmentNo);
-        }, 300);
+        }, 500);
       }
     } catch (error) {
       console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
     }
   });
 
-  return card;
+  return card; 
 }
 
+// 🟢 4. โค้ดดึงข้อมูลเข้า Task Hub 
 async function loadExistingTasks() {
   const containers = [
     "assignContainer",
@@ -492,6 +484,10 @@ async function loadExistingTasks() {
     console.error("Error loading tasks:", error);
   }
 }
+
+
+
+
 
 // ======================================================
 // 🚀 END กลุ่มที่ 5
