@@ -138,13 +138,14 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
+  // 🟢 ปรับปรุง: เปลี่ยนจากการแสดงแจ้งเตือน เป็นการสลับหน้าจอไปที่ Box Details
   const btnScan = col.querySelector(".btn-scan");
   btnScan.addEventListener("click", () => {
-     if (typeof safeAlert === "function") {
-         safeAlert("เตรียมแพ็คของ", `พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`, "info");
-     } else {
-         alert(`พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`);
-     }
+    sessionStorage.setItem("activeShipmentNo", shipmentNo);
+    if (typeof showView === "function") {
+      showView("boxDetailsView");
+    }
+    console.log(`📦 เปิดหน้าสแกนสินค้าลง Shipment: ${shipmentNo}`);
   });
 
   return col;
