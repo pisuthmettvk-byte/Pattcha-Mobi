@@ -73,9 +73,13 @@ async function loadBranchesIntoDropdown() {
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
   col.className = "shipment-column";
-  col.setAttribute("data-shipment", shipmentNo);
+  
+  // 🟢 แก้ไข: เพิ่มเกราะป้องกันจอขาว หาก Shipment_No ว่างเปล่าหรือผิดฟอร์แมต
+  const safeShipmentNo = shipmentNo || "UNKNOWN-00000000-00XX-0000-00XX";
+  col.setAttribute("data-shipment", safeShipmentNo);
 
-  const dateParts = shipmentNo.split("-")[1]; 
+  const parts = safeShipmentNo.split("-");
+  const dateParts = parts.length > 1 ? parts[1] : ""; 
   const displayDate = dateParts && dateParts.length === 8 
         ? `${dateParts.substring(0,2)}/${dateParts.substring(2,4)}/${dateParts.substring(6,8)}` 
         : new Date().toLocaleDateString("en-GB").substring(0, 8);
@@ -93,7 +97,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     padding: 10px 20px;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap; /* 🟢 จุดสำคัญ: สั่งให้ปัดบรรทัดตกเมื่อจอแคบ */
+    flex-wrap: wrap; 
     align-items: center;
     justify-content: space-between;
     gap: 15px;
@@ -104,7 +108,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
       <input type="checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
       <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
-      <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${shipmentNo}</span>
+      <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${safeShipmentNo}</span>
     </div>
 
     <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
@@ -130,7 +134,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   const btnDelete = col.querySelector(".btn-delete");
   btnDelete.addEventListener("click", () => {
-    if (confirm(`ต้องการลบ Shipment: ${shipmentNo} ใช่หรือไม่?`)) {
+    if (confirm(`ต้องการลบ Shipment: ${safeShipmentNo} ใช่หรือไม่?`)) {
       col.remove();
       const container = document.getElementById("lobbyContentContainer");
       const emptyState = document.getElementById("lobbyEmptyState");
@@ -140,20 +144,16 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 🟢 ปรับปรุง: เปลี่ยนจากการแสดงแจ้งเตือน เป็นการสลับหน้าจอไปที่ Box Details
   const btnScan = col.querySelector(".btn-scan");
   btnScan.addEventListener("click", () => {
-    sessionStorage.setItem("activeShipmentNo", shipmentNo);
+    sessionStorage.setItem("activeShipmentNo", safeShipmentNo);
     if (typeof showView === "function") {
       showView("boxDetailsView");
     }
-    console.log(`📦 เปิดหน้าสแกนสินค้าลง Shipment: ${shipmentNo}`);
   });
 
   return col;
 }
-
-
 
 
 
@@ -280,11 +280,12 @@ function createUniversalCard(branchName, docNo, branchID, status = "pending") {
 
 //===============
 // [Render Lobby Tasks] START
+
 async function renderLobbyTasks(branchID) {
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
-  
   if (!container) return;
+  
   container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color:#666;"><h4>กำลังดึงข้อมูลงาน...</h4><i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i></div>';
 
   try {
@@ -303,15 +304,14 @@ async function renderLobbyTasks(branchID) {
       const isMatchBranch = task.Destination === branchID;
       const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
       const isMyOrigin = String(task.Origin_Branch || "").trim().toUpperCase() === myBranch;
-      
       return isMatchBranch && isAssignStatus && isMyOrigin;
     });
 
     if (branchTasks.length > 0) {
       if (emptyState) emptyState.style.display = "none";
       branchTasks.forEach(task => {
+        // 🟢 แก้ไข: บังคับให้สร้าง UI จากแม่พิมพ์ลูกระนาดสีเงิน (createShipmentColumn) เท่านั้น
         if (typeof createShipmentColumn === "function") {
-          // 🟢 โยนข้อมูลให้แม่พิมพ์หลักทำงาน (รับประกันหน้าตาเหมือนกัน 100%)
           const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
           container.appendChild(col);
         }
@@ -324,6 +324,8 @@ async function renderLobbyTasks(branchID) {
     container.innerHTML = '<div style="text-align:center; color:#dc3545; padding: 20px;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
   }
 }
+
+
 // [Render Lobby Tasks] END
 //===============
 
@@ -371,7 +373,6 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
   const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
   
-  // 🟢 แปลงรหัสปลายทางให้แสดงเป็นรหัสสาขาจริง
   const displayDestBranch = typeof getRealBranchCode === "function" ? getRealBranchCode(destBranch) : destBranch;
 
   const card = document.createElement("div"); 
@@ -402,18 +403,15 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
   `;
 
   card.addEventListener("click", async () => {
-    console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
-    
-    // 1. บันทึกข้อมูลลงหน่วยความจำ
+    // 🟢 แก้ไข: บังคับจำรหัสสาขาจริง (เช่น CTW03) ป้องกันการสร้างงานใหม่แล้วกลายเป็น 0202
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
-    sessionStorage.setItem("selectedBranchID", destBranch);
+    sessionStorage.setItem("selectedBranchID", displayDestBranch); 
 
     if (!sessionStorage.getItem("selectedBranchName")) {
       sessionStorage.setItem("selectedBranchName", "");
     }
 
     try {
-      // 2. 🟢 สลับไปหน้า Lobby อย่างปลอดภัย (เช็กฟังก์ชันก่อนเรียกใช้งาน ป้องกันหน้าจอขาว)
       if (typeof showView === "function") {
         showView("transferOutLobbyView");
       } else {
@@ -421,21 +419,15 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
         document.getElementById('transferOutLobbyView').classList.remove('hide');
       }
       
-      // 3. โหลด Header หัวมุม Lobby
-      if (typeof loadLobbyHeader === "function") {
-        loadLobbyHeader();
-      }
+      if (typeof loadLobbyHeader === "function") loadLobbyHeader();
       
-      // 4. วาดแถบ Shipment Columns ของสาขานั้น
+      // 🟢 ส่งรหัส DB (เช่น 02CT) ไปดึงข้อมูล เพื่อให้โชว์รายการถูกต้อง
       if (typeof renderLobbyTasks === "function") {
         await renderLobbyTasks(destBranch);
       }
       
-      // 5. ไฮไลต์งานให้เห็นชัดเจนเมื่อวาดเสร็จ
       setTimeout(() => {
-        if (typeof focusShipmentInLobby === "function") {
-          focusShipmentInLobby(shipmentNo);
-        }
+        if (typeof focusShipmentInLobby === "function") focusShipmentInLobby(shipmentNo);
       }, 500);
 
     } catch (error) {
@@ -445,6 +437,8 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
 
   return card; 
 }
+
+
 
 
 
