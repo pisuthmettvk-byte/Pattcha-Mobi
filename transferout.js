@@ -252,6 +252,49 @@ function createUniversalCard(branchName, docNo, branchID, status = "pending") {
 // กลุ่มที่ 4: ระบบหน้า Lobby และการบันทึกข้อมูล (API POST)
 // ======================================================
 
+// 🟢 ฟังก์ชันดึงงานของสาขาเป้าหมายมาแสดงใน Lobby (แก้ Error is not defined)
+async function renderLobbyTasks(branchID) {
+  const container = document.getElementById("lobbyContentContainer");
+  const emptyState = document.getElementById("lobbyEmptyState");
+  
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center; padding: 20px; font-weight:bold; color:#666;">กำลังดึงข้อมูลงาน... <i class="fas fa-spinner fa-spin"></i></div>';
+
+  try {
+    const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
+    const tasks = await response.json();
+    container.innerHTML = ""; 
+
+    if (!Array.isArray(tasks)) return;
+
+    // กรองเฉพาะงานที่ Destination ตรงกับที่กดเลือก และสถานะเป็น Assign
+    const branchTasks = tasks.filter(task => {
+      const isMatchBranch = task.Destination === branchID;
+      const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
+      return isMatchBranch && isAssignStatus;
+    });
+
+    if (branchTasks.length > 0) {
+      if (emptyState) emptyState.style.display = "none";
+      branchTasks.forEach(task => {
+        if (typeof createShipmentColumn === "function") {
+          const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
+          container.appendChild(col);
+        }
+      });
+    } else {
+      if (emptyState) emptyState.style.display = "block";
+    }
+  } catch (error) {
+    console.error("🚨 Error loading lobby tasks:", error);
+    container.innerHTML = '<div style="text-align:center; color:#dc3545;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
+  }
+}
+
+
+
+
+
 function getNextRunningNumber() {
   let currentNum = parseInt(localStorage.getItem("shipment_running_counter") || "0");
   currentNum++;
@@ -355,6 +398,7 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
 
 
 
+// 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
 async function loadExistingTasks() {
   const containers = ["assignContainer", "pendingContainer", "completeContainer"];
   const assignContainer = document.getElementById("assignContainer");
@@ -367,19 +411,45 @@ async function loadExistingTasks() {
 
     containers.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ""; });
 
+    // 📍 ดึงรหัสสาขาของตัวเองที่ล็อกอินอยู่
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
     let counts = { assign: 0, pending: 0, complete: 0 };
+
     tasks.forEach(task => {
-      const statusKey = (task.Status || "").toLowerCase();
-      const card = createTransferOutTaskCard(task.Date, task.Shipment_No, task.Origin_Type, task.Destination, task.Total_Box, task.Total_Item, task.Status);
-      const target = document.getElementById(statusKey + "Container");
-      if (target) { target.appendChild(card); counts[statusKey]++; }
+      // 📍 แปลงรหัสปลายทางของ Task เพื่อมาตรวจสอบ
+      const realDestBranch = typeof getRealBranchCode === "function" ? getRealBranchCode(task.Destination) : task.Destination;
+      
+      // 🟢 ตรรกะสำคัญ: แสดงงานก็ต่อเมื่อ ปลายทาง (Destination) "ไม่ใช่" สาขาตัวเอง
+      if (realDestBranch !== myBranch) {
+        const statusKey = (task.Status || "").toLowerCase();
+        
+        if (typeof createTransferOutTaskCard === "function") {
+          const card = createTransferOutTaskCard(
+            task.Date, 
+            task.Shipment_No, 
+            task.Origin_Type, 
+            task.Destination, 
+            task.Total_Box, 
+            task.Total_Item, 
+            task.Status
+          );
+          
+          const target = document.getElementById(statusKey + "Container");
+          if (target) { 
+            target.appendChild(card); 
+            counts[statusKey]++; 
+          }
+        }
+      }
     });
 
     Object.keys(counts).forEach(key => {
       const el = document.getElementById(key + "TaskCount");
       if (el) el.innerHTML = "Task (" + counts[key] + ") <i class=\"fas fa-chevron-down\"></i>";
     });
-  } catch (error) { console.error("Error loading tasks:", error); }
+  } catch (error) { 
+    console.error("Error loading tasks:", error); 
+  }
 }
 
 // ======================================================
