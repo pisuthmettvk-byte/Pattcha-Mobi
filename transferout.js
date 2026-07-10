@@ -338,7 +338,7 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
   const leftBorderColor = colorMap[statusKey] || "#ccc";
   
   // 🟢 แปลงรหัสปลายทางให้แสดงเป็นรหัสสาขาจริง
-  const displayDestBranch = getRealBranchCode(destBranch);
+  const displayDestBranch = typeof getRealBranchCode === "function" ? getRealBranchCode(destBranch) : destBranch;
 
   const card = document.createElement("div"); 
   card.className = "task-card";
@@ -369,6 +369,8 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
 
   card.addEventListener("click", async () => {
     console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
+    
+    // 1. บันทึกข้อมูลลงหน่วยความจำ
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
     sessionStorage.setItem("selectedBranchID", destBranch);
 
@@ -377,13 +379,31 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     }
 
     try {
-      showView("transferOutLobbyView");
-      loadLobbyHeader();
-      await renderLobbyTasks(destBranch);
+      // 2. 🟢 สลับไปหน้า Lobby อย่างปลอดภัย (เช็กฟังก์ชันก่อนเรียกใช้งาน ป้องกันหน้าจอขาว)
+      if (typeof showView === "function") {
+        showView("transferOutLobbyView");
+      } else {
+        document.querySelectorAll('.view-screen').forEach(el => el.classList.add('hide'));
+        document.getElementById('transferOutLobbyView').classList.remove('hide');
+      }
       
+      // 3. โหลด Header หัวมุม Lobby
+      if (typeof loadLobbyHeader === "function") {
+        loadLobbyHeader();
+      }
+      
+      // 4. วาดแถบ Shipment Columns ของสาขานั้น
+      if (typeof renderLobbyTasks === "function") {
+        await renderLobbyTasks(destBranch);
+      }
+      
+      // 5. ไฮไลต์งานให้เห็นชัดเจนเมื่อวาดเสร็จ
       setTimeout(() => {
-        focusShipmentInLobby(shipmentNo);
+        if (typeof focusShipmentInLobby === "function") {
+          focusShipmentInLobby(shipmentNo);
+        }
       }, 500);
+
     } catch (error) {
       console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
     }
@@ -391,10 +411,6 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
 
   return card; 
 }
-
-
-
-
 
 
 
