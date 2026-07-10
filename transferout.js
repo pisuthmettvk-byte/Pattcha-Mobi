@@ -174,16 +174,42 @@ function showView(viewId) {
   }
 }
 
-// ฟังก์ชันโหลดชื่อสาขาบนหัว Lobby
-function loadLobbyHeader() {
-  const branchID = sessionStorage.getItem("selectedBranchID");
-  const branchName = sessionStorage.getItem("selectedBranchName");
-  const headerElement = document.getElementById("lobbyBranchHeaderName"); 
 
-  if (headerElement && branchID && branchName) {
-    headerElement.textContent = `[${branchID}] - ${branchName}`;
+//===============
+// [Load Lobby Header] START
+function loadLobbyHeader() {
+  const branchID = sessionStorage.getItem("selectedBranchID") || ""; // ค่าที่ได้จะเป็น 02KK
+  const headerEl = document.getElementById("lobbyBranchHeaderName");
+  if (!headerEl) return;
+
+  let branchName = "ไม่ระบุชื่อสาขา";
+  let displayId = branchID; // ตั้งต้นเป็น 02KK
+
+  // 🟢 แปลงรหัส 02KK กลับให้เป็นรหัสสาขาจริง (เช่น KKN02)
+  if (typeof getRealBranchCode === "function") {
+      displayId = getRealBranchCode(branchID); 
   }
+
+  // 🟢 นำรหัสสาขาจริง ไปค้นหา "ชื่อสาขา" ในแคชให้ตรงเป๊ะ
+  if (window.appBranches && Array.isArray(window.appBranches)) {
+    const matched = window.appBranches.find(b => {
+        const bId = String(b.id || b.Branch_ID || b.BranchID || "").trim().toUpperCase();
+        return bId === displayId;
+    });
+    
+    if (matched) {
+      branchName = matched.name || matched.Branch_Name || matched.BranchName || "";
+    }
+  }
+  
+  // 🟢 จุดแก้ไขข้อ 3: แสดงผลเป็น [KKN02] - ชื่อสาขา
+  headerEl.textContent = `[${displayId}] - ${branchName}`;
 }
+// [Load Lobby Header] END
+//===============
+
+
+
 // =================================================================
 // 🚀 END กลุ่มที่ 2
 // =================================================================
@@ -703,70 +729,63 @@ const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
     });
   }
 
-  // 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
+
+// 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
   if (btnConfirm) {
     btnConfirm.addEventListener("click", () => {
       if (!selectType || !selectType.value) {
         if (typeof safeAlert === "function")
-          safeAlert(
-            "ข้อมูลไม่ครบ",
-            "กรุณาเลือกประเภทการโอนก่อนครับ",
-            "warning",
-          );
+          safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
         else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
         return;
       }
 
-      // 🟢 ดึงรหัสสาขาปัจจุบันมาเป็นต้นทาง (Origin)
       const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
-      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
-      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02"; // รหัสจริง เช่น KKN02
+      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`; // รหัส DB เช่น 02KK
       const dateStr = new Date().toLocaleDateString("en-GB");
       const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
 
+      // 🟢 เพิ่มการส่ง "Branch: selectedBranchID" (รหัสจริง) ไปบันทึกเงียบๆ ลงคอลัมน์ I หลังบ้าน
       const payload = {
         Date: dateStr,
         Shipment_No: finalShipmentNo,
-        Origin_Branch: myBranch, // 🟢 ปรับให้บันทึกต้นทางเป็นสาขาตนเอง
-        Destination: targetDestination,
+        Origin_Branch: myBranch,
+        Destination: targetDestination, 
+        Branch: selectedBranchID, // << จุดแก้ไขข้อ 4-5: เก็บรหัสสาขาจริงลงฐานข้อมูล
         Origin_Type: "Store",
-        Status: "Assign", // หรือ STATUS_CONFIG.NEW
+        Status: "Assign", 
       };
 
       btnConfirm.disabled = true;
-      btnConfirm.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+      btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
       btnConfirm.style.opacity = "0.7";
-
 
       fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
           if (res.status === "success") {
-            // 1. สร้างคอลัมน์ลงในหน้า Lobby
             if (container) container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
             if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
             if (emptyState) emptyState.style.display = "none";
 
-            // 2. 🟢 สร้าง Task Card ส่งกลับไปหน้า Task Hub แบบ Real-time
-            const taskHubAssignContainer = document.getElementById("assignContainer"); // 🟢 แก้ไข ID ให้ตรงกับหน้า HTML จริง
+            const taskHubAssignContainer = document.getElementById("assignContainer"); 
             if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
                
-               // 🟢 ปรับการส่งข้อมูลให้เป็นพารามิเตอร์เรียงตัว ตามที่ฟังก์ชัน createTransferOutTaskCard ต้องการ
+               // 🟢 จุดแก้ไขข้อ 1-2: ต้องส่ง `targetDestination` (02KK) เข้าไปสร้างการ์ด!
+               // เพื่อให้พอกดคลิกการ์ดแล้ว ระบบจะนำ 02KK ไปค้นหาใน Lobby ได้ถูกต้อง ป้องกันจอขาว 100%
                const newCard = createTransferOutTaskCard(
                  dateStr, 
                  finalShipmentNo, 
                  "Store", 
-                 selectedBranchID, 
+                 targetDestination, // << ปรับให้ตรงกับฐานข้อมูล
                  0, 
                  0, 
                  "Assign" 
                );
                
                taskHubAssignContainer.appendChild(newCard);
-               console.log(`✅ สร้าง Task Card (Assign) สำเร็จ!`);
 
-               // 🟢 3. อัปเดตตัวเลข (Count) ทันทีโดยไม่ต้องรีเฟรชหน้า
                const assignCountEl = document.getElementById("assignTaskCount");
                if (assignCountEl) {
                  const currentCount = taskHubAssignContainer.querySelectorAll('.task-card').length;
@@ -781,9 +800,7 @@ const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
             btnConfirm.style.opacity = "1";
         });
     });
-  }
-
-      
+  }      
       
       
       
