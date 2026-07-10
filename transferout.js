@@ -68,6 +68,10 @@ async function loadBranchesIntoDropdown() {
 // ======================================================
 // 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (Responsive: ปัดบรรทัดเมื่อจอแคบ)
 // ======================================================
+
+
+//===============
+// [Create Shipment Column UI - Single Source of Truth] START
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
   col.className = "shipment-column";
@@ -91,7 +95,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     padding: 10px 20px;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap; /* 🟢 จุดสำคัญ: สั่งให้ปัดบรรทัดตกเมื่อจอแคบ */
+    flex-wrap: wrap; 
     align-items: center;
     justify-content: space-between;
     gap: 15px;
@@ -138,20 +142,18 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 🟢 ปรับปรุง: เปลี่ยนจากการแสดงแจ้งเตือน เป็นการสลับหน้าจอไปที่ Box Details
   const btnScan = col.querySelector(".btn-scan");
   btnScan.addEventListener("click", () => {
     sessionStorage.setItem("activeShipmentNo", shipmentNo);
     if (typeof showView === "function") {
       showView("boxDetailsView");
     }
-    console.log(`📦 เปิดหน้าสแกนสินค้าลง Shipment: ${shipmentNo}`);
   });
 
   return col;
 }
-
-
+// [Create Shipment Column UI] END
+//===============
 
 
 
@@ -253,32 +255,40 @@ function createUniversalCard(branchName, docNo, branchID, status = "pending") {
 // กลุ่มที่ 4: ระบบหน้า Lobby และการบันทึกข้อมูล (API POST)
 // ======================================================
 
-// 🟢 ฟังก์ชันดึงงานของสาขาเป้าหมายมาแสดงใน Lobby (แก้ Error is not defined)
+//===============
+// [Render Lobby Tasks] START
 async function renderLobbyTasks(branchID) {
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
   
   if (!container) return;
-  container.innerHTML = '<div style="text-align:center; padding: 20px; font-weight:bold; color:#666;">กำลังดึงข้อมูลงาน... <i class="fas fa-spinner fa-spin"></i></div>';
+  container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color:#666;"><h4>กำลังดึงข้อมูลงาน...</h4><i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i></div>';
 
   try {
     const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
     const tasks = await response.json();
     container.innerHTML = ""; 
 
-    if (!Array.isArray(tasks)) return;
+    if (!Array.isArray(tasks)) {
+       if (emptyState) emptyState.style.display = "block";
+       return;
+    }
 
-    // กรองเฉพาะงานที่ Destination ตรงกับที่กดเลือก และสถานะเป็น Assign
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
+
     const branchTasks = tasks.filter(task => {
       const isMatchBranch = task.Destination === branchID;
       const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
-      return isMatchBranch && isAssignStatus;
+      const isMyOrigin = String(task.Origin_Branch || "").trim().toUpperCase() === myBranch;
+      
+      return isMatchBranch && isAssignStatus && isMyOrigin;
     });
 
     if (branchTasks.length > 0) {
       if (emptyState) emptyState.style.display = "none";
       branchTasks.forEach(task => {
         if (typeof createShipmentColumn === "function") {
+          // 🟢 โยนข้อมูลให้แม่พิมพ์หลักทำงาน (รับประกันหน้าตาเหมือนกัน 100%)
           const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
           container.appendChild(col);
         }
@@ -288,11 +298,11 @@ async function renderLobbyTasks(branchID) {
     }
   } catch (error) {
     console.error("🚨 Error loading lobby tasks:", error);
-    container.innerHTML = '<div style="text-align:center; color:#dc3545;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
+    container.innerHTML = '<div style="text-align:center; color:#dc3545; padding: 20px;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
   }
 }
-
-
+// [Render Lobby Tasks] END
+//===============
 
 
 
