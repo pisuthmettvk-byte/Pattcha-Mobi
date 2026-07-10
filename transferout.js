@@ -310,10 +310,15 @@ async function renderLobbyTasks(branchID) {
     if (branchTasks.length > 0) {
       if (emptyState) emptyState.style.display = "none";
       branchTasks.forEach(task => {
-        // 🟢 แก้ไข: บังคับให้สร้าง UI จากแม่พิมพ์ลูกระนาดสีเงิน (createShipmentColumn) เท่านั้น
-        if (typeof createShipmentColumn === "function") {
-          const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
-          container.appendChild(col);
+        // 🟢 เพิ่ม try...catch ป้องกันชิปเมนต์ที่รหัสพัง (เช่น 0202) ไม่ให้ทำให้จอขาวทั้งหน้า
+        try {
+            if (typeof createShipmentColumn === "function") {
+                const safeNo = String(task.Shipment_No || "");
+                const col = createShipmentColumn(safeNo, task.Origin_Type || "Store");
+                container.appendChild(col);
+            }
+        } catch (err) {
+            console.error("🚨 พบงานที่ข้อมูลพัง (ข้ามการแสดงผล):", task, err);
         }
       });
     } else {
@@ -324,7 +329,6 @@ async function renderLobbyTasks(branchID) {
     container.innerHTML = '<div style="text-align:center; color:#dc3545; padding: 20px;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
   }
 }
-
 
 // [Render Lobby Tasks] END
 //===============
@@ -725,61 +729,59 @@ const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
 
 
 // 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
-  if (btnConfirm) {
+if (btnConfirm) {
     btnConfirm.addEventListener("click", () => {
       if (!selectType || !selectType.value) {
-        if (typeof safeAlert === "function")
-          safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
+        if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
         else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
         return;
       }
 
       const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
-      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02"; // รหัสจริง เช่น KKN02
-      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`; // รหัส DB เช่น 02KK
+      
+      // 🟢 1. ดึงรหัสจากหน่วยความจำ (อาจเป็น CTW03 หรือ 02CT)
+      const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
+      
+      // 🟢 2. บังคับแปลงให้เป็นรหัสจริงเสมอ (ถ้าเป็น 02CT จะถูกแปลงกลับเป็น CTW03)
+      const actualBranchID = (typeof getRealBranchCode === "function") ? getRealBranchCode(rawSelected) : rawSelected;
+      
+      // 🟢 3. ตัด 2 ตัวหน้า จะได้ "CT" แล้วประกอบร่างเป็น "02CT" ถูกต้องเป๊ะ 100%
+      const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`; 
+      
       const dateStr = new Date().toLocaleDateString("en-GB");
       const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
 
-      // 🟢 เพิ่มการส่ง "Branch: selectedBranchID" (รหัสจริง) ไปบันทึกเงียบๆ ลงคอลัมน์ I หลังบ้าน
+      // 🟢 ส่ง Branch (รหัสสาขาจริง) เข้าฐานข้อมูลตามคำสั่งข้อ 4-5
       const payload = {
         Date: dateStr,
         Shipment_No: finalShipmentNo,
         Origin_Branch: myBranch,
         Destination: targetDestination, 
-        Branch: selectedBranchID, // << จุดแก้ไขข้อ 4-5: เก็บรหัสสาขาจริงลงฐานข้อมูล
+        Branch: actualBranchID, 
         Origin_Type: "Store",
         Status: "Assign", 
       };
 
       btnConfirm.disabled = true;
       btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
-      btnConfirm.style.opacity = "0.7";
 
       fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(res => {
           if (res.status === "success") {
-            if (container) container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+            if (container && typeof createShipmentColumn === "function") {
+                container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+            }
             if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
             if (emptyState) emptyState.style.display = "none";
 
             const taskHubAssignContainer = document.getElementById("assignContainer"); 
             if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
-               
-               // 🟢 จุดแก้ไขข้อ 1-2: ต้องส่ง `targetDestination` (02KK) เข้าไปสร้างการ์ด!
-               // เพื่อให้พอกดคลิกการ์ดแล้ว ระบบจะนำ 02KK ไปค้นหาใน Lobby ได้ถูกต้อง ป้องกันจอขาว 100%
                const newCard = createTransferOutTaskCard(
-                 dateStr, 
-                 finalShipmentNo, 
-                 "Store", 
-                 targetDestination, // << ปรับให้ตรงกับฐานข้อมูล
-                 0, 
-                 0, 
-                 "Assign" 
+                 dateStr, finalShipmentNo, "Store", targetDestination, 0, 0, "Assign" 
                );
-               
                taskHubAssignContainer.appendChild(newCard);
-
+               
                const assignCountEl = document.getElementById("assignTaskCount");
                if (assignCountEl) {
                  const currentCount = taskHubAssignContainer.querySelectorAll('.task-card').length;
@@ -791,11 +793,9 @@ const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
         .finally(() => { 
             btnConfirm.disabled = false; 
             btnConfirm.innerHTML = "ยืนยันสร้าง"; 
-            btnConfirm.style.opacity = "1";
         });
     });
   }      
-      
       
       
       
