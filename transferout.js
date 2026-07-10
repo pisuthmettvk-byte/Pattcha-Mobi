@@ -15,38 +15,34 @@ const STATUS_CONFIG = {
 
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
-
   if (!select) return;
-  
   select.innerHTML = '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
 
   try {
-    // 🔴 เรียก API ด้วย action=get_branches
     const response = await fetch(CONFIG.API_URL + "?action=get_branches");
-    
-    // อ่านค่าที่ตอบกลับมาก่อนเพื่อเช็กว่าใช่ JSON จริงไหม
     const rawText = await response.text();
     let branches;
-    
     try {
-        branches = JSON.parse(rawText); // พยายามแปลงเป็น JSON
+      branches = JSON.parse(rawText); 
     } catch (e) {
-        console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
-        select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
-        return; // หยุดทำงานทันที
+      console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
+      select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+      return; 
     }
 
-    // ดึงรหัสสาขาตัวเองเพื่อเอามากรองออก (ไม่ให้โอนหาตัวเอง)
+    // 🟢 เก็บแคชข้อมูลสาขาทั้งหมดไว้ใช้แปลงรหัสใน Task Card
+    if (Array.isArray(branches)) {
+      window.appBranches = branches;
+    }
+
     const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
-    
     select.innerHTML = '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
     if (Array.isArray(branches)) {
       branches.forEach((branch) => {
-        // รองรับ Key จาก API หลายรูปแบบ (เผื่อตัวพิมพ์เล็ก/ใหญ่)
         const branchId = String(branch.id || branch.Branch_ID || branch.BranchID || "").trim().toUpperCase();
         const branchName = branch.name || branch.Branch_Name || branch.BranchName || "";
-        
+
         if (branchId !== myBranch && branchId !== "") {
           const option = document.createElement("option");
           option.value = branchId;
@@ -60,8 +56,6 @@ async function loadBranchesIntoDropdown() {
     if (select) select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
   }
 }
-
-
 // =================================================================
 // 🚀 END กลุ่มที่ 1
 // =================================================================
@@ -280,12 +274,30 @@ function formatShipmentNoHTML(shipmentNo) {
 // กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
 // ======================================================
 
+function getRealBranchCode(destCode) {
+  if (!destCode) return "-";
+  if (window.appBranches && Array.isArray(window.appBranches)) {
+    const matched = window.appBranches.find((b) => {
+      const bId = String(b.id || b.Branch_ID || b.BranchID || "").trim().toUpperCase();
+      const prefix = bId.substring(0, 2);
+      return String(destCode).includes(prefix);
+    });
+    if (matched) {
+      return String(matched.id || matched.Branch_ID || matched.BranchID || "").trim().toUpperCase();
+    }
+  }
+  return destCode;
+}
+
 function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, totalBox, totalItem, status) {
   const colorMap = { assign: "#dc3545", pending: "#e0a800", complete: "#28a745" };
   const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
+  
+  // 🟢 แปลงรหัสปลายทางให้แสดงเป็นรหัสสาขาจริง
+  const displayDestBranch = getRealBranchCode(destBranch);
 
-  const card = document.createElement("div");
+  const card = document.createElement("div"); 
   card.className = "task-card";
   card.dataset.destination = destBranch;
 
@@ -305,30 +317,40 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
         <span style="font-weight: bold; font-size: 16px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo || "-"}</span>
       </div>
       <div style="display: flex; align-items: center; justify-content: flex-end; gap: 15px; flex-grow: 1; min-width: 250px;">
-        <span style="font-size: 14px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${destBranch || "-"}</span>
+        <span style="font-size: 14px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${displayDestBranch}</span>
         <span style="font-size: 13px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox || 0}) TOTAL (${totalItem || 0})</span>
         <span style="background: ${leftBorderColor}; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${status || "Assign"}</span>
       </div>
     </div>
   `;
 
-  // 🟢 แก้ไข: เปลี่ยนจาก Card เป็น card (ตัวพิมพ์เล็ก) ให้แมตช์กับตัวแปรต้นทาง
-  card.addEventListener("click", () => {
-    // 1. โค้ดเดิม: เก็บเลข Shipment ไว้
+  card.addEventListener("click", async () => {
+    console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
-
-    // 2. 🟢 แก้ไข: เปลี่ยนจาก cardData.Destination เป็น destBranch เพื่อบันทึกรหัสสาขาเข้าคลังความจำพารวมมิตรในหน้า Lobby
     sessionStorage.setItem("selectedBranchID", destBranch);
 
-    // 3. โค้ดเดิม: สลับไปหน้า Lobby
-    if (typeof focusShipmentInLobby === "function") {
+    if (!sessionStorage.getItem("selectedBranchName")) {
+      sessionStorage.setItem("selectedBranchName", "");
+    }
+
+    try {
+      showView("transferOutLobbyView");
+      loadLobbyHeader();
+      await renderLobbyTasks(destBranch);
+      
+      setTimeout(() => {
         focusShipmentInLobby(shipmentNo);
+      }, 500);
+    } catch (error) {
+      console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
     }
   });
 
-  // 🟢 แก้ไข: เปลี่ยนจาก Card เป็น card ตัวพิมพ์เล็กก่อนส่งออกไปใช้งาน
-  return card;
+  return card; 
 }
+
+
+
 
 
 
