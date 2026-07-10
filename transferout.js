@@ -70,8 +70,6 @@ async function loadBranchesIntoDropdown() {
 // ======================================================
 
 
-//===============
-// [Create Shipment Column UI - Single Source of Truth] START
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
   col.className = "shipment-column";
@@ -95,7 +93,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     padding: 10px 20px;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap; 
+    flex-wrap: wrap; /* 🟢 จุดสำคัญ: สั่งให้ปัดบรรทัดตกเมื่อจอแคบ */
     align-items: center;
     justify-content: space-between;
     gap: 15px;
@@ -142,19 +140,18 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
+  // 🟢 ปรับปรุง: เปลี่ยนจากการแสดงแจ้งเตือน เป็นการสลับหน้าจอไปที่ Box Details
   const btnScan = col.querySelector(".btn-scan");
   btnScan.addEventListener("click", () => {
     sessionStorage.setItem("activeShipmentNo", shipmentNo);
     if (typeof showView === "function") {
       showView("boxDetailsView");
     }
+    console.log(`📦 เปิดหน้าสแกนสินค้าลง Shipment: ${shipmentNo}`);
   });
 
   return col;
 }
-// [Create Shipment Column UI] END
-//===============
-
 
 
 
