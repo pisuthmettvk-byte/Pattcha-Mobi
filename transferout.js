@@ -399,6 +399,8 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
 
 
 // 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
+//===============
+// [Load Tasks & Filter by Origin] START
 async function loadExistingTasks() {
   const containers = ["assignContainer", "pendingContainer", "completeContainer"];
   const assignContainer = document.getElementById("assignContainer");
@@ -416,11 +418,11 @@ async function loadExistingTasks() {
     let counts = { assign: 0, pending: 0, complete: 0 };
 
     tasks.forEach(task => {
-      // 📍 แปลงรหัสปลายทางของ Task เพื่อมาตรวจสอบ
-      const realDestBranch = typeof getRealBranchCode === "function" ? getRealBranchCode(task.Destination) : task.Destination;
+      // 📍 ดึงรหัสสาขาต้นทาง (Origin) จากฐานข้อมูล
+      const originBranch = String(task.Origin_Branch || "").trim().toUpperCase();
       
-      // 🟢 ตรรกะสำคัญ: แสดงงานก็ต่อเมื่อ ปลายทาง (Destination) "ไม่ใช่" สาขาตัวเอง
-      if (realDestBranch !== myBranch) {
+      // 🟢 เงื่อนไขที่ 1: แสดงเฉพาะงานที่ "สาขาต้นทาง (Origin)" ตรงกับสาขาของตัวเองเท่านั้น!
+      if (originBranch === myBranch) {
         const statusKey = (task.Status || "").toLowerCase();
         
         if (typeof createTransferOutTaskCard === "function") {
@@ -443,14 +445,17 @@ async function loadExistingTasks() {
       }
     });
 
+    // 🟢 อัปเดตตัวเลขจำนวนงานตอนโหลดหน้า
     Object.keys(counts).forEach(key => {
       const el = document.getElementById(key + "TaskCount");
-      if (el) el.innerHTML = "Task (" + counts[key] + ") <i class=\"fas fa-chevron-down\"></i>";
+      if (el) el.innerHTML = `Task (${counts[key]}) <i class="fas fa-chevron-down"></i>`;
     });
   } catch (error) { 
     console.error("Error loading tasks:", error); 
   }
 }
+// [Load Tasks & Filter by Origin] END
+//===============
 
 // ======================================================
 // 🚀 END กลุ่มที่ 5
@@ -637,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
   // ==========================================
-  const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
   const shipmentBoxModal = document.getElementById("shipmentBoxModal");
   const selectType = document.getElementById("selectTransferType");
   const inputBoxNumber = document.getElementById("inputBoxNumber");
@@ -688,18 +693,20 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
+      // 🟢 ดึงรหัสสาขาปัจจุบันมาเป็นต้นทาง (Origin)
+      const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
       const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
-      const finalShipmentNo = `${selectType.value}-${new Date().toLocaleDateString("en-GB").replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
+      const dateStr = new Date().toLocaleDateString("en-GB");
+      const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
 
       const payload = {
-        Date: new Date().toLocaleDateString("en-GB"),
+        Date: dateStr,
         Shipment_No: finalShipmentNo,
-        Origin_Branch: "CK",
+        Origin_Branch: myBranch, // 🟢 ปรับให้บันทึกต้นทางเป็นสาขาตนเอง
         Destination: targetDestination,
         Origin_Type: "Store",
-        Status: "Assign",
+        Status: "Assign", // หรือ STATUS_CONFIG.NEW
       };
 
       btnConfirm.disabled = true;
@@ -708,45 +715,49 @@ document.addEventListener("DOMContentLoaded", () => {
       btnConfirm.style.opacity = "0.7";
 
 
-fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
-  .then(res => res.json())
-  .then(res => {
-    if (res.status === "success") {
-      // 1. สร้างคอลัมน์ลงในหน้า Lobby
-      if (container) container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
-      if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-      if (emptyState) emptyState.style.display = "none";
+      fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status === "success") {
+            // 1. สร้างคอลัมน์ลงในหน้า Lobby
+            if (container) container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+            if (emptyState) emptyState.style.display = "none";
 
-      // 2. 🟢 สร้าง Task Card ส่งกลับไปหน้า Task Hub
-      const taskHubAssignContainer = document.getElementById("taskContainerAssign"); 
-      if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
-         const newCardData = {
-            Shipment_No: finalShipmentNo,
-            Destination: targetDestination,
-            Date: new Date().toLocaleDateString("en-GB"),
-            Total_Box: 0,
-            Total_Item: 0,
-            Status: STATUS_CONFIG.NEW // 🟢 ระบบจะมาดึงคำว่า "Assign" จากด้านบนสุดของไฟล์ให้เอง
-         };
-         
-         const newCard = createTransferOutTaskCard(newCardData);
-         if (typeof newCard === "string") {
-             taskHubAssignContainer.insertAdjacentHTML("beforeend", newCard);
-         } else {
-             taskHubAssignContainer.appendChild(newCard);
-         }
-         console.log(`✅ สร้าง Task Card (${STATUS_CONFIG.NEW}) สำเร็จ!`);
-      }
-    }
-  })
-  .finally(() => { 
-      btnConfirm.disabled = false; 
-      btnConfirm.innerHTML = "ยืนยันสร้าง"; 
-      btnConfirm.style.opacity = "1";
-  });
+            // 2. 🟢 สร้าง Task Card ส่งกลับไปหน้า Task Hub แบบ Real-time
+            const taskHubAssignContainer = document.getElementById("assignContainer"); // 🟢 แก้ไข ID ให้ตรงกับหน้า HTML จริง
+            if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
+               
+               // 🟢 ปรับการส่งข้อมูลให้เป็นพารามิเตอร์เรียงตัว ตามที่ฟังก์ชัน createTransferOutTaskCard ต้องการ
+               const newCard = createTransferOutTaskCard(
+                 dateStr, 
+                 finalShipmentNo, 
+                 "Store", 
+                 selectedBranchID, 
+                 0, 
+                 0, 
+                 "Assign" 
+               );
+               
+               taskHubAssignContainer.appendChild(newCard);
+               console.log(`✅ สร้าง Task Card (Assign) สำเร็จ!`);
 
-});
-}
+               // 🟢 3. อัปเดตตัวเลข (Count) ทันทีโดยไม่ต้องรีเฟรชหน้า
+               const assignCountEl = document.getElementById("assignTaskCount");
+               if (assignCountEl) {
+                 const currentCount = taskHubAssignContainer.querySelectorAll('.task-card').length;
+                 assignCountEl.innerHTML = `Task (${currentCount}) <i class="fas fa-chevron-down"></i>`;
+               }
+            }
+          }
+        })
+        .finally(() => { 
+            btnConfirm.disabled = false; 
+            btnConfirm.innerHTML = "ยืนยันสร้าง"; 
+            btnConfirm.style.opacity = "1";
+        });
+    });
+  }
 
       
       
