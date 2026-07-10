@@ -1,64 +1,44 @@
-const webAppUrl =
-  "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+const webAppUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
-// 🚨 หมายเหตุ: สมมติว่า CONFIG ถูกประกาศไว้ที่ไฟล์อื่นแล้ว หากยังไม่มี ให้เอา // ด้านล่างออกครับ
-// const CONFIG = { API_URL: webAppUrl };
+// 🟢 ปลดล็อกตัวแปร CONFIG เพื่อให้ API ทำงานได้
+const CONFIG = { API_URL: webAppUrl };
 
 // ==========================================
-// ⚙️ ตัวแปรตั้งค่าสถานะ (เปลี่ยนคำตรงนี้ จุดเดียวจบ!)
+// ⚙️ ตัวแปรตั้งค่าสถานะ
 // ==========================================
 const STATUS_CONFIG = {
   NEW: "Assign",
   PENDING: "Pending",
   COMPLETE: "Complete",
 };
-// =================================================================
-// 🚀 START Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
-// =================================================================
 
+// =================================================================
+// 🚀 กลุ่มที่ 1: โหลดข้อมูลพื้นฐาน (สาขา & ประเภทโอน)
+// =================================================================
 async function loadBranchesIntoDropdown() {
   const select = document.getElementById("selectDestination");
-
   if (!select) return;
-
-  select.innerHTML =
-    '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
+  select.innerHTML = '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
 
   try {
-    // 🔴 เรียก API ด้วย action=get_branches
     const response = await fetch(CONFIG.API_URL + "?action=get_branches");
-
-    // อ่านค่าที่ตอบกลับมาก่อนเพื่อเช็กว่าใช่ JSON จริงไหม
     const rawText = await response.text();
     let branches;
-
     try {
-      branches = JSON.parse(rawText); // พยายามแปลงเป็น JSON
+      branches = JSON.parse(rawText); 
     } catch (e) {
       console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
-      select.innerHTML =
-        '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
-      return; // หยุดทำงานทันที
+      select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+      return; 
     }
 
-    // ดึงรหัสสาขาตัวเองเพื่อเอามากรองออก (ไม่ให้โอนหาตัวเอง)
-    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-      .trim()
-      .toUpperCase();
-
-    select.innerHTML =
-      '<option value="" disabled selected>-- SELECT BRANCH --</option>';
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
+    select.innerHTML = '<option value="" disabled selected>-- SELECT BRANCH --</option>';
 
     if (Array.isArray(branches)) {
       branches.forEach((branch) => {
-        // รองรับ Key จาก API หลายรูปแบบ (เผื่อตัวพิมพ์เล็ก/ใหญ่)
-        const branchId = String(
-          branch.id || branch.Branch_ID || branch.BranchID || "",
-        )
-          .trim()
-          .toUpperCase();
-        const branchName =
-          branch.name || branch.Branch_Name || branch.BranchName || "";
+        const branchId = String(branch.id || branch.Branch_ID || branch.BranchID || "").trim().toUpperCase();
+        const branchName = branch.name || branch.Branch_Name || branch.BranchName || "";
 
         if (branchId !== myBranch && branchId !== "") {
           const option = document.createElement("option");
@@ -70,111 +50,36 @@ async function loadBranchesIntoDropdown() {
     }
   } catch (error) {
     console.error("🚨 Error fetch branches:", error);
-    if (select)
-      select.innerHTML =
-        '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+    if (select) select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
   }
 }
 
-// =================================================================
-// 🚀 END กลุ่มที่ 1
-// =================================================================
+function loadTransferTypesIntoDropdown() {
+  const selectType = document.getElementById("selectTransferType");
+  if (!selectType) return;
+  selectType.innerHTML = '<option value="">กำลังโหลดประเภท...</option>';
 
-// ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (Responsive: ปัดบรรทัดเมื่อจอแคบ)
-// ======================================================
-function createShipmentColumn(shipmentNo, originType = "Store") {
-  const col = document.createElement("div");
-  col.className = "shipment-column";
-  col.setAttribute("data-shipment", shipmentNo);
-
-  const dateParts = shipmentNo.split("-")[1];
-  const displayDate =
-    dateParts && dateParts.length === 8
-      ? `${dateParts.substring(0, 2)}/${dateParts.substring(2, 4)}/${dateParts.substring(6, 8)}`
-      : new Date().toLocaleDateString("en-GB").substring(0, 8);
-
-  col.style.cssText = `
-    background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
-    border-top: 1px solid #fff;
-    border-bottom: 1px solid #bbb;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    width: 100%;
-    margin-bottom: 15px;
-    padding: 10px 20px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap; /* 🟢 จุดสำคัญ: สั่งให้ปัดบรรทัดตกเมื่อจอแคบ */
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    box-sizing: border-box;
-  `;
-
-  col.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-      <input type="checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
-      <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
-      <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${shipmentNo}</span>
-    </div>
-
-    <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
-      <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444; box-shadow: inset 0 1px 2px rgba(255,255,255,1);">
-        ${originType}
-      </span>
-      <div style="display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #333; text-shadow: 1px 1px 0px #fff;">
-        <span><i class="fas fa-truck"></i> (0)</span>
-        <span><i class="fas fa-barcode"></i> (0)</span>
-        <span><i class="fas fa-hand-paper"></i> (0)</span>
-      </div>
-    </div>
-
-    <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
-      <i class="fas fa-box-open btn-scan" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สแกนเพิ่มกล่อง"></i>
-      <i class="fas fa-trash-alt btn-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบงานนี้"></i>
-      
-      <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-        Assign
-      </span>
-    </div>
-  `;
-
-  const btnDelete = col.querySelector(".btn-delete");
-  btnDelete.addEventListener("click", () => {
-    if (confirm(`ต้องการลบ Shipment: ${shipmentNo} ใช่หรือไม่?`)) {
-      col.remove();
-      const container = document.getElementById("lobbyContentContainer");
-      const emptyState = document.getElementById("lobbyEmptyState");
-      if (
-        container &&
-        container.querySelectorAll(".shipment-column").length === 0
-      ) {
-        if (emptyState) emptyState.style.display = "block";
+  fetch(CONFIG.API_URL + "?action=get_transfer_types")
+    .then((res) => res.json())
+    .then((data) => {
+      selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
+      if (Array.isArray(data)) {
+        data.forEach((item) => {
+          const key = item.Type_Key || item.type_key || item.id || item.Key || "";
+          const desc = item.Description || item.description || item.name || item.Desc || "";
+          const option = document.createElement("option");
+          option.value = key;
+          option.textContent = `[${key}] ${desc}`;
+          selectType.appendChild(option);
+        });
       }
-    }
-  });
-
-  const btnScan = col.querySelector(".btn-scan");
-  btnScan.addEventListener("click", () => {
-    if (typeof safeAlert === "function") {
-      safeAlert(
-        "เตรียมแพ็คของ",
-        `พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`,
-        "info",
-      );
-    } else {
-      alert(`พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`);
-    }
-  });
-
-  return col;
+    })
+    .catch((err) => console.error("Dropdown Load Error:", err));
 }
 
-// ฟังก์ชันสลับหน้าจอ (Switch View)
-
+// =================================================================
+// 🚀 กลุ่มที่ 2: ระบบจัดการ UI (Lobby & สลับหน้าจอ)
+// =================================================================
 function showView(viewId) {
   const allViews = document.querySelectorAll(".view-screen");
   allViews.forEach((view) => {
@@ -197,41 +102,103 @@ function loadLobbyHeader() {
   }
 }
 
-// =================================================================
-// 🚀 END กลุ่มที่ 2
-// =================================================================
+function focusShipmentInLobby(shipmentNo) {
+  const columns = document.querySelectorAll(".shipment-column");
+  columns.forEach((col) => {
+    if (col.innerHTML.includes(shipmentNo)) {
+      col.style.transition = "background 0.5s";
+      col.style.background = "#fff3cd";
+      col.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        col.style.background = "#ffffff";
+      }, 2000);
+    }
+  });
+}
+
+function createShipmentColumn(shipmentNo, originType = "Store") {
+  const col = document.createElement("div");
+  col.className = "shipment-column";
+  col.setAttribute("data-shipment", shipmentNo);
+
+  const dateParts = shipmentNo.split("-")[1];
+  const displayDate =
+    dateParts && dateParts.length === 8
+      ? `${dateParts.substring(0, 2)}/${dateParts.substring(2, 4)}/${dateParts.substring(6, 8)}`
+      : new Date().toLocaleDateString("en-GB").substring(0, 8);
+
+  col.style.cssText = `
+    background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
+    border-top: 1px solid #fff; border-bottom: 1px solid #bbb;
+    border-left: 1px solid #ccc; border-right: 1px solid #ccc;
+    border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    width: 100%; margin-bottom: 15px; padding: 10px 20px;
+    display: flex; flex-direction: row; flex-wrap: wrap; 
+    align-items: center; justify-content: space-between; gap: 15px; box-sizing: border-box;
+  `;
+
+  col.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+      <input type="checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
+      <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
+      <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${shipmentNo}</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
+      <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444; box-shadow: inset 0 1px 2px rgba(255,255,255,1);">
+        ${originType}
+      </span>
+      <div style="display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #333; text-shadow: 1px 1px 0px #fff;">
+        <span><i class="fas fa-truck"></i> (0)</span>
+        <span><i class="fas fa-barcode"></i> (0)</span>
+        <span><i class="fas fa-hand-paper"></i> (0)</span>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
+      <i class="fas fa-box-open btn-scan" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สแกนเพิ่มกล่อง"></i>
+      <i class="fas fa-trash-alt btn-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบงานนี้"></i>
+      <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+        Assign
+      </span>
+    </div>
+  `;
+
+  col.querySelector(".btn-delete").addEventListener("click", () => {
+    if (confirm(`ต้องการลบ Shipment: ${shipmentNo} ใช่หรือไม่?`)) {
+      col.remove();
+      const container = document.getElementById("lobbyContentContainer");
+      const emptyState = document.getElementById("lobbyEmptyState");
+      if (container && container.querySelectorAll(".shipment-column").length === 0) {
+        if (emptyState) emptyState.style.display = "block";
+      }
+    }
+  });
+
+  col.querySelector(".btn-scan").addEventListener("click", () => {
+    if (typeof safeAlert === "function") {
+      safeAlert("เตรียมแพ็คของ", `พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`, "info");
+    } else {
+      alert(`พร้อมสแกนสินค้าลง Shipment: ${shipmentNo}`);
+    }
+  });
+
+  return col;
+}
 
 // ======================================================
-// กลุ่มที่ 3: ฟังก์ชันกลางสำหรับสร้าง Card Task (Universal Card Factory)
+// 🚀 กลุ่มที่ 3: ฟังก์ชันอรรถประโยชน์จากต้นฉบับ (Utility)
 // ======================================================
 function createUniversalCard(branchName, docNo, branchID, status = "pending") {
-  // 1. ตั้งค่าสีตามสถานะ
-  const colorMap = {
-    pending: "#dc3545", // สีแดง
-    done: "#28a745", // สีเขียว
-    issue: "#ffc107", // สีเหลือง/ส้ม
-  };
-
+  const colorMap = { pending: "#dc3545", done: "#28a745", issue: "#ffc107" };
   const borderColor = colorMap[status] || "#ccc";
-
-  // 2. สร้างโครงสร้าง Card
   const card = document.createElement("div");
   card.className = "task-list-item shipment-card";
   card.setAttribute("data-branch-id", branchID);
 
   card.style.cssText = `
-        width: 100%; 
-        border-left: 6px solid ${borderColor}; 
-        border-bottom: 1px solid #e0e0e0; 
-        padding: 15px 20px; 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        background: white;
-        cursor: pointer;
+        width: 100%; border-left: 6px solid ${borderColor}; border-bottom: 1px solid #e0e0e0; 
+        padding: 15px 20px; display: flex; justify-content: space-between; 
+        align-items: center; background: white; cursor: pointer;
     `;
-
-  // 3. ใส่เนื้อหาข้างใน
   card.innerHTML = `
         <div style="text-align: left;">
             <div style="font-weight: bold; font-size: 14px; color: #333;">Doc No: ${docNo}</div>
@@ -239,33 +206,12 @@ function createUniversalCard(branchName, docNo, branchID, status = "pending") {
         </div>
         <i class="fas fa-chevron-right" style="color: #ccc; font-size: 14px;"></i>
     `;
-
-  // 4. เพิ่มลูกเล่นให้คลิกได้
   card.addEventListener("click", () => {
-    console.log(`Clicked on: ${docNo}`);
     sessionStorage.setItem("selectedBranchID", branchID);
     showView("transferOutLobbyView");
     loadLobbyHeader();
   });
-
   return card;
-}
-// ======================================================
-// 🚀 END กลุ่มที่ 3
-// ======================================================
-
-// ======================================================
-// กลุ่มที่ 4: ระบบหน้า Lobby และการบันทึกข้อมูล (API POST)
-// ======================================================
-
-function getNextRunningNumber() {
-  let currentNum = parseInt(
-    localStorage.getItem("shipment_running_counter") || "0",
-  );
-  currentNum++;
-  if (currentNum > 9999) currentNum = 1;
-  localStorage.setItem("shipment_running_counter", currentNum.toString());
-  return currentNum.toString().padStart(4, "0");
 }
 
 function formatShipmentNoHTML(shipmentNo) {
@@ -273,83 +219,37 @@ function formatShipmentNoHTML(shipmentNo) {
 }
 
 // ======================================================
-// 🚀 END กลุ่มที่ 4
+// 🚀 กลุ่มที่ 4: ระบบสร้างการ์ดงาน & โหลดงานเข้า Lobby
 // ======================================================
+function getNextRunningNumber() {
+  let currentNum = parseInt(localStorage.getItem("shipment_running_counter") || "0");
+  currentNum++;
+  if (currentNum > 9999) currentNum = 1;
+  localStorage.setItem("shipment_running_counter", currentNum.toString());
+  return currentNum.toString().padStart(4, "0");
+}
 
-card.addEventListener("click", () => {
-  console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
-
-  // 1. บันทึกข้อมูลลงคลังความจำ (Session Storage)
-  sessionStorage.setItem("jump_to_shipment", shipmentNo);
-  sessionStorage.setItem("selectedBranchID", destBranch);
-
-  // (เพิ่มให้ครับ) ดักไว้เผื่อระบบถามหาชื่อสาขา จะได้ไม่โชว์คำว่า null บนนหัว Lobby
-  if (!sessionStorage.getItem("selectedBranchName")) {
-    sessionStorage.setItem("selectedBranchName", "");
-  }
-
-  try {
-    // 2. 🟢 สั่งสลับหน้าจอ (Switch View)
-    if (typeof showView === "function") {
-      // 🚨 หมายเหตุ: ถ้า ID หน้า Lobby ของเจเลอร์ไม่ได้ชื่อ "viewLobby" ให้เปลี่ยนคำในวงเล็บให้ตรงนะครับ
-      showView("viewLobby");
-      console.log("🔄 สลับไปหน้า Lobby สำเร็จ!");
-    }
-
-    // 3. 🟢 สั่งเปลี่ยนชื่อหัว Lobby
-    if (typeof loadLobbyHeader === "function") {
-      loadLobbyHeader();
-    }
-
-    // 4. 🟢 สั่งโฟกัสไฮไลต์แถบสีเงิน
-    if (typeof focusShipmentInLobby === "function") {
-      console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
-      focusShipmentInLobby(shipmentNo);
-    }
-  } catch (error) {
-    console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
-  }
-});
-
-// ======================================================
-// กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
-// ======================================================
-
-// ======================================================
-// กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด ดึงข้อมูล และวาด Lobby)
-// ======================================================
-
-// 🟢 1. ฟังก์ชันใหม่: ดึงงานทั้งหมดของสาขา (เฉพาะสถานะ Assign) มาวาดใน Lobby
 async function renderLobbyTasks(branchID) {
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
   
   if (!container) return;
-  
   container.innerHTML = '<div style="text-align:center; padding: 20px; font-weight:bold; color:#666;">กำลังดึงข้อมูลงาน... <i class="fas fa-spinner fa-spin"></i></div>';
 
   try {
     const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
     const tasks = await response.json();
-    
     container.innerHTML = ""; 
 
     if (!Array.isArray(tasks)) return;
 
-    // กรองเฉพาะ "สาขาที่เลือก" และ "สถานะ Assign"
-    const branchTasks = tasks.filter(task => {
-      const isMatchBranch = task.Destination === branchID;
-      const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
-      return isMatchBranch && isAssignStatus;
-    });
+    const branchTasks = tasks.filter(task => task.Destination === branchID && (task.Status || "").toLowerCase() === "assign");
 
     if (branchTasks.length > 0) {
       if (emptyState) emptyState.style.display = "none";
       branchTasks.forEach(task => {
-        if (typeof createShipmentColumn === "function") {
-            const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
-            container.appendChild(col);
-        }
+        const col = createShipmentColumn(task.Shipment_No, task.Origin_Type || "Store");
+        container.appendChild(col);
       });
     } else {
       if (emptyState) emptyState.style.display = "block";
@@ -360,13 +260,15 @@ async function renderLobbyTasks(branchID) {
   }
 }
 
-// 🟢 2. ฟังก์ชันสร้างการ์ด (อัปเดตการดึงข้อมูลเข้า Lobby)
+// ======================================================
+// 🚀 กลุ่มที่ 5: ระบบจัดการ Task Hub 
+// ======================================================
 function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, totalBox, totalItem, status) {
   const colorMap = { assign: "#dc3545", pending: "#e0a800", complete: "#28a745" };
   const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
 
-  const card = document.createElement("div"); // ใช้ c เล็ก
+  const card = document.createElement("div"); 
   card.className = "task-card";
   card.dataset.destination = destBranch;
 
@@ -393,10 +295,8 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     </div>
   `;
 
-  // 🟢 3. แก้ไข Card เป็น card (ตัวเล็ก) และทำงานแบบรอโหลดให้เสร็จ (async)
   card.addEventListener("click", async () => {
     console.log(`🎯 กดคลิกการ์ด: ${shipmentNo} (สาขา: ${destBranch})`);
-
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
     sessionStorage.setItem("selectedBranchID", destBranch);
 
@@ -405,28 +305,13 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     }
 
     try {
-      const lobbyScreenId = "transferOutLobbyView"; 
-
-      if (typeof showView === "function") {
-        showView(lobbyScreenId);
-        console.log(`🔄 สลับไปหน้า ${lobbyScreenId} สำเร็จ!`);
-      }
-      if (typeof loadLobbyHeader === "function") {
-        loadLobbyHeader();
-      }
-
-      // 🟢 จิ๊กซอว์สำคัญ: ดึงงานมาวาดใน Lobby รอให้เสร็จก่อน
-      if (typeof renderLobbyTasks === "function") {
-         await renderLobbyTasks(destBranch);
-         console.log(`✅ โหลดข้อมูลงาน Assign ของสาขา ${destBranch} เข้า Lobby สำเร็จ!`);
-      }
-
-      if (typeof focusShipmentInLobby === "function") {
-        setTimeout(() => {
-          console.log("✅ กำลังรันฟังก์ชัน focusShipmentInLobby...");
-          focusShipmentInLobby(shipmentNo);
-        }, 500);
-      }
+      showView("transferOutLobbyView");
+      loadLobbyHeader();
+      await renderLobbyTasks(destBranch);
+      
+      setTimeout(() => {
+        focusShipmentInLobby(shipmentNo);
+      }, 500);
     } catch (error) {
       console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
     }
@@ -435,13 +320,8 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
   return card; 
 }
 
-// 🟢 4. โค้ดดึงข้อมูลเข้า Task Hub 
 async function loadExistingTasks() {
-  const containers = [
-    "assignContainer",
-    "pendingContainer",
-    "completeContainer",
-  ];
+  const containers = ["assignContainer", "pendingContainer", "completeContainer"];
   const assignContainer = document.getElementById("assignContainer");
   if (!assignContainer) return;
 
@@ -459,13 +339,8 @@ async function loadExistingTasks() {
     tasks.forEach((task) => {
       const statusKey = (task.Status || "").toLowerCase();
       const card = createTransferOutTaskCard(
-        task.Date,
-        task.Shipment_No,
-        task.Origin_Type,
-        task.Destination,
-        task.Total_Box,
-        task.Total_Item,
-        task.Status,
+        task.Date, task.Shipment_No, task.Origin_Type, task.Destination,
+        task.Total_Box, task.Total_Item, task.Status
       );
       const target = document.getElementById(statusKey + "Container");
       if (target) {
@@ -476,75 +351,16 @@ async function loadExistingTasks() {
 
     Object.keys(counts).forEach((key) => {
       const el = document.getElementById(key + "TaskCount");
-      if (el)
-        el.innerHTML =
-          "Task (" + counts[key] + ') <i class="fas fa-chevron-down"></i>';
+      if (el) el.innerHTML = "Task (" + counts[key] + ') <i class="fas fa-chevron-down"></i>';
     });
   } catch (error) {
     console.error("Error loading tasks:", error);
   }
 }
 
-
-
-
-
 // ======================================================
-// 🚀 END กลุ่มที่ 5
+// 🚀 กลุ่มที่ 6: MASTER INITIALIZER (คุมระบบทั้งหมด)
 // ======================================================
-
-// ======================================================
-// กลุ่มที่ 6: Utility & Global Initializers (ส่วนเชื่อมประสาน)
-// ======================================================
-
-// 1. ฟังก์ชันค้นหาและวาร์ป (ใช้ร่วมกันทั้งหน้า Lobby และ Task Hub)
-function focusShipmentInLobby(shipmentNo) {
-  const columns = document.querySelectorAll(".shipment-column");
-  columns.forEach((col) => {
-    if (col.innerHTML.includes(shipmentNo)) {
-      col.style.transition = "background 0.5s";
-      col.style.background = "#fff3cd";
-      col.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => {
-        col.style.background = "#ffffff";
-      }, 2000);
-    }
-  });
-}
-
-function loadTransferTypesIntoDropdown() {
-  const selectType = document.getElementById("selectTransferType");
-  if (!selectType) return;
-  selectType.innerHTML = '<option value="">กำลังโหลดประเภท...</option>';
-
-  fetch(CONFIG.API_URL + "?action=get_transfer_types")
-    .then((res) => res.json())
-    .then((data) => {
-      selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
-      if (Array.isArray(data)) {
-        data.forEach((item) => {
-          const key =
-            item.Type_Key || item.type_key || item.id || item.Key || "";
-          const desc =
-            item.Description ||
-            item.description ||
-            item.name ||
-            item.Desc ||
-            "";
-          const option = document.createElement("option");
-          option.value = key;
-          option.textContent = `[${key}] ${desc}`;
-          selectType.appendChild(option);
-        });
-      }
-    })
-    .catch((err) => console.error("Dropdown Load Error:", err));
-}
-
-// ======================================================
-// 🚀 MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API
-// ======================================================
-
 document.addEventListener("DOMContentLoaded", () => {
   const productMovementView = document.getElementById("productMovementView");
   const viewTaskHub = document.getElementById("transferOutTaskHubView");
@@ -555,32 +371,33 @@ document.addEventListener("DOMContentLoaded", () => {
   loadBranchesIntoDropdown();
   loadTransferTypesIntoDropdown();
 
-  // ฟังก์ชันนำทางแบบย่อ
   const navigationTo = (hideView, showView) => {
     if (hideView) hideView.classList.add("hide");
     if (showView) showView.classList.remove("hide");
   };
 
-  // Event ปุ่ม นำทางต่างๆ
-  document
-    .getElementById("btnTransferOut")
-    ?.addEventListener("click", () =>
-      navigationTo(productMovementView, viewTaskHub),
-    );
-  document
-    .getElementById("btnBackToMovement")
-    ?.addEventListener("click", () =>
-      navigationTo(viewTaskHub, productMovementView),
-    );
-  document
-    .getElementById("btnBackFromTaskHub")
-    ?.addEventListener("click", () =>
-      navigationTo(viewTaskHub, productMovementView),
-    );
+  // 🟢 1. ระบบ Event Delegation แก้ปัญหาคลิกปุ่มไม่ติด (รองรับ Puppeteer & อุปกรณ์จริง)
+  document.body.addEventListener("click", (e) => {
+    // ดักปุ่ม Transfer Out หน้าหลัก
+    const btnTransferOut = e.target.closest("#btnTransferOut");
+    if (btnTransferOut) {
+      if (productMovementView && viewTaskHub) {
+        navigationTo(productMovementView, viewTaskHub);
+      }
+    }
 
-  const btnCreateNewTask =
-    document.getElementById("btnCreateNewTask") ||
-    document.getElementById("btnNewTask");
+    // ดักปุ่มย้อนกลับจาก Task Hub
+    const btnBackToMovement = e.target.closest("#btnBackToMovement");
+    const btnBackFromTaskHub = e.target.closest("#btnBackFromTaskHub");
+    if (btnBackToMovement || btnBackFromTaskHub) {
+      if (productMovementView && viewTaskHub) {
+        navigationTo(viewTaskHub, productMovementView);
+      }
+    }
+  });
+
+  // 🟢 2. ปุ่มนำทางอื่นๆ (สร้างงาน, ยกเลิก)
+  const btnCreateNewTask = document.getElementById("btnCreateNewTask") || document.getElementById("btnNewTask");
   if (btnCreateNewTask) {
     btnCreateNewTask.addEventListener("click", () => {
       const selectDest = document.getElementById("selectDestination");
@@ -589,32 +406,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document
-    .getElementById("btnCancelDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnBackFromDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnCancelFromLobby")
-    ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
-  document
-    .getElementById("btnBackToDest")
-    ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+  document.getElementById("btnCancelDest")?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+  document.getElementById("btnBackFromDest")?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+  document.getElementById("btnCancelFromLobby")?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+  document.getElementById("btnBackToDest")?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
 
-  const btnSubmitDest =
-    document.getElementById("btnSubmitDest") ||
-    document.getElementById("btnNextDest");
+  const btnSubmitDest = document.getElementById("btnSubmitDest") || document.getElementById("btnNextDest");
   if (btnSubmitDest) {
     btnSubmitDest.addEventListener("click", () => {
       const destDropdown = document.getElementById("selectDestination");
       if (!destDropdown || !destDropdown.value) {
-        if (typeof safeAlert === "function")
-          safeAlert(
-            "ข้อมูลไม่ครบถ้วน",
-            "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ",
-            "warning",
-          );
+        if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ", "warning");
         else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
         return;
       }
@@ -630,7 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ระบบ Modal สร้างงาน (รถบรรทุก + ยืนยัน)
+  // 🟢 3. ระบบ Modal สร้างงาน (รถบรรทุก + ยืนยัน)
   const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
   const shipmentBoxModal = document.getElementById("shipmentBoxModal");
   const selectType = document.getElementById("selectTransferType");
@@ -653,12 +455,10 @@ document.addEventListener("DOMContentLoaded", () => {
         inputBoxNumber.value = "กรุณาเลือกประเภท...";
         return;
       }
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
       const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
       const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
-      let previewNum =
-        parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
+      let previewNum = parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
       if (previewNum > 9999) previewNum = 1;
       const previewRunning = previewNum.toString().padStart(4, "0");
       inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
@@ -668,18 +468,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnConfirm) {
     btnConfirm.addEventListener("click", () => {
       if (!selectType || !selectType.value) {
-        if (typeof safeAlert === "function")
-          safeAlert(
-            "ข้อมูลไม่ครบ",
-            "กรุณาเลือกประเภทการโอนก่อนครับ",
-            "warning",
-          );
+        if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
         else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
         return;
       }
 
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
       const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
       const finalShipmentNo = `${selectType.value}-${new Date().toLocaleDateString("en-GB").replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
       const dateStr = new Date().toLocaleDateString("en-GB");
@@ -694,8 +488,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       btnConfirm.disabled = true;
-      btnConfirm.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+      btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
       btnConfirm.style.opacity = "0.7";
 
       fetch(CONFIG.API_URL + "?action=save_new_task", {
@@ -705,32 +498,16 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((res) => res.json())
         .then((res) => {
           if (res.status === "success") {
-            if (container)
-              container.appendChild(
-                createShipmentColumn(finalShipmentNo, "Store"),
-              );
+            if (container) container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
             if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
             if (emptyState) emptyState.style.display = "none";
 
-            // 🟢 แก้ไข: ใช้ Container ชื่อให้ตรงกับตอนโหลดข้อมูล และส่งข้อมูลแบบ Argument แยกส่วนให้ถูกต้อง
             const assignContainer = document.getElementById("assignContainer");
-            if (
-              assignContainer &&
-              typeof createTransferOutTaskCard === "function"
-            ) {
+            if (assignContainer && typeof createTransferOutTaskCard === "function") {
               const newCard = createTransferOutTaskCard(
-                dateStr,
-                finalShipmentNo,
-                "Store",
-                targetDestination,
-                0,
-                0,
-                STATUS_CONFIG.NEW,
+                dateStr, finalShipmentNo, "Store", targetDestination, 0, 0, STATUS_CONFIG.NEW
               );
               assignContainer.appendChild(newCard);
-              console.log(
-                `✅ สร้าง Task Card (${STATUS_CONFIG.NEW}) ลงกล่อง assignContainer สำเร็จ!`,
-              );
             }
           }
         })
@@ -742,7 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ระบบเช็กการวาร์ปเมื่อโหลดหน้าจอ
+  // 🟢 4. ระบบเช็กการวาร์ปเมื่อโหลดหน้าจอ
   const pendingJump = sessionStorage.getItem("jump_to_shipment");
   if (pendingJump) {
     setTimeout(() => {
@@ -751,14 +528,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 500);
   }
 });
-
-
-
-
-
-
-
-
-// ======================================================
-// MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
-// ======================================================
