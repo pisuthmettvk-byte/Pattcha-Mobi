@@ -1,6 +1,3 @@
-// ==========================================
-// CONFIGURATION & CONSTANTS
-// ==========================================
 const CONFIG = {
   API_URL:
     "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec",
