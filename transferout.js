@@ -9,6 +9,12 @@ const STATUS_CONFIG = {
     COMPLETE: "Complete" // งานที่รับเสร็จสมบูรณ์
 };
 
+
+
+
+
+
+
 // =================================================================
 // 🚀 START Drop Down & ปุ่มควบคุม (หน้าเลือกสาขา)
 // =================================================================
@@ -65,98 +71,162 @@ async function loadBranchesIntoDropdown() {
 
 
 
+
+
+
+
+
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (Responsive: ปัดบรรทัดเมื่อจอแคบ)
+// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 1]
+// ======================================================
+function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
+  // สร้างเลขที่กล่อง เช่น 01CK-0022-02CT-0001
+  const childBoxNo = `${baseBoxNo}-${String(boxRunningIndex).padStart(4, '0')}`;
+  
+  const childDiv = document.createElement("div");
+  childDiv.className = "shipment-child-box";
+  childDiv.dataset.boxNo = childBoxNo;
+  childDiv.dataset.status = "open"; // open = กล่องเขียว, closed = กล่องแดง
+
+  childDiv.style.cssText = `
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    background: #fdfdfd; border: 1px solid #e0e0e0; border-left: 5px solid #28a745;
+    padding: 12px 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    cursor: pointer; transition: all 0.2s;
+  `;
+
+  childDiv.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 15px; flex: 1; min-width: 200px;">
+      <input type="checkbox" class="child-checkbox" disabled title="ต้องปิดกล่องก่อนถึงจะเลือกได้" 
+             style="width: 18px; height: 18px; border-radius: 4px; cursor: not-allowed;" onclick="event.stopPropagation();">
+      <i class="fas fa-box-open box-status-icon" style="color: #28a745; font-size: 18px; filter: drop-shadow(1px 1px 1px #ddd);"></i>
+      <span style="font-weight: bold; font-size: 14px; color: #333; letter-spacing: 0.5px;">${childBoxNo}</span>
+    </div>
+    
+    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 18px; font-size: 13px; font-weight: bold; color: #555;">
+      <span title="จำนวนที่สแกนบาร์โค้ด"><i class="fas fa-barcode" style="color: #666;"></i> (<span class="child-scan-qty">0</span>)</span>
+      <span title="จำนวนที่นับด้วยมือ"><i class="fas fa-hand-paper" style="color: #8d6e63;"></i> (<span class="child-manual-qty">0</span>)</span>
+      <i class="fas fa-trash-alt child-btn-delete hide" style="color: #dc3545; font-size: 18px; cursor: pointer; padding-left: 5px;" onclick="event.stopPropagation();"></i>
+    </div>
+  `;
+
+  // 🟢 คลิกลิสต์กล่องลูก เพื่อเข้าหน้า Box Details View
+  childDiv.addEventListener("click", () => {
+    sessionStorage.setItem("activeBoxNo", childBoxNo);
+    sessionStorage.setItem("activeBoxStatus", childDiv.dataset.status);
+    
+    if (typeof showView === "function") {
+      showView("boxDetailsView");
+    }
+  });
+
+  return childDiv;
+}
+// ======================================================
+// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 1]
 // ======================================================
 
 
+
+
+
+
+
+
+
+
+// ======================================================
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 1 Update]
+// ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
   col.className = "shipment-column";
   
-  // 🟢 แก้ไข: เพิ่มเกราะป้องกันจอขาว หาก Shipment_No ว่างเปล่าหรือผิดฟอร์แมต
   const safeShipmentNo = shipmentNo || "UNKNOWN-00000000-00XX-0000-00XX";
   col.setAttribute("data-shipment", safeShipmentNo);
 
+  // สกัดเอาวันที่ และตัดคำเพื่อเตรียมสร้างรหัสกล่องลูก
   const parts = safeShipmentNo.split("-");
   const dateParts = parts.length > 1 ? parts[1] : ""; 
   const displayDate = dateParts && dateParts.length === 8 
         ? `${dateParts.substring(0,2)}/${dateParts.substring(2,4)}/${dateParts.substring(6,8)}` 
         : new Date().toLocaleDateString("en-GB").substring(0, 8);
 
+  // สกัดรหัสฐาน TS-11072026-01CK-0022-02CT ให้เหลือแค่ 01CK-0022-02CT
+  const baseBoxNo = parts.length >= 5 ? parts.slice(2).join("-") : safeShipmentNo;
+
   col.style.cssText = `
     background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
-    border-top: 1px solid #fff;
-    border-bottom: 1px solid #bbb;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    width: 100%;
-    margin-bottom: 15px;
-    padding: 10px 20px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap; 
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    box-sizing: border-box;
+    border: 1px solid #ccc; border-top: 1px solid #fff; border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; margin-bottom: 15px;
+    padding: 12px 20px; display: flex; flex-direction: column; box-sizing: border-box;
   `;
 
+  // 🟢 ปรับโครงสร้าง: แบ่ง Header ของแม่ และ Container สำหรับใส่กล่องลูก
   col.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-      <input type="checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
-      <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
-      <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${safeShipmentNo}</span>
-    </div>
-
-    <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
-      <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444; box-shadow: inset 0 1px 2px rgba(255,255,255,1);">
-        ${originType}
-      </span>
-      <div style="display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #333; text-shadow: 1px 1px 0px #fff;">
-        <span><i class="fas fa-truck"></i> (0)</span>
-        <span><i class="fas fa-barcode"></i> (0)</span>
-        <span><i class="fas fa-hand-paper"></i> (0)</span>
-      </div>
-    </div>
-
-    <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
-      <i class="fas fa-box-open btn-scan" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สแกนเพิ่มกล่อง"></i>
-      <i class="fas fa-trash-alt btn-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบงานนี้"></i>
+    <div class="shipment-column-header" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; width: 100%;">
       
-      <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-        Assign
-      </span>
+      <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+        <input type="checkbox" class="master-checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
+        <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
+        <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${safeShipmentNo}</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
+        <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444; box-shadow: inset 0 1px 2px rgba(255,255,255,1);">
+          ${originType}
+        </span>
+        <div style="display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #333; text-shadow: 1px 1px 0px #fff;">
+          <span><i class="fas fa-truck" style="color: #dc3545;"></i> (<span class="master-truck-count">0</span>)</span>
+          <span><i class="fas fa-barcode" style="color: #666;"></i> (<span class="master-scan-count">0</span>)</span>
+          <span><i class="fas fa-hand-paper" style="color: #8d6e63;"></i> (<span class="master-manual-count">0</span>)</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
+        <i class="fas fa-box-open btn-add-child-box" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สร้างกล่องใหม่"></i>
+        <i class="fas fa-trash-alt btn-master-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="โหมดลบข้อมูล"></i>
+        
+        <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+          Assign
+        </span>
+      </div>
+
+    </div>
+
+    <!-- 🟢 พื้นที่สำหรับใส่กล่องลูก (ซ่อนไว้ก่อนถ้ายังไม่มี) -->
+    <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #aaa;">
     </div>
   `;
 
-  const btnDelete = col.querySelector(".btn-delete");
-  btnDelete.addEventListener("click", () => {
-    if (confirm(`ต้องการลบ Shipment: ${safeShipmentNo} ใช่หรือไม่?`)) {
-      col.remove();
-      const container = document.getElementById("lobbyContentContainer");
-      const emptyState = document.getElementById("lobbyEmptyState");
-      if (container && container.querySelectorAll(".shipment-column").length === 0) {
-         if (emptyState) emptyState.style.display = "block";
-      }
-    }
+  const btnMasterDelete = col.querySelector(".btn-master-delete");
+  btnMasterDelete.addEventListener("click", () => {
+    // ลอจิกปุ่มถังขยะแม่ จะถูกเขียนเต็มๆ ใน Phase 3 ครับ (ตอนนี้ใส่ Alert พื้นฐานไว้ก่อน)
+    alert("โหมดลบข้อมูล (Master Delete) จะเปิดใช้งานใน Phase 3 ครับ!");
   });
 
-  const btnScan = col.querySelector(".btn-scan");
-  btnScan.addEventListener("click", () => {
-    sessionStorage.setItem("activeShipmentNo", safeShipmentNo);
-    if (typeof showView === "function") {
-      showView("boxDetailsView");
-    }
+  // 🟢 ลอจิกปุ่มกล่องเขียวตัวแม่ (กดแล้วสร้างกล่องลูก)
+  let boxCounter = 0; 
+  const btnAddChildBox = col.querySelector(".btn-add-child-box");
+  const childrenContainer = col.querySelector(".shipment-children-container");
+  const masterTruckCount = col.querySelector(".master-truck-count");
+
+  btnAddChildBox.addEventListener("click", () => {
+    boxCounter++; // เพิ่มลำดับกล่อง
+    const childEl = createShipmentChildBox(baseBoxNo, boxCounter); // สร้าง UI กล่องลูก
+    
+    childrenContainer.appendChild(childEl);
+    childrenContainer.classList.remove("hide"); // แสดงพื้นที่กล่องลูก
+    
+    masterTruckCount.textContent = boxCounter; // อัปเดตตัวเลขรถบรรทุกที่แม่
   });
 
   return col;
 }
 
-
-
+// ======================================================
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (Responsive: ปัดบรรทัดเมื่อจอแคบ)
+// ======================================================
 
 
 // ฟังก์ชันสลับหน้าจอ (Switch View)
@@ -213,7 +283,6 @@ function loadLobbyHeader() {
 }
 // [Load Lobby Header] END
 //===============
-
 
 
 // =================================================================
@@ -454,9 +523,6 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
 
   return card; 
 }
-
-
-
 
 
 // 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
