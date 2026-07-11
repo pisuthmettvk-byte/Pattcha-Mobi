@@ -11,39 +11,41 @@ const STATUS_CONFIG = {
 
 
 // ======================================================
-// 🛡️ [Phase 3] ระบบแช่แข็งการสัมผัสทั้งหน้าจอ (Super Freeze Interceptor)
+// 🛡️ [Phase 3] ระบบแช่แข็งล็อกเป้าหมาย (Isolated Freeze Interceptor)
 // ======================================================
-window.isGlobalDeleteMode = false; // สถานะโหมดลบ (ค่าเริ่มต้นคือ ปิด)
+window.isGlobalDeleteMode = false; 
+window.activeDeleteShipment = null; 
 
 document.addEventListener("click", (e) => {
   if (window.isGlobalDeleteMode) {
-    // 1. อนุญาตให้กดปุ่มถังขยะแม่ และ ถังขยะลูก ได้ เพื่อใช้ปิดโหมดหรือลบงาน
-    if (e.target.closest('.btn-master-delete') || e.target.closest('.child-btn-delete')) {
+    // 1. อนุญาตให้กดปุ่มถังขยะใน "ชิปเมนต์ที่กำลังเปิดโหมดลบอยู่" เท่านั้น
+    const isToggleActiveParent = e.target.closest(`.shipment-column[data-shipment="${window.activeDeleteShipment}"] .btn-master-delete`);
+    const isDeleteActiveParent = e.target.closest(`.shipment-column[data-shipment="${window.activeDeleteShipment}"] .parent-btn-delete`);
+    const isDeleteActiveChild  = e.target.closest(`.shipment-column[data-shipment="${window.activeDeleteShipment}"] .child-btn-delete`);
+    
+    if (isToggleActiveParent || isDeleteActiveParent || isDeleteActiveChild) {
       return; 
     }
-    
-    // 2. อนุญาตให้กดปุ่มบนหน้าต่างแจ้งเตือน (Popup) ได้ เพื่อให้กดยืนยันหรือปิด Popup ได้
+
+    // 2. อนุญาตให้กดปุ่มบนหน้าต่าง Popup
     if (e.target.closest('.swal-overlay') || e.target.closest('.swal-modal') || e.target.closest('.sweet-alert')) {
       return;
     }
 
-    // 3. บล็อกการกดอื่นๆ ทั้งหมดที่อยู่ในพื้นที่หน้าจอแอปพลิเคชัน (Checkbox, แถบลิสต์, ปุ่มต่างๆ)
+    // 3. บล็อกทุกอย่างที่เหลือในแอป 
     const isInsideApp = e.target.closest('#transferOutLobbyView') || e.target.closest('.app-header') || e.target.closest('.main-content');
     if (isInsideApp) {
       e.preventDefault();
       e.stopPropagation();
       
-      // 🔴 แสดงหน้าต่างแจ้งเตือนสีแดง (error)
       if (typeof safeAlert === "function") {
-        safeAlert("ระงับการใช้งานชั่วคราว!", "คุณกำลังเปิดโหมดลบข้อมูลอยู่ กรุณากดปุ่มรูปถังขยะอีกครั้งเพื่อปิดโหมดนี้ ก่อนทำรายการอื่นครับ", "error");
+        safeAlert("ระงับการใช้งานชั่วคราว!", "คุณกำลังเปิดโหมดลบข้อมูลของชิปเมนต์อื่นอยู่ กรุณาจัดการให้เสร็จ หรือกดปุ่มรูปถังขยะเพื่อปิดโหมดลบที่คันนั้นก่อนครับ", "error");
       } else {
-        alert("ระงับการใช้งานชั่วคราว!\nคุณกำลังเปิดโหมดลบข้อมูลอยู่ กรุณากดปิดโหมดลบก่อนครับ");
+        alert("ระงับการใช้งานชั่วคราว!\nกรุณาปิดโหมดลบของชิปเมนต์ที่กำลังทำงานอยู่ก่อนครับ");
       }
     }
   }
-}, true); // ใช้ capture: true เพื่อเป็นด่านแรกสุดในการดักจับ
-
-
+}, true);
 // ======================================================
 // 🛡️ [Phase 3] ระบบแช่แข็งการสัมผัสทั้งหน้าจอ (Super Freeze Interceptor)
 // ======================================================
@@ -113,22 +115,20 @@ async function loadBranchesIntoDropdown() {
 
 
 // ======================================================
-// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 3 Update - Task Card Style]
+// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 3 Final]
 // ======================================================
 function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
   const childBoxNo = `${baseBoxNo}-${String(boxRunningIndex).padStart(4, '0')}`;
-  
   const childDiv = document.createElement("div");
   childDiv.className = "shipment-child-box";
   childDiv.dataset.boxNo = childBoxNo;
   childDiv.dataset.status = "open"; 
 
-  // 🟢 แก้ไขดีไซน์ให้เหมือน Task Card 100% (พื้นขาว, ไม่มีขอบมน, ขอบซ้าย 6px ตามสถานะ)
+  // 🟢 ปรับดีไซน์เป็น Task Card (พื้นขาว, ไม่มีขอบมน, มีแถบสีซ้ายมือ)
   childDiv.style.cssText = `
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
     background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745;
-    padding: 16px 15px; margin-bottom: 5px; box-sizing: border-box;
-    cursor: pointer; transition: all 0.2s; width: 100%;
+    padding: 16px 15px; width: 100%; box-sizing: border-box; cursor: pointer; transition: all 0.2s;
   `;
 
   childDiv.innerHTML = `
@@ -159,7 +159,7 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
       const parentCol = childDiv.closest(".shipment-column"); 
       childDiv.remove(); 
       
-      // 🟢 อัปเดตตัวเลขรถบรรทุกที่แม่ให้ลดลง (นับจำนวนที่มีอยู่จริง)
+      // 🟢 อัปเดตยอด 🚚 ด้วยการนับของจริงบนหน้าจอ
       if (parentCol) {
         const truckCountEl = parentCol.querySelector(".master-truck-count");
         const remainingBoxes = parentCol.querySelectorAll(".shipment-child-box").length;
@@ -170,11 +170,16 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
 
   return childDiv;
 }
+// ======================================================
+// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 3 Final]
+// ======================================================
+
+
 
 
 
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 3 Update]
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 3 Final]
 // ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
@@ -191,25 +196,24 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   const baseBoxNo = parts.length >= 5 ? parts.slice(2).join("-") : safeShipmentNo;
 
-  col.style.cssText = `
-    background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
-    border: 1px solid #ccc; border-top: 1px solid #fff; border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; margin-bottom: 15px;
-    padding: 12px 20px; display: flex; flex-direction: column; box-sizing: border-box;
-    transition: all 0.3s ease;
-  `;
+  // เปลือกนอกไม่มีลูกระนาด จัดระยะห่างแม่-ลูก
+  col.style.cssText = `width: 100%; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;`;
 
   col.innerHTML = `
-    <div class="shipment-column-header" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; width: 100%;">
+    <!-- 🟢 Header แม่ (พื้นหลังลูกระนาด) -->
+    <div class="shipment-column-header" style="
+      background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
+      border: 1px solid #ccc; border-top: 1px solid #fff; border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; padding: 12px 20px; 
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; box-sizing: border-box; transition: all 0.3s ease;
+    ">
       <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
         <input type="checkbox" class="master-checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
         <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
         <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${safeShipmentNo}</span>
       </div>
       <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
-        <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444;">
-          ${originType}
-        </span>
+        <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444;">${originType}</span>
         <div style="display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #333; text-shadow: 1px 1px 0px #fff;">
           <span><i class="fas fa-truck" style="color: #dc3545;"></i> (<span class="master-truck-count">0</span>)</span>
           <span><i class="fas fa-barcode" style="color: #666;"></i> (<span class="master-scan-count">0</span>)</span>
@@ -217,82 +221,96 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
+        <!-- 🟢 ปุ่มถังขยะของจริง สำหรับลบแม่ (ซ่อนไว้ก่อน) -->
+        <i class="fas fa-trash-alt parent-btn-delete hide" style="color: #dc3545; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบชิปเมนต์นี้"></i>
+        
         <i class="fas fa-box-open btn-add-child-box" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สร้างกล่องใหม่"></i>
-        <i class="fas fa-trash-alt btn-master-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff); transition: all 0.2s;" title="โหมดลบข้อมูล"></i>
+        <i class="fas fa-trash-alt btn-master-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff); transition: all 0.2s;" title="สวิตช์ เปิด/ปิด โหมดลบ"></i>
         <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold;">Assign</span>
       </div>
     </div>
-    <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 0px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #aaa;">
-    </div>
+    
+    <!-- 🟢 พื้นที่ใส่กล่องลูก แยกจาก Header -->
+    <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 5px;"></div>
   `;
 
+  const headerDiv = col.querySelector(".shipment-column-header");
   const childrenContainer = col.querySelector(".shipment-children-container");
   const btnMasterDelete = col.querySelector(".btn-master-delete");
+  const btnParentDelete = col.querySelector(".parent-btn-delete"); 
   const btnAddChildBox = col.querySelector(".btn-add-child-box");
   const masterTruckCount = col.querySelector(".master-truck-count");
 
+  // 1. สวิตช์สลับโหมดลบ (Toggle Mode)
   btnMasterDelete.addEventListener("click", () => {
-    const childBoxes = childrenContainer.querySelectorAll(".shipment-child-box");
-    
-    // 🟢 กรณีลบแม่เปล่า: ให้ตามไปลบ Task Card ในหน้า Hub ด้วย
-    if (childBoxes.length === 0) {
-      if (confirm(`ชิปเมนต์ ${safeShipmentNo} ยังไม่มีกล่องสินค้า ต้องการลบชิปเมนต์นี้ทิ้งใช่หรือไม่?`)) {
-        col.remove(); // ลบแถบใน Lobby
-        
-        // ค้นหาและลบ Task Card ที่หน้าหลัก
-        const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
-        taskCards.forEach(card => {
-          if (card.innerHTML.includes(safeShipmentNo)) {
-             card.remove(); 
-          }
-        });
-
-        const container = document.getElementById("lobbyContentContainer");
-        const emptyState = document.getElementById("lobbyEmptyState");
-        if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
-           emptyState.style.display = "block";
-        }
-      }
-      return;
+    // บล็อกถ้าคันอื่นเปิดโหมดลบอยู่
+    if (window.isGlobalDeleteMode && window.activeDeleteShipment !== safeShipmentNo) {
+      return; 
     }
 
     const isDeleteMode = btnMasterDelete.classList.toggle("delete-mode-active");
     window.isGlobalDeleteMode = isDeleteMode; 
+    window.activeDeleteShipment = isDeleteMode ? safeShipmentNo : null; 
+
+    const childBoxes = childrenContainer.querySelectorAll(".shipment-child-box");
 
     if (isDeleteMode) {
       btnMasterDelete.style.color = "#ffc107"; 
       btnMasterDelete.style.transform = "scale(1.2)";
-      col.style.border = "2px dashed #ffc107"; 
-      childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.remove("hide"));
+      headerDiv.style.border = "2px dashed #ffc107"; 
+      btnParentDelete.classList.remove("hide"); // โชว์ถังขยะแม่ของจริง
+      childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.remove("hide")); 
     } else {
       btnMasterDelete.style.color = "#c9302c"; 
       btnMasterDelete.style.transform = "scale(1)";
-      col.style.border = "1px solid #ccc";
+      headerDiv.style.border = "1px solid #ccc";
+      btnParentDelete.classList.add("hide"); // ซ่อนถังขยะแม่
       childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.add("hide"));
     }
   });
 
-  // 🟢 ลอจิกการกดสร้างกล่องลูก (และนับตัวเลขจริง)
-  let boxIdCounter = 0; // ตัวแปรนี้ใช้วิ่งเลขรหัสกล่องเท่านั้น (-0001, -0002)
+  // 2. ปุ่มกดลบแม่ของจริง
+  btnParentDelete.addEventListener("click", () => {
+    if (confirm(`คุณต้องการลบชิปเมนต์ ${safeShipmentNo} และข้อมูลกล่องทั้งหมด ทิ้งใช่หรือไม่?`)) {
+      
+      // 🟢 [Phase 4 Placeholder] ตำแหน่งสำหรับยิง API ลบข้อมูลหลังบ้านชีต TransferOut_Log และ Box_Log
+
+      col.remove(); 
+      
+      const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
+      taskCards.forEach(card => {
+        if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
+      });
+
+      // ปลดล็อกระบบแช่แข็งทั้งหมด (Unfreeze)
+      window.isGlobalDeleteMode = false;
+      window.activeDeleteShipment = null;
+
+      const container = document.getElementById("lobbyContentContainer");
+      const emptyState = document.getElementById("lobbyEmptyState");
+      if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
+         emptyState.style.display = "block";
+      }
+    }
+  });
+
+  // 3. สร้างกล่องลูก
+  let boxIdCounter = 0; 
   btnAddChildBox.addEventListener("click", () => {
     boxIdCounter++; 
     const childEl = createShipmentChildBox(baseBoxNo, boxIdCounter);
     childrenContainer.appendChild(childEl);
     childrenContainer.classList.remove("hide");
     
-    // 🟢 อัปเดตตัวเลขรถบรรทุก (นับจำนวนที่มีอยู่จริงในหน้าจอ)
-    const currentBoxesCount = childrenContainer.querySelectorAll('.shipment-child-box').length;
-    masterTruckCount.textContent = currentBoxesCount; 
+    masterTruckCount.textContent = childrenContainer.querySelectorAll('.shipment-child-box').length; 
   });
 
   return col;
 }
-
-
-
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment (Responsive: ปัดบรรทัดเมื่อจอแคบ)
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 3 Final]
 // ======================================================
+
 
 
 // ฟังก์ชันสลับหน้าจอ (Switch View)
