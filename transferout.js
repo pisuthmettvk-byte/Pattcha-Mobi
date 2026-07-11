@@ -176,10 +176,8 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
 
 
 
-
-
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 3 Final]
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 4 Final Fix]
 // ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
@@ -269,7 +267,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 🟢 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน Phase 4)
+  // 🟢 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน ผ่าน Fetch API)
   btnParentDelete.addEventListener("click", () => {
     if (confirm(`คุณต้องการลบชิปเมนต์ ${safeShipmentNo} และข้อมูลกล่องทั้งหมด ทิ้งใช่หรือไม่?`)) {
       
@@ -283,43 +281,45 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
         });
       }
 
-      // 2. ยิง API สั่งให้หลังบ้านลบข้อมูล
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            if (typeof Swal !== "undefined") Swal.close();
-            
-            // 3. เมื่อหลังบ้านลบเสร็จ ค่อยลบกราฟิกบนหน้าจอ
-            col.remove(); 
-            
-            const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
-            taskCards.forEach(card => {
-              if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
-            });
+      // 2. ใช้ fetch API แทน google.script.run เนื่องจากโฮสต์บน GitHub
+      const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+      
+      fetch(`${apiUrl}?action=delete_shipment&shipmentNo=${safeShipmentNo}`, {
+        method: 'GET'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          if (typeof Swal !== "undefined") Swal.close();
+          
+          // 3. เมื่อหลังบ้านลบเสร็จ ค่อยลบกราฟิกบนหน้าจอ
+          col.remove(); 
+          
+          const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
+          taskCards.forEach(card => {
+            if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
+          });
 
-            // ปลดล็อกระบบแช่แข็งทั้งหมด
-            window.isGlobalDeleteMode = false;
-            window.activeDeleteShipment = null;
+          // ปลดล็อกระบบแช่แข็งทั้งหมด
+          window.isGlobalDeleteMode = false;
+          window.activeDeleteShipment = null;
 
-            const container = document.getElementById("lobbyContentContainer");
-            const emptyState = document.getElementById("lobbyEmptyState");
-            if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
-               emptyState.style.display = "block";
-            }
-          } else {
-            // แจ้งเตือนถ้าลบไม่สำเร็จ
-            if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", response.message, "error");
+          const container = document.getElementById("lobbyContentContainer");
+          const emptyState = document.getElementById("lobbyEmptyState");
+          if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
+             emptyState.style.display = "block";
           }
-        })
-        .withFailureHandler(function(error) {
-          if (typeof safeAlert === "function") safeAlert("ข้อผิดพลาดเครือข่าย", "ไม่สามารถติดต่อ @Google Workspace ได้", "error");
-        })
-        .deleteShipmentData(safeShipmentNo); // ส่งรหัสแม่ไปให้ฟังก์ชันหลังบ้าน
+        } else {
+          if (typeof Swal !== "undefined") Swal.close();
+          if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+        }
+      })
+      .catch(error => {
+        if (typeof Swal !== "undefined") Swal.close();
+        if (typeof safeAlert === "function") safeAlert("ข้อผิดพลาดเครือข่าย", "ไม่สามารถติดต่อ @Google Workspace ได้", "error");
+      });
     }
   });
-
-
-
 
   // 3. สร้างกล่องลูก
   let boxIdCounter = 0; 
@@ -334,8 +334,9 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   return col;
 }
+
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 3 Final]
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 4 Final Fix]
 // ======================================================
 
 
