@@ -11,37 +11,42 @@ const STATUS_CONFIG = {
 
 
 // ======================================================
-// 🛡️ [Phase 3] ระบบแช่แข็งปุ่ม เมื่ออยู่ในโหมดลบ (Delete Mode Interceptor)
+// 🛡️ [Phase 3] ระบบแช่แข็งการสัมผัสทั้งหน้าจอ (Super Freeze Interceptor)
 // ======================================================
 window.isGlobalDeleteMode = false; // สถานะโหมดลบ (ค่าเริ่มต้นคือ ปิด)
 
-window.checkDeleteMode = function(event) {
+document.addEventListener("click", (e) => {
   if (window.isGlobalDeleteMode) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (typeof safeAlert === "function") {
-      safeAlert("โหมดลบข้อมูลทำงานอยู่", "ไม่สามารถใช้งานปุ่มนี้ได้ กรุณากดปุ่มรูปถังขยะที่แถบชิปเมนต์อีกครั้ง เพื่อปิดโหมดลบก่อนครับ", "warning");
-    } else {
-      alert("กรุณาปิดโหมดลบข้อมูลก่อนครับ");
+    // 1. อนุญาตให้กดปุ่มถังขยะแม่ และ ถังขยะลูก ได้ เพื่อใช้ปิดโหมดหรือลบงาน
+    if (e.target.closest('.btn-master-delete') || e.target.closest('.child-btn-delete')) {
+      return; 
     }
-    return true; // คืนค่า true เพื่อบล็อกการทำงานอื่น
+    
+    // 2. อนุญาตให้กดปุ่มบนหน้าต่างแจ้งเตือน (Popup) ได้ เพื่อให้กดยืนยันหรือปิด Popup ได้
+    if (e.target.closest('.swal-overlay') || e.target.closest('.swal-modal') || e.target.closest('.sweet-alert')) {
+      return;
+    }
+
+    // 3. บล็อกการกดอื่นๆ ทั้งหมดที่อยู่ในพื้นที่หน้าจอแอปพลิเคชัน (Checkbox, แถบลิสต์, ปุ่มต่างๆ)
+    const isInsideApp = e.target.closest('#transferOutLobbyView') || e.target.closest('.app-header') || e.target.closest('.main-content');
+    if (isInsideApp) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 🔴 แสดงหน้าต่างแจ้งเตือนสีแดง (error)
+      if (typeof safeAlert === "function") {
+        safeAlert("ระงับการใช้งานชั่วคราว!", "คุณกำลังเปิดโหมดลบข้อมูลอยู่ กรุณากดปุ่มรูปถังขยะอีกครั้งเพื่อปิดโหมดนี้ ก่อนทำรายการอื่นครับ", "error");
+      } else {
+        alert("ระงับการใช้งานชั่วคราว!\nคุณกำลังเปิดโหมดลบข้อมูลอยู่ กรุณากดปิดโหมดลบก่อนครับ");
+      }
+    }
   }
-  return false;
-};
+}, true); // ใช้ capture: true เพื่อเป็นด่านแรกสุดในการดักจับ
 
-// นำไปผูกกับปุ่มหลักๆ ในหน้า Lobby ทันทีที่โหลดหน้าจอ
-document.addEventListener("DOMContentLoaded", () => {
-  const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
-  const btnCancelFromLobby = document.getElementById("btnCancelFromLobby");
-  
-  // ใช้ capture: true เพื่อดักจับการคลิกเป็นด่านแรกสุด
-  if (btnAddShipmentTruck) btnAddShipmentTruck.addEventListener("click", window.checkDeleteMode, true);
-  if (btnCancelFromLobby) btnCancelFromLobby.addEventListener("click", window.checkDeleteMode, true);
-});
-// ======================================================
-// 🛡️ [Phase 3] ระบบแช่แข็งปุ่ม เมื่ออยู่ในโหมดลบ (Delete Mode Interceptor)
-// ======================================================
 
+// ======================================================
+// 🛡️ [Phase 3] ระบบแช่แข็งการสัมผัสทั้งหน้าจอ (Super Freeze Interceptor)
+// ======================================================
 
 
 
@@ -108,9 +113,8 @@ async function loadBranchesIntoDropdown() {
 
 
 // ======================================================
-// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 1 + 3]
+// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 3 Update - Task Card Style]
 // ======================================================
-
 function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
   const childBoxNo = `${baseBoxNo}-${String(boxRunningIndex).padStart(4, '0')}`;
   
@@ -119,46 +123,43 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
   childDiv.dataset.boxNo = childBoxNo;
   childDiv.dataset.status = "open"; 
 
+  // 🟢 แก้ไขดีไซน์ให้เหมือน Task Card 100% (พื้นขาว, ไม่มีขอบมน, ขอบซ้าย 6px ตามสถานะ)
   childDiv.style.cssText = `
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-    background: #fdfdfd; border: 1px solid #e0e0e0; border-left: 5px solid #28a745;
-    padding: 12px 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    cursor: pointer; transition: all 0.2s;
+    background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745;
+    padding: 16px 15px; margin-bottom: 5px; box-sizing: border-box;
+    cursor: pointer; transition: all 0.2s; width: 100%;
   `;
 
   childDiv.innerHTML = `
     <div style="display: flex; align-items: center; gap: 15px; flex: 1; min-width: 200px;">
       <input type="checkbox" class="child-checkbox" disabled title="ต้องปิดกล่องก่อนถึงจะเลือกได้" 
              style="width: 18px; height: 18px; border-radius: 4px; cursor: not-allowed;" onclick="event.stopPropagation();">
-      <i class="fas fa-box-open box-status-icon" style="color: #28a745; font-size: 18px; filter: drop-shadow(1px 1px 1px #ddd);"></i>
+      <i class="fas fa-box-open box-status-icon" style="color: #28a745; font-size: 18px;"></i>
       <span style="font-weight: bold; font-size: 14px; color: #333; letter-spacing: 0.5px;">${childBoxNo}</span>
     </div>
     
     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 18px; font-size: 13px; font-weight: bold; color: #555;">
       <span title="จำนวนที่สแกนบาร์โค้ด"><i class="fas fa-barcode" style="color: #666;"></i> (<span class="child-scan-qty">0</span>)</span>
       <span title="จำนวนที่นับด้วยมือ"><i class="fas fa-hand-paper" style="color: #8d6e63;"></i> (<span class="child-manual-qty">0</span>)</span>
-      <!-- 🟢 ปุ่มถังขยะลูก (ซ่อนไว้ก่อน) -->
       <i class="fas fa-trash-alt child-btn-delete hide" style="color: #dc3545; font-size: 18px; cursor: pointer; padding-left: 5px;" onclick="event.stopPropagation();"></i>
     </div>
   `;
 
-  // 1. กดที่แถบ -> พาวาร์ปไปหน้า Box Details
   childDiv.addEventListener("click", () => {
     sessionStorage.setItem("activeBoxNo", childBoxNo);
     sessionStorage.setItem("activeBoxStatus", childDiv.dataset.status);
     if (typeof showView === "function") showView("boxDetailsView");
   });
 
-  // 2. 🟢 ลอจิกการกดถังขยะของกล่องลูก (Phase 3)
   const btnDeleteChild = childDiv.querySelector(".child-btn-delete");
   btnDeleteChild.addEventListener("click", (e) => {
-    e.stopPropagation(); // ไม่ให้ทะลุไปโดนคำสั่งเข้ากล่อง
-    
+    e.stopPropagation(); 
     if (confirm(`ต้องการลบกล่อง ${childBoxNo} ทิ้งใช่หรือไม่? ข้อมูลสินค้าในกล่องนี้จะหายไปทั้งหมด`)) {
-      const parentCol = childDiv.closest(".shipment-column"); // หาตัวแม่
-      childDiv.remove(); // ลบตัวเองทิ้ง
+      const parentCol = childDiv.closest(".shipment-column"); 
+      childDiv.remove(); 
       
-      // อัปเดตตัวเลขรถบรรทุกที่แม่ให้ลดลงตามจริง
+      // 🟢 อัปเดตตัวเลขรถบรรทุกที่แม่ให้ลดลง (นับจำนวนที่มีอยู่จริง)
       if (parentCol) {
         const truckCountEl = parentCol.querySelector(".master-truck-count");
         const remainingBoxes = parentCol.querySelectorAll(".shipment-child-box").length;
@@ -171,24 +172,10 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
 }
 
 
-// ======================================================
-// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 1]
-// ======================================================
-
-
-
-
-
-
-
-
-
 
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 1 + 3]
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 3 Update]
 // ======================================================
-
-
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
   col.className = "shipment-column";
@@ -214,15 +201,13 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   col.innerHTML = `
     <div class="shipment-column-header" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; width: 100%;">
-      
       <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
         <input type="checkbox" class="master-checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
         <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
         <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${safeShipmentNo}</span>
       </div>
-
       <div style="display: flex; align-items: center; gap: 20px; flex-grow: 1; flex-wrap: wrap; min-width: 150px;">
-        <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444; box-shadow: inset 0 1px 2px rgba(255,255,255,1);">
+        <span style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; color: #444;">
           ${originType}
         </span>
         <div style="display: flex; gap: 15px; font-size: 13px; font-weight: bold; color: #333; text-shadow: 1px 1px 0px #fff;">
@@ -231,17 +216,13 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
           <span><i class="fas fa-hand-paper" style="color: #8d6e63;"></i> (<span class="master-manual-count">0</span>)</span>
         </div>
       </div>
-
       <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
         <i class="fas fa-box-open btn-add-child-box" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สร้างกล่องใหม่"></i>
         <i class="fas fa-trash-alt btn-master-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff); transition: all 0.2s;" title="โหมดลบข้อมูล"></i>
-        
-        <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-          Assign
-        </span>
+        <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold;">Assign</span>
       </div>
     </div>
-    <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #aaa;">
+    <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 0px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #aaa;">
     </div>
   `;
 
@@ -250,14 +231,22 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   const btnAddChildBox = col.querySelector(".btn-add-child-box");
   const masterTruckCount = col.querySelector(".master-truck-count");
 
-  // 🟢 1. ลอจิกปุ่มถังขยะตัวแม่ (Master Delete Toggle - Phase 3)
   btnMasterDelete.addEventListener("click", () => {
     const childBoxes = childrenContainer.querySelectorAll(".shipment-child-box");
     
-    // กรณีที่ 1: ไม่มีกล่องลูกเลย -> ถามลบชิปเมนต์ทิ้งทั้งแถบ
+    // 🟢 กรณีลบแม่เปล่า: ให้ตามไปลบ Task Card ในหน้า Hub ด้วย
     if (childBoxes.length === 0) {
       if (confirm(`ชิปเมนต์ ${safeShipmentNo} ยังไม่มีกล่องสินค้า ต้องการลบชิปเมนต์นี้ทิ้งใช่หรือไม่?`)) {
-        col.remove();
+        col.remove(); // ลบแถบใน Lobby
+        
+        // ค้นหาและลบ Task Card ที่หน้าหลัก
+        const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
+        taskCards.forEach(card => {
+          if (card.innerHTML.includes(safeShipmentNo)) {
+             card.remove(); 
+          }
+        });
+
         const container = document.getElementById("lobbyContentContainer");
         const emptyState = document.getElementById("lobbyEmptyState");
         if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
@@ -267,54 +256,38 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       return;
     }
 
-    // กรณีที่ 2: มีกล่องลูก -> สลับโหมดเปิด/ปิด ถังขยะ
     const isDeleteMode = btnMasterDelete.classList.toggle("delete-mode-active");
-    window.isGlobalDeleteMode = isDeleteMode; // แจ้งสถานะให้ทั้งระบบรู้
-
-    const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
-    const btnCancelFromLobby = document.getElementById("btnCancelFromLobby");
+    window.isGlobalDeleteMode = isDeleteMode; 
 
     if (isDeleteMode) {
-      // ⚠️ เปิดโหมดลบ
-      btnMasterDelete.style.color = "#ffc107"; // สีเหลืองเตือน
+      btnMasterDelete.style.color = "#ffc107"; 
       btnMasterDelete.style.transform = "scale(1.2)";
-      col.style.border = "2px dashed #ffc107"; // ไฮไลต์กรอบแม่ให้รู้ว่ากำลังแก้คันนี้
-      
-      if (btnAddShipmentTruck) btnAddShipmentTruck.style.opacity = "0.4";
-      if (btnCancelFromLobby) btnCancelFromLobby.style.opacity = "0.4";
-      btnAddChildBox.style.opacity = "0.4"; // ซ่อนปุ่มสร้างกล่องชั่วคราว
-      btnAddChildBox.style.pointerEvents = "none";
-
-      // โชว์ถังขยะลูกทุกใบ
+      col.style.border = "2px dashed #ffc107"; 
       childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.remove("hide"));
     } else {
-      // ✅ ปิดโหมดลบ กลับสู่ภาวะปกติ
-      btnMasterDelete.style.color = "#c9302c"; // สีแดงปกติ
+      btnMasterDelete.style.color = "#c9302c"; 
       btnMasterDelete.style.transform = "scale(1)";
       col.style.border = "1px solid #ccc";
-      
-      if (btnAddShipmentTruck) btnAddShipmentTruck.style.opacity = "1";
-      if (btnCancelFromLobby) btnCancelFromLobby.style.opacity = "1";
-      btnAddChildBox.style.opacity = "1";
-      btnAddChildBox.style.pointerEvents = "auto";
-
-      // ซ่อนถังขยะลูกทุกใบ
       childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.add("hide"));
     }
   });
 
-  // 🟢 2. ลอจิกปุ่มกล่องเขียวตัวแม่ (สร้างกล่องลูก)
-  let boxCounter = 0; 
+  // 🟢 ลอจิกการกดสร้างกล่องลูก (และนับตัวเลขจริง)
+  let boxIdCounter = 0; // ตัวแปรนี้ใช้วิ่งเลขรหัสกล่องเท่านั้น (-0001, -0002)
   btnAddChildBox.addEventListener("click", () => {
-    boxCounter++; 
-    const childEl = createShipmentChildBox(baseBoxNo, boxCounter);
+    boxIdCounter++; 
+    const childEl = createShipmentChildBox(baseBoxNo, boxIdCounter);
     childrenContainer.appendChild(childEl);
     childrenContainer.classList.remove("hide");
-    masterTruckCount.textContent = boxCounter; 
+    
+    // 🟢 อัปเดตตัวเลขรถบรรทุก (นับจำนวนที่มีอยู่จริงในหน้าจอ)
+    const currentBoxesCount = childrenContainer.querySelectorAll('.shipment-child-box').length;
+    masterTruckCount.textContent = currentBoxesCount; 
   });
 
   return col;
 }
+
 
 
 // ======================================================
