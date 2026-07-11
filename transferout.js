@@ -269,30 +269,57 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 2. ปุ่มกดลบแม่ของจริง
+  // 🟢 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน Phase 4)
   btnParentDelete.addEventListener("click", () => {
     if (confirm(`คุณต้องการลบชิปเมนต์ ${safeShipmentNo} และข้อมูลกล่องทั้งหมด ทิ้งใช่หรือไม่?`)) {
       
-      // 🟢 [Phase 4 Placeholder] ตำแหน่งสำหรับยิง API ลบข้อมูลหลังบ้านชีต TransferOut_Log และ Box_Log
-
-      col.remove(); 
-      
-      const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
-      taskCards.forEach(card => {
-        if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
-      });
-
-      // ปลดล็อกระบบแช่แข็งทั้งหมด (Unfreeze)
-      window.isGlobalDeleteMode = false;
-      window.activeDeleteShipment = null;
-
-      const container = document.getElementById("lobbyContentContainer");
-      const emptyState = document.getElementById("lobbyEmptyState");
-      if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
-         emptyState.style.display = "block";
+      // 1. โชว์หน้าต่าง Loading ระหว่างรอ @Google Workspace
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          title: 'กำลังลบข้อมูล...',
+          text: 'กรุณารอสักครู่ ระบบกำลังลบข้อมูลจากฐานข้อมูล',
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading(); }
+        });
       }
+
+      // 2. ยิง API สั่งให้หลังบ้านลบข้อมูล
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            if (typeof Swal !== "undefined") Swal.close();
+            
+            // 3. เมื่อหลังบ้านลบเสร็จ ค่อยลบกราฟิกบนหน้าจอ
+            col.remove(); 
+            
+            const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
+            taskCards.forEach(card => {
+              if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
+            });
+
+            // ปลดล็อกระบบแช่แข็งทั้งหมด
+            window.isGlobalDeleteMode = false;
+            window.activeDeleteShipment = null;
+
+            const container = document.getElementById("lobbyContentContainer");
+            const emptyState = document.getElementById("lobbyEmptyState");
+            if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
+               emptyState.style.display = "block";
+            }
+          } else {
+            // แจ้งเตือนถ้าลบไม่สำเร็จ
+            if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", response.message, "error");
+          }
+        })
+        .withFailureHandler(function(error) {
+          if (typeof safeAlert === "function") safeAlert("ข้อผิดพลาดเครือข่าย", "ไม่สามารถติดต่อ @Google Workspace ได้", "error");
+        })
+        .deleteShipmentData(safeShipmentNo); // ส่งรหัสแม่ไปให้ฟังก์ชันหลังบ้าน
     }
   });
+
+
+
 
   // 3. สร้างกล่องลูก
   let boxIdCounter = 0; 
