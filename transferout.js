@@ -588,11 +588,12 @@ document.addEventListener("DOMContentLoaded", () => {
   loadBranchesIntoDropdown();
   loadTransferTypesIntoDropdown();
 
+
   // ==========================================
   // 3. ผูก Event ปุ่ม นำทาง (Navigation) ของ Transfer Out
   // ==========================================
 
-  // เข้า-ออก ระบบ Transfer Out
+  // เข้า-ออก ระบบ Transfer Out (Main Menu <-> Task Hub)
   document
     .getElementById("btnTransferOut")
     ?.addEventListener("click", () =>
@@ -610,9 +611,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
   // ปุ่ม + สร้างงานใหม่ (ไปหน้าเลือกสาขา)
-  const btnCreateNewTask =
-    document.getElementById("btnCreateNewTask") ||
-    document.getElementById("btnNewTask");
+  const btnCreateNewTask = document.getElementById("btnCreateNewTask") || document.getElementById("btnNewTask");
   if (btnCreateNewTask) {
     btnCreateNewTask.addEventListener("click", () => {
       const selectDest = document.getElementById("selectDestination");
@@ -621,7 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ปุ่ม Cancel กลับจากหน้าเลือกสาขา และ หน้า Lobby
+  // ปุ่ม Cancel กลับจากหน้าเลือกสาขา 
   document
     .getElementById("btnCancelDest")
     ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
@@ -629,63 +628,57 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("btnBackFromDest")
     ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
   document
-    .getElementById("btnCancelFromLobby")
-    ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
-  document
     .getElementById("btnBackToDest")
     ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+
+  // 🟢 พระเอกของงาน 1: กด Cancel จากหน้า Lobby ต้องกลับไป Task Hub และ "รีเฟรชข้อมูล"
+  document
+    .getElementById("btnCancelFromLobby")
+    ?.addEventListener("click", () => {
+        navigationTo(viewLobby, viewTaskHub);
+        // รีเฟรชกระดานงานเพื่อให้เห็น Card ใหม่ที่เพิ่งสร้าง
+        if (typeof loadExistingTasks === "function") {
+            loadExistingTasks();
+        }
+    });
 
   // ==========================================
   // 4. ลอจิกปุ่ม Next (เลือกสาขา -> ไป Lobby)
   // ==========================================
-  const btnSubmitDest =
-    document.getElementById("btnSubmitDest") ||
-    document.getElementById("btnNextDest");
+  const btnSubmitDest = document.getElementById("btnSubmitDest") || document.getElementById("btnNextDest");
   if (btnSubmitDest) {
-    btnSubmitDest.addEventListener("click", () => {
+    btnSubmitDest.addEventListener("click", async () => {
       const destDropdown = document.getElementById("selectDestination");
 
       // เช็กการเลือกข้อมูล
       if (!destDropdown || !destDropdown.value) {
         if (typeof safeAlert === "function")
-          safeAlert(
-            "ข้อมูลไม่ครบถ้วน",
-            "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ",
-            "warning",
-          );
+          safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ", "warning");
         else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
         return;
       }
 
       const branchID = destDropdown.value;
-      const branchName = destDropdown.options[destDropdown.selectedIndex].text;
-
-      // เช็ก Lobby เดิมที่อาจเปิดค้างไว้
-      const existingLobby = document.querySelector(
-        `.shipment-card[data-branch-id="${branchID}"]`,
-      );
-      if (existingLobby) {
-        if (typeof safeAlert === "function")
-          safeAlert(
-            "แจ้งเตือน",
-            "ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว ระบบจะพาคุณไปที่หน้าเดิมครับ",
-            "warning",
-          );
-        else alert("ห้อง Lobby ของสาขานี้ถูกเปิดไว้แล้ว");
-      }
 
       // บันทึก SessionStorage
       sessionStorage.setItem("selectedBranchID", branchID);
-      sessionStorage.setItem("selectedBranchName", branchName);
 
-      // เปลี่ยนชื่อหัว Lobby
-      const lobbyHeader = document.getElementById("lobbyBranchHeaderName");
-      if (lobbyHeader) lobbyHeader.innerText = branchName;
-
-      // วาร์ปไปหน้า Lobby
+      // วาร์ปไปหน้า Lobby แบบ Smooth Animation
       navigationTo(viewDest, viewLobby);
+      
+      // 🟢 พระเอกของงาน 2: โหลด Header และ "ดึงข้อมูล Lobby" ของสาขานั้นมาแสดง
+      if (typeof loadLobbyHeader === "function") loadLobbyHeader();
+      if (typeof renderLobbyTasks === "function") {
+          await renderLobbyTasks(branchID);
+      }
     });
   }
+
+
+
+
+
+
 
   // ==========================================
   // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
