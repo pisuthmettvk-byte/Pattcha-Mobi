@@ -161,19 +161,25 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
 // ฟังก์ชันสลับหน้าจอ (Switch View)
 function showView(viewId) {
-  const allViews = document.querySelectorAll(".view-screen");
+  // 🟢 ดึงหน้าจอทั้งหมดรวมถึง master-view (เช่น boxDetailsView)
+  const allViews = document.querySelectorAll(".view-screen, .master-view");
   allViews.forEach((view) => {
     view.classList.add("hide"); 
+    view.style.opacity = "0"; // รีเซ็ตความโปร่งใสให้ทุกหน้า
   });
 
   const targetView = document.getElementById(viewId);
   if (targetView) {
     targetView.classList.remove("hide");
+    // 🟢 บังคับให้หน้าจอทึบแสง (แสดงผล 100%) ป้องกันปัญหาจอล่องหน/จอขาว
+    setTimeout(() => {
+        targetView.style.transition = "opacity 0.15s ease-in-out";
+        targetView.style.opacity = "1";
+    }, 10);
   } else {
     console.error("ไม่พบหน้าจอ ID:", viewId);
   }
 }
-
 
 //===============
 // [Load Lobby Header] START
@@ -406,8 +412,8 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     </div>
   `;
 
-  card.addEventListener("click", async () => {
-    // 🟢 แก้ไข: บังคับจำรหัสสาขาจริง (เช่น CTW03) ป้องกันการสร้างงานใหม่แล้วกลายเป็น 0202
+card.addEventListener("click", async () => {
+    // 🟢 บังคับจำรหัสสาขาจริง ป้องกันการสร้างงานใหม่แล้วกลายเป็น 0202
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
     sessionStorage.setItem("selectedBranchID", displayDestBranch); 
 
@@ -416,16 +422,19 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
     }
 
     try {
-      if (typeof showView === "function") {
-        showView("transferOutLobbyView");
-      } else {
-        document.querySelectorAll('.view-screen').forEach(el => el.classList.add('hide'));
-        document.getElementById('transferOutLobbyView').classList.remove('hide');
+      // 🟢 เรียกใช้ระบบนำทางหลัก (navigationTo) เพื่อให้สลับหน้าแบบมีแอนิเมชัน Smooth สมบูรณ์แบบ
+      const viewTaskHub = document.getElementById("transferOutTaskHubView");
+      const viewLobby = document.getElementById("transferOutLobbyView");
+      
+      if (typeof navigationTo === "function" && viewTaskHub && viewLobby) {
+          navigationTo(viewTaskHub, viewLobby);
+      } else if (typeof showView === "function") {
+          showView("transferOutLobbyView");
       }
       
       if (typeof loadLobbyHeader === "function") loadLobbyHeader();
       
-      // 🟢 ส่งรหัส DB (เช่น 02CT) ไปดึงข้อมูล เพื่อให้โชว์รายการถูกต้อง
+      // 🟢 ส่งรหัส DB ไปดึงข้อมูล เพื่อให้โชว์รายการถูกต้อง
       if (typeof renderLobbyTasks === "function") {
         await renderLobbyTasks(destBranch);
       }
