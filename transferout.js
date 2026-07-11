@@ -383,7 +383,24 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
   const statusKey = (status || "").toLowerCase();
   const leftBorderColor = colorMap[statusKey] || "#ccc";
   
-  const displayDestBranch = typeof getRealBranchCode === "function" ? getRealBranchCode(destBranch) : destBranch;
+  // 🟢 ค้นหาชื่อสาขาเต็ม จากแคช (เช่น [CTW03] Central World)
+  let displayDestText = destBranch;
+  if (window.appBranches && Array.isArray(window.appBranches)) {
+    const matched = window.appBranches.find(b => {
+      const bId = String(b.id || b.Branch_ID || b.BranchID || "").trim().toUpperCase();
+      return bId === destBranch || String(destBranch).includes(bId.substring(0,2));
+    });
+    if (matched) {
+      const branchName = matched.name || matched.Branch_Name || matched.BranchName || "";
+      const branchId = matched.id || matched.Branch_ID || matched.BranchID || destBranch;
+      displayDestText = `[${branchId}] ${branchName}`; 
+    }
+  }
+
+  // Fallback ถ้าหาไม่เจอจริงๆ ให้ใช้ getRealBranchCode
+  if (displayDestText === destBranch && typeof getRealBranchCode === "function") {
+      displayDestText = getRealBranchCode(destBranch);
+  }
 
   const card = document.createElement("div"); 
   card.className = "task-card";
@@ -405,47 +422,34 @@ function createTransferOutTaskCard(date, shipmentNo, originType, destBranch, tot
         <span style="font-weight: bold; font-size: 16px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo || "-"}</span>
       </div>
       <div style="display: flex; align-items: center; justify-content: flex-end; gap: 15px; flex-grow: 1; min-width: 250px;">
-        <span style="font-size: 14px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${displayDestBranch}</span>
+        <!-- 🟢 เปลี่ยนตัวแปรให้แสดงชื่อสาขาเต็มตรงนี้ -->
+        <span style="font-size: 14px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${displayDestText}</span>
         <span style="font-size: 13px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox || 0}) TOTAL (${totalItem || 0})</span>
         <span style="background: ${leftBorderColor}; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${status || "Assign"}</span>
       </div>
     </div>
   `;
 
-card.addEventListener("click", async () => {
-    // 🟢 บังคับจำรหัสสาขาจริง ป้องกันการสร้างงานใหม่แล้วกลายเป็น 0202
+  card.addEventListener("click", async () => {
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
-    sessionStorage.setItem("selectedBranchID", displayDestBranch); 
-
-    if (!sessionStorage.getItem("selectedBranchName")) {
-      sessionStorage.setItem("selectedBranchName", "");
-    }
+    sessionStorage.setItem("selectedBranchID", destBranch); 
+    if (!sessionStorage.getItem("selectedBranchName")) sessionStorage.setItem("selectedBranchName", "");
 
     try {
-      // 🟢 เรียกใช้ระบบนำทางหลัก (navigationTo) เพื่อให้สลับหน้าแบบมีแอนิเมชัน Smooth สมบูรณ์แบบ
       const viewTaskHub = document.getElementById("transferOutTaskHubView");
       const viewLobby = document.getElementById("transferOutLobbyView");
       
-      if (typeof navigationTo === "function" && viewTaskHub && viewLobby) {
-          navigationTo(viewTaskHub, viewLobby);
-      } else if (typeof showView === "function") {
-          showView("transferOutLobbyView");
-      }
+      if (typeof navigationTo === "function" && viewTaskHub && viewLobby) navigationTo(viewTaskHub, viewLobby);
+      else if (typeof showView === "function") showView("transferOutLobbyView");
       
       if (typeof loadLobbyHeader === "function") loadLobbyHeader();
-      
-      // 🟢 ส่งรหัส DB ไปดึงข้อมูล เพื่อให้โชว์รายการถูกต้อง
-      if (typeof renderLobbyTasks === "function") {
-        await renderLobbyTasks(destBranch);
-      }
+      if (typeof renderLobbyTasks === "function") await renderLobbyTasks(destBranch);
       
       setTimeout(() => {
         if (typeof focusShipmentInLobby === "function") focusShipmentInLobby(shipmentNo);
       }, 500);
 
-    } catch (error) {
-      console.error("🚨 ระบบขัดข้องระหว่างพาวาร์ปเข้า Lobby:", error);
-    }
+    } catch (error) { console.error("🚨 วาร์ปเข้า Lobby ล้มเหลว:", error); }
   });
 
   return card; 
@@ -526,18 +530,23 @@ async function loadExistingTasks() {
 // กลุ่มที่ 6: Utility & Global Initializers (ส่วนเชื่อมประสาน)
 // ======================================================
 
-// 1. ฟังก์ชันค้นหาและวาร์ป (ใช้ร่วมกันทั้งหน้า Lobby และ Task Hub)
+// 1. ฟังก์ชันค้นหาและวาร์ป (แก้ไขคืนค่าสีลูกระนาดให้ถูกต้อง)
 function focusShipmentInLobby(shipmentNo) {
   const columns = document.querySelectorAll(".shipment-column");
   columns.forEach(col => {
     if (col.innerHTML.includes(shipmentNo)) {
       col.style.transition = "background 0.5s";
-      col.style.background = "#fff3cd"; 
+      col.style.background = "#fff3cd"; // ไฮไลต์สีเหลือง
       col.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => { col.style.background = "#ffffff"; }, 2000);
+      
+      setTimeout(() => { 
+        // 🟢 คืนค่ากลับเป็นเกรเดียนต์ลูกระนาดสีเงิน (ไม่ใช้สีขาว #ffffff)
+        col.style.background = "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)"; 
+      }, 2000);
     }
   });
 }
+
 
 // 2. ฟังก์ชันโหลด Dropdown ประเภทการโอน (ใช้ใน Modal)
 function loadTransferTypesIntoDropdown() {
