@@ -1145,23 +1145,28 @@ document.getElementById("btnBackFromBox").addEventListener("click", () => {
     window.currentBoxElement = null;
 });
 
-// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ล็อก/ปลดล็อกแบบเหล็กลูกระนาด)
+// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ปรับสไตล์ตาม Lobby)
 window.updateBoxWrapButtonState = function(totalItemsCount) {
     const btnWrap = document.getElementById("btnBoxWrap");
     if (!btnWrap) return;
 
     if (totalItemsCount > 0) {
-        // มีสินค้า = ปลดล็อก (เหล็กสีแดงเงางาม, กดได้)
-        btnWrap.style.opacity = "1";
-        btnWrap.style.filter = "none";
+        // มีสินค้า = ปลดล็อก (ลูกระนาดสีแดง เหมือนปุ่ม EXPORT ที่พร้อมกด)
+        btnWrap.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+        btnWrap.style.color = "white";
+        btnWrap.style.borderTop = "1px solid #ff8e99";
         btnWrap.style.pointerEvents = "auto";
+        btnWrap.style.cursor = "pointer";
     } else {
-        // ไม่มีสินค้า = ล็อก (เหล็กสีแดงหม่น/ลดความเงา, กดไม่ได้)
-        btnWrap.style.opacity = "0.6";
-        btnWrap.style.filter = "grayscale(70%)";
+        // ไม่มีสินค้า = ล็อก (ดำโปร่งแสง เหมือนปุ่ม EXPORT ที่ถูกปิด)
+        btnWrap.style.background = "rgba(0, 0, 0, 0.466)";
+        btnWrap.style.color = "#aaa";
+        btnWrap.style.borderTop = "1px solid rgba(255,255,255,0.1)";
         btnWrap.style.pointerEvents = "none";
+        btnWrap.style.cursor = "not-allowed";
     }
 };
+
 
 // 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด)
 window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
