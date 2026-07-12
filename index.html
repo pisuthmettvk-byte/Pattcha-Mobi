@@ -1,4 +1,4 @@
-<!doctype html>
+    <!doctype html>
 <html lang="th">
 <head>
     <meta charset="UTF-8" />
@@ -895,17 +895,53 @@
             </div>
         </div>
 
-        <!-- ช่อง Magic Search (โครงสร้างเดิม) -->
-        <div id="unifiedInputArea" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
-            <div id="boxSearchContainer" style="position: relative;">
-                <i class="fas fa-search" style="position: absolute; left: 20px; top: 16px; color: #6c757d;"></i>
-                <input type="text" id="boxSearchInput" placeholder="ค้นหาสินค้าในกล่อง (SKU...)" style="width: 100%; padding: 15px 45px 15px 50px; border-radius: 30px; border: 1px solid #ddd; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); font-size: 14px;">
-                <div id="boxClearSearchBtn" style="position: absolute; right: 15px; top: 13px; width: 24px; height: 24px; border-radius: 50%; background: #6c757d; color: white; display: none; justify-content: center; align-items: center; cursor: pointer;">
-                    <i class="fas fa-times" style="font-size: 12px;"></i>
+         <div style="width: 80px"></div>
+              </div>
+
+              <div
+                id="unifiedInputArea"
+                style="width: 100%; padding: 0px 20px; box-sizing: border-box"
+              >
+                <div id="searchContainer" style="position: relative">
+                  <i
+                    class="fas fa-search"
+                    style="position: absolute; left: 20px; top: 16px; color: #db8591"
+                  ></i>
+                  <input
+                    type="text"
+                    id="searchStockInput"
+                    placeholder="ค้นหาสินค้า (SKU, หมวดหมู่...)"
+                    style="
+                      width: 100%;
+                      padding: 15px 45px 15px 50px;
+                      border-radius: 30px;
+                      border: none;
+                      outline: none;
+                      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                    "
+                  />
+                  <div
+                    id="clearSearchBtn"
+                    style="
+                      position: absolute;
+                      right: 15px;
+                      top: 13px;
+                      width: 24px;
+                      height: 24px;
+                      border-radius: 50%;
+                      background: #db8591;
+                      color: white;
+                      display: none;
+                      justify-content: center;
+                      align-items: center;
+                      cursor: pointer;
+                    "
+                  >
+                    <i class="fas fa-times" style="font-size: 12px"></i>
+                  </div>
                 </div>
+              </div>
             </div>
-        </div>
-    </div>
 
     <!-- 🟢 2. Content Area (พื้นที่แสดงสินค้า - คงเดิม) -->
     <div id="boxContentArea" style="flex: 1; overflow-y: auto; width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;">
