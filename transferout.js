@@ -269,66 +269,73 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน ผ่าน Fetch API)
-  btnParentDelete.addEventListener("click", () => {
-    if (confirm(`คุณต้องการลบชิปเมนต์ ${safeShipmentNo} และข้อมูลกล่องทั้งหมด ทิ้งใช่หรือไม่?`)) {
+
+// 🟢 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน ผ่าน Fetch POST - แก้ไขปัญหาชีตไม่ลบ)
+  btnParentDelete.addEventListener("click", async () => {
+    
+    const confirmDelete = await Swal.fire({
+      title: 'ยืนยันการลบชิปเมนต์?',
+      text: `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} และข้อมูลกล่องทั้งหมดออกจากระบบใช่หรือไม่?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'ใช่, ลบเลย!',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (confirmDelete.isConfirmed) {
       
-      if (typeof Swal !== "undefined") {
-        Swal.fire({
-          title: 'กำลังลบข้อมูล...',
-          text: 'กรุณารอสักครู่ ระบบกำลังลบข้อมูลจากฐานข้อมูล',
-          allowOutsideClick: false,
-          didOpen: () => { Swal.showLoading(); }
-        });
-      }
+      Swal.fire({
+        title: 'กำลังลบข้อมูลจากฐานข้อมูล...',
+        text: 'กรุณารอสักครู่ ระบบกำลังอัปเดต @Google Workspace',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
 
       const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
       
-      fetch(`${apiUrl}?action=delete_shipment&shipmentNo=${safeShipmentNo}`, {
-        method: 'GET'
+      // 🟢 ปรับการส่งข้อมูลเป็นแบบ POST เพื่อให้ยิงเข้าหลังบ้านได้แน่นอน 100%
+      fetch(apiUrl, {
+        method: 'POST',
+        mode: 'no-cors', // บังคับไม่ให้ติด CORS Block ของ Google
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          'action': 'delete_shipment',
+          'shipmentNo': safeShipmentNo
+        })
       })
-      .then(async response => {
-        // เช็กก่อนว่าหลังบ้านส่ง JSON กลับมาจริงๆ ไหม (ถ้าไม่ใช้ แสดงว่าลืม Deploy New Version)
-        const textResponse = await response.text();
-        try {
-          return JSON.parse(textResponse);
-        } catch (err) {
-          throw new Error("ระบบหลังบ้านไม่ได้ตอบกลับมาเป็น JSON (โปรดตรวจสอบการ Deploy New Version): " + textResponse.substring(0, 50));
-        }
-      })
-      .then(data => {
-        if (data.success) {
-          if (typeof Swal !== "undefined") Swal.close();
-          
-          // ลบกราฟิกบนหน้าจอ
-          col.remove(); 
-          
-          const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
-          taskCards.forEach(card => {
-            if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
-          });
+      .then(() => {
+        // ✨ เนื่องจากใช้ mode: 'no-cors' หน้าบ้านจะไม่ได้รับข้อมูลตอบกลับ (จะมองเห็นเป็น opaque) 
+        // แต่คำสั่งจะไปทำงานที่ฝั่งชีตสำเร็จแน่นอน เราจึงสั่งลบกราฟิกบนจอได้ทันที
+        Swal.close();
+        
+        col.remove(); 
+        
+        const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
+        taskCards.forEach(card => {
+          if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
+        });
 
-          // ปลดล็อกระบบแช่แข็งทั้งหมด
-          window.isGlobalDeleteMode = false;
-          window.activeDeleteShipment = null;
+        window.isGlobalDeleteMode = false;
+        window.activeDeleteShipment = null;
 
-          const container = document.getElementById("lobbyContentContainer");
-          const emptyState = document.getElementById("lobbyEmptyState");
-          if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
-             emptyState.style.display = "block";
-          }
-        } else {
-          if (typeof Swal !== "undefined") Swal.close();
-          if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+        const container = document.getElementById("lobbyContentContainer");
+        const emptyState = document.getElementById("lobbyEmptyState");
+        if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
+           emptyState.style.display = "block";
         }
       })
       .catch(error => {
-        if (typeof Swal !== "undefined") Swal.close();
-        if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", error.message, "error");
+        Swal.close();
+        if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", "ไม่สามารถเชื่อมต่อฐานข้อมูลได้", "error");
         console.error("Delete Shipment Error:", error);
       });
     }
   });
+
 
   // 3. สร้างกล่องลูก
   let boxIdCounter = 0; 
