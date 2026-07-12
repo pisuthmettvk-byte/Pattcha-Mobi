@@ -1161,11 +1161,35 @@ window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
     document.getElementById("boxDetailsView").classList.remove("hide");
 };
 
-// 3. ฟังก์ชันปุ่ม WRAP (ปิดกล่อง)
-document.getElementById("btnBoxWrap").addEventListener("click", async () => {
-    
-    // ⚠️ ในอนาคตต้องเช็กว่ามีสินค้าในกล่องไหมถึงจะกดได้ (ตอนนี้อนุญาตให้กดทดสอบระบบไปก่อน)
-    
+// 3. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ล็อก/ปลดล็อก)
+window.updateBoxWrapButtonState = function(totalItemsCount) {
+    const btnWrap = document.getElementById("btnBoxWrap");
+    if (!btnWrap) return;
+
+    if (totalItemsCount > 0) {
+        // มีสินค้า = ปลดล็อก (สีแดง, กดได้)
+        btnWrap.style.opacity = "1";
+        btnWrap.style.pointerEvents = "auto";
+        btnWrap.style.background = "#d93844";
+    } else {
+        // ไม่มีสินค้า = ล็อก (สีเทาจาง, กดไม่ได้)
+        btnWrap.style.opacity = "0.4";
+        btnWrap.style.pointerEvents = "none";
+        btnWrap.style.background = "#999";
+    }
+};
+window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
+    // ... โค้ดเปลี่ยนข้อความ / เปลี่ยนสีปุ่มเดิม ...
+
+    // 🚨 ใหม! ทำการล็อกปุ่ม WRAP ไว้ก่อนทันทีที่เปิดหน้าต่าง (เพราะสินค้าเป็น 0)
+    if (!isClosed) {
+        window.updateBoxWrapButtonState(0); 
+    }
+
+    // สลับหน้าจอ
+    // ...
+};
+
     const isConfirmed = await safeConfirm('ยืนยันการปิดกล่อง (WRAP)?', `คุณต้องการปิดกล่อง ${window.currentActiveBoxNo} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`);
 
     if (isConfirmed) {
