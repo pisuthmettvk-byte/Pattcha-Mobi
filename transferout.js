@@ -1145,25 +1145,28 @@ document.getElementById("btnBackFromBox").addEventListener("click", () => {
     window.currentBoxElement = null;
 });
 
-// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (สีเท่าปุ่ม EXPORT)
+// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ใช้ Style ถอดแบบหน้า Lobby)
 window.updateBoxWrapButtonState = function(totalItemsCount) {
     const btnWrap = document.getElementById("btnBoxWrap");
     if (!btnWrap) return;
 
     if (totalItemsCount > 0) {
         // มีสินค้า = ปลดล็อก (สีแดงลูกระนาดแบบ EXPORT)
+        btnWrap.disabled = false;
         btnWrap.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
         btnWrap.style.color = "white";
-        btnWrap.style.pointerEvents = "auto";
+        btnWrap.style.borderLeft = "1px solid rgba(255,255,255,0.3)";
         btnWrap.style.cursor = "pointer";
     } else {
-        // ไม่มีสินค้า = ล็อก (สีดำโปร่งแสง)
+        // ไม่มีสินค้า = ล็อก (สีดำโปร่งแสงตามโค้ดต้นฉบับ)
+        btnWrap.disabled = true;
         btnWrap.style.background = "rgba(0, 0, 0, 0.466)";
         btnWrap.style.color = "#aaa";
-        btnWrap.style.pointerEvents = "none";
+        btnWrap.style.borderLeft = "1px solid rgba(255,255,255,0.2)";
         btnWrap.style.cursor = "not-allowed";
     }
 };
+
 
 // 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด)
 window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {

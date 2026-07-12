@@ -912,20 +912,22 @@
         </div>
     </div>
 
-    <!-- 🟢 3. Footer (ขนาดและดีไซน์เท่าปุ่ม CANCEL / EXPORT เป๊ะๆ 100%) -->
-    <div style="width: 100%; display: flex; z-index: 10; border-top: 1px solid #ff8e99;">
+
+
+<!-- 🟢 3. Footer (โคลน Class และ Style จากหน้า Lobby 100%) -->
+    <div class="master-footer" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99; z-index: 10;">
         
-        <!-- ปุ่มรูปกล้อง (โคลนสไตล์มาจากปุ่ม CANCEL) -->
-        <button id="btnBoxScanner" style="flex: 1; padding: 15px 0; background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; border: none; border-top: 1px solid #ccc; font-size: 22px; cursor: pointer; display: flex; justify-content: center; align-items: center;">
-            <i class="fas fa-camera"></i>
+        <!-- ปุ่มรูปกล้อง (โคลน Style ปุ่ม CANCEL) -->
+        <button id="btnBoxScanner" class="master-btn-half" style="background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; font-weight: bold; font-size: 16px; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center;">
+            <i class="fas fa-camera" style="font-size: 22px;"></i>
         </button>
         
-        <!-- ปุ่ม WRAP (โคลนสไตล์มาจากปุ่ม EXPORT ค่าเริ่มต้นคือล็อก) -->
-        <button id="btnBoxWrap" style="flex: 1; padding: 15px 0; background: rgba(0, 0, 0, 0.466); color: #aaa; border: none; border-left: 1px solid rgba(255,255,255,0.2); font-size: 16px; font-weight: bold; cursor: not-allowed; display: flex; justify-content: center; align-items: center;">
+        <!-- ปุ่ม WRAP (โคลน Style ปุ่ม EXPORT ตอนล็อก) -->
+        <button id="btnBoxWrap" class="master-btn-half" disabled style="background: rgba(0, 0, 0, 0.466); color: #aaa; font-weight: bold; border-left: 1px solid rgba(255,255,255,0.2); cursor: not-allowed; transition: all 0.3s; display: flex; justify-content: center; align-items: center;">
             <i class="fas fa-box" style="margin-right: 8px;"></i> WRAP
         </button>
-    </div>
-</div>
+    </div>  
+  </div>
 
 
 
