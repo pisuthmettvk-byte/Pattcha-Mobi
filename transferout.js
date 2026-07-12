@@ -10,6 +10,8 @@ const STATUS_CONFIG = {
 };
 
 
+
+
 // ======================================================
 // 🛡️ [Phase 3] ระบบแช่แข็งล็อกเป้าหมาย (Isolated Freeze Interceptor)
 // ======================================================
@@ -49,6 +51,47 @@ document.addEventListener("click", (e) => {
 // ======================================================
 // 🛡️ [Phase 3] ระบบแช่แข็งการสัมผัสทั้งหน้าจอ (Super Freeze Interceptor)
 // ======================================================
+
+
+
+
+
+// 📍 [แจ้งเตือนแบบป๊อปอัป 2 ปุ่ม สำหรับยืนยันการลบ]
+window.safeConfirm = function (title, message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "sys-alert-element";
+    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+
+    overlay.innerHTML = `
+      <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; animation: popIn 0.3s ease-out;">
+        <div style="background: #dc3545; padding: 20px; text-align: center;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 40px; color: white;"></i>
+        </div>
+        <div style="padding: 25px 20px; text-align: center;">
+          <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${title}</h3>
+          <p style="margin: 0; font-size: 14px; color: #666; line-height: 1.5;">${message}</p>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: space-between; gap: 10px;">
+          <button class="btn-cancel" style="background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 50%;">ยกเลิก</button>
+          <button class="btn-confirm" style="background: #dc3545; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 50%;">ใช่, ลบเลย</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector(".btn-cancel").addEventListener("click", () => {
+      document.body.removeChild(overlay);
+      resolve(false);
+    });
+    overlay.querySelector(".btn-confirm").addEventListener("click", () => {
+      document.body.removeChild(overlay);
+      resolve(true);
+    });
+  });
+};
+
+
 
 
 
@@ -179,7 +222,7 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
 
 
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 4: UI Button Fix]
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 4 Final Update]
 // ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
@@ -199,6 +242,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   col.style.cssText = `width: 100%; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;`;
 
   col.innerHTML = `
+    <!-- 🟢 Header แม่ -->
     <div class="shipment-column-header" style="
       background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
       border: 1px solid #ccc; border-top: 1px solid #fff; border-radius: 8px;
@@ -220,6 +264,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       </div>
       <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
         
+        <!-- 🟢 ปุ่มลบแม่ของจริง -->
         <div class="parent-btn-delete hide" style="background: #dc3545; color: white; padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="ลบชิปเมนต์คันนี้ทิ้ง">
           <i class="fas fa-times-circle"></i> ลบทั้งคัน
         </div>
@@ -230,6 +275,7 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       </div>
     </div>
     
+    <!-- 🟢 พื้นที่ใส่กล่องลูก -->
     <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 5px;"></div>
   `;
 
@@ -240,102 +286,80 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   const btnAddChildBox = col.querySelector(".btn-add-child-box");
   const masterTruckCount = col.querySelector(".master-truck-count");
 
-  // 1. สวิตช์สลับโหมดลบ (Toggle Mode)
+  // 1. สวิตช์สลับโหมดลบ
   btnMasterDelete.addEventListener("click", () => {
     if (window.isGlobalDeleteMode && window.activeDeleteShipment !== safeShipmentNo) {
       return; 
     }
-
     const isDeleteMode = btnMasterDelete.classList.toggle("delete-mode-active");
     window.isGlobalDeleteMode = isDeleteMode; 
     window.activeDeleteShipment = isDeleteMode ? safeShipmentNo : null; 
-
     const childBoxes = childrenContainer.querySelectorAll(".shipment-child-box");
 
     if (isDeleteMode) {
       btnMasterDelete.style.color = "#ffc107"; 
       btnMasterDelete.style.transform = "scale(1.2)";
       headerDiv.style.border = "2px dashed #ffc107"; 
-      // โชว์ปุ่มลบแม่ (ลบ class hide ออก โดยใช้การแสดงผลแบบ flex ที่ใส่ไว้ใน inline style แล้ว)
       btnParentDelete.classList.remove("hide"); 
       childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.remove("hide")); 
     } else {
       btnMasterDelete.style.color = "#c9302c"; 
       btnMasterDelete.style.transform = "scale(1)";
       headerDiv.style.border = "1px solid #ccc";
-      // ซ่อนปุ่มลบแม่
       btnParentDelete.classList.add("hide"); 
       childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.add("hide"));
     }
   });
 
-
-// 🟢 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน ผ่าน Fetch POST - แก้ไขปัญหาชีตไม่ลบ)
+  // 2. ปุ่มกดลบแม่ของจริง (ใช้ safeConfirm และ POST API)
   btnParentDelete.addEventListener("click", async () => {
     
-    const confirmDelete = await Swal.fire({
-      title: 'ยืนยันการลบชิปเมนต์?',
-      text: `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} และข้อมูลกล่องทั้งหมดออกจากระบบใช่หรือไม่?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'ใช่, ลบเลย!',
-      cancelButtonText: 'ยกเลิก'
-    });
+    // เรียกใช้ UI แจ้งเตือนของเจเลอร์
+    const isConfirmed = await safeConfirm('ยืนยันการลบชิปเมนต์?', `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งใช่หรือไม่?`);
 
-    if (confirmDelete.isConfirmed) {
-      
-      Swal.fire({
-        title: 'กำลังลบข้อมูลจากฐานข้อมูล...',
-        text: 'กรุณารอสักครู่ ระบบกำลังอัปเดต @Google Workspace',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-      });
+    if (isConfirmed) {
+      // โชว์ Loading
+      const loadingOverlay = document.createElement("div");
+      loadingOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
+      loadingOverlay.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบข้อมูล...";
+      document.body.appendChild(loadingOverlay);
 
       const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
       
-      // 🟢 ปรับการส่งข้อมูลเป็นแบบ POST เพื่อให้ยิงเข้าหลังบ้านได้แน่นอน 100%
-      fetch(apiUrl, {
+      // ยิง API ผ่าน POST (เหมือน save_new_task)
+      fetch(`${apiUrl}?action=delete_shipment`, {
         method: 'POST',
-        mode: 'no-cors', // บังคับไม่ให้ติด CORS Block ของ Google
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          'action': 'delete_shipment',
-          'shipmentNo': safeShipmentNo
-        })
+        body: JSON.stringify({ shipmentNo: safeShipmentNo })
       })
-      .then(() => {
-        // ✨ เนื่องจากใช้ mode: 'no-cors' หน้าบ้านจะไม่ได้รับข้อมูลตอบกลับ (จะมองเห็นเป็น opaque) 
-        // แต่คำสั่งจะไปทำงานที่ฝั่งชีตสำเร็จแน่นอน เราจึงสั่งลบกราฟิกบนจอได้ทันที
-        Swal.close();
+      .then(response => response.json())
+      .then(data => {
+        document.body.removeChild(loadingOverlay); // ปิด Loading
         
-        col.remove(); 
-        
-        const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
-        taskCards.forEach(card => {
-          if (card.innerHTML.includes(safeShipmentNo)) card.remove(); 
-        });
+        if (data.success) {
+          col.remove(); // ลบกราฟิกแม่
+          const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
+          taskCards.forEach(card => {
+            if (card.innerHTML.includes(safeShipmentNo)) card.remove(); // ลบ Task Card
+          });
 
-        window.isGlobalDeleteMode = false;
-        window.activeDeleteShipment = null;
+          window.isGlobalDeleteMode = false;
+          window.activeDeleteShipment = null;
 
-        const container = document.getElementById("lobbyContentContainer");
-        const emptyState = document.getElementById("lobbyEmptyState");
-        if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
-           emptyState.style.display = "block";
+          const container = document.getElementById("lobbyContentContainer");
+          const emptyState = document.getElementById("lobbyEmptyState");
+          if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
+             emptyState.style.display = "block";
+          }
+        } else {
+          safeAlert("เกิดข้อผิดพลาด", data.message, "error");
         }
       })
       .catch(error => {
-        Swal.close();
-        if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", "ไม่สามารถเชื่อมต่อฐานข้อมูลได้", "error");
-        console.error("Delete Shipment Error:", error);
+        document.body.removeChild(loadingOverlay);
+        safeAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
       });
     }
   });
-
 
   // 3. สร้างกล่องลูก
   let boxIdCounter = 0; 
@@ -344,12 +368,13 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     const childEl = createShipmentChildBox(baseBoxNo, boxIdCounter);
     childrenContainer.appendChild(childEl);
     childrenContainer.classList.remove("hide");
-    
     masterTruckCount.textContent = childrenContainer.querySelectorAll('.shipment-child-box').length; 
   });
 
   return col;
 }
+
+
 
 // ======================================================
 // 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 4 Final Fix]
