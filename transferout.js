@@ -1145,25 +1145,25 @@ document.getElementById("btnBackFromBox").addEventListener("click", () => {
     window.currentBoxElement = null;
 });
 
-// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ล็อก/ปลดล็อก)
+// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ล็อก/ปลดล็อกแบบเหล็กลูกระนาด)
 window.updateBoxWrapButtonState = function(totalItemsCount) {
     const btnWrap = document.getElementById("btnBoxWrap");
     if (!btnWrap) return;
 
     if (totalItemsCount > 0) {
-        // มีสินค้า = ปลดล็อก (สีแดง, กดได้)
+        // มีสินค้า = ปลดล็อก (เหล็กสีแดงเงางาม, กดได้)
         btnWrap.style.opacity = "1";
+        btnWrap.style.filter = "none";
         btnWrap.style.pointerEvents = "auto";
-        btnWrap.style.background = "#d93844";
     } else {
-        // ไม่มีสินค้า = ล็อก (สีเทาจาง, กดไม่ได้)
-        btnWrap.style.opacity = "0.4";
+        // ไม่มีสินค้า = ล็อก (เหล็กสีแดงหม่น/ลดความเงา, กดไม่ได้)
+        btnWrap.style.opacity = "0.6";
+        btnWrap.style.filter = "grayscale(70%)";
         btnWrap.style.pointerEvents = "none";
-        btnWrap.style.background = "#999";
     }
 };
 
-// 3. ฟังก์ชันเปิดหน้า Box Details (ยุบรวมให้สมบูรณ์)
+// 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด)
 window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
     window.currentActiveShipment = shipmentNo;
     window.currentActiveBoxNo = boxNo;
@@ -1179,19 +1179,29 @@ window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
     const searchInput = document.getElementById("boxSearchInput");
 
     if (isClosed) {
-        // โหมด Read-Only (ปิดกล่องแล้ว)
+        // 🔴 โหมด Read-Only (ปิดกล่องแล้ว)
         btnWrap.style.display = "none"; // ซ่อนปุ่ม WRAP
+        
+        // แปลงร่างปุ่มกล้องกลับเป็นสไตล์ Master Blueprint ของ Stock In House 
         btnScanner.style.background = "linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%)"; 
+        btnScanner.style.border = "none";
+        btnScanner.style.color = "white";
+        btnScanner.style.textShadow = "none";
         btnScanner.style.boxShadow = "0 6px 15px rgba(219,133,145,0.3)";
         if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
     } else {
-        // โหมดปกติ (กล่องเปิดอยู่)
-        btnWrap.style.display = "flex"; 
-        btnScanner.style.background = "#6c757d"; 
-        btnScanner.style.boxShadow = "0 4px 10px rgba(108,117,125,0.3)";
+        // 🟢 โหมดปกติ (กล่องเปิดอยู่)
+        btnWrap.style.display = "flex"; // โชว์ปุ่ม WRAP
+        
+        // คืนร่างปุ่มกล้องเป็น "เหล็กสีเงินลูกระนาด"
+        btnScanner.style.background = "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)"; 
+        btnScanner.style.border = "1px solid #888";
+        btnScanner.style.color = "#333";
+        btnScanner.style.textShadow = "1px 1px 0px #fff";
+        btnScanner.style.boxShadow = "0 4px 6px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.8)";
         if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
         
-        // 🚨 ล็อกปุ่ม WRAP ไว้ก่อนทันทีที่เปิดหน้าต่าง (เพราะสินค้าเป็น 0)
+        // ล็อกปุ่ม WRAP ไว้ก่อนทันทีที่เปิดหน้าต่าง (เพราะสินค้าเป็น 0)
         window.updateBoxWrapButtonState(0); 
     }
 
@@ -1200,6 +1210,8 @@ window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
     if(lobbyView) lobbyView.classList.add("hide");
     document.getElementById("boxDetailsView").classList.remove("hide");
 };
+
+
 
 // 4. ฟังก์ชันปุ่ม WRAP (ปิดกล่อง) - ประกอบร่างสำเร็จ
 document.getElementById("btnBoxWrap").addEventListener("click", async () => {
