@@ -914,21 +914,20 @@
         </div>
     </div>
 
-    <!-- 🟢 3. Footer (ปุ่มกล้อง และ WRAP แบบ 50:50) -->
-    <div style="width: 100%; padding: 15px; background: #ffffff; border-top: 1px solid #eee; box-sizing: border-box; z-index: 10; display: flex; gap: 15px; box-shadow: 0 -4px 10px rgba(0,0,0,0.03);">
+       <!-- 🟢 3. Footer (เลย์เอาต์ 50:50 ไร้ช่องว่าง สไตล์เดียวกับ Lobby) -->
+    <div style="width: 100%; display: flex; z-index: 10;">
         
-        <!-- ปุ่มรูปกล้อง (สีเทา Cancel) -->
-        <button id="btnBoxScanner" style="flex: 1; background: #6c757d; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 22px; box-shadow: 0 4px 10px rgba(108,117,125,0.3); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s;">
+        <!-- ปุ่มรูปกล้อง (ฝั่งซ้าย - สไตล์ CANCEL) -->
+        <button id="btnBoxScanner" style="flex: 1; background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; border: none; border-top: 1px solid #ccc; padding: 15px; font-size: 22px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center;">
             <i class="fas fa-camera"></i>
         </button>
         
-        <!-- ปุ่ม WRAP (สีแดง Export) -->
-        <button id="btnBoxWrap" style="flex: 1; background: #d93844; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 10px rgba(217,56,68,0.3); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s;">
+        <!-- ปุ่ม WRAP (ฝั่งขวา - สไตล์ EXPORT) -->
+        <button id="btnBoxWrap" style="flex: 1; background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center;">
             <i class="fas fa-box" style="margin-right: 8px;"></i> WRAP
         </button>
     </div>
 </div>
-
 
 
 
