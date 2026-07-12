@@ -155,11 +155,10 @@ async function loadBranchesIntoDropdown() {
 
 
 
-
-
 // ======================================================
-// 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 3 Final]
+// 📦 ฟังก์ชันสร้างกล่องลูก
 // ======================================================
+
 function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
   const childBoxNo = `${baseBoxNo}-${String(boxRunningIndex).padStart(4, '0')}`;
   const childDiv = document.createElement("div");
@@ -167,7 +166,7 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
   childDiv.dataset.boxNo = childBoxNo;
   childDiv.dataset.status = "open"; 
 
-  // 🟢 ปรับดีไซน์เป็น Task Card (พื้นขาว, ไม่มีขอบมน, มีแถบสีซ้ายมือ)
+  // 🟢 ปรับดีไซน์เป็น Task Card
   childDiv.style.cssText = `
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
     background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745;
@@ -189,12 +188,25 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
     </div>
   `;
 
-  childDiv.addEventListener("click", () => {
-    sessionStorage.setItem("activeBoxNo", childBoxNo);
-    sessionStorage.setItem("activeBoxStatus", childDiv.dataset.status);
-    if (typeof showView === "function") showView("boxDetailsView");
+  // 🚨 [แก้ไขส่วนนี้] การกดเปิดหน้า Box Details แบบใหม่
+  childDiv.addEventListener("click", function(e) {
+    // ป้องกันไม่ให้เปิดหน้าต่าง ถ้าเปิดโหมดลบอยู่ หรือกดโดนปุ่มลบ/เช็คบ็อกซ์
+    if (window.isGlobalDeleteMode || e.target.closest('.child-btn-delete') || e.target.closest('.child-checkbox')) return;
+    
+    // ดึงรหัสชิปเมนต์ตัวแม่
+    const parentCol = childDiv.closest(".shipment-column");
+    const shipmentNo = parentCol ? parentCol.getAttribute("data-shipment") : baseBoxNo;
+    
+    // เช็กสถานะว่ากล่องปิดหรือยัง
+    const isClosed = childDiv.dataset.status === "Closed";
+    
+    // โยนข้อมูลไปที่ฟังก์ชันเปิดหน้า
+    if (typeof window.openBoxDetails === "function") {
+        window.openBoxDetails(shipmentNo, childBoxNo, childDiv, isClosed);
+    }
   });
 
+  // ลอจิกปุ่มลบ (คงเดิม)
   const btnDeleteChild = childDiv.querySelector(".child-btn-delete");
   btnDeleteChild.addEventListener("click", (e) => {
     e.stopPropagation(); 
@@ -202,7 +214,6 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
       const parentCol = childDiv.closest(".shipment-column"); 
       childDiv.remove(); 
       
-      // 🟢 อัปเดตยอด 🚚 ด้วยการนับของจริงบนหน้าจอ
       if (parentCol) {
         const truckCountEl = parentCol.querySelector(".master-truck-count");
         const remainingBoxes = parentCol.querySelectorAll(".shipment-child-box").length;
@@ -213,6 +224,9 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
 
   return childDiv;
 }
+
+
+
 // ======================================================
 // 📦 ฟังก์ชันสร้างกล่องลูก (Shipment List Child) - [Phase 3 Final]
 // ======================================================
@@ -1115,18 +1129,41 @@ window.currentActiveShipment = null;
 window.currentActiveBoxNo = null;
 window.currentBoxElement = null; // เก็บอ้างอิง DOM ของกล่องในหน้า Lobby
 
-// 1. ปุ่ม Back ย้อนกลับไป Lobby
+// 1. ปุ่ม Back ย้อนกลับไป Lobby (แก้ไขจอขาว)
 document.getElementById("btnBackFromBox").addEventListener("click", () => {
     document.getElementById("boxDetailsView").classList.add("hide");
-    document.getElementById("lobbyView").classList.remove("hide");
     
+    // กลับไปหน้า Lobby ให้ถูก ID
+    const lobbyView = document.getElementById("transferOutLobbyView") || document.getElementById("lobbyView");
+    if (lobbyView) {
+        lobbyView.classList.remove("hide");
+    }
+
     // เคลียร์ค่า
     window.currentActiveShipment = null;
     window.currentActiveBoxNo = null;
     window.currentBoxElement = null;
 });
 
-// 2. ฟังก์ชันเปิดหน้า Box Details (ถูกเรียกตอนกดที่แถบกล่องลูกในหน้า Lobby)
+// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ล็อก/ปลดล็อก)
+window.updateBoxWrapButtonState = function(totalItemsCount) {
+    const btnWrap = document.getElementById("btnBoxWrap");
+    if (!btnWrap) return;
+
+    if (totalItemsCount > 0) {
+        // มีสินค้า = ปลดล็อก (สีแดง, กดได้)
+        btnWrap.style.opacity = "1";
+        btnWrap.style.pointerEvents = "auto";
+        btnWrap.style.background = "#d93844";
+    } else {
+        // ไม่มีสินค้า = ล็อก (สีเทาจาง, กดไม่ได้)
+        btnWrap.style.opacity = "0.4";
+        btnWrap.style.pointerEvents = "none";
+        btnWrap.style.background = "#999";
+    }
+};
+
+// 3. ฟังก์ชันเปิดหน้า Box Details (ยุบรวมให้สมบูรณ์)
 window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
     window.currentActiveShipment = shipmentNo;
     window.currentActiveBoxNo = boxNo;
@@ -1144,51 +1181,31 @@ window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
     if (isClosed) {
         // โหมด Read-Only (ปิดกล่องแล้ว)
         btnWrap.style.display = "none"; // ซ่อนปุ่ม WRAP
-        btnScanner.style.background = "linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%)"; // เปลี่ยนสีกล้องเป็น Blueprint
+        btnScanner.style.background = "linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%)"; 
         btnScanner.style.boxShadow = "0 6px 15px rgba(219,133,145,0.3)";
-        searchInput.placeholder = "ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
+        if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
     } else {
         // โหมดปกติ (กล่องเปิดอยู่)
-        btnWrap.style.display = "flex"; // โชว์ปุ่ม WRAP แบบ 50:50
-        btnWrap.style.background = "#d93844"; // สีแดง Active
-        btnScanner.style.background = "#6c757d"; // สีเทาปกติ
+        btnWrap.style.display = "flex"; 
+        btnScanner.style.background = "#6c757d"; 
         btnScanner.style.boxShadow = "0 4px 10px rgba(108,117,125,0.3)";
-        searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
-    }
-
-    // สลับหน้าจอ
-    document.getElementById("lobbyView").classList.add("hide");
-    document.getElementById("boxDetailsView").classList.remove("hide");
-};
-
-// 3. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ล็อก/ปลดล็อก)
-window.updateBoxWrapButtonState = function(totalItemsCount) {
-    const btnWrap = document.getElementById("btnBoxWrap");
-    if (!btnWrap) return;
-
-    if (totalItemsCount > 0) {
-        // มีสินค้า = ปลดล็อก (สีแดง, กดได้)
-        btnWrap.style.opacity = "1";
-        btnWrap.style.pointerEvents = "auto";
-        btnWrap.style.background = "#d93844";
-    } else {
-        // ไม่มีสินค้า = ล็อก (สีเทาจาง, กดไม่ได้)
-        btnWrap.style.opacity = "0.4";
-        btnWrap.style.pointerEvents = "none";
-        btnWrap.style.background = "#999";
-    }
-};
-window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
-    // ... โค้ดเปลี่ยนข้อความ / เปลี่ยนสีปุ่มเดิม ...
-
-    // 🚨 ใหม! ทำการล็อกปุ่ม WRAP ไว้ก่อนทันทีที่เปิดหน้าต่าง (เพราะสินค้าเป็น 0)
-    if (!isClosed) {
+        if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
+        
+        // 🚨 ล็อกปุ่ม WRAP ไว้ก่อนทันทีที่เปิดหน้าต่าง (เพราะสินค้าเป็น 0)
         window.updateBoxWrapButtonState(0); 
     }
 
     // สลับหน้าจอ
-    // ...
+    const lobbyView = document.getElementById("transferOutLobbyView") || document.getElementById("lobbyView");
+    if(lobbyView) lobbyView.classList.add("hide");
+    document.getElementById("boxDetailsView").classList.remove("hide");
 };
+
+// 4. ฟังก์ชันปุ่ม WRAP (ปิดกล่อง) - ประกอบร่างสำเร็จ
+document.getElementById("btnBoxWrap").addEventListener("click", async () => {
+    
+    // ป้องกันการกดถ้าปุ่มถูกล็อกอยู่
+    if (document.getElementById("btnBoxWrap").style.pointerEvents === "none") return;
 
     const isConfirmed = await safeConfirm('ยืนยันการปิดกล่อง (WRAP)?', `คุณต้องการปิดกล่อง ${window.currentActiveBoxNo} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`);
 
@@ -1243,6 +1260,29 @@ window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
         });
     }
 });
+
+// 5. ระบบช่องค้นหา Magic Search (Box Details)
+const boxSearchInput = document.getElementById("boxSearchInput");
+const boxClearSearchBtn = document.getElementById("boxClearSearchBtn");
+
+if (boxSearchInput && boxClearSearchBtn) {
+    // ตรวจจับตอนพิมพ์
+    boxSearchInput.addEventListener("input", function() {
+        if (this.value.trim().length > 0) {
+            boxClearSearchBtn.style.display = "flex"; // โชว์ X
+        } else {
+            boxClearSearchBtn.style.display = "none"; // ซ่อน X
+        }
+    });
+
+    // ตรวจจับตอนกดปุ่ม X
+    boxClearSearchBtn.addEventListener("click", function() {
+        boxSearchInput.value = ""; // ล้างค่า
+        this.style.display = "none"; // ซ่อนปุ่ม X
+        boxSearchInput.focus(); // เด้งเคอร์เซอร์กลับไปที่ช่องพิมพ์
+    });
+}
+
 
 // ======================================================
 // 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP)
