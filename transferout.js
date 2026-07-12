@@ -176,8 +176,10 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
 
 
 
+
+
 // ======================================================
-// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 4 Final Fix]
+// 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่ (Master Column) - [Phase 4: UI Button Fix]
 // ======================================================
 function createShipmentColumn(shipmentNo, originType = "Store") {
   const col = document.createElement("div");
@@ -194,11 +196,9 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   const baseBoxNo = parts.length >= 5 ? parts.slice(2).join("-") : safeShipmentNo;
 
-  // เปลือกนอกไม่มีลูกระนาด จัดระยะห่างแม่-ลูก
   col.style.cssText = `width: 100%; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;`;
 
   col.innerHTML = `
-    <!-- 🟢 Header แม่ (พื้นหลังลูกระนาด) -->
     <div class="shipment-column-header" style="
       background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
       border: 1px solid #ccc; border-top: 1px solid #fff; border-radius: 8px;
@@ -219,8 +219,10 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 18px; flex-shrink: 0;">
-        <!-- 🟢 ปุ่มถังขยะของจริง สำหรับลบแม่ (ซ่อนไว้ก่อน) -->
-        <i class="fas fa-trash-alt parent-btn-delete hide" style="color: #dc3545; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="ลบชิปเมนต์นี้"></i>
+        
+        <div class="parent-btn-delete hide" style="background: #dc3545; color: white; padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="ลบชิปเมนต์คันนี้ทิ้ง">
+          <i class="fas fa-times-circle"></i> ลบทั้งคัน
+        </div>
         
         <i class="fas fa-box-open btn-add-child-box" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สร้างกล่องใหม่"></i>
         <i class="fas fa-trash-alt btn-master-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff); transition: all 0.2s;" title="สวิตช์ เปิด/ปิด โหมดลบ"></i>
@@ -228,7 +230,6 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       </div>
     </div>
     
-    <!-- 🟢 พื้นที่ใส่กล่องลูก แยกจาก Header -->
     <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 5px;"></div>
   `;
 
@@ -241,7 +242,6 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
   // 1. สวิตช์สลับโหมดลบ (Toggle Mode)
   btnMasterDelete.addEventListener("click", () => {
-    // บล็อกถ้าคันอื่นเปิดโหมดลบอยู่
     if (window.isGlobalDeleteMode && window.activeDeleteShipment !== safeShipmentNo) {
       return; 
     }
@@ -256,22 +256,23 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       btnMasterDelete.style.color = "#ffc107"; 
       btnMasterDelete.style.transform = "scale(1.2)";
       headerDiv.style.border = "2px dashed #ffc107"; 
-      btnParentDelete.classList.remove("hide"); // โชว์ถังขยะแม่ของจริง
+      // โชว์ปุ่มลบแม่ (ลบ class hide ออก โดยใช้การแสดงผลแบบ flex ที่ใส่ไว้ใน inline style แล้ว)
+      btnParentDelete.classList.remove("hide"); 
       childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.remove("hide")); 
     } else {
       btnMasterDelete.style.color = "#c9302c"; 
       btnMasterDelete.style.transform = "scale(1)";
       headerDiv.style.border = "1px solid #ccc";
-      btnParentDelete.classList.add("hide"); // ซ่อนถังขยะแม่
+      // ซ่อนปุ่มลบแม่
+      btnParentDelete.classList.add("hide"); 
       childBoxes.forEach(child => child.querySelector(".child-btn-delete").classList.add("hide"));
     }
   });
 
-  // 🟢 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน ผ่าน Fetch API)
+  // 2. ปุ่มกดลบแม่ของจริง (เชื่อมต่อหลังบ้าน ผ่าน Fetch API)
   btnParentDelete.addEventListener("click", () => {
     if (confirm(`คุณต้องการลบชิปเมนต์ ${safeShipmentNo} และข้อมูลกล่องทั้งหมด ทิ้งใช่หรือไม่?`)) {
       
-      // 1. โชว์หน้าต่าง Loading ระหว่างรอ @Google Workspace
       if (typeof Swal !== "undefined") {
         Swal.fire({
           title: 'กำลังลบข้อมูล...',
@@ -281,18 +282,25 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
         });
       }
 
-      // 2. ใช้ fetch API แทน google.script.run เนื่องจากโฮสต์บน GitHub
       const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
       
       fetch(`${apiUrl}?action=delete_shipment&shipmentNo=${safeShipmentNo}`, {
         method: 'GET'
       })
-      .then(response => response.json())
+      .then(async response => {
+        // เช็กก่อนว่าหลังบ้านส่ง JSON กลับมาจริงๆ ไหม (ถ้าไม่ใช้ แสดงว่าลืม Deploy New Version)
+        const textResponse = await response.text();
+        try {
+          return JSON.parse(textResponse);
+        } catch (err) {
+          throw new Error("ระบบหลังบ้านไม่ได้ตอบกลับมาเป็น JSON (โปรดตรวจสอบการ Deploy New Version): " + textResponse.substring(0, 50));
+        }
+      })
       .then(data => {
         if (data.success) {
           if (typeof Swal !== "undefined") Swal.close();
           
-          // 3. เมื่อหลังบ้านลบเสร็จ ค่อยลบกราฟิกบนหน้าจอ
+          // ลบกราฟิกบนหน้าจอ
           col.remove(); 
           
           const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
@@ -316,7 +324,8 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
       })
       .catch(error => {
         if (typeof Swal !== "undefined") Swal.close();
-        if (typeof safeAlert === "function") safeAlert("ข้อผิดพลาดเครือข่าย", "ไม่สามารถติดต่อ @Google Workspace ได้", "error");
+        if (typeof safeAlert === "function") safeAlert("เกิดข้อผิดพลาด", error.message, "error");
+        console.error("Delete Shipment Error:", error);
       });
     }
   });
