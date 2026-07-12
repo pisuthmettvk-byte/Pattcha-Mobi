@@ -876,23 +876,26 @@
                           </div>
 
                                
+<!-- ========================================================= -->
+<!-- 📦 หน้าจอ Box Details View -->
+<!-- ========================================================= -->
 <div id="boxDetailsView" class="hide" style="width: 100%; height: 100vh; display: flex; flex-direction: column; background: #f4f7f6; position: fixed; top: 0; left: 0; z-index: 100000; overflow: hidden;">
     
-        <!-- 🟢 1. Header (ปรับเป็นสีเดียวแบบ Transfer Out) -->
-    <div style="background: #ffffff; padding: 20px 0 15px 0; border-bottom: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.05); z-index: 10;">
-
+    <!-- 🟢 1. Header (ปรับสีเป็น โทนแดงลูกระนาด แบบหน้า Shipment Lobby) -->
+    <div style="background: linear-gradient(to bottom, #a71d1d 0%, #e53935 50%, #a71d1d 100%); padding: 20px 0 15px 0; border-bottom: 2px solid #8a1a1b; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 10;">
+        
         <!-- ส่วนหัว (Back Button + Box Info) -->
         <div style="display: flex; align-items: center; padding: 0 20px; margin-bottom: 15px; gap: 15px;">
-            <button id="btnBackFromBox" style="background: none; border: none; font-size: 24px; color: #333; cursor: pointer; padding: 0;">
+            <button id="btnBackFromBox" style="background: none; border: none; font-size: 24px; color: white; cursor: pointer; padding: 0;">
                 <i class="fas fa-chevron-left"></i>
             </button>
             <div style="display: flex; flex-direction: column;">
-                <span id="boxDetailsShipmentText" style="font-size: 12px; color: #666; font-weight: bold; letter-spacing: 0.5px;">(Shipment No: XXXXXX)</span>
-                <span id="boxDetailsBoxText" style="font-size: 20px; color: #0033cc; font-weight: 900; letter-spacing: 1px;">BOX-XXX</span>
+                <span id="boxDetailsShipmentText" style="font-size: 12px; color: rgba(255,255,255,0.8); font-weight: bold; letter-spacing: 0.5px;">(Shipment No: XXXXXX)</span>
+                <span id="boxDetailsBoxText" style="font-size: 20px; color: white; font-weight: 900; letter-spacing: 1px;">BOX-XXX</span>
             </div>
         </div>
 
-        <!-- ช่อง Magic Search (สไตล์ Stock In House) -->
+        <!-- ช่อง Magic Search (โครงสร้างเดิม) -->
         <div id="unifiedInputArea" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
             <div id="boxSearchContainer" style="position: relative;">
                 <i class="fas fa-search" style="position: absolute; left: 20px; top: 16px; color: #6c757d;"></i>
@@ -904,9 +907,8 @@
         </div>
     </div>
 
-    <!-- 🟢 2. Content Area (พื้นที่แสดงสินค้า) -->
+    <!-- 🟢 2. Content Area (พื้นที่แสดงสินค้า - คงเดิม) -->
     <div id="boxContentArea" style="flex: 1; overflow-y: auto; width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;">
-        <!-- [เดี๋ยวเราจะมาใส่ Card สินค้าในระยะถัดไป ตอนนี้ใส่ข้อความรอไว้ก่อน] -->
         <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
             <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
             <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
@@ -914,20 +916,21 @@
         </div>
     </div>
 
-       <!-- 🟢 3. Footer (เลย์เอาต์ 50:50 ไร้ช่องว่าง สไตล์เดียวกับ Lobby) -->
-    <div style="width: 100%; display: flex; z-index: 10;">
+    <!-- 🟢 3. Footer (ปรับขนาดเต็มจอ แนบชิดขอบ ไร้ความโค้งมน แบบหน้า Lobby) -->
+    <div style="width: 100%; display: flex; z-index: 10; padding: 0; margin: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.1);">
         
-        <!-- ปุ่มรูปกล้อง (ฝั่งซ้าย - สไตล์ CANCEL) -->
-        <button id="btnBoxScanner" style="flex: 1; background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; border: none; border-top: 1px solid #ccc; padding: 15px; font-size: 22px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center;">
+        <!-- ปุ่มรูปกล้อง (ฝั่งซ้าย - สไตล์ปุ่ม CANCEL) -->
+        <button id="btnBoxScanner" style="flex: 1; background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; border: none; border-top: 1px solid #ccc; padding: 20px 0; font-size: 24px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center; border-radius: 0;">
             <i class="fas fa-camera"></i>
         </button>
         
-        <!-- ปุ่ม WRAP (ฝั่งขวา - สไตล์ EXPORT) -->
-        <button id="btnBoxWrap" style="flex: 1; background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: flex; justify-content: center; align-items: center;">
+        <!-- ปุ่ม WRAP (ฝั่งขวา - สไตล์ปุ่ม EXPORT ค่าเริ่มต้นคือ ล็อก/สีดำโปร่งแสง) -->
+        <button id="btnBoxWrap" style="flex: 1; background: rgba(0, 0, 0, 0.466); color: #aaa; border: none; border-left: 1px solid rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.1); padding: 20px 0; font-size: 16px; font-weight: bold; cursor: not-allowed; transition: all 0.3s; display: flex; justify-content: center; align-items: center; border-radius: 0;">
             <i class="fas fa-box" style="margin-right: 8px;"></i> WRAP
         </button>
     </div>
 </div>
+
 
 
 
