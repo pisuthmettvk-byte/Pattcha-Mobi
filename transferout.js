@@ -1406,12 +1406,10 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
 
 
 
-
-
 // ======================================================
-// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search (แก้ไขบั๊ก Debounce & ฟังก์ชันหาย)
+// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search (แก้บั๊ก Scope ข้อมูล)
 
-// สร้างตัวแปรเก็บสินค้าในกล่อง
+
 window.currentBoxItems = window.currentBoxItems || [];
 
 // 1. ฟังก์ชันค้นหา
@@ -1422,7 +1420,6 @@ window.handleBoxSearch = function() {
     const query = inputElem.value.trim().toLowerCase();
     const clearBtn = document.getElementById("boxClearSearchBtn");
 
-    // โชว์/ซ่อน ปุ่ม X
     if (clearBtn) clearBtn.style.display = query.length > 0 ? "flex" : "none";
 
     const container = document.getElementById("boxContentArea");
@@ -1432,9 +1429,9 @@ window.handleBoxSearch = function() {
         return;
     }
 
-    // ตรวจสอบฐานข้อมูลจริง (ต้อง Login ก่อนถึงจะมีข้อมูล)
-    if (typeof window.localProductDatabase !== 'undefined' && window.localProductDatabase.length > 0) {
-        const results = window.localProductDatabase.filter(item => {
+    // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ ตามโครงสร้างของ app.js
+    if (typeof localProductDatabase !== 'undefined' && localProductDatabase.length > 0) {
+        const results = localProductDatabase.filter(item => {
             return Object.values(item).some(
                 val => val != null && val.toString().toLowerCase().includes(query)
             );
@@ -1448,30 +1445,29 @@ window.handleBoxSearch = function() {
         // เรนเดอร์การ์ดโหมด A (ค้นหาเพื่อเพิ่ม)
         container.innerHTML = results.map(item => window.renderBoxModeACard(item)).join('');
     } else {
-        container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่มีข้อมูล (กรุณาเปิดหน้า Stock In House เพื่ออัปเดตข้อมูล)</div>';
+        container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่มีข้อมูล (กรุณา Login ใหม่อีกครั้ง)</div>';
     }
 };
 
-// 2. ฟังก์ชันล้างช่องค้นหา (ผูกกับปุ่ม X)
+// 2. ฟังก์ชันล้างช่องค้นหา (ปุ่ม X)
 window.clearBoxSearch = function() {
     const inputElem = document.getElementById("boxSearchInput");
     const clearBtn = document.getElementById("boxClearSearchBtn");
 
     if (inputElem) {
         inputElem.value = "";
-        inputElem.focus(); // เด้งเคอร์เซอร์กลับไป
+        inputElem.focus(); 
     }
     if (clearBtn) clearBtn.style.display = "none";
 
     window.renderBoxContentArea();
 };
 
-// 3. ฟังก์ชันเรนเดอร์ของในกล่อง (โหมด B)
+// 3. ฟังก์ชันเรนเดอร์ของในกล่อง
 window.renderBoxContentArea = function() {
     const container = document.getElementById("boxContentArea");
     if (!container) return;
 
-    // ถ้ากล่องว่างเปล่า ให้โชว์หน้า Empty State
     if (window.currentBoxItems.length === 0) {
         container.innerHTML = `
             <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
@@ -1483,16 +1479,16 @@ window.renderBoxContentArea = function() {
         return;
     }
 
-    // ถ้ามีสินค้า เรนเดอร์การ์ดโหมด B
     container.innerHTML = window.currentBoxItems.map(item => window.renderBoxModeBCard(item, false)).join('');
     if(typeof window.updateBoxWrapButtonState === 'function') window.updateBoxWrapButtonState(window.currentBoxItems.length);
 };
 
-// 4. ฟังก์ชันจำลองเมื่อกดปุ่ม ADD เข้ากล่อง
+// 4. ฟังก์ชันกดปุ่ม ADD เข้ากล่อง
 window.addSearchItemToBox = function(sku) {
-    if (!window.localProductDatabase) return;
+    // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ
+    if (typeof localProductDatabase === 'undefined') return;
     
-    const product = window.localProductDatabase.find(p => p.sku === sku);
+    const product = localProductDatabase.find(p => p.sku === sku);
     if (!product) return;
 
     const existingItem = window.currentBoxItems.find(item => item.sku === sku);
@@ -1508,22 +1504,22 @@ window.addSearchItemToBox = function(sku) {
         });
     }
 
-    // เคลียร์ช่องค้นหาและโชว์ของในกล่อง
     window.clearBoxSearch(); 
 };
 
-// 5. 🚨 ผูก Event Listener แบบแก้บั๊ก Debounce undefined (สำคัญมาก!)
+// 5. ผูก Event Listener (Debounce)
 document.addEventListener("DOMContentLoaded", () => {
     const boxSearchInputElem = document.getElementById("boxSearchInput");
     if (boxSearchInputElem) {
-        // ใช้ Arrow Function ครอบเอาไว้ เพื่อให้มันเรียกใช้ handleBoxSearch ในจังหวะที่พิมพ์เท่านั้น (ฟังก์ชันโหลดเสร็จแล้วแน่นอน)
         boxSearchInputElem.addEventListener("input", debounceSearch((e) => {
             if(typeof window.handleBoxSearch === 'function') {
                 window.handleBoxSearch();
             }
-        }, 250)); // หน่วงเวลา 250ms เท่าหน้า Stock
+        }, 250)); 
     }
 });
+
+
 // 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
 // ======================================================
 
