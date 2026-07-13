@@ -1307,10 +1307,8 @@ if (boxSearchInput && boxClearSearchBtn) {
 
 
 
-
 // ======================================================
-// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) START
-
+// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (อัปเดตให้กดดูสต็อกได้)
 
 // 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (Magic Search Result)
 window.renderBoxModeACard = function(item) {
@@ -1321,25 +1319,27 @@ window.renderBoxModeACard = function(item) {
 
     return `
     <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
-      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
+      
+      <!-- 👆 พื้นที่กดดูรายละเอียด (รูปภาพ) -->
+      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+      
       <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
-        
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-          <div class="prod-text">
+          
+          <!-- 👆 พื้นที่กดดูรายละเอียด (ชื่อและ SKU) -->
+          <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
             <div class="prod-name" style="margin-top: 0;">${safeName}</div>
             <div class="prod-sku">${safeSku}</div>
           </div>
-          <!-- แสดงราคาด้วย ฿ ตามต้นฉบับ -->
           <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
         </div>
         
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-          <!-- แสดงเฉพาะยอดสต็อกสีเขียว -->
           <span style="color: #10b981; font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
             <i class="fas fa-thumbs-up"></i> ${stockAvail}
           </span>
           
-          <!-- ปุ่ม ADD สำหรับดึงเข้ากล่อง -->
+          <!-- 🎯 พื้นที่จัดการ (ปุ่ม ADD ไม่เกี่ยวกับการดูสต็อก) -->
           <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
             <i class="fas fa-plus"></i> ADD
           </button>
@@ -1354,7 +1354,6 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
     const safeName = escapeHTML(item.name || "-");
     const priceStr = Number(item.price || 0).toLocaleString();
     
-    // ลอจิกไอคอน: ถ้ามีการกดเพิ่ม/ลดด้วยมือ (isManual) ให้ใช้รูปมือ, ถ้ามาจากการยิงกล้องล้วนๆ ให้ใช้บาร์โค้ด
     const isManualModified = item.manualQty > 0 || item.isManual === true;
     const iconHtml = isManualModified 
         ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>' 
@@ -1362,9 +1361,9 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
     
     const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
 
-    // ชุดปุ่มควบคุม (ซ่อนทั้งหมดหากกล่องถูก WRAP ไปแล้ว)
     const controlsHtml = isClosedBox ? '' : `
         <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- 🎯 พื้นที่จัดการ (ปุ่มบวก/ลบ) -->
           <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
             <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
             <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
@@ -1377,11 +1376,15 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
 
     return `
     <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
-      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
+      
+      <!-- 👆 พื้นที่กดดูรายละเอียด (รูปภาพ) -->
+      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+      
       <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
-        
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-          <div class="prod-text">
+          
+          <!-- 👆 พื้นที่กดดูรายละเอียด (ชื่อและ SKU) -->
+          <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
             <div class="prod-name" style="margin-top: 0;">${safeName}</div>
             <div class="prod-sku">${safeSku}</div>
           </div>
@@ -1389,11 +1392,9 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
         </div>
         
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-          <!-- แสดงไอคอนอัจฉริยะ (มือ/บาร์โค้ด) -->
           <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
             ${iconHtml} ยอดรวม: ${totalQty}
           </span>
-          
           ${controlsHtml}
         </div>
       </div>
