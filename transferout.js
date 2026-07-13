@@ -1527,67 +1527,79 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-// ======================================================
-// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (อัปเดต: จำกัดสต็อก + แจ้งเตือนตอนลบ)
+// ==========================================================================
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (อัปเดต: ใช้ UI หน้าต่างแจ้งเตือนของระบบหลัก 100%) START
 
-// เพิ่มจำนวน (+) - ห้ามเกินสต็อก
-window.increaseBoxItemQty = function(sku) {
-    const item = window.currentBoxItems.find(p => p.sku === sku);
-    if (item) {
-        const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
-        
-        // เช็กว่ายอดรวมน้อยกว่าสต็อกที่มีหรือไม่
-        if (totalQty < item.availableStock) {
-            item.manualQty += 1;
-            item.isManual = true; // เปลี่ยนไอคอนเป็นรูปมือ
-            window.renderBoxContentArea(); 
-        } else {
-            // ดึงระบบแจ้งเตือนของ app.js มาใช้
-            if(typeof customAlert === 'function') {
-                customAlert(`มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้นเท่านั้นครับ`, "STOCK LIMIT");
-            } else {
-                alert(`❌ ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`);
-            }
-        }
-    }
-};
+      // เพิ่มจำนวน (+) - ห้ามเกินสต็อก
+      window.increaseBoxItemQty = function(sku) {
+          const item = window.currentBoxItems.find(p => p.sku === sku);
+          if (item) {
+              const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+              
+              // เช็กว่ายอดรวมน้อยกว่าสต็อกที่มีหรือไม่
+              if (totalQty < item.availableStock) {
+                  item.manualQty += 1;
+                  item.isManual = true; 
+                  window.renderBoxContentArea(); 
+              } else {
+                  // บังคับใช้หน้าต่าง customAlert แบบเดียวกับหน้าอื่นๆ
+                  const msg = `มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้นเท่านั้นครับ`;
+                  if (typeof window.customAlert === 'function') {
+                      window.customAlert(msg, "STOCK LIMIT");
+                  } else if (typeof customAlert === 'function') {
+                      customAlert(msg, "STOCK LIMIT");
+                  } else {
+                      alert(`❌ ไม่สามารถเพิ่มได้ ${msg}`); // สำรองกรณีฉุกเฉิน
+                  }
+              }
+          }
+      };
 
-// ลดจำนวน (-) - ห้ามติดลบ
-window.decreaseBoxItemQty = function(sku) {
-    const item = window.currentBoxItems.find(p => p.sku === sku);
-    if (item) {
-        if (item.manualQty > 0) {
-            item.manualQty -= 1;
-            item.isManual = true;
-        } else if (item.scanQty > 0) {
-            item.scanQty -= 1;
-        }
-        
-        // ถ้าลดจนเหลือ 0 ให้เด้งหายไปจากกล่องอัตโนมัติ (ไม่กวนใจถาม)
-        if ((item.scanQty + item.manualQty) <= 0) {
-            window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
-        }
-        window.renderBoxContentArea();
-    }
-};
+      // ลดจำนวน (-) - ห้ามติดลบ
+      window.decreaseBoxItemQty = function(sku) {
+          const item = window.currentBoxItems.find(p => p.sku === sku);
+          if (item) {
+              if (item.manualQty > 0) {
+                  item.manualQty -= 1;
+                  item.isManual = true;
+              } else if (item.scanQty > 0) {
+                  item.scanQty -= 1;
+              }
+              
+              // ถ้าลดจนเหลือ 0 ให้เด้งหายไปจากกล่องอัตโนมัติ
+              if ((item.scanQty + item.manualQty) <= 0) {
+                  window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
+              }
+              window.renderBoxContentArea();
+          }
+      };
 
-// ถังขยะ (ลบออกจากกล่อง) - มีแจ้งเตือนกันพลาด
-window.removeBoxItem = async function(sku) {
-    let isConfirm = false;
-    
-    // ดึงหน้าต่าง Confirm สวยๆ จาก app.js มาถามก่อน
-    if(typeof customConfirm === 'function') {
-        isConfirm = await customConfirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?", "CONFIRM DELETE");
-    } else {
-        isConfirm = confirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?");
-    }
+      // ถังขยะ (ลบออกจากกล่อง) - บังคับใช้หน้าต่าง customConfirm
+      window.removeBoxItem = async function(sku) {
+          let isConfirm = false;
+          const msg = "ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?";
+          const title = "CONFIRM DELETE";
+          
+          // บังคับใช้หน้าต่าง customConfirm แบบเดียวกับหน้าอื่นๆ
+          if (typeof window.customConfirm === 'function') {
+              isConfirm = await window.customConfirm(msg, title);
+          } else if (typeof customConfirm === 'function') {
+              isConfirm = await customConfirm(msg, title);
+          } else {
+              isConfirm = confirm(msg); // สำรองกรณีฉุกเฉิน
+          }
 
-    // ถ้ากด OK ถึงจะลบ
-    if (isConfirm) {
-        window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
-        window.renderBoxContentArea(); 
-    }
-};
+          // ถ้าผู้ใช้กด OK (ตกลง) ถึงจะลบ
+          if (isConfirm) {
+              window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
+              window.renderBoxContentArea(); 
+          }
+      };
+
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (อัปเดต: ใช้ UI หน้าต่างแจ้งเตือนของระบบหลัก 100%) END
+// ==========================================================================
+
+
 
 // ======================================================
 // 🛡️ แก้ไขปัญหา Z-Index แบบฝัง CSS ทับ (Force Override)
