@@ -1308,4 +1308,200 @@ if (boxSearchInput && boxClearSearchBtn) {
 
 
 
+// ======================================================
+// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) START
+
+
+// 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (Magic Search Result)
+window.renderBoxModeACard = function(item) {
+    const safeSku = escapeHTML(item.sku || "-");
+    const safeName = escapeHTML(item.name || "-");
+    const priceStr = Number(item.price || 0).toLocaleString();
+    const stockAvail = escapeHTML(item.availableStock || 0);
+
+    return `
+    <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
+      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
+      <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
+          <div class="prod-text">
+            <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+            <div class="prod-sku">${safeSku}</div>
+          </div>
+          <!-- แสดงราคาด้วย ฿ ตามต้นฉบับ -->
+          <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
+          <!-- แสดงเฉพาะยอดสต็อกสีเขียว -->
+          <span style="color: #10b981; font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+            <i class="fas fa-thumbs-up"></i> ${stockAvail}
+          </span>
+          
+          <!-- ปุ่ม ADD สำหรับดึงเข้ากล่อง -->
+          <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <i class="fas fa-plus"></i> ADD
+          </button>
+        </div>
+      </div>
+    </div>`;
+};
+
+// 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
+window.renderBoxModeBCard = function(item, isClosedBox) {
+    const safeSku = escapeHTML(item.sku || "-");
+    const safeName = escapeHTML(item.name || "-");
+    const priceStr = Number(item.price || 0).toLocaleString();
+    
+    // ลอจิกไอคอน: ถ้ามีการกดเพิ่ม/ลดด้วยมือ (isManual) ให้ใช้รูปมือ, ถ้ามาจากการยิงกล้องล้วนๆ ให้ใช้บาร์โค้ด
+    const isManualModified = item.manualQty > 0 || item.isManual === true;
+    const iconHtml = isManualModified 
+        ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>' 
+        : '<i class="fas fa-barcode" style="color: #3b82f6;" title="สแกนผ่านกล้อง"></i>';
+    
+    const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+
+    // ชุดปุ่มควบคุม (ซ่อนทั้งหมดหากกล่องถูก WRAP ไปแล้ว)
+    const controlsHtml = isClosedBox ? '' : `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
+            <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+            <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
+            <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+          </div>
+          <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+            <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+          </button>
+        </div>`;
+
+    return `
+    <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
+      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
+      <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
+          <div class="prod-text">
+            <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+            <div class="prod-sku">${safeSku}</div>
+          </div>
+          <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
+          <!-- แสดงไอคอนอัจฉริยะ (มือ/บาร์โค้ด) -->
+          <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
+            ${iconHtml} ยอดรวม: ${totalQty}
+          </span>
+          
+          ${controlsHtml}
+        </div>
+      </div>
+    </div>`;
+};
+
+// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
+// ======================================================
+
+
+
+
+
+// ======================================================
+// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
+
+// สร้างตัวแปรจำลองสำหรับเก็บสินค้าในกล่อง (ชั่วคราว)
+window.currentBoxItems = []; 
+
+// 1. ฟังก์ชันจัดการเมื่อพิมพ์ในช่องค้นหา
+const boxSearchInputElem = document.getElementById("boxSearchInput");
+if (boxSearchInputElem) {
+    boxSearchInputElem.addEventListener("input", function() {
+        const query = this.value.trim().toLowerCase();
+        const clearBtn = document.getElementById("boxClearSearchBtn");
+        
+        // โชว์/ซ่อน ปุ่ม X
+        if (clearBtn) clearBtn.style.display = query.length > 0 ? "flex" : "none";
+
+        // กรณีล้างคำค้นหา (กลับไปแสดงของในกล่อง - โหมด B)
+        if (!query) {
+            renderBoxContentArea();
+            return;
+        }
+
+        // กรณีมีคำค้นหา: ดึงข้อมูลจากคลังหลักมาแสดง (โหมด A)
+        // (ตรวจสอบว่า localProductDatabase มีอยู่จริง)
+        if (window.localProductDatabase) {
+            const results = window.localProductDatabase.filter(item => {
+                return Object.values(item).some(
+                    val => val != null && val.toString().toLowerCase().includes(query)
+                );
+            });
+            
+            const container = document.getElementById("boxContentArea");
+            if (results.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้าในระบบ</div>';
+                return;
+            }
+
+            // เรนเดอร์การ์ดโหมด A
+            container.innerHTML = results.map(item => window.renderBoxModeACard(item)).join('');
+        }
+    });
+}
+
+// 2. ฟังก์ชันแสดงข้อมูลสินค้าในกล่อง (โหมด B หรือหน้าว่างเปล่า)
+window.renderBoxContentArea = function() {
+    const container = document.getElementById("boxContentArea");
+    
+    // ถ้ากล่องว่างเปล่า ให้โชว์หน้า Empty State
+    if (window.currentBoxItems.length === 0) {
+        container.innerHTML = `
+            <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
+                <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
+                <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
+                <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
+            </div>`;
+        window.updateBoxWrapButtonState(0); // ล็อกปุ่ม WRAP
+        return;
+    }
+
+    // ถ้ามีสินค้าในกล่อง ให้เรนเดอร์การ์ดโหมด B
+    container.innerHTML = window.currentBoxItems.map(item => window.renderBoxModeBCard(item, false)).join('');
+    window.updateBoxWrapButtonState(window.currentBoxItems.length); // ปลดล็อกปุ่ม WRAP
+};
+
+// 3. ฟังก์ชันจำลองเมื่อกดปุ่ม ADD จากการค้นหา
+window.addSearchItemToBox = function(sku) {
+    // หาข้อมูลสินค้าจากฐานข้อมูลหลัก
+    const product = window.localProductDatabase.find(p => p.sku === sku);
+    if (!product) return;
+
+    // เช็กว่ามีในกล่องแล้วหรือยัง
+    const existingItem = window.currentBoxItems.find(item => item.sku === sku);
+    if (existingItem) {
+        existingItem.manualQty += 1; // เพิ่มยอดมือ
+        existingItem.isManual = true; // ฝังแฟลกว่าแก้ไขด้วยมือ
+    } else {
+        // เพิ่มของใหม่เข้ากล่อง
+        window.currentBoxItems.push({
+            ...product,
+            scanQty: 0,
+            manualQty: 1,
+            isManual: true
+        });
+    }
+
+    // เคลียร์ช่องค้นหาและกลับไปแสดงรายการในกล่อง
+    const searchInput = document.getElementById("boxSearchInput");
+    const clearBtn = document.getElementById("boxClearSearchBtn");
+    if(searchInput) searchInput.value = "";
+    if(clearBtn) clearBtn.style.display = "none";
+    
+    renderBoxContentArea();
+};
+// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
+// ======================================================
+
+
 
