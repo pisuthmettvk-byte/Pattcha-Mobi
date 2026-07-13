@@ -1524,24 +1524,38 @@ document.addEventListener("DOMContentLoaded", () => {
 // ======================================================
 
 
-// ======================================================
-// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (ปุ่ม +, -, ถังขยะ)
 
-// เพิ่มจำนวน (+)
+
+
+// ======================================================
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (อัปเดต: จำกัดสต็อก + แจ้งเตือนตอนลบ)
+
+// เพิ่มจำนวน (+) - ห้ามเกินสต็อก
 window.increaseBoxItemQty = function(sku) {
     const item = window.currentBoxItems.find(p => p.sku === sku);
     if (item) {
-        item.manualQty += 1;
-        item.isManual = true; // เปลียนไอคอนเป็นรูปมือ
-        window.renderBoxContentArea(); // รีเฟรชหน้าจอ (ปุ่ม WRAP จะคำนวณใหม่ด้วย)
+        const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+        
+        // เช็กว่ายอดรวมน้อยกว่าสต็อกที่มีหรือไม่
+        if (totalQty < item.availableStock) {
+            item.manualQty += 1;
+            item.isManual = true; // เปลี่ยนไอคอนเป็นรูปมือ
+            window.renderBoxContentArea(); 
+        } else {
+            // ดึงระบบแจ้งเตือนของ app.js มาใช้
+            if(typeof customAlert === 'function') {
+                customAlert(`มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้นเท่านั้นครับ`, "STOCK LIMIT");
+            } else {
+                alert(`❌ ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`);
+            }
+        }
     }
 };
 
-// ลดจำนวน (-)
+// ลดจำนวน (-) - ห้ามติดลบ
 window.decreaseBoxItemQty = function(sku) {
     const item = window.currentBoxItems.find(p => p.sku === sku);
     if (item) {
-        // ให้ลดจาก manualQty ก่อน ถ้าหมดค่อยไปลดจาก scanQty
         if (item.manualQty > 0) {
             item.manualQty -= 1;
             item.isManual = true;
@@ -1549,21 +1563,69 @@ window.decreaseBoxItemQty = function(sku) {
             item.scanQty -= 1;
         }
         
-        // ถ้ายอดรวมเหลือ 0 ให้ลบออกจากกล่องอัตโนมัติ
+        // ถ้าลดจนเหลือ 0 ให้เด้งหายไปจากกล่องอัตโนมัติ (ไม่กวนใจถาม)
         if ((item.scanQty + item.manualQty) <= 0) {
-            window.removeBoxItem(sku);
-        } else {
-            window.renderBoxContentArea();
+            window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
         }
+        window.renderBoxContentArea();
     }
 };
 
-// ถังขยะ (ลบออกจากกล่อง)
-window.removeBoxItem = function(sku) {
-    // กรองเอาเฉพาะสินค้าที่ SKU ไม่ตรงกับตัวที่กดลบ (เอาตัวที่กดทิ้งไป)
-    window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
-    window.renderBoxContentArea(); // รีเฟรชหน้าจอ (ถ้าของหมดกล่อง ปุ่ม WRAP จะล็อกอัตโนมัติ)
+// ถังขยะ (ลบออกจากกล่อง) - มีแจ้งเตือนกันพลาด
+window.removeBoxItem = async function(sku) {
+    let isConfirm = false;
+    
+    // ดึงหน้าต่าง Confirm สวยๆ จาก app.js มาถามก่อน
+    if(typeof customConfirm === 'function') {
+        isConfirm = await customConfirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?", "CONFIRM DELETE");
+    } else {
+        isConfirm = confirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?");
+    }
+
+    // ถ้ากด OK ถึงจะลบ
+    if (isConfirm) {
+        window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
+        window.renderBoxContentArea(); 
+    }
 };
 
-// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (ปุ่ม +, -, ถังขยะ)
 // ======================================================
+// 🛡️ แก้ไขปัญหา Z-Index แบบฝัง CSS ทับ (Force Override)
+// ======================================================
+document.addEventListener("DOMContentLoaded", () => {
+    // สร้างแท็ก <style> บังคับให้ Modal และ Alert ลอยอยู่หน้าสุด (ทะลุหน้า Box Details แน่นอน 100%)
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #productDetailModal { z-index: 100005 !important; }
+        #customAlertOverlay { z-index: 100010 !important; }
+    `;
+    document.head.appendChild(style);
+});
+
+
+// ======================================================
+// 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อกตอนเข้า-ออกหน้าจอ)
+// ======================================================
+document.addEventListener("DOMContentLoaded", () => {
+    const boxView = document.getElementById("boxDetailsView");
+    
+    if (boxView) {
+        // ใช้ MutationObserver เพื่อดักจับตอนที่หน้าจอ Box Details ถูกเปิดขึ้นมา
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === "class") {
+                    const isHidden = boxView.classList.contains("hide");
+                    // ถ้าหน้าจอถูก "เปิด" (ไม่มี class hide) ให้ทำการรีเฟรชข้อมูลและปุ่ม WRAP ทันที!
+                    if (!isHidden) {
+                        if (typeof window.renderBoxContentArea === 'function') {
+                            window.renderBoxContentArea();
+                        }
+                    }
+                }
+            });
+        });
+
+        // สั่งให้กล้องวงจรปิดเริ่มจับตาดูหน้าต่าง boxDetailsView
+        observer.observe(boxView, { attributes: true });
+    }
+});
