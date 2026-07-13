@@ -891,20 +891,24 @@
             </div>
         </div>
 
-        <!-- ช่อง Magic Search (สัดส่วนเดิมจาก Stock in house 100% เปลี่ยนแค่สีไอคอนให้กลมกลืน) -->
-          <div id="unifiedInputAreaBox" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
-            <div id="boxSearchContainer" style="position: relative;">
-                <i class="fas fa-search" style="position: absolute; left: 20px; top: 16px; color: #b02a37;"></i>
-                
-                <input type="text" id="boxSearchInput" placeholder="ค้นหาสินค้าในกล่อง (SKU...)" style="width: 100%; padding: 15px 45px 15px 50px; box-sizing: border-box; border-radius: 30px; border: none; outline: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); font-size: 14px;">
-                
-                <div id="boxClearSearchBtn" style="position: absolute; right: 15px; top: 13px; width: 24px; height: 24px; border-radius: 50%; background: #b02a37; color: white; display: none; justify-content: center; align-items: center; cursor: pointer;">
-                    <i class="fas fa-times" style="font-size: 12px;"></i>
+              <!-- ช่อง Magic Search -->
+                <div id="unifiedInputAreaBox" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
+                    <div id="boxSearchContainer" style="position: relative;">
+                        <i class="fas fa-search" style="position: absolute; left: 20px; top: 16px; color: #b02a37;"></i>
+                        
+                        <!-- 🚨 เอา oninput ออกแล้ว เพื่อให้ไปทำงานผ่านระบบ Debounce ใน JS แทน -->
+                        <input type="text" id="boxSearchInput" placeholder="ค้นหาสินค้าในกล่อง (SKU...)" style="width: 100%; padding: 15px 45px 15px 50px; box-sizing: border-box; border-radius: 30px; border: none; outline: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); font-size: 14px;">
+                        
+                        <div id="boxClearSearchBtn" onclick="clearBoxSearch()" style="position: absolute; right: 15px; top: 13px; width: 24px; height: 24px; border-radius: 50%; background: #b02a37; color: white; display: none; justify-content: center; align-items: center; cursor: pointer;">
+                            <i class="fas fa-times" style="font-size: 12px;"></i>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-      </div>
+              </div>
 
+
+
+              
     <!-- 🟢 2. Content Area -->
     <div id="boxContentArea" style="flex: 1; overflow-y: auto; width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;">
         <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">

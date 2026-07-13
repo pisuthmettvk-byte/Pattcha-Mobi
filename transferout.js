@@ -1501,6 +1501,27 @@ window.addSearchItemToBox = function(sku) {
     
     renderBoxContentArea();
 };
+
+
+// ======================================================
+// 🚀 ผูกระบบ Debounce เข้ากับช่องค้นหา Box Details
+// (เพื่อให้รอพิมพ์จบก่อนแล้วค่อยค้นหา เหมือนหน้า Stock) START
+
+document.addEventListener("DOMContentLoaded", () => {
+    const boxSearchInputElem = document.getElementById("boxSearchInput");
+    if (boxSearchInputElem) {
+        // ใช้ CONFIG.SEARCH_DELAY (250ms) ตัวเดียวกับระบบหลัก
+        boxSearchInputElem.addEventListener(
+            "input",
+            debounceSearch(window.handleBoxSearch, CONFIG.SEARCH_DELAY)
+        );
+    }
+});
+
+// 🚀 ผูกระบบ Debounce เข้ากับช่องค้นหา Box Details
+// (เพื่อให้รอพิมพ์จบก่อนแล้วค่อยค้นหา เหมือนหน้า Stock) END
+// ======================================================
+
 // 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
 // ======================================================
 
