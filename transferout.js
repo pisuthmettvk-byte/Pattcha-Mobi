@@ -827,235 +827,235 @@ function loadTransferTypesIntoDropdown() {
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
 // ======================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  // 1. ประกาศตัวแปรหน้าจอ (View Containers)
-  const productMovementView = document.getElementById("productMovementView");
-  const viewTaskHub = document.getElementById("transferOutTaskHubView");
-  const viewDest = document.getElementById("transferOutDestView");
-  const viewLobby = document.getElementById("transferOutLobbyView");
+      document.addEventListener("DOMContentLoaded", () => {
+        // 1. ประกาศตัวแปรหน้าจอ (View Containers)
+        const productMovementView = document.getElementById("productMovementView");
+        const viewTaskHub = document.getElementById("transferOutTaskHubView");
+        const viewDest = document.getElementById("transferOutDestView");
+        const viewLobby = document.getElementById("transferOutLobbyView");
 
-  // 2. โหลดข้อมูลเริ่มต้น (กลุ่ม 1, 5, 6)
-  loadExistingTasks();
-  loadBranchesIntoDropdown();
-  loadTransferTypesIntoDropdown();
+        // 2. โหลดข้อมูลเริ่มต้น (กลุ่ม 1, 5, 6)
+        loadExistingTasks();
+        loadBranchesIntoDropdown();
+        loadTransferTypesIntoDropdown();
 
 
-  // ==========================================
-  // 3. ผูก Event ปุ่ม นำทาง (Navigation) ของ Transfer Out
-  // ==========================================
+        // ==========================================
+        // 3. ผูก Event ปุ่ม นำทาง (Navigation) ของ Transfer Out
+        // ==========================================
 
-  // เข้า-ออก ระบบ Transfer Out (Main Menu <-> Task Hub)
-  document
-    .getElementById("btnTransferOut")
-    ?.addEventListener("click", () =>
-      navigationTo(productMovementView, viewTaskHub),
-    );
-  document
-    .getElementById("btnBackToMovement")
-    ?.addEventListener("click", () =>
-      navigationTo(viewTaskHub, productMovementView),
-    );
-  document
-    .getElementById("btnBackFromTaskHub")
-    ?.addEventListener("click", () =>
-      navigationTo(viewTaskHub, productMovementView),
-    );
+        // เข้า-ออก ระบบ Transfer Out (Main Menu <-> Task Hub)
+        document
+          .getElementById("btnTransferOut")
+          ?.addEventListener("click", () =>
+            navigationTo(productMovementView, viewTaskHub),
+          );
+        document
+          .getElementById("btnBackToMovement")
+          ?.addEventListener("click", () =>
+            navigationTo(viewTaskHub, productMovementView),
+          );
+        document
+          .getElementById("btnBackFromTaskHub")
+          ?.addEventListener("click", () =>
+            navigationTo(viewTaskHub, productMovementView),
+          );
 
-  // ปุ่ม + สร้างงานใหม่ (ไปหน้าเลือกสาขา)
-  const btnCreateNewTask = document.getElementById("btnCreateNewTask") || document.getElementById("btnNewTask");
-  if (btnCreateNewTask) {
-    btnCreateNewTask.addEventListener("click", () => {
-      const selectDest = document.getElementById("selectDestination");
-      if (selectDest) selectDest.selectedIndex = 0; // เคลียร์ค่าเดิม
-      navigationTo(viewTaskHub, viewDest);
-    });
-  }
-
-  // ปุ่ม Cancel กลับจากหน้าเลือกสาขา 
-  document
-    .getElementById("btnCancelDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnBackFromDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnBackToDest")
-    ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
-
-  // 🟢 พระเอกของงาน 1: กด Cancel จากหน้า Lobby ต้องกลับไป Task Hub และ "รีเฟรชข้อมูล"
-  document
-    .getElementById("btnCancelFromLobby")
-    ?.addEventListener("click", () => {
-        navigationTo(viewLobby, viewTaskHub);
-        // รีเฟรชกระดานงานเพื่อให้เห็น Card ใหม่ที่เพิ่งสร้าง
-        if (typeof loadExistingTasks === "function") {
-            loadExistingTasks();
+        // ปุ่ม + สร้างงานใหม่ (ไปหน้าเลือกสาขา)
+        const btnCreateNewTask = document.getElementById("btnCreateNewTask") || document.getElementById("btnNewTask");
+        if (btnCreateNewTask) {
+          btnCreateNewTask.addEventListener("click", () => {
+            const selectDest = document.getElementById("selectDestination");
+            if (selectDest) selectDest.selectedIndex = 0; // เคลียร์ค่าเดิม
+            navigationTo(viewTaskHub, viewDest);
+          });
         }
-    });
 
-  // ==========================================
-  // 4. ลอจิกปุ่ม Next (เลือกสาขา -> ไป Lobby)
-  // ==========================================
-  const btnSubmitDest = document.getElementById("btnSubmitDest") || document.getElementById("btnNextDest");
-  if (btnSubmitDest) {
-    btnSubmitDest.addEventListener("click", async () => {
-      const destDropdown = document.getElementById("selectDestination");
+        // ปุ่ม Cancel กลับจากหน้าเลือกสาขา 
+        document
+          .getElementById("btnCancelDest")
+          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+        document
+          .getElementById("btnBackFromDest")
+          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+        document
+          .getElementById("btnBackToDest")
+          ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
 
-      // เช็กการเลือกข้อมูล
-      if (!destDropdown || !destDropdown.value) {
-        if (typeof safeAlert === "function")
-          safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ", "warning");
-        else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
-        return;
-      }
+        // 🟢 พระเอกของงาน 1: กด Cancel จากหน้า Lobby ต้องกลับไป Task Hub และ "รีเฟรชข้อมูล"
+        document
+          .getElementById("btnCancelFromLobby")
+          ?.addEventListener("click", () => {
+              navigationTo(viewLobby, viewTaskHub);
+              // รีเฟรชกระดานงานเพื่อให้เห็น Card ใหม่ที่เพิ่งสร้าง
+              if (typeof loadExistingTasks === "function") {
+                  loadExistingTasks();
+              }
+          });
 
-      const branchID = destDropdown.value;
+        // ==========================================
+        // 4. ลอจิกปุ่ม Next (เลือกสาขา -> ไป Lobby)
+        // ==========================================
+        const btnSubmitDest = document.getElementById("btnSubmitDest") || document.getElementById("btnNextDest");
+        if (btnSubmitDest) {
+          btnSubmitDest.addEventListener("click", async () => {
+            const destDropdown = document.getElementById("selectDestination");
 
-      // บันทึก SessionStorage
-      sessionStorage.setItem("selectedBranchID", branchID);
-
-      // วาร์ปไปหน้า Lobby แบบ Smooth Animation
-      navigationTo(viewDest, viewLobby);
-      
-      // 🟢 พระเอกของงาน 2: โหลด Header และ "ดึงข้อมูล Lobby" ของสาขานั้นมาแสดง
-      if (typeof loadLobbyHeader === "function") loadLobbyHeader();
-      if (typeof renderLobbyTasks === "function") {
-          await renderLobbyTasks(branchID);
-      }
-    });
-  }
-
-
-
-
-
-
-
-  // ==========================================
-  // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
-  // ==========================================
-const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
-  const shipmentBoxModal = document.getElementById("shipmentBoxModal");
-  const selectType = document.getElementById("selectTransferType");
-  const inputBoxNumber = document.getElementById("inputBoxNumber");
-  const btnConfirm = document.getElementById("btnConfirmBox");
-  const container = document.getElementById("lobbyContentContainer");
-  const emptyState = document.getElementById("lobbyEmptyState");
-
-  // 🎯 1. ดักจับการเปิดหน้าต่าง (Fresh Start)
-  if (btnAddShipmentTruck && shipmentBoxModal) {
-    btnAddShipmentTruck.addEventListener("click", () => {
-      if (selectType) selectType.selectedIndex = 0;
-      if (inputBoxNumber) inputBoxNumber.value = "กรุณาเลือกประเภท...";
-      shipmentBoxModal.classList.remove("hide");
-    });
-  }
-
-  // 🎯 2. ดักจับตอนเลือก Dropdown (Auto-Preview)
-  if (selectType && inputBoxNumber) {
-    selectType.addEventListener("change", () => {
-      if (!selectType.value) {
-        inputBoxNumber.value = "กรุณาเลือกประเภท...";
-        return;
-      }
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
-      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
-      const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
-      let previewNum =
-        parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
-      if (previewNum > 9999) previewNum = 1;
-      const previewRunning = previewNum.toString().padStart(4, "0");
-
-      inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
-    });
-  }
-
-
-// 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
-if (btnConfirm) {
-    btnConfirm.addEventListener("click", () => {
-      if (!selectType || !selectType.value) {
-        if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
-        else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
-        return;
-      }
-
-      const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
-      
-      // 🟢 1. ดึงรหัสจากหน่วยความจำ (อาจเป็น CTW03 หรือ 02CT)
-      const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
-      
-      // 🟢 2. บังคับแปลงให้เป็นรหัสจริงเสมอ (ถ้าเป็น 02CT จะถูกแปลงกลับเป็น CTW03)
-      const actualBranchID = (typeof getRealBranchCode === "function") ? getRealBranchCode(rawSelected) : rawSelected;
-      
-      // 🟢 3. ตัด 2 ตัวหน้า จะได้ "CT" แล้วประกอบร่างเป็น "02CT" ถูกต้องเป๊ะ 100%
-      const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`; 
-      
-      const dateStr = new Date().toLocaleDateString("en-GB");
-      const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
-
-      // 🟢 ส่ง Branch (รหัสสาขาจริง) เข้าฐานข้อมูลตามคำสั่งข้อ 4-5
-      const payload = {
-        Date: dateStr,
-        Shipment_No: finalShipmentNo,
-        Origin_Branch: myBranch,
-        Destination: targetDestination, 
-        Branch: actualBranchID, 
-        Origin_Type: "Store",
-        Status: "Assign", 
-      };
-
-      btnConfirm.disabled = true;
-      btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
-
-      fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === "success") {
-            if (container && typeof createShipmentColumn === "function") {
-                container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+            // เช็กการเลือกข้อมูล
+            if (!destDropdown || !destDropdown.value) {
+              if (typeof safeAlert === "function")
+                safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ", "warning");
+              else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
+              return;
             }
-            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-            if (emptyState) emptyState.style.display = "none";
 
-            const taskHubAssignContainer = document.getElementById("assignContainer"); 
-            if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
-               const newCard = createTransferOutTaskCard(
-                 dateStr, finalShipmentNo, "Store", targetDestination, 0, 0, "Assign" 
-               );
-               taskHubAssignContainer.appendChild(newCard);
-               
-               const assignCountEl = document.getElementById("assignTaskCount");
-               if (assignCountEl) {
-                 const currentCount = taskHubAssignContainer.querySelectorAll('.task-card').length;
-                 assignCountEl.innerHTML = `Task (${currentCount}) <i class="fas fa-chevron-down"></i>`;
-               }
+            const branchID = destDropdown.value;
+
+            // บันทึก SessionStorage
+            sessionStorage.setItem("selectedBranchID", branchID);
+
+            // วาร์ปไปหน้า Lobby แบบ Smooth Animation
+            navigationTo(viewDest, viewLobby);
+            
+            // 🟢 พระเอกของงาน 2: โหลด Header และ "ดึงข้อมูล Lobby" ของสาขานั้นมาแสดง
+            if (typeof loadLobbyHeader === "function") loadLobbyHeader();
+            if (typeof renderLobbyTasks === "function") {
+                await renderLobbyTasks(branchID);
             }
-          }
-        })
-        .finally(() => { 
-            btnConfirm.disabled = false; 
-            btnConfirm.innerHTML = "ยืนยันสร้าง"; 
-        });
-    });
-  }      
-      
-      
-      
-      
+          });
+        }
 
-  // ==========================================
-  // 6. ระบบวาร์ปหน้าจอ (เมื่อกดมาจากการ์ด Task Hub)
-  // ==========================================
-  const pendingJump = sessionStorage.getItem("jump_to_shipment");
-  if (pendingJump) {
-    setTimeout(() => {
-      focusShipmentInLobby(pendingJump);
-      sessionStorage.removeItem("jump_to_shipment");
-    }, 500);
-  }
-});
+
+
+
+
+
+
+        // ==========================================
+        // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
+        // ==========================================
+      const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+        const shipmentBoxModal = document.getElementById("shipmentBoxModal");
+        const selectType = document.getElementById("selectTransferType");
+        const inputBoxNumber = document.getElementById("inputBoxNumber");
+        const btnConfirm = document.getElementById("btnConfirmBox");
+        const container = document.getElementById("lobbyContentContainer");
+        const emptyState = document.getElementById("lobbyEmptyState");
+
+        // 🎯 1. ดักจับการเปิดหน้าต่าง (Fresh Start)
+        if (btnAddShipmentTruck && shipmentBoxModal) {
+          btnAddShipmentTruck.addEventListener("click", () => {
+            if (selectType) selectType.selectedIndex = 0;
+            if (inputBoxNumber) inputBoxNumber.value = "กรุณาเลือกประเภท...";
+            shipmentBoxModal.classList.remove("hide");
+          });
+        }
+
+        // 🎯 2. ดักจับตอนเลือก Dropdown (Auto-Preview)
+        if (selectType && inputBoxNumber) {
+          selectType.addEventListener("change", () => {
+            if (!selectType.value) {
+              inputBoxNumber.value = "กรุณาเลือกประเภท...";
+              return;
+            }
+            const selectedBranchID =
+              sessionStorage.getItem("selectedBranchID") || "KKN02";
+            const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
+            const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+            let previewNum =
+              parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
+            if (previewNum > 9999) previewNum = 1;
+            const previewRunning = previewNum.toString().padStart(4, "0");
+
+            inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
+          });
+        }
+
+
+      // 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
+      if (btnConfirm) {
+          btnConfirm.addEventListener("click", () => {
+            if (!selectType || !selectType.value) {
+              if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
+              else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+              return;
+            }
+
+            const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
+            
+            // 🟢 1. ดึงรหัสจากหน่วยความจำ (อาจเป็น CTW03 หรือ 02CT)
+            const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
+            
+            // 🟢 2. บังคับแปลงให้เป็นรหัสจริงเสมอ (ถ้าเป็น 02CT จะถูกแปลงกลับเป็น CTW03)
+            const actualBranchID = (typeof getRealBranchCode === "function") ? getRealBranchCode(rawSelected) : rawSelected;
+            
+            // 🟢 3. ตัด 2 ตัวหน้า จะได้ "CT" แล้วประกอบร่างเป็น "02CT" ถูกต้องเป๊ะ 100%
+            const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`; 
+            
+            const dateStr = new Date().toLocaleDateString("en-GB");
+            const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
+
+            // 🟢 ส่ง Branch (รหัสสาขาจริง) เข้าฐานข้อมูลตามคำสั่งข้อ 4-5
+            const payload = {
+              Date: dateStr,
+              Shipment_No: finalShipmentNo,
+              Origin_Branch: myBranch,
+              Destination: targetDestination, 
+              Branch: actualBranchID, 
+              Origin_Type: "Store",
+              Status: "Assign", 
+            };
+
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+            fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
+              .then(res => res.json())
+              .then(res => {
+                if (res.status === "success") {
+                  if (container && typeof createShipmentColumn === "function") {
+                      container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+                  }
+                  if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+                  if (emptyState) emptyState.style.display = "none";
+
+                  const taskHubAssignContainer = document.getElementById("assignContainer"); 
+                  if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
+                    const newCard = createTransferOutTaskCard(
+                      dateStr, finalShipmentNo, "Store", targetDestination, 0, 0, "Assign" 
+                    );
+                    taskHubAssignContainer.appendChild(newCard);
+                    
+                    const assignCountEl = document.getElementById("assignTaskCount");
+                    if (assignCountEl) {
+                      const currentCount = taskHubAssignContainer.querySelectorAll('.task-card').length;
+                      assignCountEl.innerHTML = `Task (${currentCount}) <i class="fas fa-chevron-down"></i>`;
+                    }
+                  }
+                }
+              })
+              .finally(() => { 
+                  btnConfirm.disabled = false; 
+                  btnConfirm.innerHTML = "ยืนยันสร้าง"; 
+              });
+          });
+        }      
+            
+            
+            
+            
+
+        // ==========================================
+        // 6. ระบบวาร์ปหน้าจอ (เมื่อกดมาจากการ์ด Task Hub)
+        // ==========================================
+        const pendingJump = sessionStorage.getItem("jump_to_shipment");
+        if (pendingJump) {
+          setTimeout(() => {
+            focusShipmentInLobby(pendingJump);
+            sessionStorage.removeItem("jump_to_shipment");
+          }, 500);
+        }
+      });
 
 // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
@@ -1064,560 +1064,607 @@ if (btnConfirm) {
 
 
 
-// ======================================================
-// 📦 [Phase 2] ฟังก์ชันศูนย์สั่งการเปลี่ยนสถานะกล่อง (State Controller)
-// ======================================================
-window.updateShipmentBoxState = function(boxNo, status, scanQty = 0, manualQty = 0) {
-  // 1. ค้นหากล่องลูกในหน้าจอ จากรหัสกล่อง
-  const childBox = document.querySelector(`.shipment-child-box[data-box-no="${boxNo}"]`);
-  if (!childBox) return;
+// ==================================================================
+// 📦 [Phase 2] ฟังก์ชันศูนย์สั่งการเปลี่ยนสถานะกล่อง (State Controller) START
+      window.updateShipmentBoxState = function(boxNo, status, scanQty = 0, manualQty = 0) {
+        // 1. ค้นหากล่องลูกในหน้าจอ จากรหัสกล่อง
+        const childBox = document.querySelector(`.shipment-child-box[data-box-no="${boxNo}"]`);
+        if (!childBox) return;
 
-  // 2. อัปเดตตัวเลขสินค้า (ได้ข้อมูลมาจากหน้า Box Details)
-  const scanEl = childBox.querySelector(".child-scan-qty");
-  const manualEl = childBox.querySelector(".child-manual-qty");
-  if (scanEl) scanEl.textContent = scanQty;
-  if (manualEl) manualEl.textContent = manualQty;
+        // 2. อัปเดตตัวเลขสินค้า (ได้ข้อมูลมาจากหน้า Box Details)
+        const scanEl = childBox.querySelector(".child-scan-qty");
+        const manualEl = childBox.querySelector(".child-manual-qty");
+        if (scanEl) scanEl.textContent = scanQty;
+        if (manualEl) manualEl.textContent = manualQty;
 
-  // 3. ควบคุมการเปลี่ยนแปลง UI และสถานะ
-  const iconEl = childBox.querySelector(".box-status-icon");
-  const checkboxEl = childBox.querySelector(".child-checkbox");
+        // 3. ควบคุมการเปลี่ยนแปลง UI และสถานะ
+        const iconEl = childBox.querySelector(".box-status-icon");
+        const checkboxEl = childBox.querySelector(".child-checkbox");
 
-  childBox.dataset.status = status; 
-  sessionStorage.setItem("activeBoxStatus", status); 
+        childBox.dataset.status = status; 
+        sessionStorage.setItem("activeBoxStatus", status); 
 
-  if (status === "closed") {
-    // 🔴 [กล่องถูกปิด] -> เปลี่ยนเป็นกล่องปิดสีแดง
-    if (iconEl) {
-      iconEl.className = "fas fa-box box-status-icon";
-      iconEl.style.color = "#dc3545"; // สีแดง
-    }
-    // 🔓 ปลดล็อก Checkbox ให้สามารถติ๊กเลือกได้
-    if (checkboxEl) {
-      checkboxEl.disabled = false;
-      checkboxEl.style.cursor = "pointer";
-      checkboxEl.title = "เลือกกล่องนี้เพื่อเตรียมส่งออก";
-    }
-  } else {
-    // 🟢 [กล่องยังเปิด] -> เปลี่ยนเป็นกล่องเปิดสีเขียว
-    if (iconEl) {
-      iconEl.className = "fas fa-box-open box-status-icon";
-      iconEl.style.color = "#28a745"; // สีเขียว
-    }
-    // 🔒 ล็อก Checkbox ห้ามกด และล้างค่าการติ๊กออก
-    if (checkboxEl) {
-      checkboxEl.disabled = true;
-      checkboxEl.style.cursor = "not-allowed";
-      checkboxEl.checked = false; // บังคับเอาเครื่องหมายถูกออก
-      checkboxEl.title = "ต้องปิดกล่องก่อนถึงจะเลือกได้";
-    }
-  }
-};
-
-// ======================================================
-// 📦 [Phase 2] ฟังก์ชันศูนย์สั่งการเปลี่ยนสถานะกล่อง (State Controller)
-// ======================================================
+        if (status === "closed") {
+          // 🔴 [กล่องถูกปิด] -> เปลี่ยนเป็นกล่องปิดสีแดง
+          if (iconEl) {
+            iconEl.className = "fas fa-box box-status-icon";
+            iconEl.style.color = "#dc3545"; // สีแดง
+          }
+          // 🔓 ปลดล็อก Checkbox ให้สามารถติ๊กเลือกได้
+          if (checkboxEl) {
+            checkboxEl.disabled = false;
+            checkboxEl.style.cursor = "pointer";
+            checkboxEl.title = "เลือกกล่องนี้เพื่อเตรียมส่งออก";
+          }
+        } else {
+          // 🟢 [กล่องยังเปิด] -> เปลี่ยนเป็นกล่องเปิดสีเขียว
+          if (iconEl) {
+            iconEl.className = "fas fa-box-open box-status-icon";
+            iconEl.style.color = "#28a745"; // สีเขียว
+          }
+          // 🔒 ล็อก Checkbox ห้ามกด และล้างค่าการติ๊กออก
+          if (checkboxEl) {
+            checkboxEl.disabled = true;
+            checkboxEl.style.cursor = "not-allowed";
+            checkboxEl.checked = false; // บังคับเอาเครื่องหมายถูกออก
+            checkboxEl.title = "ต้องปิดกล่องก่อนถึงจะเลือกได้";
+          }
+        }
+      };
+// 📦 [Phase 2] ฟังก์ชันศูนย์สั่งการเปลี่ยนสถานะกล่อง (State Controller) END
+// ==================================================================
 
 
 
 
-// ======================================================
-// 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP)
-// ======================================================
+// ===============================================================
+// 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) START
 
 // ตัวแปรควบคุมสถานะกล่องปัจจุบัน
-window.currentActiveShipment = null;
-window.currentActiveBoxNo = null;
-window.currentBoxElement = null; // เก็บอ้างอิง DOM ของกล่องในหน้า Lobby
+        window.currentActiveShipment = null;
+        window.currentActiveBoxNo = null;
+        window.currentBoxElement = null; // เก็บอ้างอิง DOM ของกล่องในหน้า Lobby
+        // 1. ปุ่ม Back ย้อนกลับไป Lobby (แก้ไขจอขาว)
+        document.getElementById("btnBackFromBox").addEventListener("click", () => {
+            document.getElementById("boxDetailsView").classList.add("hide");
+            
+            // กลับไปหน้า Lobby ให้ถูก ID
+            const lobbyView = document.getElementById("transferOutLobbyView") || document.getElementById("lobbyView");
+            if (lobbyView) {
+                lobbyView.classList.remove("hide");
+            }
 
-// 1. ปุ่ม Back ย้อนกลับไป Lobby (แก้ไขจอขาว)
-document.getElementById("btnBackFromBox").addEventListener("click", () => {
-    document.getElementById("boxDetailsView").classList.add("hide");
-    
-    // กลับไปหน้า Lobby ให้ถูก ID
-    const lobbyView = document.getElementById("transferOutLobbyView") || document.getElementById("lobbyView");
-    if (lobbyView) {
-        lobbyView.classList.remove("hide");
-    }
+            // เคลียร์ค่า
+            window.currentActiveShipment = null;
+            window.currentActiveBoxNo = null;
+            window.currentBoxElement = null;
+        });
+        // 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ใช้ Style ถอดแบบหน้า Lobby)
+        window.updateBoxWrapButtonState = function(totalItemsCount) {
+            const btnWrap = document.getElementById("btnBoxWrap");
+            if (!btnWrap) return;
 
-    // เคลียร์ค่า
-    window.currentActiveShipment = null;
-    window.currentActiveBoxNo = null;
-    window.currentBoxElement = null;
-});
+            if (totalItemsCount > 0) {
+                // มีสินค้า = ปลดล็อก (สีแดงลูกระนาดแบบ EXPORT)
+                btnWrap.disabled = false;
+                btnWrap.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+                btnWrap.style.color = "white";
+                btnWrap.style.borderLeft = "1px solid rgba(255,255,255,0.3)";
+                btnWrap.style.cursor = "pointer";
+            } else {
+                // ไม่มีสินค้า = ล็อก (สีดำโปร่งแสงตามโค้ดต้นฉบับ)
+                btnWrap.disabled = true;
+                btnWrap.style.background = "rgba(0, 0, 0, 0.466)";
+                btnWrap.style.color = "#aaa";
+                btnWrap.style.borderLeft = "1px solid rgba(255,255,255,0.2)";
+                btnWrap.style.cursor = "not-allowed";
+            }
+        };
+        // 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด)
+        window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
+            window.currentActiveShipment = shipmentNo;
+            window.currentActiveBoxNo = boxNo;
+            window.currentBoxElement = boxElement;
 
-// 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ใช้ Style ถอดแบบหน้า Lobby)
-window.updateBoxWrapButtonState = function(totalItemsCount) {
-    const btnWrap = document.getElementById("btnBoxWrap");
-    if (!btnWrap) return;
+            // อัปเดตข้อความบน Header
+            document.getElementById("boxDetailsShipmentText").textContent = `(Shipment No: ${shipmentNo})`;
+            document.getElementById("boxDetailsBoxText").textContent = boxNo;
 
-    if (totalItemsCount > 0) {
-        // มีสินค้า = ปลดล็อก (สีแดงลูกระนาดแบบ EXPORT)
-        btnWrap.disabled = false;
-        btnWrap.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
-        btnWrap.style.color = "white";
-        btnWrap.style.borderLeft = "1px solid rgba(255,255,255,0.3)";
-        btnWrap.style.cursor = "pointer";
-    } else {
-        // ไม่มีสินค้า = ล็อก (สีดำโปร่งแสงตามโค้ดต้นฉบับ)
-        btnWrap.disabled = true;
-        btnWrap.style.background = "rgba(0, 0, 0, 0.466)";
-        btnWrap.style.color = "#aaa";
-        btnWrap.style.borderLeft = "1px solid rgba(255,255,255,0.2)";
-        btnWrap.style.cursor = "not-allowed";
-    }
-};
+            // จัดการ UI ตามสถานะของกล่อง
+            const btnScanner = document.getElementById("btnBoxScanner");
+            const btnWrap = document.getElementById("btnBoxWrap");
+            const searchInput = document.getElementById("boxSearchInput");
+
+            if (isClosed) {
+                // 🔴 โหมด Read-Only (ปิดกล่องแล้ว)
+                btnWrap.style.display = "none"; // ซ่อนปุ่ม WRAP
+                
+                // แปลงร่างปุ่มกล้องกลับเป็นสไตล์ Master Blueprint ของ Stock In House 
+                btnScanner.style.background = "linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%)"; 
+                btnScanner.style.border = "none";
+                btnScanner.style.color = "white";
+                btnScanner.style.textShadow = "none";
+                btnScanner.style.boxShadow = "0 6px 15px rgba(219,133,145,0.3)";
+                if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
+            } else {
+                // 🟢 โหมดปกติ (กล่องเปิดอยู่)
+                btnWrap.style.display = "flex"; // โชว์ปุ่ม WRAP
+                
+                // คืนร่างปุ่มกล้องเป็น "เหล็กสีเงินลูกระนาด"
+                btnScanner.style.background = "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)"; 
+                btnScanner.style.border = "1px solid #888";
+                btnScanner.style.color = "#333";
+                btnScanner.style.textShadow = "1px 1px 0px #fff";
+                btnScanner.style.boxShadow = "0 4px 6px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.8)";
+                if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
+                
+                // ล็อกปุ่ม WRAP ไว้ก่อนทันทีที่เปิดหน้าต่าง (เพราะสินค้าเป็น 0)
+                window.updateBoxWrapButtonState(0); 
+            }
+
+            // สลับหน้าจอ
+            const lobbyView = document.getElementById("transferOutLobbyView") || document.getElementById("lobbyView");
+            if(lobbyView) lobbyView.classList.add("hide");
+            document.getElementById("boxDetailsView").classList.remove("hide");
+        };
+        // 4. ฟังก์ชันปุ่ม WRAP (ปิดกล่อง) - ประกอบร่างสำเร็จ
+        document.getElementById("btnBoxWrap").addEventListener("click", async () => {
+            
+            // ป้องกันการกดถ้าปุ่มถูกล็อกอยู่
+            if (document.getElementById("btnBoxWrap").style.pointerEvents === "none") return;
+
+            const isConfirmed = await safeConfirm('ยืนยันการปิดกล่อง (WRAP)?', `คุณต้องการปิดกล่อง ${window.currentActiveBoxNo} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`);
+
+            if (isConfirmed) {
+                // โชว์ Loading
+                const loadingOverlay = document.createElement("div");
+                loadingOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
+                loadingOverlay.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังบันทึกกล่อง...";
+                document.body.appendChild(loadingOverlay);
+
+                const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+                
+                const payload = {
+                    shipmentNo: window.currentActiveShipment,
+                    boxNo: window.currentActiveBoxNo,
+                    totalScan: 0, // รอเชื่อมข้อมูลจริงระยะต่อไป
+                    totalManual: 0, // รอเชื่อมข้อมูลจริงระยะต่อไป
+                    status: "Closed"
+                };
+
+                // ยิง API ไปบันทึกใน Box_Log
+                fetch(`${apiUrl}?action=close_box`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.body.removeChild(loadingOverlay);
+                    
+                    if (data.success) {
+                        // 🔴 อัปเดต UI หน้า Lobby ให้กล่องเป็นสีแดง
+                        if (window.currentBoxElement) {
+                            window.currentBoxElement.setAttribute("data-status", "Closed"); // อัปเดต State
+                            
+                            const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
+                            if (boxIcon) {
+                                boxIcon.className = "fas fa-box"; // เปลี่ยนไอคอนเป็นกล่องปิด
+                                boxIcon.style.color = "#d93844"; // เปลี่ยนสีเป็นสีแดง
+                            }
+                        }
+
+                        // เด้งกลับหน้า Lobby
+                        document.getElementById("btnBackFromBox").click();
+                        
+                    } else {
+                        safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+                    }
+                })
+                .catch(error => {
+                    document.body.removeChild(loadingOverlay);
+                    safeAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
+                });
+            }
+        });
+        // 5. ระบบช่องค้นหา Magic Search (Box Details)
+        const boxSearchInput = document.getElementById("boxSearchInput");
+        const boxClearSearchBtn = document.getElementById("boxClearSearchBtn");
+        if (boxSearchInput && boxClearSearchBtn) {
+            // ตรวจจับตอนพิมพ์
+            boxSearchInput.addEventListener("input", function() {
+                if (this.value.trim().length > 0) {
+                    boxClearSearchBtn.style.display = "flex"; // โชว์ X
+                } else {
+                    boxClearSearchBtn.style.display = "none"; // ซ่อน X
+                }
+            });
+
+            // ตรวจจับตอนกดปุ่ม X
+            boxClearSearchBtn.addEventListener("click", function() {
+                boxSearchInput.value = ""; // ล้างค่า
+                this.style.display = "none"; // ซ่อนปุ่ม X
+                boxSearchInput.focus(); // เด้งเคอร์เซอร์กลับไปที่ช่องพิมพ์
+            });
+        }
+
+// 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) END
+// ==============================================================
 
 
-// 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด)
-window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
-    window.currentActiveShipment = shipmentNo;
-    window.currentActiveBoxNo = boxNo;
-    window.currentBoxElement = boxElement;
 
-    // อัปเดตข้อความบน Header
-    document.getElementById("boxDetailsShipmentText").textContent = `(Shipment No: ${shipmentNo})`;
-    document.getElementById("boxDetailsBoxText").textContent = boxNo;
+// ======================================================
+// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (อัปเดตให้กดดูสต็อกได้) START
 
-    // จัดการ UI ตามสถานะของกล่อง
-    const btnScanner = document.getElementById("btnBoxScanner");
-    const btnWrap = document.getElementById("btnBoxWrap");
-    const searchInput = document.getElementById("boxSearchInput");
+        // 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (อัปเดต: เช็กสต็อก = 0 ล็อกปุ่ม ADD)
+        window.renderBoxModeACard = function(item) {
+            const safeSku = escapeHTML(item.sku || "-");
+            const safeName = escapeHTML(item.name || "-");
+            const priceStr = Number(item.price || 0).toLocaleString();
+            const stockAvail = Number(item.availableStock || 0); // แปลงเป็นตัวเลข
 
-    if (isClosed) {
-        // 🔴 โหมด Read-Only (ปิดกล่องแล้ว)
-        btnWrap.style.display = "none"; // ซ่อนปุ่ม WRAP
-        
-        // แปลงร่างปุ่มกล้องกลับเป็นสไตล์ Master Blueprint ของ Stock In House 
-        btnScanner.style.background = "linear-gradient(135deg, #db8591 0%, #e7a08c 50%, #fab919 100%)"; 
-        btnScanner.style.border = "none";
-        btnScanner.style.color = "white";
-        btnScanner.style.textShadow = "none";
-        btnScanner.style.boxShadow = "0 6px 15px rgba(219,133,145,0.3)";
-        if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
-    } else {
-        // 🟢 โหมดปกติ (กล่องเปิดอยู่)
-        btnWrap.style.display = "flex"; // โชว์ปุ่ม WRAP
-        
-        // คืนร่างปุ่มกล้องเป็น "เหล็กสีเงินลูกระนาด"
-        btnScanner.style.background = "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)"; 
-        btnScanner.style.border = "1px solid #888";
-        btnScanner.style.color = "#333";
-        btnScanner.style.textShadow = "1px 1px 0px #fff";
-        btnScanner.style.boxShadow = "0 4px 6px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.8)";
-        if(searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
-        
-        // ล็อกปุ่ม WRAP ไว้ก่อนทันทีที่เปิดหน้าต่าง (เพราะสินค้าเป็น 0)
-        window.updateBoxWrapButtonState(0); 
-    }
+            // ลอจิกปุ่ม ADD (ถ้าสต็อกมากกว่า 0 ให้กดได้ ถ้าเป็น 0 หรือติดลบให้ล็อก)
+            let actionButtonHtml = "";
+            if (stockAvail > 0) {
+                actionButtonHtml = `
+                  <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    <i class="fas fa-plus"></i> ADD
+                  </button>`;
+            } else {
+                actionButtonHtml = `
+                  <button disabled style="background: #ccc; color: #888; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: not-allowed;">
+                    <i class="fas fa-ban"></i> N/A
+                  </button>`;
+            }
 
-    // สลับหน้าจอ
-    const lobbyView = document.getElementById("transferOutLobbyView") || document.getElementById("lobbyView");
-    if(lobbyView) lobbyView.classList.add("hide");
-    document.getElementById("boxDetailsView").classList.remove("hide");
-};
-
-
-
-// 4. ฟังก์ชันปุ่ม WRAP (ปิดกล่อง) - ประกอบร่างสำเร็จ
-document.getElementById("btnBoxWrap").addEventListener("click", async () => {
-    
-    // ป้องกันการกดถ้าปุ่มถูกล็อกอยู่
-    if (document.getElementById("btnBoxWrap").style.pointerEvents === "none") return;
-
-    const isConfirmed = await safeConfirm('ยืนยันการปิดกล่อง (WRAP)?', `คุณต้องการปิดกล่อง ${window.currentActiveBoxNo} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`);
-
-    if (isConfirmed) {
-        // โชว์ Loading
-        const loadingOverlay = document.createElement("div");
-        loadingOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
-        loadingOverlay.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังบันทึกกล่อง...";
-        document.body.appendChild(loadingOverlay);
-
-        const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
-        
-        const payload = {
-            shipmentNo: window.currentActiveShipment,
-            boxNo: window.currentActiveBoxNo,
-            totalScan: 0, // รอเชื่อมข้อมูลจริงระยะต่อไป
-            totalManual: 0, // รอเชื่อมข้อมูลจริงระยะต่อไป
-            status: "Closed"
+            return `
+            <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
+              <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+              <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
+                  <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
+                    <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+                    <div class="prod-sku">${safeSku}</div>
+                  </div>
+                  <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
+                  <span style="${stockAvail > 0 ? 'color: #10b981;' : 'color: #ef4444;'} font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+                    <i class="fas ${stockAvail > 0 ? 'fa-thumbs-up' : 'fa-times-circle'}"></i> ${stockAvail}
+                  </span>
+                  ${actionButtonHtml}
+                </div>
+              </div>
+            </div>`;
         };
 
-        // ยิง API ไปบันทึกใน Box_Log
-        fetch(`${apiUrl}?action=close_box`, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.body.removeChild(loadingOverlay);
+
+        // 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
+        window.renderBoxModeBCard = function(item, isClosedBox) {
+            const safeSku = escapeHTML(item.sku || "-");
+            const safeName = escapeHTML(item.name || "-");
+            const priceStr = Number(item.price || 0).toLocaleString();
             
-            if (data.success) {
-                // 🔴 อัปเดต UI หน้า Lobby ให้กล่องเป็นสีแดง
-                if (window.currentBoxElement) {
-                    window.currentBoxElement.setAttribute("data-status", "Closed"); // อัปเดต State
-                    
-                    const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
-                    if (boxIcon) {
-                        boxIcon.className = "fas fa-box"; // เปลี่ยนไอคอนเป็นกล่องปิด
-                        boxIcon.style.color = "#d93844"; // เปลี่ยนสีเป็นสีแดง
-                    }
-                }
+            const isManualModified = item.manualQty > 0 || item.isManual === true;
+            const iconHtml = isManualModified 
+                ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>' 
+                : '<i class="fas fa-barcode" style="color: #3b82f6;" title="สแกนผ่านกล้อง"></i>';
+            
+            const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
 
-                // เด้งกลับหน้า Lobby
-                document.getElementById("btnBackFromBox").click();
+            const controlsHtml = isClosedBox ? '' : `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <!-- 🎯 พื้นที่จัดการ (ปุ่มบวก/ลบ) -->
+                  <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
+                    <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                    <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
+                    <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+                  </div>
+                  <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                    <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+                  </button>
+                </div>`;
+
+            return `
+            <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
+              
+              <!-- 👆 พื้นที่กดดูรายละเอียด (รูปภาพ) -->
+              <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+              
+              <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
+                  
+                  <!-- 👆 พื้นที่กดดูรายละเอียด (ชื่อและ SKU) -->
+                  <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
+                    <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+                    <div class="prod-sku">${safeSku}</div>
+                  </div>
+                  <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
+                </div>
                 
-            } else {
-                safeAlert("เกิดข้อผิดพลาด", data.message, "error");
-            }
-        })
-        .catch(error => {
-            document.body.removeChild(loadingOverlay);
-            safeAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
-        });
-    }
-});
-
-// 5. ระบบช่องค้นหา Magic Search (Box Details)
-const boxSearchInput = document.getElementById("boxSearchInput");
-const boxClearSearchBtn = document.getElementById("boxClearSearchBtn");
-
-if (boxSearchInput && boxClearSearchBtn) {
-    // ตรวจจับตอนพิมพ์
-    boxSearchInput.addEventListener("input", function() {
-        if (this.value.trim().length > 0) {
-            boxClearSearchBtn.style.display = "flex"; // โชว์ X
-        } else {
-            boxClearSearchBtn.style.display = "none"; // ซ่อน X
-        }
-    });
-
-    // ตรวจจับตอนกดปุ่ม X
-    boxClearSearchBtn.addEventListener("click", function() {
-        boxSearchInput.value = ""; // ล้างค่า
-        this.style.display = "none"; // ซ่อนปุ่ม X
-        boxSearchInput.focus(); // เด้งเคอร์เซอร์กลับไปที่ช่องพิมพ์
-    });
-}
-
-
-// ======================================================
-// 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP)
-// ======================================================
-
-
-
-// ======================================================
-// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (อัปเดตให้กดดูสต็อกได้)
-
-// 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (อัปเดต: เช็กสต็อก = 0 ล็อกปุ่ม ADD)
-window.renderBoxModeACard = function(item) {
-    const safeSku = escapeHTML(item.sku || "-");
-    const safeName = escapeHTML(item.name || "-");
-    const priceStr = Number(item.price || 0).toLocaleString();
-    const stockAvail = Number(item.availableStock || 0); // แปลงเป็นตัวเลข
-
-    // ลอจิกปุ่ม ADD (ถ้าสต็อกมากกว่า 0 ให้กดได้ ถ้าเป็น 0 หรือติดลบให้ล็อก)
-    let actionButtonHtml = "";
-    if (stockAvail > 0) {
-        actionButtonHtml = `
-          <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-            <i class="fas fa-plus"></i> ADD
-          </button>`;
-    } else {
-        actionButtonHtml = `
-          <button disabled style="background: #ccc; color: #888; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: not-allowed;">
-            <i class="fas fa-ban"></i> N/A
-          </button>`;
-    }
-
-    return `
-    <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
-      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
-      <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-          <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
-            <div class="prod-name" style="margin-top: 0;">${safeName}</div>
-            <div class="prod-sku">${safeSku}</div>
-          </div>
-          <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-          <span style="${stockAvail > 0 ? 'color: #10b981;' : 'color: #ef4444;'} font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
-            <i class="fas ${stockAvail > 0 ? 'fa-thumbs-up' : 'fa-times-circle'}"></i> ${stockAvail}
-          </span>
-          ${actionButtonHtml}
-        </div>
-      </div>
-    </div>`;
-};
-
-
-// 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
-window.renderBoxModeBCard = function(item, isClosedBox) {
-    const safeSku = escapeHTML(item.sku || "-");
-    const safeName = escapeHTML(item.name || "-");
-    const priceStr = Number(item.price || 0).toLocaleString();
-    
-    const isManualModified = item.manualQty > 0 || item.isManual === true;
-    const iconHtml = isManualModified 
-        ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>' 
-        : '<i class="fas fa-barcode" style="color: #3b82f6;" title="สแกนผ่านกล้อง"></i>';
-    
-    const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
-
-    const controlsHtml = isClosedBox ? '' : `
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <!-- 🎯 พื้นที่จัดการ (ปุ่มบวก/ลบ) -->
-          <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
-            <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
-            <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
-            <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
-          </div>
-          <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
-            <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
-          </button>
-        </div>`;
-
-    return `
-    <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
-      
-      <!-- 👆 พื้นที่กดดูรายละเอียด (รูปภาพ) -->
-      <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
-      
-      <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-          
-          <!-- 👆 พื้นที่กดดูรายละเอียด (ชื่อและ SKU) -->
-          <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
-            <div class="prod-name" style="margin-top: 0;">${safeName}</div>
-            <div class="prod-sku">${safeSku}</div>
-          </div>
-          <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-          <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
-            ${iconHtml} ยอดรวม: ${totalQty}
-          </span>
-          ${controlsHtml}
-        </div>
-      </div>
-    </div>`;
-};
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
+                  <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
+                    ${iconHtml} ยอดรวม: ${totalQty}
+                  </span>
+                  ${controlsHtml}
+                </div>
+              </div>
+            </div>`;
+        };
 // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
 // ======================================================
 
 
 
 // ======================================================
-// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search (แก้บั๊ก Scope ข้อมูล)
+// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search (แก้บั๊ก Scope ข้อมูล) START
 window.currentBoxItems = window.currentBoxItems || [];
 
-// 1. ฟังก์ชันค้นหา
-window.handleBoxSearch = function() {
-    const inputElem = document.getElementById("boxSearchInput");
-    if (!inputElem) return;
+        // 1. ฟังก์ชันค้นหา
+        window.handleBoxSearch = function() {
+            const inputElem = document.getElementById("boxSearchInput");
+            if (!inputElem) return;
 
-    const query = inputElem.value.trim().toLowerCase();
-    const clearBtn = document.getElementById("boxClearSearchBtn");
+            const query = inputElem.value.trim().toLowerCase();
+            const clearBtn = document.getElementById("boxClearSearchBtn");
 
-    if (clearBtn) clearBtn.style.display = query.length > 0 ? "flex" : "none";
+            if (clearBtn) clearBtn.style.display = query.length > 0 ? "flex" : "none";
 
-    const container = document.getElementById("boxContentArea");
+            const container = document.getElementById("boxContentArea");
 
-    if (!query) {
-        window.renderBoxContentArea();
-        return;
-    }
-
-    // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ ตามโครงสร้างของ app.js
-    if (typeof localProductDatabase !== 'undefined' && localProductDatabase.length > 0) {
-        const results = localProductDatabase.filter(item => {
-            return Object.values(item).some(
-                val => val != null && val.toString().toLowerCase().includes(query)
-            );
-        });
-
-        if (results.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้าในระบบ</div>';
-            return;
-        }
-
-        // เรนเดอร์การ์ดโหมด A (ค้นหาเพื่อเพิ่ม)
-        container.innerHTML = results.map(item => window.renderBoxModeACard(item)).join('');
-    } else {
-        container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่มีข้อมูล (กรุณา Login ใหม่อีกครั้ง)</div>';
-    }
-};
-
-// 2. ฟังก์ชันล้างช่องค้นหา (ปุ่ม X)
-window.clearBoxSearch = function() {
-    const inputElem = document.getElementById("boxSearchInput");
-    const clearBtn = document.getElementById("boxClearSearchBtn");
-
-    if (inputElem) {
-        inputElem.value = "";
-        inputElem.focus(); 
-    }
-    if (clearBtn) clearBtn.style.display = "none";
-
-    window.renderBoxContentArea();
-};
-
-// 3. ฟังก์ชันเรนเดอร์ของในกล่อง
-window.renderBoxContentArea = function() {
-    const container = document.getElementById("boxContentArea");
-    if (!container) return;
-
-    if (window.currentBoxItems.length === 0) {
-        container.innerHTML = `
-            <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
-                <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
-                <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
-                <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
-            </div>`;
-        if(typeof window.updateBoxWrapButtonState === 'function') window.updateBoxWrapButtonState(0);
-        return;
-    }
-
-    container.innerHTML = window.currentBoxItems.map(item => window.renderBoxModeBCard(item, false)).join('');
-    if(typeof window.updateBoxWrapButtonState === 'function') window.updateBoxWrapButtonState(window.currentBoxItems.length);
-};
-
-// 4. ฟังก์ชันกดปุ่ม ADD เข้ากล่อง
-window.addSearchItemToBox = function(sku) {
-    // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ
-    if (typeof localProductDatabase === 'undefined') return;
-    
-    const product = localProductDatabase.find(p => p.sku === sku);
-    if (!product) return;
-
-    const existingItem = window.currentBoxItems.find(item => item.sku === sku);
-    if (existingItem) {
-        existingItem.manualQty += 1;
-        existingItem.isManual = true;
-    } else {
-        window.currentBoxItems.push({
-            ...product,
-            scanQty: 0,
-            manualQty: 1,
-            isManual: true
-        });
-    }
-
-    window.clearBoxSearch(); 
-};
-
-// 5. ผูก Event Listener (Debounce)
-document.addEventListener("DOMContentLoaded", () => {
-    const boxSearchInputElem = document.getElementById("boxSearchInput");
-    if (boxSearchInputElem) {
-        boxSearchInputElem.addEventListener("input", debounceSearch((e) => {
-            if(typeof window.handleBoxSearch === 'function') {
-                window.handleBoxSearch();
+            if (!query) {
+                window.renderBoxContentArea();
+                return;
             }
-        }, 250)); 
-    }
-});
-// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
+
+            // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ ตามโครงสร้างของ app.js
+            if (typeof localProductDatabase !== 'undefined' && localProductDatabase.length > 0) {
+                const results = localProductDatabase.filter(item => {
+                    return Object.values(item).some(
+                        val => val != null && val.toString().toLowerCase().includes(query)
+                    );
+                });
+
+                if (results.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้าในระบบ</div>';
+                    return;
+                }
+
+                // เรนเดอร์การ์ดโหมด A (ค้นหาเพื่อเพิ่ม)
+                container.innerHTML = results.map(item => window.renderBoxModeACard(item)).join('');
+            } else {
+                container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่มีข้อมูล (กรุณา Login ใหม่อีกครั้ง)</div>';
+            }
+        };
+
+        // 2. ฟังก์ชันล้างช่องค้นหา (ปุ่ม X)
+        window.clearBoxSearch = function() {
+            const inputElem = document.getElementById("boxSearchInput");
+            const clearBtn = document.getElementById("boxClearSearchBtn");
+
+            if (inputElem) {
+                inputElem.value = "";
+                inputElem.focus(); 
+            }
+            if (clearBtn) clearBtn.style.display = "none";
+
+            window.renderBoxContentArea();
+        };
+
+        // 3. ฟังก์ชันเรนเดอร์ของในกล่อง
+        window.renderBoxContentArea = function() {
+            const container = document.getElementById("boxContentArea");
+            if (!container) return;
+
+            if (window.currentBoxItems.length === 0) {
+                container.innerHTML = `
+                    <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
+                        <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
+                        <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
+                        <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
+                    </div>`;
+                if(typeof window.updateBoxWrapButtonState === 'function') window.updateBoxWrapButtonState(0);
+                return;
+            }
+
+            container.innerHTML = window.currentBoxItems.map(item => window.renderBoxModeBCard(item, false)).join('');
+            if(typeof window.updateBoxWrapButtonState === 'function') window.updateBoxWrapButtonState(window.currentBoxItems.length);
+        };
+
+        // 4. ฟังก์ชันกดปุ่ม ADD เข้ากล่อง
+        window.addSearchItemToBox = function(sku) {
+            // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ
+            if (typeof localProductDatabase === 'undefined') return;
+            
+            const product = localProductDatabase.find(p => p.sku === sku);
+            if (!product) return;
+
+            const existingItem = window.currentBoxItems.find(item => item.sku === sku);
+            if (existingItem) {
+                existingItem.manualQty += 1;
+                existingItem.isManual = true;
+            } else {
+                window.currentBoxItems.push({
+                    ...product,
+                    scanQty: 0,
+                    manualQty: 1,
+                    isManual: true
+                });
+            }
+
+            window.clearBoxSearch(); 
+        };
+
+        // 5. ผูก Event Listener (Debounce)
+        document.addEventListener("DOMContentLoaded", () => {
+            const boxSearchInputElem = document.getElementById("boxSearchInput");
+            if (boxSearchInputElem) {
+                boxSearchInputElem.addEventListener("input", debounceSearch((e) => {
+                    if(typeof window.handleBoxSearch === 'function') {
+                        window.handleBoxSearch();
+                    }
+                }, 250)); 
+            }
+        });
+
+// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details END
 // ======================================================
 
 
 
 
 
-// ==========================================================================
-// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (อัปเดต: ใช้ UI หน้าต่างแจ้งเตือนของระบบหลัก 100%) START
 
-      // เพิ่มจำนวน (+) - ห้ามเกินสต็อก
-      window.increaseBoxItemQty = function(sku) {
-          const item = window.currentBoxItems.find(p => p.sku === sku);
-          if (item) {
-              const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
-              
-              // เช็กว่ายอดรวมน้อยกว่าสต็อกที่มีหรือไม่
-              if (totalQty < item.availableStock) {
-                  item.manualQty += 1;
-                  item.isManual = true; 
-                  window.renderBoxContentArea(); 
-              } else {
-                  // บังคับใช้หน้าต่าง customAlert แบบเดียวกับหน้าอื่นๆ
-                  const msg = `มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้นเท่านั้นครับ`;
-                  if (typeof window.customAlert === 'function') {
-                      window.customAlert(msg, "STOCK LIMIT");
-                  } else if (typeof customAlert === 'function') {
-                      customAlert(msg, "STOCK LIMIT");
-                  } else {
-                      alert(`❌ ไม่สามารถเพิ่มได้ ${msg}`); // สำรองกรณีฉุกเฉิน
-                  }
-              }
-          }
-      };
 
-      // ลดจำนวน (-) - ห้ามติดลบ
-      window.decreaseBoxItemQty = function(sku) {
-          const item = window.currentBoxItems.find(p => p.sku === sku);
-          if (item) {
-              if (item.manualQty > 0) {
-                  item.manualQty -= 1;
-                  item.isManual = true;
-              } else if (item.scanQty > 0) {
-                  item.scanQty -= 1;
-              }
-              
-              // ถ้าลดจนเหลือ 0 ให้เด้งหายไปจากกล่องอัตโนมัติ
-              if ((item.scanQty + item.manualQty) <= 0) {
-                  window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
-              }
-              window.renderBoxContentArea();
-          }
-      };
 
-      // ถังขยะ (ลบออกจากกล่อง) - บังคับใช้หน้าต่าง customConfirm
-      window.removeBoxItem = async function(sku) {
-          let isConfirm = false;
-          const msg = "ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?";
-          const title = "CONFIRM DELETE";
-          
-          // บังคับใช้หน้าต่าง customConfirm แบบเดียวกับหน้าอื่นๆ
-          if (typeof window.customConfirm === 'function') {
-              isConfirm = await window.customConfirm(msg, title);
-          } else if (typeof customConfirm === 'function') {
-              isConfirm = await customConfirm(msg, title);
+
+
+// ==========================================================
+// 📍 [สร้างหน้าต่างยืนยันแบบป๊อปอัป ให้เข้าธีมเดียวกับ safeAlert] START
+
+      window.safeConfirm = function (title, message, type = "error") {
+        return new Promise((resolve) => {
+          const overlay = document.createElement("div");
+          overlay.className = "sys-alert-element";
+          overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000006; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);";
+
+          let headerBg, iconClass, btnBg, btnText;
+          if (type === "warning" || type === "question") {
+            headerBg = "#ffc107";
+            iconClass = "fas fa-question-circle";
+            btnBg = "#ffc107";
+            btnText = "#000";
           } else {
-              isConfirm = confirm(msg); // สำรองกรณีฉุกเฉิน
+            headerBg = "#dc3545"; // สีแดง (เหมาะกับการลบข้อมูล)
+            iconClass = "fas fa-exclamation-triangle";
+            btnBg = "#dc3545";
+            btnText = "white";
           }
 
-          // ถ้าผู้ใช้กด OK (ตกลง) ถึงจะลบ
-          if (isConfirm) {
-              window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
-              window.renderBoxContentArea(); 
-          }
+          overlay.innerHTML = `
+            <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; animation: popIn 0.3s ease-out;">
+              <div style="background: ${headerBg}; padding: 20px; text-align: center;">
+                <i class="${iconClass}" style="font-size: 40px; color: white;"></i>
+              </div>
+              <div style="padding: 25px 20px; text-align: center;">
+                <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${title}</h3>
+                <p style="margin: 0; font-size: 14px; color: #666; line-height: 1.5;">${message}</p>
+              </div>
+              <div style="padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: space-between; gap: 10px;">
+                <button class="btn-cancel" style="background: #e2e8f0; color: #475569; border: none; padding: 12px 0; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1;">ยกเลิก</button>
+                <button class="btn-ok" style="background: ${btnBg}; color: ${btnText}; border: none; padding: 12px 0; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">ตกลง</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+
+          overlay.querySelector(".btn-ok").addEventListener("click", () => {
+            document.body.removeChild(overlay);
+            resolve(true); // ส่งค่า true เมื่อกดตกลง
+          });
+          
+          overlay.querySelector(".btn-cancel").addEventListener("click", () => {
+            document.body.removeChild(overlay);
+            resolve(false); // ส่งค่า false เมื่อกดยกเลิก
+          });
+        });
       };
+
+// 📍 [สร้างหน้าต่างยืนยันแบบป๊อปอัป ให้เข้าธีมเดียวกับ safeAlert] END
+// ==========================================================
+
+
+
+
+
+// =================================================================
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้า (เชื่อมกับ safeAlert และ safeConfirm) START
+
+
+        // 1. เพิ่มจำนวน (+) - ห้ามเกินสต็อก
+        window.increaseBoxItemQty = function(sku) {
+            const item = window.currentBoxItems.find(p => p.sku === sku);
+            if (item) {
+                const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+                
+                if (totalQty < item.availableStock) {
+                    item.manualQty += 1;
+                    item.isManual = true; 
+                    window.renderBoxContentArea(); 
+                } else {
+                    // 📍 ใช้ safeAlert แบบที่เจเลอร์ออกแบบไว้
+                    if (typeof window.safeAlert === 'function') {
+                        window.safeAlert("STOCK LIMIT", `ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`, "warning");
+                    } else {
+                        alert(`มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`);
+                    }
+                }
+            }
+        };
+
+        // 2. ลดจำนวน (-) - ห้ามติดลบ
+        window.decreaseBoxItemQty = function(sku) {
+            const item = window.currentBoxItems.find(p => p.sku === sku);
+            if (item) {
+                if (item.manualQty > 0) {
+                    item.manualQty -= 1;
+                    item.isManual = true;
+                } else if (item.scanQty > 0) {
+                    item.scanQty -= 1;
+                }
+                
+                if ((item.scanQty + item.manualQty) <= 0) {
+                    window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
+                }
+                window.renderBoxContentArea();
+            }
+        };
+
+        // 3. ถังขยะ (ลบออกจากกล่อง) - แจ้งเตือนก่อนลบ
+        window.removeBoxItem = async function(sku) {
+            let isConfirm = false;
+            
+            // 📍 ใช้ safeConfirm ตัวใหม่ที่สร้างให้เข้าธีม
+            if (typeof window.safeConfirm === 'function') {
+                isConfirm = await window.safeConfirm("CONFIRM DELETE", "ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?", "error");
+            } else {
+                isConfirm = confirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?");
+            }
+
+            if (isConfirm) {
+                window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
+                window.renderBoxContentArea(); 
+            }
+        };
 
 // ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (อัปเดต: ใช้ UI หน้าต่างแจ้งเตือนของระบบหลัก 100%) END
 // ==========================================================================
 
 
 
-// ======================================================
-// 🛡️ แก้ไขปัญหา Z-Index แบบฝัง CSS ทับ (Force Override)
-// ======================================================
-document.addEventListener("DOMContentLoaded", () => {
-    // สร้างแท็ก <style> บังคับให้ Modal และ Alert ลอยอยู่หน้าสุด (ทะลุหน้า Box Details แน่นอน 100%)
-    const style = document.createElement('style');
-    style.innerHTML = `
-        #productDetailModal { z-index: 100005 !important; }
-        #customAlertOverlay { z-index: 100010 !important; }
-    `;
-    document.head.appendChild(style);
-});
+// ==========================================================
+// 🛡️ แก้ไขปัญหา Z-Index แบบฝัง CSS ทับ (Force Override) START
+
+      document.addEventListener("DOMContentLoaded", () => {
+          // สร้างแท็ก <style> บังคับให้ Modal และ Alert ลอยอยู่หน้าสุด (ทะลุหน้า Box Details แน่นอน 100%)
+          const style = document.createElement('style');
+          style.innerHTML = `
+              #productDetailModal { z-index: 100005 !important; }
+              #customAlertOverlay { z-index: 100010 !important; }
+          `;
+          document.head.appendChild(style);
+      });
+
+// 🛡️ แก้ไขปัญหา Z-Index แบบฝัง CSS ทับ (Force Override) END
+// ==========================================================
 
 
-// ======================================================
-// 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อกตอนเข้า-ออกหน้าจอ)
-// ======================================================
+
+
+
+
+// ==================================================================
+// 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อกตอนเข้า-ออกหน้าจอ)  START
+
 document.addEventListener("DOMContentLoaded", () => {
     const boxView = document.getElementById("boxDetailsView");
     
@@ -1641,3 +1688,6 @@ document.addEventListener("DOMContentLoaded", () => {
         observer.observe(boxView, { attributes: true });
     }
 });
+
+// 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อกตอนเข้า-ออกหน้าจอ)  END
+// ==================================================================
