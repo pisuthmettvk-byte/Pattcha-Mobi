@@ -1691,3 +1691,115 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อกตอนเข้า-ออกหน้าจอ)  END
 // ==================================================================
+
+
+
+
+
+
+// ===========================================================
+// 🚀 Phase 8 & 9: ระบบบันทึกข้อมูลกล่อง (Submit Box Data) START
+
+window.submitWrapBox = function() {
+    // 1. เช็กความพร้อม: ถ้ากล่องว่าง ห้ามบันทึก
+    if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
+        if (typeof window.safeAlert === 'function') {
+            window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
+        }
+        return;
+    }
+
+    // 📍 2. ดึงรหัส Shipment ปัจจุบัน (สมมติว่าเจเลอร์เก็บไว้ในตัวแปรนี้)
+    // หากเจเลอร์ใช้ชื่อตัวแปรอื่นในการเก็บรหัสรอบงาน รบกวนเปลี่ยนให้ตรงกันนะครับ
+    const shipmentId = window.currentShipmentId || "TEST-SHIPMENT-001"; 
+
+    // 3. เปลี่ยน UI ปุ่มเป็น Loading State ป้องกันการกดเบิ้ล
+    const wrapBtn = document.getElementById("btnWrapBox"); // ตรวจสอบว่า ID ปุ่ม WRAP ตรงกับ HTML ของเจเลอร์
+    let originalBtnHtml = "";
+    if (wrapBtn) {
+        originalBtnHtml = wrapBtn.innerHTML;
+        wrapBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+        wrapBtn.style.pointerEvents = "none"; // ล็อกการคลิก
+        wrapBtn.style.opacity = "0.7";
+    }
+
+    // 4. สร้าง Payload (ก้อนข้อมูลที่จะส่งไป Code.gs)
+    const payload = {
+        shipmentId: shipmentId,
+        boxNumber: "AUTO", // ให้หลังบ้านไปรันเลขกล่องต่อจากของเดิม
+        items: window.currentBoxItems.map(item => ({
+            sku: item.sku,
+            name: item.name,
+            scanQty: item.scanQty || 0,
+            manualQty: item.manualQty || 0,
+            totalQty: (item.scanQty || 0) + (item.manualQty || 0)
+        }))
+    };
+
+    // 5. ส่งข้อมูลผ่าน google.script.run (สำหรับสภาพแวดล้อม Google Apps Script)
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+            .withSuccessHandler(function(response) {
+                // คืนค่าปุ่มให้กลับมาปกติ
+                if (wrapBtn) {
+                    wrapBtn.innerHTML = originalBtnHtml;
+                    wrapBtn.style.pointerEvents = "auto";
+                    wrapBtn.style.opacity = "1";
+                }
+                
+                // === เริ่ม Phase 9 (Post-Save) ===
+                if (response && response.status === 'success') {
+                    if (typeof window.safeAlert === 'function') {
+                        window.safeAlert("SUCCESS", `บันทึก ${response.boxName} สำเร็จ!`, "success");
+                    }
+                    // เคลียร์กล่องให้เป็นกล่องว่าง
+                    window.currentBoxItems = [];
+                    window.renderBoxContentArea();
+                    
+                    // TODO: สั่งปิดหน้าต่าง Box Details กลับไปหน้า Lobby
+                    // document.getElementById("boxDetailsView").classList.add("hide"); 
+                } else {
+                    if (typeof window.safeAlert === 'function') {
+                        window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (response.message || "ไม่ทราบสาเหตุ"), "error");
+                    }
+                }
+            })
+            .withFailureHandler(function(error) {
+                // กรณีเน็ตหลุด หรือสคริปต์พัง
+                if (wrapBtn) {
+                    wrapBtn.innerHTML = originalBtnHtml;
+                    wrapBtn.style.pointerEvents = "auto";
+                    wrapBtn.style.opacity = "1";
+                }
+                if (typeof window.safeAlert === 'function') {
+                    window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: " + error.message, "error");
+                }
+            })
+            .saveBoxData(payload); // 📍 ต้องไปสร้างฟังก์ชัน saveBoxData(payload) ใน Code.gs ทีหลัง
+            
+    } else {
+        // ==========================================
+        // 🧪 โหมดจำลอง (Mockup) สำหรับรันบน Local / GitHub Pages
+        // ==========================================
+        console.log("Mock Payload กำลังถูกส่ง:", payload);
+        
+        // จำลองเวลาดีเลย์อินเทอร์เน็ต 1.5 วินาที
+        setTimeout(() => {
+            if (wrapBtn) {
+                wrapBtn.innerHTML = originalBtnHtml;
+                wrapBtn.style.pointerEvents = "auto";
+                wrapBtn.style.opacity = "1";
+            }
+            if (typeof window.safeAlert === 'function') {
+                window.safeAlert("TEST SUCCESS", "จำลองการบันทึกกล่องสำเร็จ (โหมดจำลอง)", "success");
+            }
+            
+            // เคลียร์กล่องทดสอบ
+            window.currentBoxItems = [];
+            window.renderBoxContentArea();
+        }, 1500);
+    }
+};
+
+// 🚀 Phase 8 & 9: ระบบบันทึกข้อมูลกล่อง (Submit Box Data) END
+// ===========================================================
