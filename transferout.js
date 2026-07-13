@@ -1409,52 +1409,68 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
 
 
 // ======================================================
-// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
+// 🔍 Phase 7.2 & 7.3: ระบบ Magic Search (แก้ไขบั๊ก Debounce & ฟังก์ชันหาย)
 
-// สร้างตัวแปรจำลองสำหรับเก็บสินค้าในกล่อง (ชั่วคราว)
-window.currentBoxItems = []; 
+// สร้างตัวแปรเก็บสินค้าในกล่อง
+window.currentBoxItems = window.currentBoxItems || [];
 
-// 1. ฟังก์ชันจัดการเมื่อพิมพ์ในช่องค้นหา
-const boxSearchInputElem = document.getElementById("boxSearchInput");
-if (boxSearchInputElem) {
-    boxSearchInputElem.addEventListener("input", function() {
-        const query = this.value.trim().toLowerCase();
-        const clearBtn = document.getElementById("boxClearSearchBtn");
-        
-        // โชว์/ซ่อน ปุ่ม X
-        if (clearBtn) clearBtn.style.display = query.length > 0 ? "flex" : "none";
+// 1. ฟังก์ชันค้นหา
+window.handleBoxSearch = function() {
+    const inputElem = document.getElementById("boxSearchInput");
+    if (!inputElem) return;
 
-        // กรณีล้างคำค้นหา (กลับไปแสดงของในกล่อง - โหมด B)
-        if (!query) {
-            renderBoxContentArea();
+    const query = inputElem.value.trim().toLowerCase();
+    const clearBtn = document.getElementById("boxClearSearchBtn");
+
+    // โชว์/ซ่อน ปุ่ม X
+    if (clearBtn) clearBtn.style.display = query.length > 0 ? "flex" : "none";
+
+    const container = document.getElementById("boxContentArea");
+
+    if (!query) {
+        window.renderBoxContentArea();
+        return;
+    }
+
+    // ตรวจสอบฐานข้อมูลจริง (ต้อง Login ก่อนถึงจะมีข้อมูล)
+    if (typeof window.localProductDatabase !== 'undefined' && window.localProductDatabase.length > 0) {
+        const results = window.localProductDatabase.filter(item => {
+            return Object.values(item).some(
+                val => val != null && val.toString().toLowerCase().includes(query)
+            );
+        });
+
+        if (results.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้าในระบบ</div>';
             return;
         }
 
-        // กรณีมีคำค้นหา: ดึงข้อมูลจากคลังหลักมาแสดง (โหมด A)
-        // (ตรวจสอบว่า localProductDatabase มีอยู่จริง)
-        if (window.localProductDatabase) {
-            const results = window.localProductDatabase.filter(item => {
-                return Object.values(item).some(
-                    val => val != null && val.toString().toLowerCase().includes(query)
-                );
-            });
-            
-            const container = document.getElementById("boxContentArea");
-            if (results.length === 0) {
-                container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้าในระบบ</div>';
-                return;
-            }
+        // เรนเดอร์การ์ดโหมด A (ค้นหาเพื่อเพิ่ม)
+        container.innerHTML = results.map(item => window.renderBoxModeACard(item)).join('');
+    } else {
+        container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่มีข้อมูล (กรุณาเปิดหน้า Stock In House เพื่ออัปเดตข้อมูล)</div>';
+    }
+};
 
-            // เรนเดอร์การ์ดโหมด A
-            container.innerHTML = results.map(item => window.renderBoxModeACard(item)).join('');
-        }
-    });
-}
+// 2. ฟังก์ชันล้างช่องค้นหา (ผูกกับปุ่ม X)
+window.clearBoxSearch = function() {
+    const inputElem = document.getElementById("boxSearchInput");
+    const clearBtn = document.getElementById("boxClearSearchBtn");
 
-// 2. ฟังก์ชันแสดงข้อมูลสินค้าในกล่อง (โหมด B หรือหน้าว่างเปล่า)
+    if (inputElem) {
+        inputElem.value = "";
+        inputElem.focus(); // เด้งเคอร์เซอร์กลับไป
+    }
+    if (clearBtn) clearBtn.style.display = "none";
+
+    window.renderBoxContentArea();
+};
+
+// 3. ฟังก์ชันเรนเดอร์ของในกล่อง (โหมด B)
 window.renderBoxContentArea = function() {
     const container = document.getElementById("boxContentArea");
-    
+    if (!container) return;
+
     // ถ้ากล่องว่างเปล่า ให้โชว์หน้า Empty State
     if (window.currentBoxItems.length === 0) {
         container.innerHTML = `
@@ -1463,28 +1479,27 @@ window.renderBoxContentArea = function() {
                 <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
                 <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
             </div>`;
-        window.updateBoxWrapButtonState(0); // ล็อกปุ่ม WRAP
+        if(typeof window.updateBoxWrapButtonState === 'function') window.updateBoxWrapButtonState(0);
         return;
     }
 
-    // ถ้ามีสินค้าในกล่อง ให้เรนเดอร์การ์ดโหมด B
+    // ถ้ามีสินค้า เรนเดอร์การ์ดโหมด B
     container.innerHTML = window.currentBoxItems.map(item => window.renderBoxModeBCard(item, false)).join('');
-    window.updateBoxWrapButtonState(window.currentBoxItems.length); // ปลดล็อกปุ่ม WRAP
+    if(typeof window.updateBoxWrapButtonState === 'function') window.updateBoxWrapButtonState(window.currentBoxItems.length);
 };
 
-// 3. ฟังก์ชันจำลองเมื่อกดปุ่ม ADD จากการค้นหา
+// 4. ฟังก์ชันจำลองเมื่อกดปุ่ม ADD เข้ากล่อง
 window.addSearchItemToBox = function(sku) {
-    // หาข้อมูลสินค้าจากฐานข้อมูลหลัก
+    if (!window.localProductDatabase) return;
+    
     const product = window.localProductDatabase.find(p => p.sku === sku);
     if (!product) return;
 
-    // เช็กว่ามีในกล่องแล้วหรือยัง
     const existingItem = window.currentBoxItems.find(item => item.sku === sku);
     if (existingItem) {
-        existingItem.manualQty += 1; // เพิ่มยอดมือ
-        existingItem.isManual = true; // ฝังแฟลกว่าแก้ไขด้วยมือ
+        existingItem.manualQty += 1;
+        existingItem.isManual = true;
     } else {
-        // เพิ่มของใหม่เข้ากล่อง
         window.currentBoxItems.push({
             ...product,
             scanQty: 0,
@@ -1493,35 +1508,22 @@ window.addSearchItemToBox = function(sku) {
         });
     }
 
-    // เคลียร์ช่องค้นหาและกลับไปแสดงรายการในกล่อง
-    const searchInput = document.getElementById("boxSearchInput");
-    const clearBtn = document.getElementById("boxClearSearchBtn");
-    if(searchInput) searchInput.value = "";
-    if(clearBtn) clearBtn.style.display = "none";
-    
-    renderBoxContentArea();
+    // เคลียร์ช่องค้นหาและโชว์ของในกล่อง
+    window.clearBoxSearch(); 
 };
 
-
-// ======================================================
-// 🚀 ผูกระบบ Debounce เข้ากับช่องค้นหา Box Details
-// (เพื่อให้รอพิมพ์จบก่อนแล้วค่อยค้นหา เหมือนหน้า Stock) START
-
+// 5. 🚨 ผูก Event Listener แบบแก้บั๊ก Debounce undefined (สำคัญมาก!)
 document.addEventListener("DOMContentLoaded", () => {
     const boxSearchInputElem = document.getElementById("boxSearchInput");
     if (boxSearchInputElem) {
-        // ใช้ CONFIG.SEARCH_DELAY (250ms) ตัวเดียวกับระบบหลัก
-        boxSearchInputElem.addEventListener(
-            "input",
-            debounceSearch(window.handleBoxSearch, CONFIG.SEARCH_DELAY)
-        );
+        // ใช้ Arrow Function ครอบเอาไว้ เพื่อให้มันเรียกใช้ handleBoxSearch ในจังหวะที่พิมพ์เท่านั้น (ฟังก์ชันโหลดเสร็จแล้วแน่นอน)
+        boxSearchInputElem.addEventListener("input", debounceSearch((e) => {
+            if(typeof window.handleBoxSearch === 'function') {
+                window.handleBoxSearch();
+            }
+        }, 250)); // หน่วงเวลา 250ms เท่าหน้า Stock
     }
 });
-
-// 🚀 ผูกระบบ Debounce เข้ากับช่องค้นหา Box Details
-// (เพื่อให้รอพิมพ์จบก่อนแล้วค่อยค้นหา เหมือนหน้า Stock) END
-// ======================================================
-
 // 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
 // ======================================================
 
