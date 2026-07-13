@@ -1310,43 +1310,48 @@ if (boxSearchInput && boxClearSearchBtn) {
 // ======================================================
 // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (อัปเดตให้กดดูสต็อกได้)
 
-// 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (Magic Search Result)
+// 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (อัปเดต: เช็กสต็อก = 0 ล็อกปุ่ม ADD)
 window.renderBoxModeACard = function(item) {
     const safeSku = escapeHTML(item.sku || "-");
     const safeName = escapeHTML(item.name || "-");
     const priceStr = Number(item.price || 0).toLocaleString();
-    const stockAvail = escapeHTML(item.availableStock || 0);
+    const stockAvail = Number(item.availableStock || 0); // แปลงเป็นตัวเลข
+
+    // ลอจิกปุ่ม ADD (ถ้าสต็อกมากกว่า 0 ให้กดได้ ถ้าเป็น 0 หรือติดลบให้ล็อก)
+    let actionButtonHtml = "";
+    if (stockAvail > 0) {
+        actionButtonHtml = `
+          <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            <i class="fas fa-plus"></i> ADD
+          </button>`;
+    } else {
+        actionButtonHtml = `
+          <button disabled style="background: #ccc; color: #888; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: not-allowed;">
+            <i class="fas fa-ban"></i> N/A
+          </button>`;
+    }
 
     return `
     <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
-      
-      <!-- 👆 พื้นที่กดดูรายละเอียด (รูปภาพ) -->
       <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
-      
       <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-          
-          <!-- 👆 พื้นที่กดดูรายละเอียด (ชื่อและ SKU) -->
           <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
             <div class="prod-name" style="margin-top: 0;">${safeName}</div>
             <div class="prod-sku">${safeSku}</div>
           </div>
           <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
         </div>
-        
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-          <span style="color: #10b981; font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
-            <i class="fas fa-thumbs-up"></i> ${stockAvail}
+          <span style="${stockAvail > 0 ? 'color: #10b981;' : 'color: #ef4444;'} font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+            <i class="fas ${stockAvail > 0 ? 'fa-thumbs-up' : 'fa-times-circle'}"></i> ${stockAvail}
           </span>
-          
-          <!-- 🎯 พื้นที่จัดการ (ปุ่ม ADD ไม่เกี่ยวกับการดูสต็อก) -->
-          <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-            <i class="fas fa-plus"></i> ADD
-          </button>
+          ${actionButtonHtml}
         </div>
       </div>
     </div>`;
 };
+
 
 // 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
 window.renderBoxModeBCard = function(item, isClosedBox) {
@@ -1400,7 +1405,6 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
       </div>
     </div>`;
 };
-
 // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
 // ======================================================
 
@@ -1408,8 +1412,6 @@ window.renderBoxModeBCard = function(item, isClosedBox) {
 
 // ======================================================
 // 🔍 Phase 7.2 & 7.3: ระบบ Magic Search (แก้บั๊ก Scope ข้อมูล)
-
-
 window.currentBoxItems = window.currentBoxItems || [];
 
 // 1. ฟังก์ชันค้นหา
@@ -1518,10 +1520,50 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 250)); 
     }
 });
-
-
 // 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details
 // ======================================================
 
 
+// ======================================================
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (ปุ่ม +, -, ถังขยะ)
 
+// เพิ่มจำนวน (+)
+window.increaseBoxItemQty = function(sku) {
+    const item = window.currentBoxItems.find(p => p.sku === sku);
+    if (item) {
+        item.manualQty += 1;
+        item.isManual = true; // เปลียนไอคอนเป็นรูปมือ
+        window.renderBoxContentArea(); // รีเฟรชหน้าจอ (ปุ่ม WRAP จะคำนวณใหม่ด้วย)
+    }
+};
+
+// ลดจำนวน (-)
+window.decreaseBoxItemQty = function(sku) {
+    const item = window.currentBoxItems.find(p => p.sku === sku);
+    if (item) {
+        // ให้ลดจาก manualQty ก่อน ถ้าหมดค่อยไปลดจาก scanQty
+        if (item.manualQty > 0) {
+            item.manualQty -= 1;
+            item.isManual = true;
+        } else if (item.scanQty > 0) {
+            item.scanQty -= 1;
+        }
+        
+        // ถ้ายอดรวมเหลือ 0 ให้ลบออกจากกล่องอัตโนมัติ
+        if ((item.scanQty + item.manualQty) <= 0) {
+            window.removeBoxItem(sku);
+        } else {
+            window.renderBoxContentArea();
+        }
+    }
+};
+
+// ถังขยะ (ลบออกจากกล่อง)
+window.removeBoxItem = function(sku) {
+    // กรองเอาเฉพาะสินค้าที่ SKU ไม่ตรงกับตัวที่กดลบ (เอาตัวที่กดทิ้งไป)
+    window.currentBoxItems = window.currentBoxItems.filter(p => p.sku !== sku);
+    window.renderBoxContentArea(); // รีเฟรชหน้าจอ (ถ้าของหมดกล่อง ปุ่ม WRAP จะล็อกอัตโนมัติ)
+};
+
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (ปุ่ม +, -, ถังขยะ)
+// ======================================================
