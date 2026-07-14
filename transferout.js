@@ -1207,65 +1207,7 @@ function loadTransferTypesIntoDropdown() {
             if(lobbyView) lobbyView.classList.add("hide");
             document.getElementById("boxDetailsView").classList.remove("hide");
         };
-        // 4. ฟังก์ชันปุ่ม WRAP (ปิดกล่อง) - ประกอบร่างสำเร็จ
-        document.getElementById("btnBoxWrap").addEventListener("click", async () => {
-            
-            // ป้องกันการกดถ้าปุ่มถูกล็อกอยู่
-            if (document.getElementById("btnBoxWrap").style.pointerEvents === "none") return;
 
-            const isConfirmed = await safeConfirm('ยืนยันการปิดกล่อง (WRAP)?', `คุณต้องการปิดกล่อง ${window.currentActiveBoxNo} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`);
-
-            if (isConfirmed) {
-                // โชว์ Loading
-                const loadingOverlay = document.createElement("div");
-                loadingOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
-                loadingOverlay.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังบันทึกกล่อง...";
-                document.body.appendChild(loadingOverlay);
-
-                const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
-                
-                const payload = {
-                    shipmentNo: window.currentActiveShipment,
-                    boxNo: window.currentActiveBoxNo,
-                    totalScan: 0, // รอเชื่อมข้อมูลจริงระยะต่อไป
-                    totalManual: 0, // รอเชื่อมข้อมูลจริงระยะต่อไป
-                    status: "Closed"
-                };
-
-                // ยิง API ไปบันทึกใน Box_Log
-                fetch(`${apiUrl}?action=close_box`, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    document.body.removeChild(loadingOverlay);
-                    
-                    if (data.success) {
-                        // 🔴 อัปเดต UI หน้า Lobby ให้กล่องเป็นสีแดง
-                        if (window.currentBoxElement) {
-                            window.currentBoxElement.setAttribute("data-status", "Closed"); // อัปเดต State
-                            
-                            const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
-                            if (boxIcon) {
-                                boxIcon.className = "fas fa-box"; // เปลี่ยนไอคอนเป็นกล่องปิด
-                                boxIcon.style.color = "#d93844"; // เปลี่ยนสีเป็นสีแดง
-                            }
-                        }
-
-                        // เด้งกลับหน้า Lobby
-                        document.getElementById("btnBackFromBox").click();
-                        
-                    } else {
-                        safeAlert("เกิดข้อผิดพลาด", data.message, "error");
-                    }
-                })
-                .catch(error => {
-                    document.body.removeChild(loadingOverlay);
-                    safeAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
-                });
-            }
-        });
         // 5. ระบบช่องค้นหา Magic Search (Box Details)
         const boxSearchInput = document.getElementById("boxSearchInput");
         const boxClearSearchBtn = document.getElementById("boxClearSearchBtn");
@@ -1694,59 +1636,60 @@ window.currentBoxItems = window.currentBoxItems || [];
 
 
 // ======================================================
-// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม API หลังบ้านจริง)
-
-window.submitWrapBox = function() {
+// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (ใช้ต้นแบบความสำเร็จจากปุ่มสร้างชิปเมนต์)
+// ======================================================
+window.submitWrapBox = async function() {
     if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
         if (typeof window.safeAlert === 'function') window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
         return;
     }
 
-    // 1. ดึงข้อมูลจาก Header 
     const shipmentElem = document.getElementById("boxDetailsShipmentText"); 
     const boxElem = document.getElementById("boxDetailsBoxText");       
     
-    let shipmentId = "UNKNOWN-SHP";
-    if (shipmentElem) {
-        shipmentId = shipmentElem.innerText.replace("(Shipment No: ", "").replace(")", "").trim();
-    }
+    let shipmentId = shipmentElem ? shipmentElem.innerText.replace("(Shipment No: ", "").replace(")", "").trim() : "UNKNOWN-SHP";
     const boxNumber = boxElem ? boxElem.innerText.trim() : "UNKNOWN-BOX";
 
-    // 2. ล็อกปุ่ม
+    // 1. ถามยืนยันก่อน
+    const isConfirmed = await safeConfirm('ยืนยันการปิดกล่อง (WRAP)?', `คุณต้องการปิดกล่อง ${boxNumber} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`);
+    if (!isConfirmed) return;
+
+    // 2. ล็อกปุ่มแบบเดียวกับตอนสร้างชิปเมนต์
     const wrapBtn = document.getElementById("btnBoxWrap"); 
-    let originalBtnHtml = "";
+    let originalBtnHtml = wrapBtn ? wrapBtn.innerHTML : "";
     if (wrapBtn) {
-        originalBtnHtml = wrapBtn.innerHTML;
         wrapBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> กำลังบันทึก...';
         wrapBtn.style.pointerEvents = "none";
         wrapBtn.style.opacity = "0.7";
     }
 
-    // 3. สร้าง Payload (โครงสร้างเดิมที่สมบูรณ์ 100%)
+    // 3. เตรียม Payload
+    let totalScanQty = 0;
+    let totalManualQty = 0;
     const payload = {
         shipmentId: shipmentId,
         boxNumber: boxNumber,
-        items: window.currentBoxItems.map(item => ({
-            sku: item.sku,
-            name: item.name,
-            scanQty: item.scanQty || 0,
-            manualQty: item.manualQty || 0,
-            totalQty: (item.scanQty || 0) + (item.manualQty || 0)
-        }))
+        items: window.currentBoxItems.map(item => {
+            const scan = item.scanQty || 0;
+            const manual = item.manualQty || 0;
+            totalScanQty += scan;
+            totalManualQty += manual;
+            return {
+                sku: item.sku,
+                name: item.name,
+                scanQty: scan,
+                manualQty: manual,
+                totalQty: scan + manual
+            };
+        })
     };
 
-    // 📍 4. THE REAL FLOW: ส่งข้อมูลเข้า Google Apps Script จริงผ่าน Fetch API
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
-    const API_URL = SCRIPT_URL + "?action=save_box"; 
-
-    fetch(API_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: JSON.stringify(payload)
+    // 📍 4. ยิง API แบบเดียวกับปุ่ม "btnConfirm" (ไม่ต้องใส่ Headers ให้ติด CORS)
+    fetch(CONFIG.API_URL + "?action=save_box", { 
+        method: "POST", 
+        body: JSON.stringify(payload) 
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
         // ปลดล็อกปุ่ม
         if (wrapBtn) {
@@ -1755,43 +1698,43 @@ window.submitWrapBox = function() {
             wrapBtn.style.opacity = "1";
         }
         
-        if (data && data.status === 'success') {
-            // แจ้งเตือนสำเร็จ
-            if (typeof window.safeAlert === 'function') {
-                window.safeAlert("SUCCESS", `บันทึกกล่อง ${data.boxName || boxNumber} ลงรอบงาน ${shipmentId} สำเร็จ!`, "success");
-            }
+        if (data.status === 'success' || data.success) { // รองรับทั้ง 2 รูปแบบ
             
-            // ล้างข้อมูลกล่อง
+            // อัปเดต UI หน้า Lobby ให้กล่องเป็นสีแดง และโชว์ยอด
+            if (window.currentBoxElement) {
+                window.currentBoxElement.setAttribute("data-status", "Closed"); 
+                const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
+                if (boxIcon) {
+                    boxIcon.className = "fas fa-box"; 
+                    boxIcon.style.color = "#d93844"; 
+                }
+                const scanEl = window.currentBoxElement.querySelector(".child-scan-qty");
+                const manualEl = window.currentBoxElement.querySelector(".child-manual-qty");
+                if (scanEl) scanEl.textContent = totalScanQty;
+                if (manualEl) manualEl.textContent = totalManualQty;
+            }
+
+            // แจ้งเตือนสำเร็จ แล้วกลับไป Lobby
+            if (typeof window.safeAlert === 'function') {
+                window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} สำเร็จ!`, "success");
+            }
             window.currentBoxItems = [];
             window.renderBoxContentArea();
+            document.getElementById("btnBackFromBox").click(); 
             
-            // ปิดหน้า Box กลับไป Lobby
-            const boxView = document.getElementById("boxDetailsView");
-            if (boxView) boxView.classList.add("hide");
-
-            const lobbyView = document.getElementById("transferOutLobbyView");
-            if (lobbyView) lobbyView.classList.remove("hide"); 
         } else {
-            // กรณี Backend ตอบกลับมาว่ามี Error
-            if (typeof window.safeAlert === 'function') {
-                window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่ทราบสาเหตุ"), "error");
-            }
+            if (typeof window.safeAlert === 'function') window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "บันทึกล้มเหลว"), "error");
         }
     })
     .catch(error => {
-        // ปลดล็อกปุ่มกรณีเกิด Error จากฝั่งเซิร์ฟเวอร์ (เน็ตหลุด / เซิร์ฟเวอร์ไม่ตอบสนอง)
         if (wrapBtn) {
             wrapBtn.innerHTML = originalBtnHtml;
             wrapBtn.style.pointerEvents = "auto";
             wrapBtn.style.opacity = "1";
         }
-        if (typeof window.safeAlert === 'function') {
-            window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: " + error.message, "error");
-        }
+        if (typeof window.safeAlert === 'function') window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
-
-
 // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม API หลังบ้านจริง)
 // ===========================================================
 
