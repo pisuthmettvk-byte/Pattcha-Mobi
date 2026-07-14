@@ -186,15 +186,25 @@ window.toggleScanMode = function() {
 // 🌟 SCAN SUCCESS CALLBACK (เมื่อสแกนติด)
 // ==========================================
 const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
-  if (window.isScannerMode) {
-    await stopScanner();
-  }
+  // 📍 ดักจับ Context ว่าถูกเรียกจากหน้า Box Details หรือไม่
+  if (window.currentScannerContext === 'box') {
+      // โหมดกล่อง: ส่ง SKU ไปเพิ่มลงกล่องโดยตรง
+      if (typeof window.addScannedItemToBox === 'function') {
+          window.addScannedItemToBox(decodedText);
+      }
+      // ไม่ปิดกล้อง เพื่อให้สแกนสินค้าชิ้นต่อไปได้อย่างต่อเนื่อง
+  } else {
+      // โหมดปกติ (Stock In House): ทำงานตามโฟลว์เดิม
+      if (window.isScannerMode) {
+        await stopScanner();
+      }
 
-  // โยนตัวเลขที่สแกนได้ ส่งข้ามไฟล์ไปให้ช่องค้นหาใน app.js ทำงานต่อ
-  const searchInput = document.getElementById("searchStockInput");
-  if (searchInput) {
-    searchInput.value = decodedText;
-    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      // โยนตัวเลขที่สแกนได้ ส่งข้ามไฟล์ไปให้ช่องค้นหาใน app.js ทำงานต่อ
+      const searchInput = document.getElementById("searchStockInput");
+      if (searchInput) {
+        searchInput.value = decodedText;
+        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
   }
 };
 
