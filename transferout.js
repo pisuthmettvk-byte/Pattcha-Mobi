@@ -1179,32 +1179,40 @@ function loadTransferTypesIntoDropdown() {
             const btnWrap = document.getElementById("btnBoxWrap");
             const searchInput = document.getElementById("boxSearchInput");
 
-            // ----------------------------------------------------
-            // 📍 [เพิ่มใหม่]: ผูก Event ให้ปุ่มกล้องใหม่เสมอ เพื่อล้างค่าเก่า
+         // ----------------------------------------------------
+            // 📷 ผูก Event ให้ปุ่มกล้อง (Box Details) - [Safe Layer Override]
             // ----------------------------------------------------
             if (btnScanner) {
-                // ต้องเอา Event เก่าออกก่อน ป้องกันการกด 1 ครั้งแล้วเปิดกล้อง 2 รอบ
                 const newBtnScanner = btnScanner.cloneNode(true);
                 btnScanner.parentNode.replaceChild(newBtnScanner, btnScanner);
                 
                 newBtnScanner.addEventListener("click", async () => {
                     if (isClosed) {
-                        // ถ้าปิดกล่องแล้ว ให้เป็นแค่ปุ่มประดับ
                         if (typeof safeAlert === 'function') safeAlert("กล่องปิดแล้ว", "ไม่สามารถแสกนเพิ่มได้ครับ", "warning");
                         return;
                     }
 
-                    // 1. สับสวิตช์บอกว่า "เรียกกล้องจากหน้า Box นะ!"
+                    // 1. สับสวิตช์บอกว่า "เรียกกล้องจากหน้า Box"
                     window.currentScannerContext = 'box'; 
                     
-                    // 2. เรียกเปิดกล้อง
+                    // 2. เรียกเปิดกล้องตามปกติ
                     if (typeof window.toggleScanner === "function") {
+                        
+                        // 📍 [Safe Approach]: ดันเลเยอร์หน้าต่างกล้องขึ้นมาบนสุดเฉพาะตอนเรียกจากหน้านี้!
                         const scanView = document.getElementById("scannerView");
                         if (scanView) {
+                            // ลบคลาส hide ออกก่อน (เผื่อมีค้าง)
+                            scanView.classList.remove("hide");
+                            
+                            // ดัน Z-Index ทะลุทะลวงแบบเฉพาะกิจ
                             scanView.style.position = "fixed";
-                            scanView.style.zIndex = "99999";
+                            scanView.style.zIndex = "9999999"; 
+                            scanView.style.opacity = "1";
+                            scanView.style.display = "block"; 
                         }
+                        
                         await window.toggleScanner();
+                        
                     } else {
                         alert("ไม่พบโมดูลกล้อง (toggleScanner) ในระบบ");
                     }
@@ -1277,12 +1285,6 @@ function loadTransferTypesIntoDropdown() {
 // 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) END
 // ===============================================================
 
-
-
-
-
-// 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) END
-// ==============================================================
 
 
 
