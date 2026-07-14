@@ -42,7 +42,7 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    const config = { fps: 30, qrbox: { width: 250, height: 250 } };
 
     try {
       // 🟢 ด่านที่ 1: พยายามเปิดกล้องหลัง (มือถือ)
