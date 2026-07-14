@@ -202,30 +202,37 @@ window.toggleScanMode = function() {
 // [qrCodeSuccessCallback] START
 
 const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
-  // 📍 ดักจับ Context ว่าถูกเรียกจากหน้า Box Details หรือไม่
+  // 📍 [Prevent Double Scan: ป้องกันสแกนเบิ้ลรัวๆ]
+  if (window.isTransitioning) return;
+  window.isTransitioning = true;
+  setTimeout(() => { window.isTransitioning = false; }, 1000); 
+
+  const sku = decodedText ? decodedText.trim() : "";
+
+  // 📍 [Context: Box Details View (โหมดลงกล่อง)]
   if (window.currentScannerContext === 'box') {
-      // ---🔍 [The Bridge Fix: โหมด Single Scan สำหรับหน้ากล่อง]
       
       // 1. สั่งปิดกล้องทันทีเมื่อสแกนติด (Single Scan Pattern)
       if (window.isScannerMode) {
-          await stopScanner();
+          if (typeof stopScanner === 'function') await stopScanner();
       }
 
-      // 2. ส่ง SKU ไปประมวลผลเพิ่มลงกล่อง
+      // 2. ส่ง SKU ไปประมวลผลเพิ่มลงกล่องอัตโนมัติ
       if (typeof window.addScannedItemToBox === 'function') {
-          window.addScannedItemToBox(decodedText);
+          window.addScannedItemToBox(sku);
       }
       
-  } else {
-      // 🏠 โหมดปกติ (Stock In House): ทำงานตามโฟลว์เดิม 100%
+  } 
+  // 🏠 [Context: Stock In House (โหมดปกติ - รักษา Golden Standard ไว้ 100%)]
+  else {
       if (window.isScannerMode) {
-        await stopScanner();
+          if (typeof stopScanner === 'function') await stopScanner();
       }
 
-      // โยนตัวเลขที่สแกนได้ ส่งข้ามไฟล์ไปให้ช่องค้นหาใน app.js ทำงานต่อ
-      const searchInput = document.getElementById("searchStockInput");
+      // โยนตัวเลขที่สแกนได้ ส่งข้ามไฟล์ไปให้ช่องค้นหาหลักทำงาน
+      const searchInput = document.getElementById("searchStockInput") || document.getElementById("searchInput");
       if (searchInput) {
-        searchInput.value = decodedText;
+        searchInput.value = sku;
         searchInput.dispatchEvent(new Event("input", { bubbles: true }));
       }
   }
@@ -233,6 +240,9 @@ const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
 
 //[qrCodeSuccessCallback] END
 //===============
+
+
+
 
 
 function mockReceiveSignal(hasPendingDelivery, qty = 0) {
