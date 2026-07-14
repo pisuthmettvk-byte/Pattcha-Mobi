@@ -1665,29 +1665,29 @@ window.currentBoxItems = window.currentBoxItems || [];
 // ==================================================================
 // 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อกตอนเข้า-ออกหน้าจอ)  START
 
-document.addEventListener("DOMContentLoaded", () => {
-    const boxView = document.getElementById("boxDetailsView");
-    
-    if (boxView) {
-        // ใช้ MutationObserver เพื่อดักจับตอนที่หน้าจอ Box Details ถูกเปิดขึ้นมา
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.attributeName === "class") {
-                    const isHidden = boxView.classList.contains("hide");
-                    // ถ้าหน้าจอถูก "เปิด" (ไม่มี class hide) ให้ทำการรีเฟรชข้อมูลและปุ่ม WRAP ทันที!
-                    if (!isHidden) {
-                        if (typeof window.renderBoxContentArea === 'function') {
-                            window.renderBoxContentArea();
-                        }
-                    }
-                }
-            });
-        });
+      document.addEventListener("DOMContentLoaded", () => {
+          const boxView = document.getElementById("boxDetailsView");
+          
+          if (boxView) {
+              // ใช้ MutationObserver เพื่อดักจับตอนที่หน้าจอ Box Details ถูกเปิดขึ้นมา
+              const observer = new MutationObserver((mutations) => {
+                  mutations.forEach((mutation) => {
+                      if (mutation.attributeName === "class") {
+                          const isHidden = boxView.classList.contains("hide");
+                          // ถ้าหน้าจอถูก "เปิด" (ไม่มี class hide) ให้ทำการรีเฟรชข้อมูลและปุ่ม WRAP ทันที!
+                          if (!isHidden) {
+                              if (typeof window.renderBoxContentArea === 'function') {
+                                  window.renderBoxContentArea();
+                              }
+                          }
+                      }
+                  });
+              });
 
-        // สั่งให้กล้องวงจรปิดเริ่มจับตาดูหน้าต่าง boxDetailsView
-        observer.observe(boxView, { attributes: true });
-    }
-});
+              // สั่งให้กล้องวงจรปิดเริ่มจับตาดูหน้าต่าง boxDetailsView
+              observer.observe(boxView, { attributes: true });
+          }
+      });
 
 // 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อกตอนเข้า-ออกหน้าจอ)  END
 // ==================================================================
@@ -1701,32 +1701,32 @@ document.addEventListener("DOMContentLoaded", () => {
 // 🚀 Phase 8 & 9: ระบบบันทึกข้อมูลกล่อง (อัปเดต ID ปุ่ม) START
 
 window.submitWrapBox = function() {
-    // 1. เช็กความพร้อม: ถ้ากล่องว่าง ห้ามบันทึก
     if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
-        if (typeof window.safeAlert === 'function') {
-            window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
-        }
+        if (typeof window.safeAlert === 'function') window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
         return;
     }
 
-    // 2. ดึงรหัส Shipment ปัจจุบัน 
-    const shipmentId = window.currentShipmentId || "TEST-SHIPMENT-001"; 
+    // 📍 1. ดึงข้อมูลจาก Header จริงบนหน้าจอ (เจเลอร์แก้ ID ให้ตรงกับ HTML นะครับ)
+    const shipmentElem = document.getElementById("headerShipmentId"); // <== เปลี่ยน ID ตรงนี้
+    const boxElem = document.getElementById("headerBoxNumber");       // <== เปลี่ยน ID ตรงนี้
+    
+    const shipmentId = shipmentElem ? shipmentElem.innerText.trim() : "UNKNOWN-SHP";
+    const boxNumber = boxElem ? boxElem.innerText.trim() : "UNKNOWN-BOX";
 
-    // 📍 3. ดึงปุ่มตาม ID ของเจเลอร์ (btnBoxWrap)
+    // 2. ล็อกปุ่ม
     const wrapBtn = document.getElementById("btnBoxWrap"); 
     let originalBtnHtml = "";
     if (wrapBtn) {
         originalBtnHtml = wrapBtn.innerHTML;
-        // เปลี่ยนหน้าตาเป็นโหมดกำลังโหลด
         wrapBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> กำลังบันทึก...';
-        wrapBtn.style.pointerEvents = "none"; // ล็อกการคลิก
+        wrapBtn.style.pointerEvents = "none";
         wrapBtn.style.opacity = "0.7";
     }
 
-    // 4. สร้าง Payload (ข้อมูลจำลอง)
+    // 3. สร้าง Payload
     const payload = {
         shipmentId: shipmentId,
-        boxNumber: "AUTO", 
+        boxNumber: boxNumber,
         items: window.currentBoxItems.map(item => ({
             sku: item.sku,
             name: item.name,
@@ -1736,64 +1736,40 @@ window.submitWrapBox = function() {
         }))
     };
 
-    // 5. ส่งข้อมูลผ่าน google.script.run
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-            .withSuccessHandler(function(response) {
-                // คืนค่าปุ่ม
-                if (wrapBtn) {
-                    wrapBtn.innerHTML = originalBtnHtml;
-                    wrapBtn.style.pointerEvents = "auto";
-                    wrapBtn.style.opacity = "1";
-                }
-                
-                if (response && response.status === 'success') {
-                    if (typeof window.safeAlert === 'function') {
-                        window.safeAlert("SUCCESS", `บันทึก ${response.boxName} สำเร็จ!`, "success");
-                    }
-                    window.currentBoxItems = [];
-                    window.renderBoxContentArea();
-                } else {
-                    if (typeof window.safeAlert === 'function') {
-                        window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (response.message || "ไม่ทราบสาเหตุ"), "error");
-                    }
-                }
-            })
-            .withFailureHandler(function(error) {
-                if (wrapBtn) {
-                    wrapBtn.innerHTML = originalBtnHtml;
-                    wrapBtn.style.pointerEvents = "auto";
-                    wrapBtn.style.opacity = "1";
-                }
-                if (typeof window.safeAlert === 'function') {
-                    window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: " + error.message, "error");
-                }
-            })
-            .saveBoxData(payload); 
-            
-    } else {
-        // ==========================================
-        // 🧪 โหมดจำลอง (Mockup) ทดสอบบนเบราว์เซอร์
-        // ==========================================
-        console.log("Mock Payload กำลังถูกส่ง:", payload);
+    // 4. จำลองการส่งข้อมูล (พร้อมทำ Flow คืนหน้าจอ)
+    setTimeout(() => {
+        // คืนค่าปุ่ม
+        if (wrapBtn) {
+            wrapBtn.innerHTML = originalBtnHtml;
+            wrapBtn.style.pointerEvents = "auto";
+            wrapBtn.style.opacity = "1";
+        }
         
-        // จำลองโหลด 1.5 วินาที
-        setTimeout(() => {
-            if (wrapBtn) {
-                wrapBtn.innerHTML = originalBtnHtml;
-                wrapBtn.style.pointerEvents = "auto";
-                wrapBtn.style.opacity = "1";
-            }
-            if (typeof window.safeAlert === 'function') {
-                window.safeAlert("TEST SUCCESS", "จำลองการบันทึกกล่องสำเร็จ (โหมดจำลอง)", "success");
-            }
-            
-            // เคลียร์กล่องและรีเฟรชหน้าจอ (เพื่อให้ปุ่มกลับไปล็อกอัตโนมัติ)
-            window.currentBoxItems = [];
-            window.renderBoxContentArea();
-        }, 1500);
-    }
+        // 🎬 THE REAL FLOW: แจ้งเตือน -> ปิดหน้าต่าง -> รีเซ็ต 
+        if (typeof window.safeAlert === 'function') {
+            window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} ลงรอบงาน ${shipmentId} สำเร็จ!`, "success");
+        }
+        
+        // 1. ล้างข้อมูลกล่อง
+        window.currentBoxItems = [];
+        window.renderBoxContentArea();
+        
+        // 2. ปิดหน้า Box Details View ทันที (กลับสู่ Lobby)
+        const boxView = document.getElementById("boxDetailsView");
+        if (boxView) boxView.classList.add("hide");
+
+        // 3. จุดเรียกฟังก์ชันอัปเดต Lobby (เตรียมไว้สำหรับ Step 3)
+        // if (typeof window.refreshLobby === 'function') window.refreshLobby();
+        
+    }, 1500); 
+    // หมายเหตุ: เมื่อพร้อมต่อ @Google Workspace เราจะเอาโค้ด setTimeout นี้ออก และใส่ google.script.run แทนครับ
 };
 
 // 🚀 Phase 8 & 9: ระบบบันทึกข้อมูลกล่อง (Submit Box Data) END
 // ===========================================================
+
+
+
+
+
+
