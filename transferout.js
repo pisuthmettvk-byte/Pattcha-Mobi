@@ -1598,7 +1598,7 @@ window.currentBoxItems = window.currentBoxItems || [];
                 }
             }
         };
-        
+
         // 2. ลดจำนวน (-) - ห้ามติดลบ
         window.decreaseBoxItemQty = function(sku) {
             const item = window.currentBoxItems.find(p => p.sku === sku);
@@ -1693,21 +1693,19 @@ window.currentBoxItems = window.currentBoxItems || [];
 
 
 
-
-
 // ======================================================
-// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม ID จริง + แก้จอขาว)
+// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม API หลังบ้านจริง)
+
 window.submitWrapBox = function() {
     if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
         if (typeof window.safeAlert === 'function') window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
         return;
     }
 
-    // 📍 1. ดึงข้อมูลจาก Header ตาม ID จริงใน HTML ที่เจเลอร์ส่งมา
+    // 1. ดึงข้อมูลจาก Header 
     const shipmentElem = document.getElementById("boxDetailsShipmentText"); 
     const boxElem = document.getElementById("boxDetailsBoxText");       
     
-    // คลีนตัวอักษร "(Shipment No: )" ออก เพื่อดึงเฉพาะรหัสรอบงาน
     let shipmentId = "UNKNOWN-SHP";
     if (shipmentElem) {
         shipmentId = shipmentElem.innerText.replace("(Shipment No: ", "").replace(")", "").trim();
@@ -1737,38 +1735,77 @@ window.submitWrapBox = function() {
         }))
     };
 
-    // 4. จำลองการส่งข้อมูล (The Real Flow UI)
-    setTimeout(() => {
-        // คืนค่าปุ่ม
-        if (wrapBtn) {
-            wrapBtn.innerHTML = originalBtnHtml;
-            wrapBtn.style.pointerEvents = "auto";
-            wrapBtn.style.opacity = "1";
-        }
-        
-        // 🎬 THE REAL FLOW: แจ้งเตือน -> ปิด Box -> กลับ Lobby
-        if (typeof window.safeAlert === 'function') {
-            window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} ลงรอบงาน ${shipmentId} สำเร็จ!`, "success");
-        }
-        
-        // 1. ล้างข้อมูลกล่อง (เตรียมไว้สำหรับใบหน้า)
-        window.currentBoxItems = [];
-        window.renderBoxContentArea();
-        
-        // 📍 2. จัดการหน้าจอ: ปิดหน้า Box Details
-        const boxView = document.getElementById("boxDetailsView");
-        if (boxView) boxView.classList.add("hide");
+    // 📍 4. THE REAL FLOW: ส่งข้อมูลเข้า Google Apps Script จริง
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+            .withSuccessHandler(function(response) {
+                // ปลดล็อกปุ่ม
+                if (wrapBtn) {
+                    wrapBtn.innerHTML = originalBtnHtml;
+                    wrapBtn.style.pointerEvents = "auto";
+                    wrapBtn.style.opacity = "1";
+                }
+                
+                if (response && response.status === 'success') {
+                    // แจ้งเตือนสำเร็จ
+                    if (typeof window.safeAlert === 'function') {
+                        window.safeAlert("SUCCESS", `บันทึกกล่อง ${response.boxName} ลงรอบงาน ${shipmentId} สำเร็จ!`, "success");
+                    }
+                    
+                    // ล้างข้อมูลกล่อง
+                    window.currentBoxItems = [];
+                    window.renderBoxContentArea();
+                    
+                    // ปิดหน้า Box กลับไป Lobby
+                    const boxView = document.getElementById("boxDetailsView");
+                    if (boxView) boxView.classList.add("hide");
 
-        // 📍 3. จัดการหน้าจอ: เปิดหน้า Lobby กลับมา (แก้ปัญหาจอขาว)
-        const lobbyView = document.getElementById("transferOutLobbyView");
-        if (lobbyView) lobbyView.classList.remove("hide"); 
-        
-        // (เผื่ออนาคต Phase 9: สั่งให้ Lobby โหลดการ์ดกล่องใหม่ที่เพิ่งบันทึก)
-        // if (typeof window.refreshLobby === 'function') window.refreshLobby();
-        
-    }, 1500); 
+                    const lobbyView = document.getElementById("transferOutLobbyView");
+                    if (lobbyView) lobbyView.classList.remove("hide"); 
+                } else {
+                    if (typeof window.safeAlert === 'function') {
+                        window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (response.message || "ไม่ทราบสาเหตุ"), "error");
+                    }
+                }
+            })
+            .withFailureHandler(function(error) {
+                // ปลดล็อกปุ่มกรณีเกิด Error จากฝั่งเซิร์ฟเวอร์
+                if (wrapBtn) {
+                    wrapBtn.innerHTML = originalBtnHtml;
+                    wrapBtn.style.pointerEvents = "auto";
+                    wrapBtn.style.opacity = "1";
+                }
+                if (typeof window.safeAlert === 'function') {
+                    window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: " + error.message, "error");
+                }
+            })
+            .saveBoxData(payload); // เรียกใช้ฟังก์ชันที่เจเลอร์เพิ่งใส่ใน Code.gs
+            
+    } else {
+        // ==========================================
+        // 🧪 Fallback: สำหรับทดสอบบน GitHub Pages (ไม่มี Backend)
+        // ==========================================
+        console.log("Mock Payload (ไม่พบ Google API):", payload);
+        setTimeout(() => {
+            if (wrapBtn) {
+                wrapBtn.innerHTML = originalBtnHtml;
+                wrapBtn.style.pointerEvents = "auto";
+                wrapBtn.style.opacity = "1";
+            }
+            if (typeof window.safeAlert === 'function') window.safeAlert("TEST SUCCESS", `จำลองการบันทึกกล่อง ${boxNumber} สำเร็จ`, "success");
+            
+            window.currentBoxItems = [];
+            window.renderBoxContentArea();
+            
+            const boxView = document.getElementById("boxDetailsView");
+            if (boxView) boxView.classList.add("hide");
+            const lobbyView = document.getElementById("transferOutLobbyView");
+            if (lobbyView) lobbyView.classList.remove("hide"); 
+        }, 1500);
+    }
 };
-// 🚀 Phase 8 & 9: ระบบบันทึกข้อมูลกล่อง (Submit Box Data) END
+
+// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม API หลังบ้านจริง)
 // ===========================================================
 
 
