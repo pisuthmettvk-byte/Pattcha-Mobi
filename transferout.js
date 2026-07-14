@@ -1823,39 +1823,48 @@ window.submitWrapBox = async function() {
 
 
 
-
-
-
 // ======================================================
-// 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver)
+// 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver) - [Resilient SKU Match]
 // ======================================================
 
-// ======================================================
-// 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver)
-// ======================================================
+//===============
+// [addScannedItemToBox] START
 
-// ตัวแปรบอกสถานะกล้อง (ค่าปริยายคือ 'stock')
 window.currentScannerContext = 'stock';
 
-window.addScannedItemToBox = function(sku) {
-    if (typeof localProductDatabase === 'undefined' || !localProductDatabase) return;
+window.addScannedItemToBox = function(decodedText) {
+    //📍 [Sanitize Input: ตัดช่องว่างและแปลงเป็นตัวพิมพ์ใหญ่ป้องกัน Error บาร์โค้ด]
+    const sku = decodedText ? decodedText.trim() : '';
+    console.log(`[SCANNER DEBUG] สแกนบาร์โค้ดได้ค่า: "${sku}"`);
+
+    if (typeof localProductDatabase === 'undefined' || !localProductDatabase) {
+        console.error("[SCANNER ERROR] ไม่พบฐานข้อมูล localProductDatabase ในระบบ");
+        return;
+    }
     
-    const product = localProductDatabase.find(p => p.sku === sku);
+    // ---🔍 [Search Product with Case-Insensitive & Trim match]
+    const product = localProductDatabase.find(p => 
+        p.sku && p.sku.toString().trim().toUpperCase() === sku.toUpperCase()
+    );
     
     if (!product) {
-        // แสกนไม่เจอของ
-        console.warn(`[SCAN FAILED] ไม่พบสินค้า SKU: ${sku}`);
-        return; // ข้ามไปเลยเงียบๆ เพื่อให้กล้องแสกนต่อได้
+        console.warn(`[SCAN FAILED] ไม่พบสินค้า SKU: ${sku} ในฐานข้อมูล`);
+        if (navigator.vibrate) navigator.vibrate(150);
+        
+        // 📍 [แจ้งเตือนสีเหลืองแวบๆ ให้รู้ว่าสแกนติดแต่หา SKU ไม่เจอในระบบ]
+        const failToast = document.createElement("div");
+        failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
+        failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบ SKU: ${sku}`;
+        document.body.appendChild(failToast);
+        setTimeout(() => failToast.remove(), 1500);
+        return; 
     }
 
-    const existingItem = window.currentBoxItems.find(item => item.sku === sku);
+    const existingItem = window.currentBoxItems.find(item => item.sku.toString().trim().toUpperCase() === sku.toUpperCase());
     const currentTotal = existingItem ? ((existingItem.scanQty || 0) + (existingItem.manualQty || 0)) : 0;
-    
-    // แปลง availableStock เป็นตัวเลข
     const stockLimit = Number(product.availableStock || 0);
     
     if (currentTotal < stockLimit) {
-        // 🟢 ของลงกล่องสำเร็จ
         if (existingItem) {
             existingItem.scanQty = (existingItem.scanQty || 0) + 1;
         } else {
@@ -1867,34 +1876,37 @@ window.addScannedItemToBox = function(sku) {
             });
         }
         
-        // 🔔 10.3 ส่งเสียง Beep 
-        const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); // เสียงดัมมี่ (ถ้าเจเลอร์มีไฟล์เสียง สามารถเอาลิงก์มาใส่ได้)
+        // 📍 [Success Feedback: เสียงสั่น และ Toast สีเขียว]
+        const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"); 
         beep.play().catch(e => console.log("Beep play prevented", e));
-
-        // 📳 สั่น 1 ที (ถ้ามือถือรองรับ)
         if (navigator.vibrate) navigator.vibrate(100);
-        
-        // อัปเดต UI หน้ากล่อง
         if (typeof window.renderBoxContentArea === 'function') window.renderBoxContentArea();
         
-        // โชว์แจ้งเตือนสีเขียวแวบๆ เล็กๆ (Toast) โดยไม่หยุดกล้อง
         const toast = document.createElement("div");
-        toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+        toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
         toast.innerHTML = `<i class="fas fa-check-circle"></i> เพิ่ม ${sku}`;
         document.body.appendChild(toast);
         setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
         
     } else {
-        // 🔴 สต็อกหมด
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]); // สั่นเตือนยาวๆ
-        
+        // 📍 [Error Feedback: สต็อกไม่พอ แจ้งเตือนสีแดง]
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
         const errToast = document.createElement("div");
-        errToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+        errToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
         errToast.innerHTML = `<i class="fas fa-times-circle"></i> สต็อกไม่พอ (${sku})`;
         document.body.appendChild(errToast);
         setTimeout(() => { errToast.style.opacity = "0"; setTimeout(() => errToast.remove(), 500); }, 2000);
     }
 };
+
+//[addScannedItemToBox] END
+//===============
+
+
+
+
+
+
 
 
 // ======================================================
