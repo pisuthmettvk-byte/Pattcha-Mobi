@@ -1722,7 +1722,7 @@ window.submitWrapBox = function() {
         wrapBtn.style.opacity = "0.7";
     }
 
-    // 3. สร้าง Payload
+    // 3. สร้าง Payload (โครงสร้างเดิมที่สมบูรณ์ 100%)
     const payload = {
         shipmentId: shipmentId,
         boxNumber: boxNumber,
@@ -1735,75 +1735,62 @@ window.submitWrapBox = function() {
         }))
     };
 
-    // 📍 4. THE REAL FLOW: ส่งข้อมูลเข้า Google Apps Script จริง
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-            .withSuccessHandler(function(response) {
-                // ปลดล็อกปุ่ม
-                if (wrapBtn) {
-                    wrapBtn.innerHTML = originalBtnHtml;
-                    wrapBtn.style.pointerEvents = "auto";
-                    wrapBtn.style.opacity = "1";
-                }
-                
-                if (response && response.status === 'success') {
-                    // แจ้งเตือนสำเร็จ
-                    if (typeof window.safeAlert === 'function') {
-                        window.safeAlert("SUCCESS", `บันทึกกล่อง ${response.boxName} ลงรอบงาน ${shipmentId} สำเร็จ!`, "success");
-                    }
-                    
-                    // ล้างข้อมูลกล่อง
-                    window.currentBoxItems = [];
-                    window.renderBoxContentArea();
-                    
-                    // ปิดหน้า Box กลับไป Lobby
-                    const boxView = document.getElementById("boxDetailsView");
-                    if (boxView) boxView.classList.add("hide");
+    // 📍 4. THE REAL FLOW: ส่งข้อมูลเข้า Google Apps Script จริงผ่าน Fetch API
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+    const API_URL = SCRIPT_URL + "?action=save_box"; 
 
-                    const lobbyView = document.getElementById("transferOutLobbyView");
-                    if (lobbyView) lobbyView.classList.remove("hide"); 
-                } else {
-                    if (typeof window.safeAlert === 'function') {
-                        window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (response.message || "ไม่ทราบสาเหตุ"), "error");
-                    }
-                }
-            })
-            .withFailureHandler(function(error) {
-                // ปลดล็อกปุ่มกรณีเกิด Error จากฝั่งเซิร์ฟเวอร์
-                if (wrapBtn) {
-                    wrapBtn.innerHTML = originalBtnHtml;
-                    wrapBtn.style.pointerEvents = "auto";
-                    wrapBtn.style.opacity = "1";
-                }
-                if (typeof window.safeAlert === 'function') {
-                    window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: " + error.message, "error");
-                }
-            })
-            .saveBoxData(payload); // เรียกใช้ฟังก์ชันที่เจเลอร์เพิ่งใส่ใน Code.gs
-            
-    } else {
-        // ==========================================
-        // 🧪 Fallback: สำหรับทดสอบบน GitHub Pages (ไม่มี Backend)
-        // ==========================================
-        console.log("Mock Payload (ไม่พบ Google API):", payload);
-        setTimeout(() => {
-            if (wrapBtn) {
-                wrapBtn.innerHTML = originalBtnHtml;
-                wrapBtn.style.pointerEvents = "auto";
-                wrapBtn.style.opacity = "1";
+    fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // ปลดล็อกปุ่ม
+        if (wrapBtn) {
+            wrapBtn.innerHTML = originalBtnHtml;
+            wrapBtn.style.pointerEvents = "auto";
+            wrapBtn.style.opacity = "1";
+        }
+        
+        if (data && data.status === 'success') {
+            // แจ้งเตือนสำเร็จ
+            if (typeof window.safeAlert === 'function') {
+                window.safeAlert("SUCCESS", `บันทึกกล่อง ${data.boxName || boxNumber} ลงรอบงาน ${shipmentId} สำเร็จ!`, "success");
             }
-            if (typeof window.safeAlert === 'function') window.safeAlert("TEST SUCCESS", `จำลองการบันทึกกล่อง ${boxNumber} สำเร็จ`, "success");
             
+            // ล้างข้อมูลกล่อง
             window.currentBoxItems = [];
             window.renderBoxContentArea();
             
+            // ปิดหน้า Box กลับไป Lobby
             const boxView = document.getElementById("boxDetailsView");
             if (boxView) boxView.classList.add("hide");
+
             const lobbyView = document.getElementById("transferOutLobbyView");
             if (lobbyView) lobbyView.classList.remove("hide"); 
-        }, 1500);
-    }
+        } else {
+            // กรณี Backend ตอบกลับมาว่ามี Error
+            if (typeof window.safeAlert === 'function') {
+                window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่ทราบสาเหตุ"), "error");
+            }
+        }
+    })
+    .catch(error => {
+        // ปลดล็อกปุ่มกรณีเกิด Error จากฝั่งเซิร์ฟเวอร์ (เน็ตหลุด / เซิร์ฟเวอร์ไม่ตอบสนอง)
+        if (wrapBtn) {
+            wrapBtn.innerHTML = originalBtnHtml;
+            wrapBtn.style.pointerEvents = "auto";
+            wrapBtn.style.opacity = "1";
+        }
+        if (typeof window.safeAlert === 'function') {
+            window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้: " + error.message, "error");
+        }
+    });
 };
+
 
 // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม API หลังบ้านจริง)
 // ===========================================================
