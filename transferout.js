@@ -1579,8 +1579,6 @@ window.currentBoxItems = window.currentBoxItems || [];
 // =================================================================
 // ⚙️ ฟังก์ชันจัดการจำนวนสินค้า (เชื่อมกับ safeAlert และ safeConfirm) START
 
-
-        // 1. เพิ่มจำนวน (+) - ห้ามเกินสต็อก
         window.increaseBoxItemQty = function(sku) {
             const item = window.currentBoxItems.find(p => p.sku === sku);
             if (item) {
@@ -1591,16 +1589,16 @@ window.currentBoxItems = window.currentBoxItems || [];
                     item.isManual = true; 
                     window.renderBoxContentArea(); 
                 } else {
-                    // 📍 ใช้ safeAlert แบบที่เจเลอร์ออกแบบไว้
+                    // 📍 เปลี่ยนจาก "warning" เป็น "error" เพื่อแสดงผลเป็นสีแดง
                     if (typeof window.safeAlert === 'function') {
-                        window.safeAlert("STOCK LIMIT", `ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`, "warning");
+                        window.safeAlert("STOCK LIMIT", `ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`, "error");
                     } else {
-                        alert(`มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`);
+                        alert(`ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`);
                     }
                 }
             }
         };
-
+        
         // 2. ลดจำนวน (-) - ห้ามติดลบ
         window.decreaseBoxItemQty = function(sku) {
             const item = window.currentBoxItems.find(p => p.sku === sku);
@@ -1698,19 +1696,22 @@ window.currentBoxItems = window.currentBoxItems || [];
 
 
 // ======================================================
-// 🚀 Phase 8 & 9: ระบบบันทึกข้อมูลกล่อง (อัปเดต ID ปุ่ม) START
-
+// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม ID จริง + แก้จอขาว)
 window.submitWrapBox = function() {
     if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
         if (typeof window.safeAlert === 'function') window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
         return;
     }
 
-    // 📍 1. ดึงข้อมูลจาก Header จริงบนหน้าจอ (เจเลอร์แก้ ID ให้ตรงกับ HTML นะครับ)
-    const shipmentElem = document.getElementById("headerShipmentId"); // <== เปลี่ยน ID ตรงนี้
-    const boxElem = document.getElementById("headerBoxNumber");       // <== เปลี่ยน ID ตรงนี้
+    // 📍 1. ดึงข้อมูลจาก Header ตาม ID จริงใน HTML ที่เจเลอร์ส่งมา
+    const shipmentElem = document.getElementById("boxDetailsShipmentText"); 
+    const boxElem = document.getElementById("boxDetailsBoxText");       
     
-    const shipmentId = shipmentElem ? shipmentElem.innerText.trim() : "UNKNOWN-SHP";
+    // คลีนตัวอักษร "(Shipment No: )" ออก เพื่อดึงเฉพาะรหัสรอบงาน
+    let shipmentId = "UNKNOWN-SHP";
+    if (shipmentElem) {
+        shipmentId = shipmentElem.innerText.replace("(Shipment No: ", "").replace(")", "").trim();
+    }
     const boxNumber = boxElem ? boxElem.innerText.trim() : "UNKNOWN-BOX";
 
     // 2. ล็อกปุ่ม
@@ -1736,7 +1737,7 @@ window.submitWrapBox = function() {
         }))
     };
 
-    // 4. จำลองการส่งข้อมูล (พร้อมทำ Flow คืนหน้าจอ)
+    // 4. จำลองการส่งข้อมูล (The Real Flow UI)
     setTimeout(() => {
         // คืนค่าปุ่ม
         if (wrapBtn) {
@@ -1745,26 +1746,28 @@ window.submitWrapBox = function() {
             wrapBtn.style.opacity = "1";
         }
         
-        // 🎬 THE REAL FLOW: แจ้งเตือน -> ปิดหน้าต่าง -> รีเซ็ต 
+        // 🎬 THE REAL FLOW: แจ้งเตือน -> ปิด Box -> กลับ Lobby
         if (typeof window.safeAlert === 'function') {
             window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} ลงรอบงาน ${shipmentId} สำเร็จ!`, "success");
         }
         
-        // 1. ล้างข้อมูลกล่อง
+        // 1. ล้างข้อมูลกล่อง (เตรียมไว้สำหรับใบหน้า)
         window.currentBoxItems = [];
         window.renderBoxContentArea();
         
-        // 2. ปิดหน้า Box Details View ทันที (กลับสู่ Lobby)
+        // 📍 2. จัดการหน้าจอ: ปิดหน้า Box Details
         const boxView = document.getElementById("boxDetailsView");
         if (boxView) boxView.classList.add("hide");
 
-        // 3. จุดเรียกฟังก์ชันอัปเดต Lobby (เตรียมไว้สำหรับ Step 3)
+        // 📍 3. จัดการหน้าจอ: เปิดหน้า Lobby กลับมา (แก้ปัญหาจอขาว)
+        const lobbyView = document.getElementById("transferOutLobbyView");
+        if (lobbyView) lobbyView.classList.remove("hide"); 
+        
+        // (เผื่ออนาคต Phase 9: สั่งให้ Lobby โหลดการ์ดกล่องใหม่ที่เพิ่งบันทึก)
         // if (typeof window.refreshLobby === 'function') window.refreshLobby();
         
     }, 1500); 
-    // หมายเหตุ: เมื่อพร้อมต่อ @Google Workspace เราจะเอาโค้ด setTimeout นี้ออก และใส่ google.script.run แทนครับ
 };
-
 // 🚀 Phase 8 & 9: ระบบบันทึกข้อมูลกล่อง (Submit Box Data) END
 // ===========================================================
 
