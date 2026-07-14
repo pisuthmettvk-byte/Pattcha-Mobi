@@ -1833,11 +1833,7 @@ window.submitWrapBox = async function() {
 window.currentScannerContext = 'stock';
 
 window.addScannedItemToBox = async function(decodedText) {
-    // 📍 [The Golden Standard Fix: สแกนปุ๊บ ปิดกล้องทันที และคืนหน้าต่าง Box Details]
-    // ปิดกล้องทันทีเพื่อไม่ให้สแกนต่อเนื่อง (Single Scan Pattern)
-    if (typeof window.toggleScanner === 'function') {
-        await window.toggleScanner(); 
-    }
+
 
     //📍 [Sanitize Input: ตัดช่องว่างและแปลงเป็นตัวพิมพ์ใหญ่ป้องกัน Error บาร์โค้ด]
     const sku = decodedText ? decodedText.trim() : '';

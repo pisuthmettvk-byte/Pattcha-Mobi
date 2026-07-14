@@ -192,19 +192,32 @@ window.toggleScanMode = function() {
   }
 };
 
+
+
 // ==========================================
-// 🌟 SCAN SUCCESS CALLBACK (เมื่อสแกนติด)
+// [Scanner Callback / Data Routing]
 // ==========================================
+
+//===============
+// [qrCodeSuccessCallback] START
+
 const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
   // 📍 ดักจับ Context ว่าถูกเรียกจากหน้า Box Details หรือไม่
   if (window.currentScannerContext === 'box') {
-      // โหมดกล่อง: ส่ง SKU ไปเพิ่มลงกล่องโดยตรง
+      // ---🔍 [The Bridge Fix: โหมด Single Scan สำหรับหน้ากล่อง]
+      
+      // 1. สั่งปิดกล้องทันทีเมื่อสแกนติด (Single Scan Pattern)
+      if (window.isScannerMode) {
+          await stopScanner();
+      }
+
+      // 2. ส่ง SKU ไปประมวลผลเพิ่มลงกล่อง
       if (typeof window.addScannedItemToBox === 'function') {
           window.addScannedItemToBox(decodedText);
       }
-      // ไม่ปิดกล้อง เพื่อให้สแกนสินค้าชิ้นต่อไปได้อย่างต่อเนื่อง
+      
   } else {
-      // โหมดปกติ (Stock In House): ทำงานตามโฟลว์เดิม
+      // 🏠 โหมดปกติ (Stock In House): ทำงานตามโฟลว์เดิม 100%
       if (window.isScannerMode) {
         await stopScanner();
       }
@@ -217,6 +230,9 @@ const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
       }
   }
 };
+
+//[qrCodeSuccessCallback] END
+//===============
 
 
 function mockReceiveSignal(hasPendingDelivery, qty = 0) {
