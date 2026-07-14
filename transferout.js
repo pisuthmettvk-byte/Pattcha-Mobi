@@ -1636,7 +1636,7 @@ window.currentBoxItems = window.currentBoxItems || [];
 
 
 // ======================================================
-// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (ใช้ต้นแบบความสำเร็จจากปุ่มสร้างชิปเมนต์)
+// 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (UI สีเหลืองคำถาม + Backend 100%)
 // ======================================================
 window.submitWrapBox = async function() {
     if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
@@ -1650,11 +1650,15 @@ window.submitWrapBox = async function() {
     let shipmentId = shipmentElem ? shipmentElem.innerText.replace("(Shipment No: ", "").replace(")", "").trim() : "UNKNOWN-SHP";
     const boxNumber = boxElem ? boxElem.innerText.trim() : "UNKNOWN-BOX";
 
-    // 1. ถามยืนยันก่อน
-    const isConfirmed = await safeConfirm('ยืนยันการปิดกล่อง (WRAP)?', `คุณต้องการปิดกล่อง ${boxNumber} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`);
+    // 📍 จุดที่ปรับปรุง: เพิ่ม "question" ต่อท้าย เพื่อเรียกใช้ Theme สีเหลืองและไอคอน ?
+    const isConfirmed = await safeConfirm(
+        'ยืนยันการปิดกล่อง (WRAP)?', 
+        `คุณต้องการปิดกล่อง ${boxNumber} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`, 
+        "question"
+    );
     if (!isConfirmed) return;
 
-    // 2. ล็อกปุ่มแบบเดียวกับตอนสร้างชิปเมนต์
+    // ล็อกปุ่ม
     const wrapBtn = document.getElementById("btnBoxWrap"); 
     let originalBtnHtml = wrapBtn ? wrapBtn.innerHTML : "";
     if (wrapBtn) {
@@ -1663,7 +1667,7 @@ window.submitWrapBox = async function() {
         wrapBtn.style.opacity = "0.7";
     }
 
-    // 3. เตรียม Payload
+    // เตรียม Payload
     let totalScanQty = 0;
     let totalManualQty = 0;
     const payload = {
@@ -1684,21 +1688,20 @@ window.submitWrapBox = async function() {
         })
     };
 
-    // 📍 4. ยิง API แบบเดียวกับปุ่ม "btnConfirm" (ไม่ต้องใส่ Headers ให้ติด CORS)
+    // ยิง API 
     fetch(CONFIG.API_URL + "?action=save_box", { 
         method: "POST", 
         body: JSON.stringify(payload) 
     })
     .then(res => res.json())
     .then(data => {
-        // ปลดล็อกปุ่ม
         if (wrapBtn) {
             wrapBtn.innerHTML = originalBtnHtml;
             wrapBtn.style.pointerEvents = "auto";
             wrapBtn.style.opacity = "1";
         }
         
-        if (data.status === 'success' || data.success) { // รองรับทั้ง 2 รูปแบบ
+        if (data.status === 'success' || data.success) { 
             
             // อัปเดต UI หน้า Lobby ให้กล่องเป็นสีแดง และโชว์ยอด
             if (window.currentBoxElement) {
@@ -1735,6 +1738,7 @@ window.submitWrapBox = async function() {
         if (typeof window.safeAlert === 'function') window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
+
 // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม API หลังบ้านจริง)
 // ===========================================================
 
