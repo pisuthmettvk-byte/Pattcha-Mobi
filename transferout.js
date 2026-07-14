@@ -1179,8 +1179,8 @@ function loadTransferTypesIntoDropdown() {
             const btnWrap = document.getElementById("btnBoxWrap");
             const searchInput = document.getElementById("boxSearchInput");
 
-         // ----------------------------------------------------
-            // 📷 ผูก Event ให้ปุ่มกล้อง (Box Details) - [Safe Layer Override]
+            // ----------------------------------------------------
+            // 📷 ผูก Event ให้ปุ่มกล้อง (Box Details) - [Super Layer Override]
             // ----------------------------------------------------
             if (btnScanner) {
                 const newBtnScanner = btnScanner.cloneNode(true);
@@ -1198,19 +1198,28 @@ function loadTransferTypesIntoDropdown() {
                     // 2. เรียกเปิดกล้องตามปกติ
                     if (typeof window.toggleScanner === "function") {
                         
-                        // 📍 [Safe Approach]: ดันเลเยอร์หน้าต่างกล้องขึ้นมาบนสุดเฉพาะตอนเรียกจากหน้านี้!
+                        // 📍 [The Fix]: ดันเลเยอร์หน้าต่างกล้องขึ้นมาบนสุดแบบฮาร์ดคอร์!
                         const scanView = document.getElementById("scannerView");
                         if (scanView) {
-                            // ลบคลาส hide ออกก่อน (เผื่อมีค้าง)
-                            scanView.classList.remove("hide");
+                            scanView.classList.remove("hide"); // เผื่อโดนซ่อนด้วย class
                             
-                            // ดัน Z-Index ทะลุทะลวงแบบเฉพาะกิจ
-                            scanView.style.position = "fixed";
-                            scanView.style.zIndex = "9999999"; 
-                            scanView.style.opacity = "1";
-                            scanView.style.display = "block"; 
+                            // บังคับให้ CSS ของ scannerView ลอยอยู่หน้าสุด (ทะลุหน้า Box Details)
+                            // z-index เลข 9 เก้าตัว คือลอยเหนือ Pop-up ทุกชนิด!
+                            scanView.style.cssText = `
+                                display: block !important;
+                                position: fixed !important;
+                                top: 0 !important;
+                                left: 0 !important;
+                                width: 100vw !important;
+                                height: 100vh !important;
+                                z-index: 999999999 !important; 
+                                opacity: 1 !important;
+                                visibility: visible !important;
+                                background-color: #000 !important;
+                            `;
                         }
                         
+                        // สั่งโมดูลกล้องเดิมทำงาน
                         await window.toggleScanner();
                         
                     } else {
