@@ -1115,10 +1115,13 @@ function loadTransferTypesIntoDropdown() {
 // ==================================================================
 
 
-// ===============================================================
-// 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) START
 
-// ตัวแปรควบคุมสถานะกล่องปัจจุบัน
+
+
+        // ===============================================================
+        // 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) START
+
+        // ตัวแปรควบคุมสถานะกล่องปัจจุบัน
         window.currentActiveShipment = null;
         window.currentActiveBoxNo = null;
         window.currentBoxElement = null; // เก็บอ้างอิง DOM ของกล่องในหน้า Lobby
@@ -1164,8 +1167,8 @@ function loadTransferTypesIntoDropdown() {
             }
         };
 
-        // 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด)
-        window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
+            // 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด)
+            window.openBoxDetails = function(shipmentNo, boxNo, boxElement, isClosed) {
             window.currentActiveShipment = shipmentNo;
             window.currentActiveBoxNo = boxNo;
             window.currentBoxElement = boxElement;
@@ -1180,7 +1183,7 @@ function loadTransferTypesIntoDropdown() {
             const searchInput = document.getElementById("boxSearchInput");
 
             // ----------------------------------------------------
-            // 📷 ผูก Event ให้ปุ่มกล้อง (Box Details) - [Super Layer Override]
+            // 📷 ผูก Event ให้ปุ่มกล้อง (Box Details) - [DOM Relocation Fix]
             // ----------------------------------------------------
             if (btnScanner) {
                 const newBtnScanner = btnScanner.cloneNode(true);
@@ -1195,31 +1198,24 @@ function loadTransferTypesIntoDropdown() {
                     // 1. สับสวิตช์บอกว่า "เรียกกล้องจากหน้า Box"
                     window.currentScannerContext = 'box'; 
                     
-                    // 2. เรียกเปิดกล้องตามปกติ
                     if (typeof window.toggleScanner === "function") {
-                        
-                        // 📍 [The Fix]: ดันเลเยอร์หน้าต่างกล้องขึ้นมาบนสุดแบบฮาร์ดคอร์!
                         const scanView = document.getElementById("scannerView");
+                        
                         if (scanView) {
-                            scanView.classList.remove("hide"); // เผื่อโดนซ่อนด้วย class
+                            // 📍 [The Fix]: ย้ายบ้าน! ดึงหน้าต่างกล้องออกมายัดไว้ใน Body นอกสุด
+                            // เพื่อให้หลุดจากกรอบ (Stacking Context) ของทุกหน้าจอ
+                            if (scanView.parentNode !== document.body) {
+                                document.body.appendChild(scanView);
+                            }
                             
-                            // บังคับให้ CSS ของ scannerView ลอยอยู่หน้าสุด (ทะลุหน้า Box Details)
-                            // z-index เลข 9 เก้าตัว คือลอยเหนือ Pop-up ทุกชนิด!
-                            scanView.style.cssText = `
-                                display: block !important;
-                                position: fixed !important;
-                                top: 0 !important;
-                                left: 0 !important;
-                                width: 100vw !important;
-                                height: 100vh !important;
-                                z-index: 999999999 !important; 
-                                opacity: 1 !important;
-                                visibility: visible !important;
-                                background-color: #000 !important;
-                            `;
+                            // ลบคลาสที่อาจจะซ่อนมันอยู่ออก
+                            scanView.classList.remove("hide");
+                            
+                            // เพิ่ม CSS แค่ Z-Index เล็กน้อย (ไม่ล้างค่าเดิม)
+                            scanView.style.zIndex = "9999999";
                         }
                         
-                        // สั่งโมดูลกล้องเดิมทำงาน
+                        // 2. สั่งโมดูลกล้องเดิมทำงาน (ใช้ดีไซน์เดิม 100%)
                         await window.toggleScanner();
                         
                     } else {
@@ -1227,8 +1223,7 @@ function loadTransferTypesIntoDropdown() {
                     }
                 });
             }
-            // ----------------------------------------------------
-
+           
             if (isClosed) {
                 // 🔴 โหมด Read-Only (ปิดกล่องแล้ว)
                 btnWrap.style.display = "none"; // ซ่อนปุ่ม WRAP
@@ -1268,31 +1263,31 @@ function loadTransferTypesIntoDropdown() {
             const lobbyView = document.getElementById("transferOutLobbyView") || document.getElementById("lobbyView");
             if(lobbyView) lobbyView.classList.add("hide");
             document.getElementById("boxDetailsView").classList.remove("hide");
-        };
+            };
 
-        // 5. ระบบช่องค้นหา Magic Search (Box Details)
-        const boxSearchInput = document.getElementById("boxSearchInput");
-        const boxClearSearchBtn = document.getElementById("boxClearSearchBtn");
-        if (boxSearchInput && boxClearSearchBtn) {
-            // ตรวจจับตอนพิมพ์
-            boxSearchInput.addEventListener("input", function() {
-                if (this.value.trim().length > 0) {
-                    boxClearSearchBtn.style.display = "flex"; // โชว์ X
-                } else {
-                    boxClearSearchBtn.style.display = "none"; // ซ่อน X
-                }
-            });
+            // 5. ระบบช่องค้นหา Magic Search (Box Details)
+            const boxSearchInput = document.getElementById("boxSearchInput");
+            const boxClearSearchBtn = document.getElementById("boxClearSearchBtn");
+            if (boxSearchInput && boxClearSearchBtn) {
+                // ตรวจจับตอนพิมพ์
+                boxSearchInput.addEventListener("input", function() {
+                    if (this.value.trim().length > 0) {
+                        boxClearSearchBtn.style.display = "flex"; // โชว์ X
+                    } else {
+                        boxClearSearchBtn.style.display = "none"; // ซ่อน X
+                    }
+                });
 
-            // ตรวจจับตอนกดปุ่ม X
-            boxClearSearchBtn.addEventListener("click", function() {
-                boxSearchInput.value = ""; // ล้างค่า
-                this.style.display = "none"; // ซ่อนปุ่ม X
-                boxSearchInput.focus(); // เด้งเคอร์เซอร์กลับไปที่ช่องพิมพ์
-            });
-        }
+                // ตรวจจับตอนกดปุ่ม X
+                boxClearSearchBtn.addEventListener("click", function() {
+                    boxSearchInput.value = ""; // ล้างค่า
+                    this.style.display = "none"; // ซ่อนปุ่ม X
+                    boxSearchInput.focus(); // เด้งเคอร์เซอร์กลับไปที่ช่องพิมพ์
+                });
+            }
 
-// 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) END
-// ===============================================================
+          // 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) END
+          // ===============================================================
 
 
 
