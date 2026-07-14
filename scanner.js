@@ -112,7 +112,17 @@ function forceResetUI() {
     scanView.classList.remove("active");
     scanView.style.zIndex = "-1"; // ซ่อนกลับไปข้างหลัง
   }
+  
   window.isScannerMode = false;
+
+  // 📍 [The Absolute Fix: ดึงหน้า Box Details กลับมา เมื่อปิดกล้อง!]
+  // ถ้าเราอยู่ในโหมดสแกนลงกล่อง ให้โชว์หน้ากล่องกลับมา
+  if (window.currentScannerContext === 'box') {
+      const boxDetailsView = document.getElementById("boxDetailsView");
+      if (boxDetailsView) {
+          boxDetailsView.classList.remove("hide");
+      }
+  }
 }
 
 // ==========================================
