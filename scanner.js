@@ -14,67 +14,10 @@ function preventDoubleTrigger() {
   return false;
 }
 
-// ==========================================
-// 🌟 CORE SCANNER FUNCTIONS
-// ==========================================
-async function startScanner() {
-  if (preventDoubleTrigger() || window.isScannerMode || isTransitioning) return;
-  isTransitioning = true;
 
-  // 1. เคลียร์ช่องค้นหาในหน้า Stock ให้พร้อมรับบาร์โค้ดใหม่
-  const searchInput = document.getElementById("searchStockInput");
-  if (searchInput) {
-    searchInput.value = "";
-    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-  }
 
-  try {
-    // 2. โชว์ UI กล้องและดึงเลเยอร์ขึ้นมาบนสุด
-    const scanView = document.getElementById("scannerView");
-    if (scanView) {
-      scanView.classList.add("active");
-      scanView.style.position = "fixed";
-      scanView.style.zIndex = "99999";
-    }
-
-    // 3. เตรียมฮาร์ดแวร์
-    if (!html5QrCode) {
-      html5QrCode = new Html5Qrcode("reader");
-    }
-
-    const config = { fps: 30, qrbox: { width: 250, height: 250 } };
-
-    try {
-      // 🟢 ด่านที่ 1: พยายามเปิดกล้องหลัง (มือถือ)
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        qrCodeSuccessCallback,
-      );
-    } catch (camErr) {
-      console.warn("กล้องหลังไม่พร้อมใช้งาน สลับไปใช้เว็บแคม...", camErr);
-      // 🟡 ด่านที่ 2: สลับไปกล้องหน้า (คอมพิวเตอร์/โน้ตบุ๊ก)
-      await html5QrCode.start(
-        { facingMode: "user" },
-        config,
-        qrCodeSuccessCallback,
-      );
-    }
-
-    // 4. แจ้ง app.js ว่ากล้องเปิดสมบูรณ์แล้ว
-    window.isScannerMode = true;
-  } catch (err) {
-    console.error("ระบบกล้องถูกปฏิเสธโดยสมบูรณ์:", err);
-    window.isScannerMode = false;
-    forceResetUI();
-    alert(
-      "ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบการอนุญาตสิทธิ (Permission) ของเบราว์เซอร์ครับ",
-    );
-  } finally {
-    isTransitioning = false;
-  }
-}
-
+//===============
+// [stopScanner] START
 async function stopScanner() {
   if (preventDoubleTrigger() || isTransitioning) return;
   isTransitioning = true;
@@ -105,7 +48,11 @@ async function stopScanner() {
     isTransitioning = false;
   }
 }
+// [stopScanner] END
+//===============
 
+//===============
+// [forceResetUI] START
 function forceResetUI() {
   const scanView = document.getElementById("scannerView");
   if (scanView) {
@@ -124,6 +71,68 @@ function forceResetUI() {
       }
   }
 }
+// [forceResetUI] END
+//===============
+
+
+// ==========================================
+// [Scanner Callback / Data Routing]
+// ==========================================
+
+//===============
+// [qrCodeSuccessCallback] START
+const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
+  // 📍 [The Bulletproof Fix: ล็อกบาร์โค้ดทันที ป้องกันการสแกนเบิ้ลหรือฮาร์ดแวร์ค้าง]
+  if (window.isProcessingScan || isTransitioning) return;
+  window.isProcessingScan = true; // ล็อกทันทีเมื่อสแกนติด 1 ครั้ง
+
+  const sku = decodedText ? decodedText.trim() : "";
+  if (!sku) {
+      window.isProcessingScan = false;
+      return;
+  }
+
+  // 📦 [Context: Box Details View (โหมดลงกล่อง)]
+  if (window.currentScannerContext === 'box') {
+      
+      // 1. ดีเลย์ 300ms ให้ฮาร์ดแวร์กล้องพักหายใจ และ Render เสร็จสมบูรณ์ (ป้องกันกล้องค้าง)
+      setTimeout(async () => {
+          if (window.isScannerMode) {
+              if (typeof stopScanner === 'function') await stopScanner();
+          }
+          
+          // 2. ปิดกล้องเสร็จ ค่อยโยนข้อมูลให้ transferout.js ทำงานต่อ
+          if (typeof window.addScannedItemToBox === 'function') {
+              window.addScannedItemToBox(sku);
+          }
+          
+          // ปลดล็อกข้อมูล (เผื่อเรียกกล้องขึ้นมาใหม่)
+          window.isProcessingScan = false; 
+      }, 300);
+      
+  } 
+  // 🏠 [Context: Stock In House (โหมดปกติ - รักษา Golden Standard)]
+  else {
+      // ใช้ดีเลย์ 300ms เพื่อปกป้องฮาร์ดแวร์เช่นเดียวกัน
+      setTimeout(async () => {
+          if (window.isScannerMode) {
+              if (typeof stopScanner === 'function') await stopScanner();
+          }
+
+          const targetInput = document.getElementById("searchStockInput") || document.getElementById("searchInput");
+          if (targetInput) {
+            targetInput.value = sku;
+            targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          
+          window.isProcessingScan = false;
+      }, 300);
+  }
+};
+// [qrCodeSuccessCallback] END
+//===============
+
+
 
 // ==========================================
 // 🌟 CROSS-FILE BRIDGE & UI CONTROLS (ปุ่มควบคุมกล้อง)
@@ -194,52 +203,8 @@ window.toggleScanMode = function() {
 
 
 
-// ==========================================
-// [Scanner Callback / Data Routing]
-// ==========================================
 
-//===============
-// [qrCodeSuccessCallback] START
 
-const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
-  // 📍 [Prevent Double Scan: ป้องกันสแกนเบิ้ลรัวๆ]
-  if (window.isTransitioning) return;
-  window.isTransitioning = true;
-  setTimeout(() => { window.isTransitioning = false; }, 1000); 
-
-  const sku = decodedText ? decodedText.trim() : "";
-
-  // 📍 [Context: Box Details View (โหมดลงกล่อง)]
-  if (window.currentScannerContext === 'box') {
-      
-      // 1. สั่งปิดกล้องทันทีเมื่อสแกนติด (Single Scan Pattern)
-      if (window.isScannerMode) {
-          if (typeof stopScanner === 'function') await stopScanner();
-      }
-
-      // 2. ส่ง SKU ไปประมวลผลเพิ่มลงกล่องอัตโนมัติ
-      if (typeof window.addScannedItemToBox === 'function') {
-          window.addScannedItemToBox(sku);
-      }
-      
-  } 
-  // 🏠 [Context: Stock In House (โหมดปกติ - รักษา Golden Standard ไว้ 100%)]
-  else {
-      if (window.isScannerMode) {
-          if (typeof stopScanner === 'function') await stopScanner();
-      }
-
-      // โยนตัวเลขที่สแกนได้ ส่งข้ามไฟล์ไปให้ช่องค้นหาหลักทำงาน
-      const searchInput = document.getElementById("searchStockInput") || document.getElementById("searchInput");
-      if (searchInput) {
-        searchInput.value = sku;
-        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-  }
-};
-
-//[qrCodeSuccessCallback] END
-//===============
 
 
 
