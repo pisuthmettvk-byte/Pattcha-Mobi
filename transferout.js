@@ -1982,12 +1982,11 @@ window.submitWrapBox = async function () {
 
 
 
+// ==========================================
+// [Box Details View / Scanner Data Receiver]
 
-// ======================================================================
-// [Box Details View / Scanner Data Receiver]  START
 
-
-//===============
+//==================================
 // [addScannedItemToBox] START
 
 window.currentScannerContext = "box";
@@ -2097,7 +2096,7 @@ window.addScannedItemToBox = async function (skuInput) {
 };
 
 // [addScannedItemToBox] END
-//===============
+//======================================
 
 
 // [Box Details View / Scanner Data Receiver] END
