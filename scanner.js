@@ -46,42 +46,32 @@ async function startScanner() {
         html5QrCode = null;
     }
     
-    // 🚀 [TECH 1: LIMIT FORMATS] จำกัดประเภทบาร์โค้ด
+    // 🚀 [TECH 1: LIMIT FORMATS] คงไว้ซึ่งความเร็ว! 
+    // ให้ซอฟต์แวร์โฟกัสแค่บาร์โค้ดที่ใช้จริง จะทำให้สแกนติดไวกว่าปกติโดยไม่ต้องพึ่งความชัดของกล้อง
     const formatsToSupport = [
       Html5QrcodeSupportedFormats.QR_CODE,
-      Html5QrcodeSupportedFormats.EAN_13,   // บาร์โค้ดสินค้าสากล
-      Html5QrcodeSupportedFormats.CODE_128, // บาร์โค้ดรหัสยาว/ซีเรียล
+      Html5QrcodeSupportedFormats.EAN_13,   
+      Html5QrcodeSupportedFormats.CODE_128, 
       Html5QrcodeSupportedFormats.CODE_39
     ];
     html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formatsToSupport });
 
-    // 🚀 [TECH 2: FORCE HD & FOCUS] Config สำหรับความคมชัด
-    const config = { 
-      fps: 10, 
-      qrbox: { width: 250, height: 250 },
-      videoConstraints: {
-        width: { min: 1280, ideal: 1280 },
-        height: { min: 720, ideal: 720 },
-        advanced: [{ focusMode: "continuous" }]
-      }
-    };
+    // 📍 กลับไปใช้ตั้งค่าดั้งเดิมของเจเลอร์ที่เสถียรที่สุด (ไม่มีการบังคับฮาร์ดแวร์ให้มือถือตกใจ)
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
     try {
-      // 📍 แผน A: พยายามเปิดกล้องหลังแบบ HD + โฟกัสต่อเนื่อง
-      // ส่ง { facingMode: "environment" } แบบ Object (เหมาะกับมือถือรุ่นใหม่)
+      // 📍 บังคับกล้องหลัง (คำสั่งดั้งเดิมที่เสถียรที่สุด)
       await html5QrCode.start(
-        { facingMode: "environment" }, 
+        { facingMode: "environment" },
         config,
         qrCodeSuccessCallback
       );
     } catch (camErr) {
-      console.warn("กล้อง HD มีปัญหา หรือมือถือไม่เข้าใจคำสั่ง Object สลับไปใช้แผนสำรอง...", camErr);
-      
-      // 📍 แผน B (Fallback): บังคับกล้องหลังแบบ 100% ด้วย String "environment"
-      // วิธีนี้เป็นการบังคับเบราว์เซอร์ทุกรุ่นให้หันไปใช้กล้องหลังแน่นอน
+      console.warn("เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...", camErr);
+      // 📍 แผนสำรอง: หากมือถือบางรุ่นไม่รับค่าด้านบน ก็ยังคงบังคับ "กล้องหลัง" ด้วยคำว่า exact (ห้ามเด้งไปกล้องหน้าเด็ดขาด)
       await html5QrCode.start(
-        "environment", // 🚀 บังคับด้วย String โดดๆ ทะลวงทุกเบราว์เซอร์!
-        { fps: 10, qrbox: { width: 250, height: 250 } }, // ถอด videoConstraints ออก
+        { facingMode: { exact: "environment" } },
+        config,
         qrCodeSuccessCallback
       );
     }
@@ -98,7 +88,6 @@ async function startScanner() {
 }
 // [startScanner] END
 //===============
-
 
 
 //===============
@@ -209,6 +198,8 @@ const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
 };
 // [qrCodeSuccessCallback] END
 //===============
+
+
 
 // ==========================================
 // 🌟 CROSS-FILE BRIDGE & UI CONTROLS (ปุ่มควบคุมกล้อง)
