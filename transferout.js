@@ -1961,6 +1961,7 @@ window.submitWrapBox = async function () {
 // 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver) - [Data Source Fix]
 // ======================================================
 
+
 // ==========================================
 // [Box Details View / Scanner Data Receiver]
 // ==========================================
@@ -2088,6 +2089,8 @@ window.addScannedItemToBox = async function (skuInput) {
 };
 // [addScannedItemToBox] END
 //===============
+
+
 
 
 
