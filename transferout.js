@@ -1919,137 +1919,139 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+
+
+
 // ======================================================================
 // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (UI สีเหลืองคำถาม + Backend 100%) START
 
+                window.updateMasterShipmentTotals = function(shipmentNo) {
+                    const masterCol = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
+                    if (!masterCol) return;
 
-window.updateMasterShipmentTotals = function(shipmentNo) {
-    const masterCol = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
-    if (!masterCol) return;
+                    const childBoxes = masterCol.querySelectorAll('.shipment-child-box');
+                    let totalScan = 0;
+                    let totalManual = 0;
 
-    const childBoxes = masterCol.querySelectorAll('.shipment-child-box');
-    let totalScan = 0;
-    let totalManual = 0;
+                    childBoxes.forEach(box => {
+                        // ดึงยอดจากหน้า UI ของกล่องลูกแต่ละใบ
+                        const scanVal = parseInt(box.querySelector('.child-scan-qty')?.textContent || "0");
+                        const manualVal = parseInt(box.querySelector('.child-manual-qty')?.textContent || "0");
+                        totalScan += scanVal;
+                        totalManual += manualVal;
+                    });
 
-    childBoxes.forEach(box => {
-        // ดึงยอดจากหน้า UI ของกล่องลูกแต่ละใบ
-        const scanVal = parseInt(box.querySelector('.child-scan-qty')?.textContent || "0");
-        const manualVal = parseInt(box.querySelector('.child-manual-qty')?.textContent || "0");
-        totalScan += scanVal;
-        totalManual += manualVal;
-    });
+                    // อัปเดตตัวเลขขึ้นชิปเมนต์แม่
+                    const masterScanEl = masterCol.querySelector('.master-scan-count');
+                    const masterManualEl = masterCol.querySelector('.master-manual-count');
+                    const masterTruckEl = masterCol.querySelector('.master-truck-count');
 
-    // อัปเดตตัวเลขขึ้นชิปเมนต์แม่
-    const masterScanEl = masterCol.querySelector('.master-scan-count');
-    const masterManualEl = masterCol.querySelector('.master-manual-count');
-    const masterTruckEl = masterCol.querySelector('.master-truck-count');
+                    if (masterScanEl) masterScanEl.textContent = totalScan;
+                    if (masterManualEl) masterManualEl.textContent = totalManual;
+                    if (masterTruckEl) masterTruckEl.textContent = childBoxes.length;
+                };
 
-    if (masterScanEl) masterScanEl.textContent = totalScan;
-    if (masterManualEl) masterManualEl.textContent = totalManual;
-    if (masterTruckEl) masterTruckEl.textContent = childBoxes.length;
-};
+                window.submitWrapBox = async function () {
+                  if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
+                    if (typeof window.safeAlert === "function") window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
+                    return;
+                  }
 
-window.submitWrapBox = async function () {
-  if (!window.currentBoxItems || window.currentBoxItems.length === 0) {
-    if (typeof window.safeAlert === "function") window.safeAlert("BOX EMPTY", "ไม่มีสินค้าในกล่อง ไม่สามารถ Wrap ได้ครับ", "warning");
-    return;
-  }
+                  const shipmentElem = document.getElementById("boxDetailsShipmentText");
+                  const boxElem = document.getElementById("boxDetailsBoxText");
 
-  const shipmentElem = document.getElementById("boxDetailsShipmentText");
-  const boxElem = document.getElementById("boxDetailsBoxText");
+                  let shipmentId = shipmentElem ? shipmentElem.innerText.replace("(Shipment No: ", "").replace(")", "").trim() : "UNKNOWN-SHP";
+                  const boxNumber = boxElem ? boxElem.innerText.trim() : "UNKNOWN-BOX";
 
-  let shipmentId = shipmentElem ? shipmentElem.innerText.replace("(Shipment No: ", "").replace(")", "").trim() : "UNKNOWN-SHP";
-  const boxNumber = boxElem ? boxElem.innerText.trim() : "UNKNOWN-BOX";
+                  const isConfirmed = await safeConfirm("ยืนยันการปิดกล่อง (WRAP)?", `คุณต้องการปิดกล่อง ${boxNumber} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`, "question");
+                  if (!isConfirmed) return;
 
-  const isConfirmed = await safeConfirm("ยืนยันการปิดกล่อง (WRAP)?", `คุณต้องการปิดกล่อง ${boxNumber} ใช่หรือไม่? เมื่อปิดแล้วจะไม่สามารถแก้ไขสินค้าในกล่องนี้ได้อีก`, "question");
-  if (!isConfirmed) return;
+                  const wrapBtn = document.getElementById("btnBoxWrap");
+                  let originalBtnHtml = wrapBtn ? wrapBtn.innerHTML : "";
+                  if (wrapBtn) {
+                    wrapBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> กำลังบันทึก...';
+                    wrapBtn.style.pointerEvents = "none";
+                    wrapBtn.style.opacity = "0.7";
+                  }
 
-  const wrapBtn = document.getElementById("btnBoxWrap");
-  let originalBtnHtml = wrapBtn ? wrapBtn.innerHTML : "";
-  if (wrapBtn) {
-    wrapBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> กำลังบันทึก...';
-    wrapBtn.style.pointerEvents = "none";
-    wrapBtn.style.opacity = "0.7";
-  }
+                  // 📍 คำนวณแยกยอด Scan และ Manual ให้ชัดเจน
+                  let totalScanQty = 0;
+                  let totalManualQty = 0;
+                  
+                  const payload = {
+                    shipmentId: shipmentId,
+                    boxNumber: boxNumber,
+                    branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase(),
+                    items: window.currentBoxItems.map((item) => {
+                      // ดึงยอดจาก Data Object ที่เราระบุไว้
+                      const scan = item.scanQty || 0;
+                      const manual = item.manualQty || 0;
+                      
+                      totalScanQty += scan;
+                      totalManualQty += manual;
+                      
+                      return {
+                        sku: item.sku,
+                        name: item.name,
+                        scanQty: scan,
+                        manualQty: manual,
+                        totalQty: scan + manual,
+                      };
+                    }),
+                  };
 
-  // 📍 คำนวณแยกยอด Scan และ Manual ให้ชัดเจน
-  let totalScanQty = 0;
-  let totalManualQty = 0;
-  
-  const payload = {
-    shipmentId: shipmentId,
-    boxNumber: boxNumber,
-    branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase(),
-    items: window.currentBoxItems.map((item) => {
-      // ดึงยอดจาก Data Object ที่เราระบุไว้
-      const scan = item.scanQty || 0;
-      const manual = item.manualQty || 0;
-      
-      totalScanQty += scan;
-      totalManualQty += manual;
-      
-      return {
-        sku: item.sku,
-        name: item.name,
-        scanQty: scan,
-        manualQty: manual,
-        totalQty: scan + manual,
-      };
-    }),
-  };
+                  fetch(CONFIG.API_URL + "?action=save_box", {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                  })
+                    .then((res) => res.json())
+                    .then((data) => {
+                      if (wrapBtn) {
+                        wrapBtn.innerHTML = originalBtnHtml;
+                        wrapBtn.style.pointerEvents = "auto";
+                        wrapBtn.style.opacity = "1";
+                      }
 
-  fetch(CONFIG.API_URL + "?action=save_box", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (wrapBtn) {
-        wrapBtn.innerHTML = originalBtnHtml;
-        wrapBtn.style.pointerEvents = "auto";
-        wrapBtn.style.opacity = "1";
-      }
+                      if (data.status === "success" || data.success) {
+                        
+                        // 📍 1. อัปเดตตัวเลขและสีของกล่องลูก (Child Box) ในหน้า Lobby
+                        if (window.currentBoxElement) {
+                          window.currentBoxElement.setAttribute("data-status", "Closed");
+                          const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
+                          if (boxIcon) {
+                            boxIcon.className = "fas fa-box";
+                            boxIcon.style.color = "#d93844"; // เปลี่ยนเป็นกล่องปิดสีแดง
+                          }
+                          
+                          // หยอดตัวเลขลงไอคอนบาร์โค้ด และ ไอคอนรูปมือ ให้แยกกันชัดเจน
+                          const scanEl = window.currentBoxElement.querySelector(".child-scan-qty");
+                          const manualEl = window.currentBoxElement.querySelector(".child-manual-qty");
+                          if (scanEl) scanEl.textContent = totalScanQty;
+                          if (manualEl) manualEl.textContent = totalManualQty;
+                        }
 
-      if (data.status === "success" || data.success) {
-        
-        // 📍 1. อัปเดตตัวเลขและสีของกล่องลูก (Child Box) ในหน้า Lobby
-        if (window.currentBoxElement) {
-          window.currentBoxElement.setAttribute("data-status", "Closed");
-          const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
-          if (boxIcon) {
-            boxIcon.className = "fas fa-box";
-            boxIcon.style.color = "#d93844"; // เปลี่ยนเป็นกล่องปิดสีแดง
-          }
-          
-          // หยอดตัวเลขลงไอคอนบาร์โค้ด และ ไอคอนรูปมือ ให้แยกกันชัดเจน
-          const scanEl = window.currentBoxElement.querySelector(".child-scan-qty");
-          const manualEl = window.currentBoxElement.querySelector(".child-manual-qty");
-          if (scanEl) scanEl.textContent = totalScanQty;
-          if (manualEl) manualEl.textContent = totalManualQty;
-        }
+                        // 📍 2. ดันตัวเลขขึ้นไปสรุปรวมที่ชิปเมนต์แม่ (Master Rollup)
+                        window.updateMasterShipmentTotals(shipmentId);
 
-        // 📍 2. ดันตัวเลขขึ้นไปสรุปรวมที่ชิปเมนต์แม่ (Master Rollup)
-        window.updateMasterShipmentTotals(shipmentId);
-
-        if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} สำเร็จ!`, "success");
-        
-        window.currentBoxItems = [];
-        window.renderBoxContentArea();
-        document.getElementById("btnBackFromBox").click();
-        
-      } else {
-        if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "บันทึกล้มเหลว"), "error");
-      }
-    })
-    .catch((error) => {
-      if (wrapBtn) {
-        wrapBtn.innerHTML = originalBtnHtml;
-        wrapBtn.style.pointerEvents = "auto";
-        wrapBtn.style.opacity = "1";
-      }
-      if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
-    });
-};
+                        if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} สำเร็จ!`, "success");
+                        
+                        window.currentBoxItems = [];
+                        if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+                        document.getElementById("btnBackFromBox").click();
+                        
+                      } else {
+                        if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "บันทึกล้มเหลว"), "error");
+                      }
+                    })
+                    .catch((error) => {
+                      if (wrapBtn) {
+                        wrapBtn.innerHTML = originalBtnHtml;
+                        wrapBtn.style.pointerEvents = "auto";
+                        wrapBtn.style.opacity = "1";
+                      }
+                      if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
+                    });
+                };
 
 // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (UI สีเหลืองคำถาม + Backend 100%) END
 // ======================================================================
@@ -2064,74 +2066,129 @@ window.submitWrapBox = async function () {
 // ======================================================================
 // 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver) - [Data Source Fix]
 // ===========================================================
-// ==================================================
-// [Box Details View / Scanner Data Receiver]
+                window.currentScannerContext = "box";
 
+                window.addScannedItemToBox = async function (skuInput) {
+                  // 1. ดึงหน้าต่าง Box Details กลับมาแสดงผลให้ชัวร์
+                  const boxDetailsView = document.getElementById("boxDetailsView");
+                  if (boxDetailsView) boxDetailsView.classList.remove("hide");
 
-//===================================
-// [addScannedItemToBox] START
+                  const sku = skuInput ? skuInput.trim() : "";
+                  if (!sku) return;
 
-window.currentScannerContext = "box";
+                  console.log(`[SCANNER DEBUG] รับค่าบาร์โค้ดลงกล่อง: "${sku}"`);
 
-window.addScannedItemToBox = async function (skuInput) {
-  // 1. ดึงหน้าต่าง Box Details กลับมาแสดงผลให้ชัวร์
-  const boxDetailsView = document.getElementById("boxDetailsView");
-  if (boxDetailsView) boxDetailsView.classList.remove("hide");
-
-  const sku = skuInput ? skuInput.trim() : "";
-  if (!sku) return;
-
-  console.log(`[SCANNER DEBUG] รับค่าบาร์โค้ดลงกล่อง: "${sku}"`);
-
-  // 📍 [The Phantom Search Fix: โคลนวิธีการทำงานของ Stock In House 100%]
-  // โยนตัวเลขบาร์โค้ดเข้าช่องค้นหาของหน้ากล่อง ให้มันดึงข้อมูลจาก localProductDatabase โดยอัตโนมัติ
-  const boxSearchInput = document.getElementById("boxSearchInput");
-  
-  if (boxSearchInput) {
-      // กรอกตัวเลขลงช่องค้นหา
-      boxSearchInput.value = sku;
-      // กระตุ้นให้ระบบค้นหาทำงาน (เหมือนพิมพ์เอง)
-      boxSearchInput.dispatchEvent(new Event("input", { bubbles: true }));
-
-      // รอให้ระบบค้นหาดึงข้อมูลขึ้นมา 300 มิลลิวินาที 
-      setTimeout(() => {
-          // ดึงข้อมูลสินค้าที่ตรงกับบาร์โค้ดมาเช็ก (ระบบเดิมของเจเลอร์ทำไว้ดีมาก)
-          if (typeof localProductDatabase !== "undefined") {
-              const productMatch = localProductDatabase.find(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
-              
-              if (productMatch) {
-                  // ✅ [พบสินค้า] เรียกฟังก์ชันยัดลงตะกร้าแบบอัตโนมัติ!
-                  if (typeof window.addSearchItemToBox === "function") {
-                      window.addSearchItemToBox(sku); // ฟังก์ชันนี้เจเลอร์เขียนไว้แล้ว มันจะเพิ่ม Qty ลงกล่องให้เอง
-                      
-                      // แจ้งเตือนสีเขียว
+                  // 📍 [The Shield: โหมด Audit ตรวจเช็กของในกล่องที่ปิดแล้ว]
+                  let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+                  
+                  if (isClosedBox) {
+                    let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
+                    if (existingItem) {
                       if (navigator.vibrate) navigator.vibrate(100);
-                      const toast = document.createElement("div");
-                      toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
-                      toast.innerHTML = `<i class="fas fa-check-circle"></i> สแกนลงกล่องแล้ว`;
-                      document.body.appendChild(toast);
-                      setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+                      if (typeof window.safeAlert === "function") window.safeAlert("✅ พบในกล่อง", `รหัส ${sku} มีอยู่ในกล่องนี้`, "success");
+                    } else {
+                      if (navigator.vibrate) navigator.vibrate(150);
+                      if (typeof window.safeAlert === "function") window.safeAlert("❌ ไม่พบสินค้า", `ไม่มีรหัส ${sku} ในกล่องนี้`, "error");
+                    }
+                    return; // ⛔ สั่งหยุดการทำงานตรงนี้เลย ห้ามบวกยอดเพิ่มเด็ดขาด!
                   }
-              } else {
-                  // ❌ [ไม่พบสินค้าในสต็อก] แจ้งเตือนสีเหลือง
-                  if (navigator.vibrate) navigator.vibrate(150);
-                  const failToast = document.createElement("div");
-                  failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
-                  failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku}`;
-                  document.body.appendChild(failToast);
-                  setTimeout(() => failToast.remove(), 2000);
-              }
-          }
-      }, 300);
 
-  } else {
-      console.error("[SCANNER ERROR] ไม่พบช่องค้นหาในหน้า Box Details");
-  }
-};
+                  // 📍 [โหมดปกติ: กล่องสีเขียวที่ยังเปิดอยู่]
+                  // [The Phantom Search Fix: โคลนวิธีการทำงานของ Stock In House 100%]
+                  const boxSearchInput = document.getElementById("boxSearchInput");
+                  
+                  if (boxSearchInput) {
+                      boxSearchInput.value = sku;
+                      boxSearchInput.dispatchEvent(new Event("input", { bubbles: true }));
 
+                      setTimeout(() => {
+                          if (typeof localProductDatabase !== "undefined") {
+                              const productMatch = localProductDatabase.find(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
+                              
+                              if (productMatch) {
+                                  // ✅ [พบสินค้า] ดำเนินการแยกยอดเข้า "บาร์โค้ด" ทันที โดยไม่พึ่งฟังก์ชันอื่น!
+                                  let itemInBox = window.currentBoxItems.find(i => i.sku === productMatch.sku);
+                                  
+                                  if (itemInBox) {
+                                      itemInBox.scanQty = (itemInBox.scanQty || 0) + 1; // บวกไอคอนบาร์โค้ด
+                                      itemInBox.totalQty = itemInBox.scanQty + (itemInBox.manualQty || 0);
+                                  } else {
+                                      window.currentBoxItems.unshift({
+                                          sku: productMatch.sku,
+                                          name: productMatch.name,
+                                          image: productMatch.image,
+                                          scanQty: 1,   // 📍 โยนเข้าไอคอนบาร์โค้ด 100%
+                                          manualQty: 0, // 📍 รูปมือเป็น 0
+                                          totalQty: 1
+                                      });
+                                  }
+
+                                  // สั่งให้หน้าจอวาดใหม่เพื่ออัปเดตตัวเลข
+                                  if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+
+                                  // แจ้งเตือนสีเขียว UI ดั้งเดิมที่สวยงามของเจเลอร์
+                                  if (navigator.vibrate) navigator.vibrate(100);
+                                  const toast = document.createElement("div");
+                                  toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+                                  toast.innerHTML = `<i class="fas fa-check-circle"></i> สแกนลงกล่องแล้ว`;
+                                  document.body.appendChild(toast);
+                                  setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+
+                              } else {
+                                  // ❌ [ไม่พบสินค้าในสต็อก] แจ้งเตือนสีเหลืองดั้งเดิมของเจเลอร์
+                                  if (navigator.vibrate) navigator.vibrate(150);
+                                  const failToast = document.createElement("div");
+                                  failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
+                                  failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku}`;
+                                  document.body.appendChild(failToast);
+                                  setTimeout(() => failToast.remove(), 2000);
+                              }
+                          }
+                      }, 300);
+                  } else {
+                      console.error("[SCANNER ERROR] ไม่พบช่องค้นหาในหน้า Box Details");
+                  }
+                };
 // [addScannedItemToBox] END
 //==================================
-
-
 // [Box Details View / Scanner Data Receiver] END
 // =======================================================================
+
+
+
+
+
+// ======================================================================
+// 🖐️ Phase 10.1: ระบบจัดการยอดกดมือ (Manual Quantity Handler) START
+                window.updateBoxItemQty = function (index, change) {
+                  // 📍 ป้องกันไม่ให้แอบกดบวกลบตอนกล่องปิดไปแล้ว
+                  let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+                  if (isClosedBox) {
+                    if (typeof window.safeAlert === "function") window.safeAlert("LOCKED", "กล่องถูกปิดไปแล้ว ไม่สามารถแก้ไขจำนวนได้", "warning");
+                    return;
+                  }
+
+                  let item = window.currentBoxItems[index];
+                  if (!item) return;
+
+                  // 📍 การกดปุ่ม + หรือ - ให้นับความเปลี่ยนแปลงที่ฝั่ง รูปมือ (manualQty) เท่านั้น!
+                  let newManualQty = (item.manualQty || 0) + change;
+                  if (newManualQty < 0) newManualQty = 0; // ห้ามติดลบ
+
+                  item.manualQty = newManualQty;
+                  item.totalQty = (item.scanQty || 0) + item.manualQty;
+
+                  // ถ้าลดจนเหลือ 0 ชิ้น ให้ถามว่าจะลบไหม?
+                  if (item.totalQty === 0) {
+                    if (confirm("จำนวนสินค้าเป็น 0 ต้องการลบออกจากกล่องหรือไม่?")) {
+                        window.currentBoxItems.splice(index, 1);
+                    } else {
+                        item.manualQty = 1; // คืนค่าให้ 1 ถ้าไม่ลบ
+                        item.totalQty = (item.scanQty || 0) + 1;
+                    }
+                  }
+
+                  if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+                };
+// 🖐️ Phase 10.1: ระบบจัดการยอดกดมือ (Manual Quantity Handler) END
+// ======================================================================
