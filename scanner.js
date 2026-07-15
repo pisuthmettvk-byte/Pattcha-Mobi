@@ -15,6 +15,65 @@ function preventDoubleTrigger() {
 }
 
 
+// ==========================================
+// 🌟 CORE SCANNER FUNCTIONS
+// ==========================================
+
+//===============
+// [startScanner] START
+async function startScanner() {
+  if (preventDoubleTrigger() || window.isScannerMode || isTransitioning) return;
+  isTransitioning = true;
+  window.isProcessingScan = false; // 📍 ประกาศตัวล็อกแต่เนิ่นๆ ป้องกัน Undefined
+
+  const searchInput = document.getElementById("searchStockInput");
+  if (searchInput) {
+    searchInput.value = "";
+    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  try {
+    const scanView = document.getElementById("scannerView");
+    if (scanView) {
+      scanView.classList.add("active");
+      scanView.style.position = "fixed";
+      scanView.style.zIndex = "99999";
+    }
+
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    // FPS 10 เสถียรสุด ไม่ทำเครื่องค้าง
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        qrCodeSuccessCallback
+      );
+    } catch (camErr) {
+      console.warn("กล้องหลังไม่พร้อมใช้งาน สลับไปใช้เว็บแคม...", camErr);
+      await html5QrCode.start(
+        { facingMode: "user" },
+        config,
+        qrCodeSuccessCallback
+      );
+    }
+
+    window.isScannerMode = true;
+  } catch (err) {
+    console.error("ระบบกล้องถูกปฏิเสธ:", err);
+    window.isScannerMode = false;
+    forceResetUI();
+    alert("ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบการอนุญาต (Permission)");
+  } finally {
+    isTransitioning = false;
+  }
+}
+// [startScanner] END
+//===============
 
 //===============
 // [stopScanner] START
@@ -27,7 +86,7 @@ async function stopScanner() {
       try {
         await html5QrCode.stop();
       } catch (stopErr) {
-        console.warn("ข้ามการหยุดฮาร์ดแวร์: เลนส์กล้องอาจจะยังไม่เปิดสมบูรณ์");
+        console.warn("ข้ามการหยุดฮาร์ดแวร์: เลนส์อาจจะยังไม่เปิดสมบูรณ์");
       }
       html5QrCode.clear();
     }
@@ -35,9 +94,8 @@ async function stopScanner() {
     console.warn("Stop scanner error:", err);
   } finally {
     window.isScannerMode = false;
-    isFlashOn = false; // รีเซ็ตสถานะแฟลชเมื่อปิดกล้อง
+    isFlashOn = false;
 
-    // รีเซ็ต UI ปุ่มแฟลชให้กลับเป็นสีขาวเดิม
     const flashBtn = document.getElementById("btnToggleFlash");
     if (flashBtn) {
       flashBtn.style.color = "#fff";
@@ -57,13 +115,13 @@ function forceResetUI() {
   const scanView = document.getElementById("scannerView");
   if (scanView) {
     scanView.classList.remove("active");
-    scanView.style.zIndex = "-1"; // ซ่อนกลับไปข้างหลัง
+    scanView.style.zIndex = "-1"; 
   }
   
   window.isScannerMode = false;
+  window.isProcessingScan = false; // ปลดล็อกบาร์โค้ดเสมอเมื่อ UI รีเซ็ต
 
-  // 📍 [The Absolute Fix: ดึงหน้า Box Details กลับมา เมื่อปิดกล้อง!]
-  // ถ้าเราอยู่ในโหมดสแกนลงกล่อง ให้โชว์หน้ากล่องกลับมา
+  // ดึงหน้า Box Details กลับมา
   if (window.currentScannerContext === 'box') {
       const boxDetailsView = document.getElementById("boxDetailsView");
       if (boxDetailsView) {
@@ -82,9 +140,9 @@ function forceResetUI() {
 //===============
 // [qrCodeSuccessCallback] START
 const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
-  // 📍 [The Bulletproof Fix: ล็อกบาร์โค้ดทันที ป้องกันการสแกนเบิ้ลหรือฮาร์ดแวร์ค้าง]
-  if (window.isProcessingScan || isTransitioning) return;
-  window.isProcessingScan = true; // ล็อกทันทีเมื่อสแกนติด 1 ครั้ง
+  // 📍 [The Shield: ป้องกันสแกนเบิ้ลและป้องกันจอค้าง]
+  if (window.isProcessingScan) return;
+  window.isProcessingScan = true; 
 
   const sku = decodedText ? decodedText.trim() : "";
   if (!sku) {
@@ -95,25 +153,21 @@ const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
   // 📦 [Context: Box Details View (โหมดลงกล่อง)]
   if (window.currentScannerContext === 'box') {
       
-      // 1. ดีเลย์ 300ms ให้ฮาร์ดแวร์กล้องพักหายใจ และ Render เสร็จสมบูรณ์ (ป้องกันกล้องค้าง)
       setTimeout(async () => {
-          if (window.isScannerMode) {
-              if (typeof stopScanner === 'function') await stopScanner();
-          }
-          
-          // 2. ปิดกล้องเสร็จ ค่อยโยนข้อมูลให้ transferout.js ทำงานต่อ
+          // โยนบาร์โค้ดไปก่อนเลย ให้ UI รับรู้ทันที (แก้ปัญหาจอล่องหน/จอขาว)
           if (typeof window.addScannedItemToBox === 'function') {
               window.addScannedItemToBox(sku);
           }
           
-          // ปลดล็อกข้อมูล (เผื่อเรียกกล้องขึ้นมาใหม่)
-          window.isProcessingScan = false; 
+          // แล้วค่อยปิดกล้องตามไปติดๆ
+          if (window.isScannerMode) {
+              if (typeof stopScanner === 'function') await stopScanner();
+          }
       }, 300);
       
   } 
-  // 🏠 [Context: Stock In House (โหมดปกติ - รักษา Golden Standard)]
+  // 🏠 [Context: Stock In House (โหมดปกติ)]
   else {
-      // ใช้ดีเลย์ 300ms เพื่อปกป้องฮาร์ดแวร์เช่นเดียวกัน
       setTimeout(async () => {
           if (window.isScannerMode) {
               if (typeof stopScanner === 'function') await stopScanner();
@@ -124,13 +178,15 @@ const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
             targetInput.value = sku;
             targetInput.dispatchEvent(new Event("input", { bubbles: true }));
           }
-          
-          window.isProcessingScan = false;
       }, 300);
   }
 };
 // [qrCodeSuccessCallback] END
 //===============
+
+
+
+
 
 
 

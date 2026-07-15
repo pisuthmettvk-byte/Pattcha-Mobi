@@ -1971,11 +1971,11 @@ window.submitWrapBox = async function () {
 window.currentScannerContext = "stock";
 
 window.addScannedItemToBox = async function (skuInput) {
-  // 📍 [The Ultimate Visibility Fix: บังคับโชว์หน้ากล่องทันทีที่เริ่มรับข้อมูล]
-  // เผื่อฮาร์ดแวร์กล้องมีดีเลย์ โค้ดส่วนนี้จะดึงหน้าต่าง Box Details กลับมาทันทีไม่ให้เกิดจอล่องหน
+  // ดึงจอกลับมาให้ชัวร์
   const boxDetailsView = document.getElementById("boxDetailsView");
   if (boxDetailsView) boxDetailsView.classList.remove("hide");
 
+  
   const sku = skuInput ? skuInput.trim() : "";
   if (!sku) return;
 
