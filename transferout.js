@@ -1980,72 +1980,60 @@ window.submitWrapBox = async function () {
 // ======================================================
 
 
-// ======================================================================
-// [Box Details View / Scanner Data Receiver] START
+// ==========================================
+// [Box Details View / Scanner Data Receiver]
+// ==========================================
+
 //===============
 // [addScannedItemToBox] START
 
-window.currentScannerContext = "stock";
+window.currentScannerContext = "box"; // บริบทนี้คือกล่อง
 
 window.addScannedItemToBox = async function (skuInput) {
-  // ดึงจอกลับมาให้ชัวร์
+  // 1. ดึงหน้าต่าง Box Details กลับมาให้ชัวร์
   const boxDetailsView = document.getElementById("boxDetailsView");
   if (boxDetailsView) boxDetailsView.classList.remove("hide");
 
   const sku = skuInput ? skuInput.trim() : "";
   if (!sku) return;
 
-  console.log(`[SCANNER DEBUG] รับค่าบาร์โค้ด: "${sku}"`);
+  console.log(`[SCANNER DEBUG] รับค่าบาร์โค้ดลงกล่อง: "${sku}"`);
 
-  // 📍 [The Golden Standard Fix: วิเคราะห์จากต้นแบบ In-House และช่องค้นหา]
-  let foundProduct = null;
+  // 📍 [The Golden Source: ค้นหาฐานข้อมูลเดียวกับที่ช่องค้นหาใช้]
   let targetDB = null;
-
-  // 1. ค้นหาผ่านตัวแปรระดับ Global ที่ล่องหนจาก window (เจาะเกราะช่องค้นหา)
-  const possibleDBNames = ['stockData', 'StockData', 'inventoryData', 'allProducts', 'products', 'globalStock'];
-  for (const dbName of possibleDBNames) {
+  
+  // กวาดหาตัวแปร Array ในระบบที่มีโครงสร้างตรงกับ Code.gs (มี availableStock, currentStock, sku)
+  for (const key in window) {
       try {
-          const arr = eval(dbName); // ดึงค่าจากตัวแปรตรงๆ ไม่ผ่าน window
-          if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object') {
-              targetDB = arr;
-              console.log(`[SCANNER DEBUG] พบแหล่งข้อมูลจากช่องค้นหา: ${dbName}`);
-              break;
+          const arr = window[key];
+          if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === "object") {
+              // ตรวจสอบว่าเป็นฐานข้อมูลสินค้าจริงหรือไม่
+              if (('sku' in arr[0] || 'SKU' in arr[0]) && ('name' in arr[0] || 'Product_Name' in arr[0])) {
+                  targetDB = arr;
+                  console.log(`[SCANNER SUCCESS] เชื่อมต่อแหล่งข้อมูลสต็อกสำเร็จจากตัวแปร: window.${key}`);
+                  break;
+              }
           }
-      } catch (e) {} 
+      } catch (e) {}
   }
 
-  // 2. แผนสำรอง: กวาดหาใน window
+  // 🚨 ถ้าหาฐานข้อมูลไม่เจอเลย
   if (!targetDB) {
-      for (const key in window) {
-          try {
-              const arr = window[key];
-              if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === "object") {
-                  if ('sku' in arr[0] || 'SKU' in arr[0] || 'ItemCode' in arr[0]) {
-                      targetDB = arr; break;
-                  }
-              }
-          } catch (e) {}
-      }
+      console.error("[SCANNER ERROR] ไม่พบฐานข้อมูลสต็อกในหน้า Box Details");
+      alert("⚠️ ไม่พบฐานข้อมูลสินค้า กรุณารีเฟรชหน้าจอหรือกลับไปหน้าหลักเพื่อโหลดข้อมูลใหม่");
+      return;
   }
 
-  // 3. ทำการเทียบรหัสสินค้าแบบ 100% Match
-  if (targetDB) {
-      const match = targetDB.find(item => {
-          for (const prop in item) {
-              if (item[prop] && String(item[prop]).trim().toUpperCase() === sku.toUpperCase()) {
-                  // สร้างคีย์ 'sku' กลางไว้ให้ระบบตะกร้าของหน้ากล่องอ่านออกเสมอ
-                  if (!item.sku && !item.SKU) item.sku = item[prop];
-                  return true;
-              }
-          }
-          return false;
-      });
-      if (match) foundProduct = { ...match };
-  }
+  // 2. ค้นหาสินค้าจาก SKU
+  const foundProduct = targetDB.find(item => 
+      (item.sku || "").toString().trim().toUpperCase() === sku.toUpperCase() || 
+      (item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase() ||
+      (item.productCode || "").toString().trim().toUpperCase() === sku.toUpperCase()
+  );
 
-  // 🚨 [กรณีสแกนหาไม่เจอ: การันตีด้วย Prototype ของกล้อง In-House]
+  // 🚨 ถ้าหาสินค้าชิ้นนั้นไม่เจอในสต็อก
   if (!foundProduct) {
-      console.warn(`[SCAN FAILED] ไม่พบสินค้าบาร์โค้ด: ${sku} ในตัวแปร`);
+      console.warn(`[SCAN FAILED] ไม่มีบาร์โค้ด: ${sku} ในสต็อก`);
       if (navigator.vibrate) navigator.vibrate(150);
 
       const failToast = document.createElement("div");
@@ -2053,91 +2041,75 @@ window.addScannedItemToBox = async function (skuInput) {
       failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku}`;
       document.body.appendChild(failToast);
       setTimeout(() => failToast.remove(), 2000);
-
-      if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
-      
-      // ⚡ The Phantom Trigger: ใช้หลักการเดียวกับ In-House โยนบาร์โค้ดลงช่องค้นหาหน้ากล่องให้ UI ดึงข้อมูลเอง
-      const boxSearch = document.getElementById("boxSearchInput") || document.querySelector("#boxDetailsView input[type='text']");
-      if (boxSearch) {
-          boxSearch.value = sku;
-          boxSearch.dispatchEvent(new Event("input", { bubbles: true }));
-      }
       return;
   }
 
-  // ---🔍 [หาค่าสต็อกที่แท้จริง รองรับชื่อคอลัมน์หลายรูปแบบจาก Code.gs]
-  const possibleStockKeys = ["availableStock", "Stock", "stock", "Qty", "qty", "Quantity"];
+  // 3. เช็คยอดสต็อกสูงสุด (อ้างอิงจากคอลัมน์ที่ Code.gs ส่งมา)
   let stockLimit = 9999;
-  for (const sKey of possibleStockKeys) {
-    if (foundProduct[sKey] !== undefined && foundProduct[sKey] !== null && foundProduct[sKey] !== "") {
-      stockLimit = Number(foundProduct[sKey]);
-      break;
-    }
+  if (foundProduct.availableStock !== undefined) {
+      stockLimit = Number(foundProduct.availableStock);
+  } else if (foundProduct.currentStock !== undefined) {
+      stockLimit = Number(foundProduct.currentStock);
   }
 
-  // ---🔍 [เพิ่มสินค้าลงตะกร้า currentBoxItems]
+  // 4. กระบวนการนำสินค้าลงกล่องอัตโนมัติ (Auto-Add Logic)
   if (!window.currentBoxItems) window.currentBoxItems = [];
 
+  // เช็คว่าเคยสแกนลงกล่องนี้ไปหรือยัง
   const existingItem = window.currentBoxItems.find(
-    (item) => (item.sku || item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase()
+      (item) => (item.sku || item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase()
   );
 
   const currentTotal = existingItem ? ((existingItem.scanQty || 0) + (existingItem.manualQty || 0)) : 0;
 
   if (currentTotal < stockLimit) {
-    // 📍 [Add to Box Logic: เข้ากล่องทันทีโดยไม่ต้องมีปุ่ม ADD]
-    if (existingItem) {
-      existingItem.scanQty = (existingItem.scanQty || 0) + 1;
-    } else {
-      window.currentBoxItems.push({
-        ...foundProduct,
-        scanQty: 1,
-        manualQty: 0,
-        isManual: false,
-        sku: foundProduct.sku || foundProduct.SKU || sku // บังคับโครงสร้างข้อมูลให้สมบูรณ์
-      });
-    }
+      // 📍 [นำของลงกล่อง]
+      if (existingItem) {
+          existingItem.scanQty = (existingItem.scanQty || 0) + 1;
+          existingItem.totalQty = existingItem.scanQty + (existingItem.manualQty || 0); // เผื่อการคำนวณ
+      } else {
+          // สร้างรายการใหม่ลงกล่อง โดยคงโครงสร้างเดิมจากฐานข้อมูล
+          window.currentBoxItems.push({
+              ...foundProduct,
+              sku: foundProduct.sku || foundProduct.SKU || sku, // บังคับสร้าง key sku
+              scanQty: 1,
+              manualQty: 0,
+              totalQty: 1,
+              isManual: false
+          });
+      }
 
-    // 📍 [Render UI: อัปเดตรายการในหน้าจอทันที]
-    if (typeof window.renderBoxContentArea === "function") {
-        window.renderBoxContentArea();
-    }
-    
-    if (typeof window.updateBoxSummary === "function") {
-        window.updateBoxSummary();
-    }
+      // 📍 [สั่งให้ UI หน้ากล่องรีเฟรชตัวเอง เพื่อแสดงรายการสินค้า]
+      if (typeof window.renderBoxContentArea === "function") {
+          window.renderBoxContentArea();
+      }
+      if (typeof window.updateBoxSummary === "function") {
+          window.updateBoxSummary();
+      }
 
-    // เคลียร์ช่องค้นหาเพื่อความสะอาดของหน้าจอ
-    const boxSearch = document.getElementById("boxSearchInput") || document.querySelector("#boxDetailsView input[type='text']");
-    if (boxSearch) {
-        boxSearch.value = "";
-        boxSearch.dispatchEvent(new Event("input", { bubbles: true }));
-    }
+      // 📍 [แจ้งเตือนความสำเร็จ]
+      const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
+      beep.play().catch(() => {});
+      if (navigator.vibrate) navigator.vibrate(100);
 
-    // 📍 [Feedback: สำเร็จ]
-    const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
-    beep.play().catch(() => {});
-    if (navigator.vibrate) navigator.vibrate(100);
-
-    const toast = document.createElement("div");
-    toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
-    toast.innerHTML = `<i class="fas fa-check-circle"></i> เพิ่มลงกล่องแล้ว`;
-    document.body.appendChild(toast);
-    setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+      const toast = document.createElement("div");
+      toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+      toast.innerHTML = `<i class="fas fa-check-circle"></i> นำลงกล่องแล้ว`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
 
   } else {
-    // 📍 [Feedback: สต็อกไม่พอ]
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    const errToast = document.createElement("div");
-    errToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
-    errToast.innerHTML = `<i class="fas fa-times-circle"></i> สต็อกไม่พอ (${stockLimit})`;
-    document.body.appendChild(errToast);
-    setTimeout(() => { errToast.style.opacity = "0"; setTimeout(() => errToast.remove(), 500); }, 2000);
-
-    if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+      // 📍 [แจ้งเตือนกรณีสต็อกหมด/เกินลิมิต]
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      const errToast = document.createElement("div");
+      errToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+      errToast.innerHTML = `<i class="fas fa-times-circle"></i> สต็อกไม่พอ (มีแค่ ${stockLimit})`;
+      document.body.appendChild(errToast);
+      setTimeout(() => { errToast.style.opacity = "0"; setTimeout(() => errToast.remove(), 500); }, 2000);
   }
 };
 
-// [addScannedItemToBox] END
+//===============// [addScannedItemToBox] END
+
 // [Box Details View / Scanner Data Receiver] END
 // =======================================================================
