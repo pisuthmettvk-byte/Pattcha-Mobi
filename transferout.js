@@ -1980,10 +1980,8 @@ window.submitWrapBox = async function () {
 // ======================================================
 
 
-// ==========================================
-// [Box Details View / Scanner Data Receiver]
-// ==========================================
-
+// ======================================================================
+// [Box Details View / Scanner Data Receiver] START
 //===============
 // [addScannedItemToBox] START
 
@@ -1999,48 +1997,76 @@ window.addScannedItemToBox = async function (skuInput) {
 
   console.log(`[SCANNER DEBUG] รับค่าบาร์โค้ด: "${sku}"`);
 
-  // 📍 [The Data Source Fix: ใช้แหล่งข้อมูลเดียวกับช่องค้นหา 100%]
-  // ปกติระบบช่องค้นหาจะใช้ window.stockData เป็นหลัก
-  let targetDB = window.stockData; 
-  
-  // สำรองเผื่อข้อมูลอยู่ในตัวแปรชื่ออื่น
-  if (!targetDB || !Array.isArray(targetDB) || targetDB.length === 0) {
-      for (const key in window) {
-          if (Array.isArray(window[key]) && window[key].length > 0 && window[key][0].hasOwnProperty('sku')) {
-              targetDB = window[key];
+  // 📍 [The Golden Standard Fix: วิเคราะห์จากต้นแบบ In-House และช่องค้นหา]
+  let foundProduct = null;
+  let targetDB = null;
+
+  // 1. ค้นหาผ่านตัวแปรระดับ Global ที่ล่องหนจาก window (เจาะเกราะช่องค้นหา)
+  const possibleDBNames = ['stockData', 'StockData', 'inventoryData', 'allProducts', 'products', 'globalStock'];
+  for (const dbName of possibleDBNames) {
+      try {
+          const arr = eval(dbName); // ดึงค่าจากตัวแปรตรงๆ ไม่ผ่าน window
+          if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object') {
+              targetDB = arr;
+              console.log(`[SCANNER DEBUG] พบแหล่งข้อมูลจากช่องค้นหา: ${dbName}`);
               break;
           }
+      } catch (e) {} 
+  }
+
+  // 2. แผนสำรอง: กวาดหาใน window
+  if (!targetDB) {
+      for (const key in window) {
+          try {
+              const arr = window[key];
+              if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === "object") {
+                  if ('sku' in arr[0] || 'SKU' in arr[0] || 'ItemCode' in arr[0]) {
+                      targetDB = arr; break;
+                  }
+              }
+          } catch (e) {}
       }
   }
 
-  if (!targetDB || targetDB.length === 0) {
-      alert("⚠️ ไม่พบข้อมูลสต็อกในระบบ กรุณารอโหลดข้อมูล หรือกลับไปหน้า Stock In House");
+  // 3. ทำการเทียบรหัสสินค้าแบบ 100% Match
+  if (targetDB) {
+      const match = targetDB.find(item => {
+          for (const prop in item) {
+              if (item[prop] && String(item[prop]).trim().toUpperCase() === sku.toUpperCase()) {
+                  // สร้างคีย์ 'sku' กลางไว้ให้ระบบตะกร้าของหน้ากล่องอ่านออกเสมอ
+                  if (!item.sku && !item.SKU) item.sku = item[prop];
+                  return true;
+              }
+          }
+          return false;
+      });
+      if (match) foundProduct = { ...match };
+  }
+
+  // 🚨 [กรณีสแกนหาไม่เจอ: การันตีด้วย Prototype ของกล้อง In-House]
+  if (!foundProduct) {
+      console.warn(`[SCAN FAILED] ไม่พบสินค้าบาร์โค้ด: ${sku} ในตัวแปร`);
+      if (navigator.vibrate) navigator.vibrate(150);
+
+      const failToast = document.createElement("div");
+      failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
+      failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku}`;
+      document.body.appendChild(failToast);
+      setTimeout(() => failToast.remove(), 2000);
+
+      if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+      
+      // ⚡ The Phantom Trigger: ใช้หลักการเดียวกับ In-House โยนบาร์โค้ดลงช่องค้นหาหน้ากล่องให้ UI ดึงข้อมูลเอง
+      const boxSearch = document.getElementById("boxSearchInput") || document.querySelector("#boxDetailsView input[type='text']");
+      if (boxSearch) {
+          boxSearch.value = sku;
+          boxSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      }
       return;
   }
 
-  // ค้นหาสินค้าจากฐานข้อมูล
-  const foundProduct = targetDB.find(item => 
-      (item.sku && item.sku.toString().trim().toUpperCase() === sku.toUpperCase()) ||
-      (item.SKU && item.SKU.toString().trim().toUpperCase() === sku.toUpperCase())
-  );
-
-  // 🚨 [กรณีสแกนหาไม่เจอ]
-  if (!foundProduct) {
-    console.warn(`[SCAN FAILED] ไม่พบสินค้าบาร์โค้ด: ${sku}`);
-    if (navigator.vibrate) navigator.vibrate(150);
-
-    const failToast = document.createElement("div");
-    failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
-    failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku}`;
-    document.body.appendChild(failToast);
-    setTimeout(() => failToast.remove(), 2000);
-
-    if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
-    return;
-  }
-
-  // ---🔍 [หาค่าสต็อกที่แท้จริง]
-  const possibleStockKeys = ["availableStock", "Stock", "stock", "Qty", "qty"];
+  // ---🔍 [หาค่าสต็อกที่แท้จริง รองรับชื่อคอลัมน์หลายรูปแบบจาก Code.gs]
+  const possibleStockKeys = ["availableStock", "Stock", "stock", "Qty", "qty", "Quantity"];
   let stockLimit = 9999;
   for (const sKey of possibleStockKeys) {
     if (foundProduct[sKey] !== undefined && foundProduct[sKey] !== null && foundProduct[sKey] !== "") {
@@ -2049,10 +2075,9 @@ window.addScannedItemToBox = async function (skuInput) {
     }
   }
 
-  // ---🔍 [เพิ่มสินค้าลงตะกร้า]
+  // ---🔍 [เพิ่มสินค้าลงตะกร้า currentBoxItems]
   if (!window.currentBoxItems) window.currentBoxItems = [];
 
-  // เช็คว่ามีสินค้านี้ในกล่องหรือยัง
   const existingItem = window.currentBoxItems.find(
     (item) => (item.sku || item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase()
   );
@@ -2060,29 +2085,36 @@ window.addScannedItemToBox = async function (skuInput) {
   const currentTotal = existingItem ? ((existingItem.scanQty || 0) + (existingItem.manualQty || 0)) : 0;
 
   if (currentTotal < stockLimit) {
-    // เข้ากล่อง
+    // 📍 [Add to Box Logic: เข้ากล่องทันทีโดยไม่ต้องมีปุ่ม ADD]
     if (existingItem) {
       existingItem.scanQty = (existingItem.scanQty || 0) + 1;
     } else {
-      // โคลนข้อมูลสินค้าทั้งหมดลงกล่อง เพื่อให้ UI วาดรูปและชื่อได้ครบถ้วน
       window.currentBoxItems.push({
         ...foundProduct,
         scanQty: 1,
         manualQty: 0,
         isManual: false,
-        sku: foundProduct.sku || foundProduct.SKU || sku // บังคับให้มี Key SKU
+        sku: foundProduct.sku || foundProduct.SKU || sku // บังคับโครงสร้างข้อมูลให้สมบูรณ์
       });
     }
 
-    // 📍 [The Render Fix: บังคับอัปเดต UI ทันที]
+    // 📍 [Render UI: อัปเดตรายการในหน้าจอทันที]
     if (typeof window.renderBoxContentArea === "function") {
         window.renderBoxContentArea();
     }
-    // อัปเดตตัวเลขสรุปผลด้านบน (ถ้ามีฟังก์ชันนี้)
+    
     if (typeof window.updateBoxSummary === "function") {
         window.updateBoxSummary();
     }
 
+    // เคลียร์ช่องค้นหาเพื่อความสะอาดของหน้าจอ
+    const boxSearch = document.getElementById("boxSearchInput") || document.querySelector("#boxDetailsView input[type='text']");
+    if (boxSearch) {
+        boxSearch.value = "";
+        boxSearch.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    // 📍 [Feedback: สำเร็จ]
     const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
     beep.play().catch(() => {});
     if (navigator.vibrate) navigator.vibrate(100);
@@ -2094,7 +2126,7 @@ window.addScannedItemToBox = async function (skuInput) {
     setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
 
   } else {
-    // 📍 [สต็อกไม่พอ]
+    // 📍 [Feedback: สต็อกไม่พอ]
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     const errToast = document.createElement("div");
     errToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
@@ -2105,14 +2137,7 @@ window.addScannedItemToBox = async function (skuInput) {
     if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
   }
 };
+
 // [addScannedItemToBox] END
-//===============
-
-
-
-
-
-
-// ======================================================
-// 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver)
+// [Box Details View / Scanner Data Receiver] END
 // =======================================================================
