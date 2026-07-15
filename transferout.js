@@ -571,8 +571,20 @@ async function renderLobbyTasks(branchID) {
     '<div style="text-align:center; padding: 40px 20px; color:#666;"><h4>กำลังดึงข้อมูลงาน...</h4><i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i></div>';
 
   try {
-    const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
-    const tasks = await response.json();
+    let tasks = null;
+
+    // 📍 [The Resilience Fix: ระบบ Retry ป้องกัน Fetch ล้มเหลวชั่วขณะจากเซิร์ฟเวอร์ Google]
+    try {
+      const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
+      if (!response.ok) throw new Error("Network Fetch Failed");
+      tasks = await response.json();
+    } catch (firstTryError) {
+      console.warn("🚨 [API RETRY] ดึงข้อมูลครั้งแรกขัดข้อง กำลังพยายามดึงข้อมูลอีกครั้ง...", firstTryError);
+      // ลองดึงใหม่อีก 1 ครั้ง
+      const retryResponse = await fetch(CONFIG.API_URL + "?action=get_tasks");
+      tasks = await retryResponse.json();
+    }
+
     container.innerHTML = "";
 
     if (!Array.isArray(tasks)) {
@@ -584,6 +596,7 @@ async function renderLobbyTasks(branchID) {
       .trim()
       .toUpperCase();
 
+    // ลอจิกการฟิลเตอร์ยังคงความสมบูรณ์เดิม 100%
     const branchTasks = tasks.filter((task) => {
       const isMatchBranch = task.Destination === branchID;
       const isAssignStatus = (task.Status || "").toLowerCase() === "assign";
@@ -597,7 +610,7 @@ async function renderLobbyTasks(branchID) {
     if (branchTasks.length > 0) {
       if (emptyState) emptyState.style.display = "none";
       branchTasks.forEach((task) => {
-        // 🟢 เพิ่ม try...catch ป้องกันชิปเมนต์ที่รหัสพัง (เช่น 0202) ไม่ให้ทำให้จอขาวทั้งหน้า
+        // 🟢 เพิ่ม try...catch ป้องกันชิปเมนต์ที่รหัสพัง (เช่น 0202) ไม่ให้ทำให้จอขาวทั้งหน้า (สมบูรณ์แล้ว)
         try {
           if (typeof createShipmentColumn === "function") {
             const safeNo = String(task.Shipment_No || "");
@@ -616,13 +629,18 @@ async function renderLobbyTasks(branchID) {
     }
   } catch (error) {
     console.error("🚨 Error loading lobby tasks:", error);
+    // แจ้งเตือนแบบเห็นชัดเจนขึ้นกรณีเน็ตพังจริงๆ
     container.innerHTML =
-      '<div style="text-align:center; color:#dc3545; padding: 20px;">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
+      '<div style="text-align:center; color:#dc3545; padding: 20px;"><i class="fas fa-wifi" style="font-size:24px; margin-bottom:10px;"></i><br>เกิดข้อผิดพลาดในการดึงข้อมูล อาจเกิดจากสัญญาณอินเทอร์เน็ต กรุณารีเฟรชครับ</div>';
   }
 }
 
 // [Render Lobby Tasks] END
 //===============
+
+
+
+
 
 function getNextRunningNumber() {
   let currentNum = parseInt(
