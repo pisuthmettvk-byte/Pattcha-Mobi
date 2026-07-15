@@ -1980,17 +1980,20 @@ window.submitWrapBox = async function () {
 // ======================================================
 
 
-// ==========================================
-// [Box Details View / Scanner Data Receiver]
-// ==========================================
+
+
+
+// ======================================================================
+// [Box Details View / Scanner Data Receiver]  START
+
 
 //===============
 // [addScannedItemToBox] START
 
-window.currentScannerContext = "box"; // บริบทนี้คือกล่อง
+window.currentScannerContext = "box";
 
 window.addScannedItemToBox = async function (skuInput) {
-  // 1. ดึงหน้าต่าง Box Details กลับมาให้ชัวร์
+  // 1. ดึงหน้าต่าง Box Details กลับมา
   const boxDetailsView = document.getElementById("boxDetailsView");
   if (boxDetailsView) boxDetailsView.classList.remove("hide");
 
@@ -1999,39 +2002,24 @@ window.addScannedItemToBox = async function (skuInput) {
 
   console.log(`[SCANNER DEBUG] รับค่าบาร์โค้ดลงกล่อง: "${sku}"`);
 
-  // 📍 [The Golden Source: ค้นหาฐานข้อมูลเดียวกับที่ช่องค้นหาใช้]
-  let targetDB = null;
+  // 📍 [The Golden Source: ดึงข้อมูลจากแหล่งเดียวกับช่องค้นหา Stock In House 100%]
+  // ปกติข้อมูลทั้งหมดจากการ Login จะถูกเก็บไว้ใน window.stockData
+  const targetDB = window.stockData || window.products || window.allProducts;
   
-  // กวาดหาตัวแปร Array ในระบบที่มีโครงสร้างตรงกับ Code.gs (มี availableStock, currentStock, sku)
-  for (const key in window) {
-      try {
-          const arr = window[key];
-          if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === "object") {
-              // ตรวจสอบว่าเป็นฐานข้อมูลสินค้าจริงหรือไม่
-              if (('sku' in arr[0] || 'SKU' in arr[0]) && ('name' in arr[0] || 'Product_Name' in arr[0])) {
-                  targetDB = arr;
-                  console.log(`[SCANNER SUCCESS] เชื่อมต่อแหล่งข้อมูลสต็อกสำเร็จจากตัวแปร: window.${key}`);
-                  break;
-              }
-          }
-      } catch (e) {}
-  }
-
-  // 🚨 ถ้าหาฐานข้อมูลไม่เจอเลย
-  if (!targetDB) {
-      console.error("[SCANNER ERROR] ไม่พบฐานข้อมูลสต็อกในหน้า Box Details");
-      alert("⚠️ ไม่พบฐานข้อมูลสินค้า กรุณารีเฟรชหน้าจอหรือกลับไปหน้าหลักเพื่อโหลดข้อมูลใหม่");
+  if (!targetDB || targetDB.length === 0) {
+      console.error("[SCANNER ERROR] ไม่พบฐานข้อมูลสต็อก");
+      alert("⚠️ ไม่พบฐานข้อมูลสินค้า กรุณารีเฟรชหรือกลับไปหน้าหลักเพื่อโหลดข้อมูลใหม่");
       return;
   }
 
-  // 2. ค้นหาสินค้าจาก SKU
+  // 2. ค้นหาสินค้าจาก SKU อย่างแม่นยำ
   const foundProduct = targetDB.find(item => 
       (item.sku || "").toString().trim().toUpperCase() === sku.toUpperCase() || 
       (item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase() ||
       (item.productCode || "").toString().trim().toUpperCase() === sku.toUpperCase()
   );
 
-  // 🚨 ถ้าหาสินค้าชิ้นนั้นไม่เจอในสต็อก
+  // 🚨 ถ้าหาสินค้าไม่เจอในสต็อก
   if (!foundProduct) {
       console.warn(`[SCAN FAILED] ไม่มีบาร์โค้ด: ${sku} ในสต็อก`);
       if (navigator.vibrate) navigator.vibrate(150);
@@ -2044,18 +2032,17 @@ window.addScannedItemToBox = async function (skuInput) {
       return;
   }
 
-  // 3. เช็คยอดสต็อกสูงสุด (อ้างอิงจากคอลัมน์ที่ Code.gs ส่งมา)
+  // 3. เช็คยอดสต็อกสูงสุด
   let stockLimit = 9999;
-  if (foundProduct.availableStock !== undefined) {
+  if (foundProduct.availableStock !== undefined && foundProduct.availableStock !== "") {
       stockLimit = Number(foundProduct.availableStock);
-  } else if (foundProduct.currentStock !== undefined) {
+  } else if (foundProduct.currentStock !== undefined && foundProduct.currentStock !== "") {
       stockLimit = Number(foundProduct.currentStock);
   }
 
   // 4. กระบวนการนำสินค้าลงกล่องอัตโนมัติ (Auto-Add Logic)
   if (!window.currentBoxItems) window.currentBoxItems = [];
 
-  // เช็คว่าเคยสแกนลงกล่องนี้ไปหรือยัง
   const existingItem = window.currentBoxItems.find(
       (item) => (item.sku || item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase()
   );
@@ -2063,15 +2050,15 @@ window.addScannedItemToBox = async function (skuInput) {
   const currentTotal = existingItem ? ((existingItem.scanQty || 0) + (existingItem.manualQty || 0)) : 0;
 
   if (currentTotal < stockLimit) {
-      // 📍 [นำของลงกล่อง]
+      // 📍 [นำของลงกล่อง +1 ทันที]
       if (existingItem) {
           existingItem.scanQty = (existingItem.scanQty || 0) + 1;
-          existingItem.totalQty = existingItem.scanQty + (existingItem.manualQty || 0); // เผื่อการคำนวณ
+          existingItem.totalQty = existingItem.scanQty + (existingItem.manualQty || 0);
       } else {
-          // สร้างรายการใหม่ลงกล่อง โดยคงโครงสร้างเดิมจากฐานข้อมูล
+          // สร้างรายการใหม่
           window.currentBoxItems.push({
               ...foundProduct,
-              sku: foundProduct.sku || foundProduct.SKU || sku, // บังคับสร้าง key sku
+              sku: foundProduct.sku || foundProduct.SKU || sku, 
               scanQty: 1,
               manualQty: 0,
               totalQty: 1,
@@ -2079,15 +2066,15 @@ window.addScannedItemToBox = async function (skuInput) {
           });
       }
 
-      // 📍 [สั่งให้ UI หน้ากล่องรีเฟรชตัวเอง เพื่อแสดงรายการสินค้า]
-      if (typeof window.renderBoxContentArea === "function") {
-          window.renderBoxContentArea();
-      }
-      if (typeof window.updateBoxSummary === "function") {
-          window.updateBoxSummary();
-      }
+      // 📍 [The Render Fix: ยิงคำสั่งอัปเดตหน้าจอครอบจักรวาล]
+      // โค้ดนี้จะสั่งอัปเดตหน้าจอ ไม่ว่าเจเลอร์จะตั้งชื่อฟังก์ชันวาดหน้าจอไว้ว่าอะไรก็ตาม
+      if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+      if (typeof window.renderBoxItems === "function") window.renderBoxItems();
+      if (typeof window.updateBoxSummary === "function") window.updateBoxSummary();
+      if (typeof window.renderCurrentBox === "function") window.renderCurrentBox();
+      if (typeof window.updateBoxUI === "function") window.updateBoxUI();
 
-      // 📍 [แจ้งเตือนความสำเร็จ]
+      // 📍 [แจ้งเตือนความสำเร็จสีเขียว]
       const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
       beep.play().catch(() => {});
       if (navigator.vibrate) navigator.vibrate(100);
@@ -2099,7 +2086,7 @@ window.addScannedItemToBox = async function (skuInput) {
       setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
 
   } else {
-      // 📍 [แจ้งเตือนกรณีสต็อกหมด/เกินลิมิต]
+      // 📍 [แจ้งเตือนสีแดงกรณีสต็อกหมด]
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
       const errToast = document.createElement("div");
       errToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
@@ -2109,7 +2096,9 @@ window.addScannedItemToBox = async function (skuInput) {
   }
 };
 
-//===============// [addScannedItemToBox] END
+// [addScannedItemToBox] END
+//===============
+
 
 // [Box Details View / Scanner Data Receiver] END
 // =======================================================================
