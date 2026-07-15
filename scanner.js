@@ -21,13 +21,11 @@ function preventDoubleTrigger() {
 //===============
 // [startScanner] START
 async function startScanner() {
-  if (isTransitioning || window.isScannerMode) return;
+  if (isTransitioning || window.isScannerMode) return; 
   isTransitioning = true;
   window.isProcessingScan = false; // 📍 ประกาศตัวล็อกแต่เนิ่นๆ ป้องกัน Undefined
 
-  const searchInput =
-    document.getElementById("searchStockInput") ||
-    document.getElementById("searchInput");
+  const searchInput = document.getElementById("searchStockInput") || document.getElementById("searchInput");
   if (searchInput) {
     searchInput.value = "";
     searchInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -43,58 +41,54 @@ async function startScanner() {
 
     // 🛠️ ล้าง Memory กล้องเก่าทิ้งทุกครั้งก่อนเปิดใหม่ ป้องกันอาการจอขาว/ค้าง 100%
     if (html5QrCode) {
-      try {
-        await html5QrCode.stop();
-      } catch (e) {}
-      html5QrCode.clear();
-      html5QrCode = null;
+        try { await html5QrCode.stop(); } catch(e){}
+        html5QrCode.clear();
+        html5QrCode = null;
     }
-
+    
     // 🚀 [TECH 1: LIMIT FORMATS] จำกัดประเภทบาร์โค้ด
     const formatsToSupport = [
       Html5QrcodeSupportedFormats.QR_CODE,
-      Html5QrcodeSupportedFormats.EAN_13, // บาร์โค้ดสินค้าสากล
+      Html5QrcodeSupportedFormats.EAN_13,   // บาร์โค้ดสินค้าสากล
       Html5QrcodeSupportedFormats.CODE_128, // บาร์โค้ดรหัสยาว/ซีเรียล
-      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.CODE_39
     ];
-    html5QrCode = new Html5Qrcode("reader", {
-      formatsToSupport: formatsToSupport,
-    });
+    html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formatsToSupport });
 
     // 🚀 [TECH 2: FORCE HD & FOCUS] ย้ายตั้งค่า HD มาไว้ใน config ให้ถูกกฎ Library
-    const config = {
-      fps: 10,
+    const config = { 
+      fps: 10, 
       qrbox: { width: 250, height: 250 },
       videoConstraints: {
         width: { min: 1280, ideal: 1280 },
         height: { min: 720, ideal: 720 },
-        advanced: [{ focusMode: "continuous" }],
-      },
+        advanced: [{ focusMode: "continuous" }]
+      }
     };
 
     try {
-      // 📍 คืนค่าคำสั่งแรกให้เหลือแค่ 1 คำสั่ง { facingMode: "environment" }
+      // 📍 แผน A: พยายามเปิดกล้องหลัง + บังคับ HD + โฟกัสต่อเนื่อง
       await html5QrCode.start(
-        { facingMode: "environment" },
+        { facingMode: "environment" }, // บังคับกล้องหลัง
         config,
-        qrCodeSuccessCallback,
+        qrCodeSuccessCallback
       );
     } catch (camErr) {
-      console.warn("กล้อง HD มีปัญหา สลับไปใช้ค่ามาตรฐาน...", camErr);
-      // Fallback: หากมือถือรุ่นเก่าไม่รับ videoConstraints ก็เปิดแบบธรรมดา
+      console.warn("กล้อง HD มีปัญหา สลับไปใช้กล้องหลังแบบมาตรฐาน...", camErr);
+      // 📍 แผน B (Fallback): หากเครื่องไม่รองรับ HD ให้เปิดกล้องหลังแบบธรรมดา (ห้ามเปิดกล้องหน้า)
       await html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        qrCodeSuccessCallback,
+        { facingMode: "environment" }, // บังคับกล้องหลังเหมือนเดิม!
+        { fps: 10, qrbox: { width: 250, height: 250 } }, // ถอดคำสั่งวิดีโอ HD ออก
+        qrCodeSuccessCallback
       );
     }
 
     window.isScannerMode = true;
   } catch (err) {
-    console.error("ระบบกล้องถูกปฏิเสธ:", err);
+    console.error("ระบบกล้องถูกปฏิเสธอย่างสมบูรณ์:", err);
     window.isScannerMode = false;
     forceResetUI();
-    alert("ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบการอนุญาต (Permission)");
+    alert("ไม่สามารถเข้าถึงกล้องหลังได้ กรุณาตรวจสอบการอนุญาต (Permission)");
   } finally {
     isTransitioning = false;
   }
@@ -143,22 +137,23 @@ function forceResetUI() {
   const scanView = document.getElementById("scannerView");
   if (scanView) {
     scanView.classList.remove("active");
-    scanView.style.zIndex = "-1";
+    scanView.style.zIndex = "-1"; 
   }
-
+  
   window.isScannerMode = false;
   window.isProcessingScan = false; // ปลดล็อกบาร์โค้ดเสมอเมื่อ UI รีเซ็ต
 
   // ดึงหน้า Box Details กลับมา
-  if (window.currentScannerContext === "box") {
-    const boxDetailsView = document.getElementById("boxDetailsView");
-    if (boxDetailsView) {
-      boxDetailsView.classList.remove("hide");
-    }
+  if (window.currentScannerContext === 'box') {
+      const boxDetailsView = document.getElementById("boxDetailsView");
+      if (boxDetailsView) {
+          boxDetailsView.classList.remove("hide");
+      }
   }
 }
 // [forceResetUI] END
 //===============
+
 
 // ==========================================
 // [Scanner Callback / Data Routing]
@@ -169,47 +164,52 @@ function forceResetUI() {
 const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
   // 📍 [The Shield: ป้องกันสแกนเบิ้ลและป้องกันจอค้าง]
   if (window.isProcessingScan || preventDoubleTrigger()) return;
-  window.isProcessingScan = true;
+  window.isProcessingScan = true; 
 
   const sku = decodedText ? decodedText.trim() : "";
   if (!sku) {
-    window.isProcessingScan = false;
-    return;
+      window.isProcessingScan = false;
+      return;
   }
 
   // 📦 [Context: Box Details View (โหมดลงกล่อง)]
-  if (window.currentScannerContext === "box") {
-    setTimeout(async () => {
-      // โยนบาร์โค้ดไปก่อนเลย ให้ UI รับรู้ทันที
-      if (typeof window.addScannedItemToBox === "function") {
-        window.addScannedItemToBox(sku);
-      }
-
-      // แล้วค่อยปิดกล้องตามไปติดๆ
-      if (window.isScannerMode) {
-        if (typeof stopScanner === "function") await stopScanner();
-      }
-    }, 300);
-  }
+  if (window.currentScannerContext === 'box') {
+      setTimeout(async () => {
+          // โยนบาร์โค้ดไปก่อนเลย ให้ UI รับรู้ทันที
+          if (typeof window.addScannedItemToBox === 'function') {
+              window.addScannedItemToBox(sku);
+          }
+          
+          // แล้วค่อยปิดกล้องตามไปติดๆ
+          if (window.isScannerMode) {
+              if (typeof stopScanner === 'function') await stopScanner();
+          }
+      }, 300);
+      
+  } 
   // 🏠 [Context: Stock In House (โหมดปกติ)]
   else {
-    setTimeout(async () => {
-      if (window.isScannerMode) {
-        if (typeof stopScanner === "function") await stopScanner();
-      }
+      setTimeout(async () => {
+          if (window.isScannerMode) {
+              if (typeof stopScanner === 'function') await stopScanner();
+          }
 
-      const targetInput =
-        document.getElementById("searchStockInput") ||
-        document.getElementById("searchInput");
-      if (targetInput) {
-        targetInput.value = sku;
-        targetInput.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    }, 300);
+          const targetInput = document.getElementById("searchStockInput") || document.getElementById("searchInput");
+          if (targetInput) {
+            targetInput.value = sku;
+            targetInput.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+      }, 300);
   }
 };
 // [qrCodeSuccessCallback] END
 //===============
+
+
+
+
+
+
 
 // ==========================================
 // 🌟 CROSS-FILE BRIDGE & UI CONTROLS (ปุ่มควบคุมกล้อง)
@@ -246,23 +246,23 @@ window.toggleFlash = async function () {
   }
 };
 
-window.toggleScanMode = function () {
+window.toggleScanMode = function() {
   const modeText = document.getElementById("scanModeText");
   const modeIcon = document.getElementById("scanModeIcon");
   const shadedRegion = document.getElementById("qr-shaded-region");
-
+  
   if (!modeText || !modeIcon || !shadedRegion) return;
 
   // 1. จำค่าความหนา "ขอบซ้าย/ขวา" ดั้งเดิมที่ Library คำนวณให้พอดีกับจอไว้
   if (!window.originalSideBorder) {
-    window.originalSideBorder = shadedRegion.style.borderLeftWidth;
+    window.originalSideBorder = shadedRegion.style.borderLeftWidth; 
   }
 
   if (modeText.innerText === "BARCODE") {
     // 🔙 สลับกลับเป็น QR CODE (จัตุรัส)
     modeText.innerText = "QR CODE";
     modeIcon.className = "fas fa-qrcode";
-
+    
     // คืนค่าขอบซ้าย/ขวา ให้กลับไปเป็นค่าที่ Library คำนวณไว้แต่แรก
     shadedRegion.style.borderLeftWidth = window.originalSideBorder;
     shadedRegion.style.borderRightWidth = window.originalSideBorder;
@@ -270,8 +270,8 @@ window.toggleScanMode = function () {
     // ↔️ สลับไปเป็น BARCODE (ผืนผ้า)
     modeText.innerText = "BARCODE";
     modeIcon.className = "fas fa-barcode";
-
-    // ลดขอบเงาด้านซ้าย/ขวาลงเหลือแค่ 25px (เป็นระยะขอบปลอดภัย)
+    
+    // ลดขอบเงาด้านซ้าย/ขวาลงเหลือแค่ 25px (เป็นระยะขอบปลอดภัย) 
     shadedRegion.style.borderLeftWidth = "25px";
     shadedRegion.style.borderRightWidth = "25px";
   }
@@ -283,7 +283,7 @@ function mockReceiveSignal(hasPendingDelivery, qty = 0) {
 
   if (hasPendingDelivery) {
     badge.classList.remove("hide"); // 🌟 ใช้คำว่า hide
-    countDisplay.innerText = qty;
+    countDisplay.innerText = qty; 
   } else {
     badge.classList.add("hide"); // 🌟 ใช้คำว่า hide
   }
