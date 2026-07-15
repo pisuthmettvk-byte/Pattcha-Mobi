@@ -1982,17 +1982,19 @@ window.submitWrapBox = async function () {
 
 
 
+
+
 // ==========================================
 // [Box Details View / Scanner Data Receiver]
 
 
-//==================================
+//===============
 // [addScannedItemToBox] START
 
 window.currentScannerContext = "box";
 
 window.addScannedItemToBox = async function (skuInput) {
-  // 1. ดึงหน้าต่าง Box Details กลับมา
+  // 1. ดึงหน้าต่าง Box Details กลับมาแสดงผลให้ชัวร์
   const boxDetailsView = document.getElementById("boxDetailsView");
   if (boxDetailsView) boxDetailsView.classList.remove("hide");
 
@@ -2001,102 +2003,54 @@ window.addScannedItemToBox = async function (skuInput) {
 
   console.log(`[SCANNER DEBUG] รับค่าบาร์โค้ดลงกล่อง: "${sku}"`);
 
-  // 📍 [The Golden Source: ดึงข้อมูลจากแหล่งเดียวกับช่องค้นหา Stock In House 100%]
-  // ปกติข้อมูลทั้งหมดจากการ Login จะถูกเก็บไว้ใน window.stockData
-  const targetDB = window.stockData || window.products || window.allProducts;
+  // 📍 [The Phantom Search Fix: โคลนวิธีการทำงานของ Stock In House 100%]
+  // โยนตัวเลขบาร์โค้ดเข้าช่องค้นหาของหน้ากล่อง ให้มันดึงข้อมูลจาก localProductDatabase โดยอัตโนมัติ
+  const boxSearchInput = document.getElementById("boxSearchInput");
   
-  if (!targetDB || targetDB.length === 0) {
-      console.error("[SCANNER ERROR] ไม่พบฐานข้อมูลสต็อก");
-      alert("⚠️ ไม่พบฐานข้อมูลสินค้า กรุณารีเฟรชหรือกลับไปหน้าหลักเพื่อโหลดข้อมูลใหม่");
-      return;
-  }
+  if (boxSearchInput) {
+      // กรอกตัวเลขลงช่องค้นหา
+      boxSearchInput.value = sku;
+      // กระตุ้นให้ระบบค้นหาทำงาน (เหมือนพิมพ์เอง)
+      boxSearchInput.dispatchEvent(new Event("input", { bubbles: true }));
 
-  // 2. ค้นหาสินค้าจาก SKU อย่างแม่นยำ
-  const foundProduct = targetDB.find(item => 
-      (item.sku || "").toString().trim().toUpperCase() === sku.toUpperCase() || 
-      (item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase() ||
-      (item.productCode || "").toString().trim().toUpperCase() === sku.toUpperCase()
-  );
-
-  // 🚨 ถ้าหาสินค้าไม่เจอในสต็อก
-  if (!foundProduct) {
-      console.warn(`[SCAN FAILED] ไม่มีบาร์โค้ด: ${sku} ในสต็อก`);
-      if (navigator.vibrate) navigator.vibrate(150);
-
-      const failToast = document.createElement("div");
-      failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
-      failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku}`;
-      document.body.appendChild(failToast);
-      setTimeout(() => failToast.remove(), 2000);
-      return;
-  }
-
-  // 3. เช็คยอดสต็อกสูงสุด
-  let stockLimit = 9999;
-  if (foundProduct.availableStock !== undefined && foundProduct.availableStock !== "") {
-      stockLimit = Number(foundProduct.availableStock);
-  } else if (foundProduct.currentStock !== undefined && foundProduct.currentStock !== "") {
-      stockLimit = Number(foundProduct.currentStock);
-  }
-
-  // 4. กระบวนการนำสินค้าลงกล่องอัตโนมัติ (Auto-Add Logic)
-  if (!window.currentBoxItems) window.currentBoxItems = [];
-
-  const existingItem = window.currentBoxItems.find(
-      (item) => (item.sku || item.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase()
-  );
-
-  const currentTotal = existingItem ? ((existingItem.scanQty || 0) + (existingItem.manualQty || 0)) : 0;
-
-  if (currentTotal < stockLimit) {
-      // 📍 [นำของลงกล่อง +1 ทันที]
-      if (existingItem) {
-          existingItem.scanQty = (existingItem.scanQty || 0) + 1;
-          existingItem.totalQty = existingItem.scanQty + (existingItem.manualQty || 0);
-      } else {
-          // สร้างรายการใหม่
-          window.currentBoxItems.push({
-              ...foundProduct,
-              sku: foundProduct.sku || foundProduct.SKU || sku, 
-              scanQty: 1,
-              manualQty: 0,
-              totalQty: 1,
-              isManual: false
-          });
-      }
-
-      // 📍 [The Render Fix: ยิงคำสั่งอัปเดตหน้าจอครอบจักรวาล]
-      // โค้ดนี้จะสั่งอัปเดตหน้าจอ ไม่ว่าเจเลอร์จะตั้งชื่อฟังก์ชันวาดหน้าจอไว้ว่าอะไรก็ตาม
-      if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
-      if (typeof window.renderBoxItems === "function") window.renderBoxItems();
-      if (typeof window.updateBoxSummary === "function") window.updateBoxSummary();
-      if (typeof window.renderCurrentBox === "function") window.renderCurrentBox();
-      if (typeof window.updateBoxUI === "function") window.updateBoxUI();
-
-      // 📍 [แจ้งเตือนความสำเร็จสีเขียว]
-      const beep = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU");
-      beep.play().catch(() => {});
-      if (navigator.vibrate) navigator.vibrate(100);
-
-      const toast = document.createElement("div");
-      toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
-      toast.innerHTML = `<i class="fas fa-check-circle"></i> นำลงกล่องแล้ว`;
-      document.body.appendChild(toast);
-      setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+      // รอให้ระบบค้นหาดึงข้อมูลขึ้นมา 300 มิลลิวินาที 
+      setTimeout(() => {
+          // ดึงข้อมูลสินค้าที่ตรงกับบาร์โค้ดมาเช็ก (ระบบเดิมของเจเลอร์ทำไว้ดีมาก)
+          if (typeof localProductDatabase !== "undefined") {
+              const productMatch = localProductDatabase.find(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
+              
+              if (productMatch) {
+                  // ✅ [พบสินค้า] เรียกฟังก์ชันยัดลงตะกร้าแบบอัตโนมัติ!
+                  if (typeof window.addSearchItemToBox === "function") {
+                      window.addSearchItemToBox(sku); // ฟังก์ชันนี้เจเลอร์เขียนไว้แล้ว มันจะเพิ่ม Qty ลงกล่องให้เอง
+                      
+                      // แจ้งเตือนสีเขียว
+                      if (navigator.vibrate) navigator.vibrate(100);
+                      const toast = document.createElement("div");
+                      toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+                      toast.innerHTML = `<i class="fas fa-check-circle"></i> สแกนลงกล่องแล้ว`;
+                      document.body.appendChild(toast);
+                      setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+                  }
+              } else {
+                  // ❌ [ไม่พบสินค้าในสต็อก] แจ้งเตือนสีเหลือง
+                  if (navigator.vibrate) navigator.vibrate(150);
+                  const failToast = document.createElement("div");
+                  failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
+                  failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku}`;
+                  document.body.appendChild(failToast);
+                  setTimeout(() => failToast.remove(), 2000);
+              }
+          }
+      }, 300);
 
   } else {
-      // 📍 [แจ้งเตือนสีแดงกรณีสต็อกหมด]
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-      const errToast = document.createElement("div");
-      errToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
-      errToast.innerHTML = `<i class="fas fa-times-circle"></i> สต็อกไม่พอ (มีแค่ ${stockLimit})`;
-      document.body.appendChild(errToast);
-      setTimeout(() => { errToast.style.opacity = "0"; setTimeout(() => errToast.remove(), 500); }, 2000);
+      console.error("[SCANNER ERROR] ไม่พบช่องค้นหาในหน้า Box Details");
   }
 };
 
 // [addScannedItemToBox] END
-//======================================
+//===============
 
 
 // [Box Details View / Scanner Data Receiver] END
