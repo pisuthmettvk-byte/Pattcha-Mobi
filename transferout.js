@@ -1912,7 +1912,7 @@ window.submitWrapBox = async function () {
     }),
   };
 
-  
+
   // ยิง API
   fetch(CONFIG.API_URL + "?action=save_box", {
     method: "POST",
@@ -1981,18 +1981,12 @@ window.submitWrapBox = async function () {
 
 // ======================================================================
 // 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver) - [Data Source Fix]
-// ======================================================
-
-
-
-
-
-
-// ==========================================
+// ===========================================================
+// ==================================================
 // [Box Details View / Scanner Data Receiver]
 
 
-//===============
+//===================================
 // [addScannedItemToBox] START
 
 window.currentScannerContext = "box";
@@ -2054,7 +2048,7 @@ window.addScannedItemToBox = async function (skuInput) {
 };
 
 // [addScannedItemToBox] END
-//===============
+//==================================
 
 
 // [Box Details View / Scanner Data Receiver] END
