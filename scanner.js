@@ -6,7 +6,7 @@ let isTransitioning = false;
 let lastScanTime = 0;
 let isFlashOn = false; // ตัวแปรเก็บสถานะเปิด/ปิดแฟลช
 
-// ป้องกันการกดปุ่มกล้องรัวๆ จนฮาร์ดแวร์ค้าง (ย้ายไปขวางตอนสแกนติด)
+// ป้องกันการกดปุ่มกล้องรัวๆ จนฮาร์ดแวร์ค้าง (ย้ายไปขวางตอนสแกนติดเท่านั้น)
 function preventDoubleTrigger() {
   const now = Date.now();
   if (now - lastScanTime < 1000) return true; // ล็อก 1 วินาที
@@ -50,39 +50,41 @@ async function startScanner() {
       html5QrCode = null;
     }
 
-    // 🚀 เพิ่มประสิทธิภาพ (Optimize 1): ล็อกเป้าชนิดบาร์โค้ด
-    // ลดภาระ CPU ให้หากันแค่ QR, EAN-13, CODE-128 และ CODE-39
+    // 🚀 [TECH 1: LIMIT FORMATS] จำกัดประเภทบาร์โค้ด
     const formatsToSupport = [
       Html5QrcodeSupportedFormats.QR_CODE,
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.EAN_13, // บาร์โค้ดสินค้าสากล
+      Html5QrcodeSupportedFormats.CODE_128, // บาร์โค้ดรหัสยาว/ซีเรียล
       Html5QrcodeSupportedFormats.CODE_39,
     ];
     html5QrCode = new Html5Qrcode("reader", {
       formatsToSupport: formatsToSupport,
     });
 
-    // FPS 10 เสถียรสุด ไม่ทำเครื่องค้าง
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-    // 🚀 เพิ่มประสิทธิภาพ (Optimize 2): บังคับกล้อง HD 720p เพื่อความคมชัด
-    const videoConstraints = {
-      facingMode: "environment",
-      width: { min: 1280, ideal: 1280 },
-      height: { min: 720, ideal: 720 },
-      advanced: [{ focusMode: "continuous" }], // บังคับโฟกัสต่อเนื่อง
+    // 🚀 [TECH 2: FORCE HD & FOCUS] ย้ายตั้งค่า HD มาไว้ใน config ให้ถูกกฎ Library
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      videoConstraints: {
+        width: { min: 1280, ideal: 1280 },
+        height: { min: 720, ideal: 720 },
+        advanced: [{ focusMode: "continuous" }],
+      },
     };
 
     try {
-      await html5QrCode.start(videoConstraints, config, qrCodeSuccessCallback);
-    } catch (camErr) {
-      console.warn(
-        "กล้องหลังแบบ HD ไม่พร้อมใช้งาน สลับไปใช้กล้องปกติ...",
-        camErr,
-      );
+      // 📍 คืนค่าคำสั่งแรกให้เหลือแค่ 1 คำสั่ง { facingMode: "environment" }
       await html5QrCode.start(
-        { facingMode: "environment" }, // Fallback กรณีมือถือไม่รองรับเงื่อนไข HD
+        { facingMode: "environment" },
         config,
+        qrCodeSuccessCallback,
+      );
+    } catch (camErr) {
+      console.warn("กล้อง HD มีปัญหา สลับไปใช้ค่ามาตรฐาน...", camErr);
+      // Fallback: หากมือถือรุ่นเก่าไม่รับ videoConstraints ก็เปิดแบบธรรมดา
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
         qrCodeSuccessCallback,
       );
     }
@@ -103,7 +105,7 @@ async function startScanner() {
 //===============
 // [stopScanner] START
 async function stopScanner() {
-  // 🚨 ถอด preventDoubleTrigger ออก! เพื่อรับประกันว่า ฮาร์ดแวร์กล้องจะถูกปิดทิ้ง 100% ทุกครั้งที่เรียกใช้
+  // 🚨 แก้บั๊กจอขาว: ถอด preventDoubleTrigger ออกจากตรงนี้
   if (isTransitioning) return;
   isTransitioning = true;
 
@@ -178,7 +180,7 @@ const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
   // 📦 [Context: Box Details View (โหมดลงกล่อง)]
   if (window.currentScannerContext === "box") {
     setTimeout(async () => {
-      // โยนบาร์โค้ดไปก่อนเลย ให้ UI รับรู้ทันที (แก้ปัญหาจอล่องหน/จอขาว)
+      // โยนบาร์โค้ดไปก่อนเลย ให้ UI รับรู้ทันที
       if (typeof window.addScannedItemToBox === "function") {
         window.addScannedItemToBox(sku);
       }
@@ -270,7 +272,6 @@ window.toggleScanMode = function () {
     modeIcon.className = "fas fa-barcode";
 
     // ลดขอบเงาด้านซ้าย/ขวาลงเหลือแค่ 25px (เป็นระยะขอบปลอดภัย)
-    // ทำให้พื้นที่ใสๆ ตรงกลางถูกดันขยายออกไปด้านข้างอัตโนมัติ โดยที่ขอบบน/ล่างยังมีความสูงเท่าเดิม!
     shadedRegion.style.borderLeftWidth = "25px";
     shadedRegion.style.borderRightWidth = "25px";
   }
