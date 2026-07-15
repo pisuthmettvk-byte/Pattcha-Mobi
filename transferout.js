@@ -1894,6 +1894,9 @@ window.submitWrapBox = async function () {
   const payload = {
     shipmentId: shipmentId,
     boxNumber: boxNumber,
+    branch: String(localStorage.getItem("pattcha_branch") || "")
+      .trim()
+      .toUpperCase(), // 📍 เพิ่มบรรทัดนี้: ส่งรหัสสาขาให้ Code.gs ไปตัดสต็อกถูกช่อง
     items: window.currentBoxItems.map((item) => {
       const scan = item.scanQty || 0;
       const manual = item.manualQty || 0;
@@ -1909,6 +1912,7 @@ window.submitWrapBox = async function () {
     }),
   };
 
+  
   // ยิง API
   fetch(CONFIG.API_URL + "?action=save_box", {
     method: "POST",
@@ -1970,7 +1974,7 @@ window.submitWrapBox = async function () {
       if (typeof window.safeAlert === "function")
         window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
-};
+};;
 
 // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (เชื่อม API หลังบ้านจริง)
 // ===========================================================
