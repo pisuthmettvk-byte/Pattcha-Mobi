@@ -21,13 +21,11 @@ function preventDoubleTrigger() {
 //===============
 // [startScanner] START
 async function startScanner() {
-  if (isTransitioning || window.isScannerMode) return;
+  if (isTransitioning || window.isScannerMode) return; 
   isTransitioning = true;
   window.isProcessingScan = false; // 📍 ประกาศตัวล็อกแต่เนิ่นๆ ป้องกัน Undefined
 
-  const searchInput =
-    document.getElementById("searchStockInput") ||
-    document.getElementById("searchInput");
+  const searchInput = document.getElementById("searchStockInput") || document.getElementById("searchInput");
   if (searchInput) {
     searchInput.value = "";
     searchInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -43,49 +41,48 @@ async function startScanner() {
 
     // 🛠️ ล้าง Memory กล้องเก่าทิ้งทุกครั้งก่อนเปิดใหม่ ป้องกันอาการจอขาว/ค้าง 100%
     if (html5QrCode) {
-      try {
-        await html5QrCode.stop();
-      } catch (e) {}
-      html5QrCode.clear();
-      html5QrCode = null;
+        try { await html5QrCode.stop(); } catch(e){}
+        html5QrCode.clear();
+        html5QrCode = null;
     }
-
+    
     // 🚀 [TECH 1: LIMIT FORMATS] จำกัดประเภทบาร์โค้ด
     const formatsToSupport = [
       Html5QrcodeSupportedFormats.QR_CODE,
-      Html5QrcodeSupportedFormats.EAN_13, // บาร์โค้ดสินค้าสากล
+      Html5QrcodeSupportedFormats.EAN_13,   // บาร์โค้ดสินค้าสากล
       Html5QrcodeSupportedFormats.CODE_128, // บาร์โค้ดรหัสยาว/ซีเรียล
-      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.CODE_39
     ];
-    html5QrCode = new Html5Qrcode("reader", {
-      formatsToSupport: formatsToSupport,
-    });
+    html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formatsToSupport });
 
-    // 🚀 [TECH 2: FORCE HD & FOCUS] ย้ายตั้งค่า HD มาไว้ใน config ให้ถูกกฎ Library
-    const config = {
-      fps: 10,
+    // 🚀 [TECH 2: FORCE HD & FOCUS] Config สำหรับความคมชัด
+    const config = { 
+      fps: 10, 
       qrbox: { width: 250, height: 250 },
       videoConstraints: {
         width: { min: 1280, ideal: 1280 },
         height: { min: 720, ideal: 720 },
-        advanced: [{ focusMode: "continuous" }],
-      },
+        advanced: [{ focusMode: "continuous" }]
+      }
     };
 
     try {
-      // 📍 แผน A: พยายามเปิดกล้องหลัง + บังคับ HD + โฟกัสต่อเนื่อง
+      // 📍 แผน A: พยายามเปิดกล้องหลังแบบ HD + โฟกัสต่อเนื่อง
+      // ส่ง { facingMode: "environment" } แบบ Object (เหมาะกับมือถือรุ่นใหม่)
       await html5QrCode.start(
-        { facingMode: "environment" }, // บังคับกล้องหลัง
+        { facingMode: "environment" }, 
         config,
-        qrCodeSuccessCallback,
+        qrCodeSuccessCallback
       );
     } catch (camErr) {
-      console.warn("กล้อง HD มีปัญหา สลับไปใช้กล้องหลังแบบมาตรฐาน...", camErr);
-      // 📍 แผน B (Fallback): หากเครื่องไม่รองรับ HD ให้เปิดกล้องหลังแบบธรรมดา (ห้ามเปิดกล้องหน้า)
+      console.warn("กล้อง HD มีปัญหา หรือมือถือไม่เข้าใจคำสั่ง Object สลับไปใช้แผนสำรอง...", camErr);
+      
+      // 📍 แผน B (Fallback): บังคับกล้องหลังแบบ 100% ด้วย String "environment"
+      // วิธีนี้เป็นการบังคับเบราว์เซอร์ทุกรุ่นให้หันไปใช้กล้องหลังแน่นอน
       await html5QrCode.start(
-        { facingMode: "environment" }, // บังคับกล้องหลังเหมือนเดิม!
-        { fps: 10, qrbox: { width: 250, height: 250 } }, // ถอดคำสั่งวิดีโอ HD ออก
-        qrCodeSuccessCallback,
+        "environment", // 🚀 บังคับด้วย String โดดๆ ทะลวงทุกเบราว์เซอร์!
+        { fps: 10, qrbox: { width: 250, height: 250 } }, // ถอด videoConstraints ออก
+        qrCodeSuccessCallback
       );
     }
 
@@ -101,6 +98,8 @@ async function startScanner() {
 }
 // [startScanner] END
 //===============
+
+
 
 //===============
 // [stopScanner] START
