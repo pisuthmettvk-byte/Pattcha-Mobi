@@ -1,78 +1,106 @@
-// ==========================================
-// 🌟 SCANNER MASTER CONFIGURATION & STATE
-// ==========================================
-let html5QrCode = null;
-let isTransitioning = false;
-let lastScanTime = 0;
-let isFlashOn = false; // ตัวแปรเก็บสถานะเปิด/ปิดแฟลช
+// ======================================================
+// 🚀 Scanner Performance Optimization (OS Native + Format Lock)
+// ======================================================
 
-// ป้องกันการกดปุ่มกล้องรัวๆ จนฮาร์ดแวร์ค้าง (ย้ายไปขวางตอนสแกนติดเท่านั้น)
-function preventDoubleTrigger() {
-  const now = Date.now();
-  if (now - lastScanTime < 1000) return true; // ล็อก 1 วินาที
-  lastScanTime = now;
-  return false;
+// 📍 ตัวแปรเก็บสถานะโหมดกล้อง (ค่าเริ่มต้นคือ barcode)
+window.currentScannerMode = window.currentScannerMode || "barcode";
+
+function getOptimizedScannerConfig() {
+  const isQRMode = window.currentScannerMode === "qr";
+
+  return {
+    fps: 15,
+    qrbox: function (viewfinderWidth, viewfinderHeight) {
+      let minEdgePercentage = 0.7;
+      let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+      let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+      if (qrboxSize > 250) qrboxSize = 250;
+      return { width: qrboxSize, height: qrboxSize };
+    },
+    useBarCodeDetectorIfSupported: true, // 🌟 เปิดใช้ AI ถอดรหัสของตัวเครื่อง (OS Native)
+    formatsToSupport: isQRMode
+      ? [Html5QrcodeSupportedFormats.QR_CODE] // 🌟 โหมด QR: อ่านเฉพาะ QR
+      : [
+          // 🌟 โหมด Barcode: อ่านเฉพาะบาร์โค้ด
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+        ],
+  };
 }
 
-// ==========================================
-// 🌟 CORE SCANNER FUNCTIONS
-// ==========================================
+// ======================================================
+// 🎛️ ฟังก์ชันสำหรับให้ปุ่ม UI เรียกใช้เพื่อสลับโหมด (QR / Barcode)
+// ======================================================
+window.switchScannerFormat = async function (mode) {
+  // mode ต้องเป็น "qr" หรือ "barcode"
+  if (window.currentScannerMode === mode) return; // ถ้าเป็นโหมดเดิมอยู่แล้ว ไม่ต้องทำอะไร
+
+  window.currentScannerMode = mode;
+  console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
+
+  // ถ้ากล้องกำลังเปิดอยู่ ให้รีสตาร์ทกล้องเพื่อดึง Config ใหม่ไปใช้
+  if (window.isScannerMode) {
+    await stopScanner();
+    await startScanner();
+  }
+};
+
+//===============
+// [toggleScanner] START (ฟังก์ชันหลักที่ใช้เปิด/ปิดกล้อง)
+window.toggleScanner = async function () {
+  const scanView = document.getElementById("scannerView");
+
+  if (window.isScannerMode) {
+    // ถ้าเปิดอยู่ ให้ปิด
+    await stopScanner();
+  } else {
+    // ถ้าปิดอยู่ ให้เปิดและดึง UI กล้องขึ้นมา
+    if (scanView) {
+      scanView.classList.add("active");
+      scanView.style.zIndex = "9999";
+    }
+    await startScanner();
+  }
+};
+// [toggleScanner] END
+//===============
+
+
+
+
 
 //===============
 // [startScanner] START
 async function startScanner() {
-  if (isTransitioning || window.isScannerMode) return; 
+  if (isTransitioning) return;
   isTransitioning = true;
-  window.isProcessingScan = false; // 📍 ประกาศตัวล็อกแต่เนิ่นๆ ป้องกัน Undefined
-
-  const searchInput = document.getElementById("searchStockInput") || document.getElementById("searchInput");
-  if (searchInput) {
-    searchInput.value = "";
-    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-  }
 
   try {
-    const scanView = document.getElementById("scannerView");
-    if (scanView) {
-      scanView.classList.add("active");
-      scanView.style.position = "fixed";
-      scanView.style.zIndex = "99999";
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
     }
 
-    // 🛠️ ล้าง Memory กล้องเก่าทิ้งทุกครั้งก่อนเปิดใหม่ ป้องกันอาการจอขาว/ค้าง 100%
-    if (html5QrCode) {
-        try { await html5QrCode.stop(); } catch(e){}
-        html5QrCode.clear();
-        html5QrCode = null;
-    }
-    
-    // 🚀 [TECH 1: LIMIT FORMATS] คงไว้ซึ่งความเร็ว! 
-    // ให้ซอฟต์แวร์โฟกัสแค่บาร์โค้ดที่ใช้จริง จะทำให้สแกนติดไวกว่าปกติโดยไม่ต้องพึ่งความชัดของกล้อง
-    const formatsToSupport = [
-      Html5QrcodeSupportedFormats.QR_CODE,
-      Html5QrcodeSupportedFormats.EAN_13,   
-      Html5QrcodeSupportedFormats.CODE_128, 
-      Html5QrcodeSupportedFormats.CODE_39
-    ];
-    html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formatsToSupport });
-
-    // 📍 กลับไปใช้ตั้งค่าดั้งเดิมของเจเลอร์ที่เสถียรที่สุด (ไม่มีการบังคับฮาร์ดแวร์ให้มือถือตกใจ)
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    // 📍 ดึงค่า Config ที่อัปเกรดแล้วมาใช้งาน
+    const config = getOptimizedScannerConfig();
 
     try {
       // 📍 บังคับกล้องหลัง (คำสั่งดั้งเดิมที่เสถียรที่สุด)
       await html5QrCode.start(
         { facingMode: "environment" },
         config,
-        qrCodeSuccessCallback
+        qrCodeSuccessCallback,
       );
     } catch (camErr) {
-      console.warn("เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...", camErr);
-      // 📍 แผนสำรอง: หากมือถือบางรุ่นไม่รับค่าด้านบน ก็ยังคงบังคับ "กล้องหลัง" ด้วยคำว่า exact (ห้ามเด้งไปกล้องหน้าเด็ดขาด)
+      console.warn(
+        "เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...",
+        camErr,
+      );
+      // 📍 แผนสำรอง: หากมือถือบางรุ่นไม่รับค่าด้านบน ก็ยังคงบังคับ "กล้องหลัง" ด้วยคำว่า exact
       await html5QrCode.start(
         { facingMode: { exact: "environment" } },
         config,
-        qrCodeSuccessCallback
+        qrCodeSuccessCallback,
       );
     }
 
@@ -88,6 +116,9 @@ async function startScanner() {
 }
 // [startScanner] END
 //===============
+
+
+
 
 
 //===============
@@ -125,6 +156,10 @@ async function stopScanner() {
 // [stopScanner] END
 //===============
 
+
+
+
+
 //===============
 // [forceResetUI] START
 function forceResetUI() {
@@ -147,134 +182,3 @@ function forceResetUI() {
 }
 // [forceResetUI] END
 //===============
-
-// ==========================================
-// [Scanner Callback / Data Routing]
-// ==========================================
-
-//===============
-// [qrCodeSuccessCallback] START
-const qrCodeSuccessCallback = async (decodedText, decodedResult) => {
-  // 📍 [The Shield: ป้องกันสแกนเบิ้ลและป้องกันจอค้าง]
-  if (window.isProcessingScan || preventDoubleTrigger()) return;
-  window.isProcessingScan = true;
-
-  const sku = decodedText ? decodedText.trim() : "";
-  if (!sku) {
-    window.isProcessingScan = false;
-    return;
-  }
-
-  // 📦 [Context: Box Details View (โหมดลงกล่อง)]
-  if (window.currentScannerContext === "box") {
-    setTimeout(async () => {
-      // โยนบาร์โค้ดไปก่อนเลย ให้ UI รับรู้ทันที
-      if (typeof window.addScannedItemToBox === "function") {
-        window.addScannedItemToBox(sku);
-      }
-
-      // แล้วค่อยปิดกล้องตามไปติดๆ
-      if (window.isScannerMode) {
-        if (typeof stopScanner === "function") await stopScanner();
-      }
-    }, 300);
-  }
-  // 🏠 [Context: Stock In House (โหมดปกติ)]
-  else {
-    setTimeout(async () => {
-      if (window.isScannerMode) {
-        if (typeof stopScanner === "function") await stopScanner();
-      }
-
-      const targetInput =
-        document.getElementById("searchStockInput") ||
-        document.getElementById("searchInput");
-      if (targetInput) {
-        targetInput.value = sku;
-        targetInput.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    }, 300);
-  }
-};
-// [qrCodeSuccessCallback] END
-//===============
-
-
-
-// ==========================================
-// 🌟 CROSS-FILE BRIDGE & UI CONTROLS (ปุ่มควบคุมกล้อง)
-// ==========================================
-window.toggleScanner = async function () {
-  if (isTransitioning) return;
-  if (window.isScannerMode) {
-    await stopScanner();
-  } else {
-    await startScanner();
-  }
-};
-
-// 🌟 เพิ่มระบบเปิด-ปิดไฟแฟลชมือถือ (Torch)
-window.toggleFlash = async function () {
-  if (!html5QrCode || !window.isScannerMode) return;
-  try {
-    isFlashOn = !isFlashOn;
-    // สั่งเปิดแฟลชผ่าน API กล้อง
-    await html5QrCode.applyVideoConstraints({
-      advanced: [{ torch: isFlashOn }],
-    });
-
-    // เปลี่ยนสีปุ่มแฟลชให้เป็นสีเหลืองทองเมื่อทำงาน
-    const flashBtn = document.getElementById("btnToggleFlash");
-    if (flashBtn) {
-      flashBtn.style.color = isFlashOn ? "#fab919" : "#fff";
-      flashBtn.style.borderColor = isFlashOn ? "#fab919" : "#fff";
-    }
-  } catch (err) {
-    console.warn("อุปกรณ์นี้ไม่รองรับระบบเปิดแฟลชผ่านเบราว์เซอร์:", err);
-    isFlashOn = false;
-    alert("ฮาร์ดแวร์หรือเบราว์เซอร์ของอุปกรณ์นี้ ไม่รองรับการสั่งเปิดแฟลชครับ");
-  }
-};
-
-window.toggleScanMode = function () {
-  const modeText = document.getElementById("scanModeText");
-  const modeIcon = document.getElementById("scanModeIcon");
-  const shadedRegion = document.getElementById("qr-shaded-region");
-
-  if (!modeText || !modeIcon || !shadedRegion) return;
-
-  // 1. จำค่าความหนา "ขอบซ้าย/ขวา" ดั้งเดิมที่ Library คำนวณให้พอดีกับจอไว้
-  if (!window.originalSideBorder) {
-    window.originalSideBorder = shadedRegion.style.borderLeftWidth;
-  }
-
-  if (modeText.innerText === "BARCODE") {
-    // 🔙 สลับกลับเป็น QR CODE (จัตุรัส)
-    modeText.innerText = "QR CODE";
-    modeIcon.className = "fas fa-qrcode";
-
-    // คืนค่าขอบซ้าย/ขวา ให้กลับไปเป็นค่าที่ Library คำนวณไว้แต่แรก
-    shadedRegion.style.borderLeftWidth = window.originalSideBorder;
-    shadedRegion.style.borderRightWidth = window.originalSideBorder;
-  } else {
-    // ↔️ สลับไปเป็น BARCODE (ผืนผ้า)
-    modeText.innerText = "BARCODE";
-    modeIcon.className = "fas fa-barcode";
-
-    // ลดขอบเงาด้านซ้าย/ขวาลงเหลือแค่ 25px (เป็นระยะขอบปลอดภัย)
-    shadedRegion.style.borderLeftWidth = "25px";
-    shadedRegion.style.borderRightWidth = "25px";
-  }
-};
-
-function mockReceiveSignal(hasPendingDelivery, qty = 0) {
-  const badge = document.getElementById("badgeInbound");
-  const countDisplay = badge.querySelector(".badge-count");
-
-  if (hasPendingDelivery) {
-    badge.classList.remove("hide"); // 🌟 ใช้คำว่า hide
-    countDisplay.innerText = qty;
-  } else {
-    badge.classList.add("hide"); // 🌟 ใช้คำว่า hide
-  }
-}
