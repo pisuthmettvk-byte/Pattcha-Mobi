@@ -1533,61 +1533,58 @@ function showView(viewId) {
                           </div>`;
               };
 
-              // 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
-              window.renderBoxModeBCard = function (item, isClosedBox) {
-                const safeSku = escapeHTML(item.sku || "-");
-                const safeName = escapeHTML(item.name || "-");
-                const priceStr = Number(item.price || 0).toLocaleString();
+// 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
+window.renderBoxModeBCard = function (item, isClosedBox) {
+  const safeSku = escapeHTML(item.sku || "-");
+  const safeName = escapeHTML(item.name || "-");
+  const priceStr = Number(item.price || 0).toLocaleString();
 
-                const isManualModified = item.manualQty > 0 || item.isManual === true;
-                const iconHtml = isManualModified
-                  ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>'
-                  : '<i class="fas fa-barcode" style="color: #3b82f6;" title="สแกนผ่านกล้อง"></i>';
+  // 🌟 [UPDATE ISSUE 1] เปลี่ยนไอคอนบาร์โค้ดเป็นสีดำ และสลับไอคอนตามการกดปุ่ม +/- 
+  const isManualModified = item.manualQty > 0 || item.isManual === true;
+  const iconHtml = isManualModified
+      ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>'
+      : '<i class="fas fa-barcode" style="color: #000000;" title="สแกนผ่านกล้อง"></i>'; // เปลี่ยนเป็นสีดำ
 
-                const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+  const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
 
-                const controlsHtml = isClosedBox
-                  ? ""
-                  : `
-                              <div style="display: flex; align-items: center; gap: 8px;">
-                                <!-- 🎯 พื้นที่จัดการ (ปุ่มบวก/ลบ) -->
-                                <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
-                                  <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
-                                  <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
-                                  <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
-                                </div>
-                                <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
-                                  <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
-                                </button>
-                              </div>`;
+  // 🌟 ซ่อนปุ่มต่างๆ ทันทีถ้ากล่องถูกปิดแล้ว
+  const controlsHtml = isClosedBox
+      ? "" 
+      : `
+          <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
+                  <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                  <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
+                  <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+              </div>
+              <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                  <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+              </button>
+          </div>`;
 
-                return `
-                          <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
-                            
-                            <!-- 👆 พื้นที่กดดูรายละเอียด (รูปภาพ) -->
-                            <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
-                            
-                            <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
-                              <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-                                
-                                <!-- 👆 พื้นที่กดดูรายละเอียด (ชื่อและ SKU) -->
-                                <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
-                                  <div class="prod-name" style="margin-top: 0;">${safeName}</div>
-                                  <div class="prod-sku">${safeSku}</div>
-                                </div>
-                                <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
-                              </div>
-                              
-                              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-                                <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
-                                  ${iconHtml} ยอดรวม: ${totalQty}
-                                </span>
-                                ${controlsHtml}
-                              </div>
-                            </div>
-                          </div>`;
-              };
-// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
+  return `
+      <!-- 🌟 [UPDATE ISSUE 3] เพิ่ม ID: box-item-xxx เพื่อให้กล้องสามารถเลื่อนจอมาหาได้ -->
+      <div id="box-item-${safeSku}" class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
+          <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+          <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
+                  <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
+                      <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+                      <div class="prod-sku">${safeSku}</div>
+                  </div>
+                  <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
+                  <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
+                      ${iconHtml} ยอดรวม: ${totalQty}
+                  </span>
+                  ${controlsHtml}
+              </div>
+          </div>
+      </div>`;
+};
+
+              // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
 // ======================================================
 
 
@@ -1663,21 +1660,29 @@ function showView(viewId) {
           const container = document.getElementById("boxContentArea");
           if (!container) return;
 
+          // 🌟 [UPDATE ISSUE 2] เช็กสถานะกล่องว่าปิดหรือยัง เพื่อส่งไปบังคับซ่อนปุ่ม
+          let isClosedBox = false;
+          if (window.currentBoxElement) {
+            isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
+          }
+
           if (window.currentBoxItems.length === 0) {
             container.innerHTML = `
-                            <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
-                                <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
-                                <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
-                                <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
-                            </div>`;
+                <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
+                    <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
+                    <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
+                    <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
+                </div>`;
             if (typeof window.updateBoxWrapButtonState === "function")
               window.updateBoxWrapButtonState(0);
             return;
           }
 
+          // 🌟 [UPDATE ISSUE 2] ส่งค่า isClosedBox เข้าไปในการ์ดด้วย เพื่อปิดตายปุ่มทั้งหมด
           container.innerHTML = window.currentBoxItems
-            .map((item) => window.renderBoxModeBCard(item, false))
+            .map((item) => window.renderBoxModeBCard(item, isClosedBox))
             .join("");
+            
           if (typeof window.updateBoxWrapButtonState === "function")
             window.updateBoxWrapButtonState(window.currentBoxItems.length);
         };
@@ -2061,77 +2066,85 @@ window.submitWrapBox = async function () {
 // ======================================================================
 // 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver) - [Data Source Fix]
 // ===========================================================
-                //===================================
-                // 📷 [addScannedItemToBox] START
-                window.currentScannerContext = "box";
 
-                window.addScannedItemToBox = async function (skuInput) {
-                  const boxDetailsView = document.getElementById("boxDetailsView");
-                  if (boxDetailsView) boxDetailsView.classList.remove("hide");
+      //===================================
+      // 📷 [addScannedItemToBox] START
+      window.currentScannerContext = "box";
 
-                  const sku = skuInput ? skuInput.trim() : "";
-                  if (!sku) return;
+      window.addScannedItemToBox = async function (skuInput) {
+        const boxDetailsView = document.getElementById("boxDetailsView");
+        if (boxDetailsView) boxDetailsView.classList.remove("hide");
 
-                  // 📍 [โหมด Audit: ตรวจเช็กกล่องแดง ห้ามบวกยอด]
-                  let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
-                  if (isClosedBox) {
-                    let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
-                    if (existingItem) {
-                      if (navigator.vibrate) navigator.vibrate(100);
-                      if (typeof window.safeAlert === "function") window.safeAlert("✅ พบในกล่อง", `รหัส ${sku} มีอยู่ในกล่องนี้`, "success");
-                    } else {
-                      if (navigator.vibrate) navigator.vibrate(150);
-                      if (typeof window.safeAlert === "function") window.safeAlert("❌ ไม่พบสินค้า", `ไม่มีรหัส ${sku} ในกล่องนี้`, "error");
-                    }
-                    return;
-                  }
+        const sku = skuInput ? skuInput.trim() : "";
+        if (!sku) return;
 
-                  // 📍 [โหมดปกติ: คืนชีพ The Phantom Search 100%]
-                  // 1. จดจำยอด "พิมพ์มือ" เดิมเอาไว้ก่อน
-                  let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
-                  let oldManualQty = existingItem ? (existingItem.manualQty || 0) : 0;
+        // 📍 [โหมด Audit: ตรวจเช็กกล่องแดง ห้ามบวกยอด]
+        let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+        if (isClosedBox) {
+          let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
+          if (existingItem) {
+            if (navigator.vibrate) navigator.vibrate(100);
+            
+            // 🌟 [UPDATE ISSUE 3] เลื่อนจอไปหาสินค้าทันที โดยไม่แสดง Popup รบกวน
+            const targetCard = document.getElementById(`box-item-${existingItem.sku}`);
+            if (targetCard) {
+              targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+              targetCard.style.transition = "background-color 0.3s";
+              targetCard.style.backgroundColor = "#d1e7dd"; // กระพริบไฮไลต์สีเขียวอ่อน
+              setTimeout(() => { targetCard.style.backgroundColor = "#fff"; }, 1500);
+            }
+          } else {
+            // แจ้งเตือนสีเหลืองกรณีไม่พบของ (คงไว้ตามเดิม)
+            if (navigator.vibrate) navigator.vibrate(150);
+            if (typeof window.safeAlert === "function") window.safeAlert("❌ ไม่พบสินค้า", `ไม่มีรหัส ${sku} ในกล่องนี้`, "error");
+          }
+          return; // ⛔ ห้ามบวกยอดเพิ่ม
+        }
 
-                  const boxSearchInput = document.getElementById("boxSearchInput");
-                  if (boxSearchInput) {
-                      boxSearchInput.value = sku;
-                      boxSearchInput.dispatchEvent(new Event("input", { bubbles: true }));
+        // 📍 [โหมดปกติ: คืนชีพ The Phantom Search]
+        let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
+        let oldManualQty = existingItem ? (existingItem.manualQty || 0) : 0;
 
-                      setTimeout(() => {
-                          // 2. ปล่อยให้ฟังก์ชันเดิมของเจเลอร์ทำงาน (เพื่อดึงรูปและอัปเดตสต็อกที่ถูกต้อง)
-                          if (typeof window.addSearchItemToBox === "function") {
-                              window.addSearchItemToBox(sku); 
-                              
-                              // 3. [The Magic Trick] ตามไปปรับแก้ตัวเลขให้เป็นยอด "บาร์โค้ด" ทันที
-                              setTimeout(() => {
-                                  let updatedItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
-                                  if (updatedItem) {
-                                      // ถ้าฟังก์ชันเดิมเผลอบวกยอดมือไป ให้หักออกกลับมาเท่าเดิม
-                                      if ((updatedItem.manualQty || 0) > oldManualQty) {
-                                          updatedItem.manualQty = oldManualQty; 
-                                      }
-                                      // เอามาบวกเข้าที่ยอดบาร์โค้ดแทน!
-                                      updatedItem.scanQty = (updatedItem.scanQty || 0) + 1;
-                                      updatedItem.totalQty = updatedItem.scanQty + updatedItem.manualQty;
-                                  }
-                                  
-                                  // รีเฟรชหน้าจอใหม่
-                                  if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
-                                  
-                                  // แจ้งเตือนสีเขียว
-                                  if (navigator.vibrate) navigator.vibrate(100);
-                                  const toast = document.createElement("div");
-                                  toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
-                                  toast.innerHTML = `<i class="fas fa-check-circle"></i> สแกนลงกล่องแล้ว`;
-                                  document.body.appendChild(toast);
-                                  setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+        const boxSearchInput = document.getElementById("boxSearchInput");
+        if (boxSearchInput) {
+            boxSearchInput.value = sku;
+            boxSearchInput.dispatchEvent(new Event("input", { bubbles: true }));
 
-                              }, 50); // ดีเลย์เล็กน้อยเพื่อให้ addSearchItemToBox โหลดเสร็จก่อน
-                          }
-                      }, 300);
-                  }
-                };
-                // [addScannedItemToBox] END
-                //==================================
+            setTimeout(() => {
+                if (typeof window.addSearchItemToBox === "function") {
+                    window.addSearchItemToBox(sku); 
+                    
+                    setTimeout(() => {
+                        let updatedItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
+                        if (updatedItem) {
+                            if ((updatedItem.manualQty || 0) > oldManualQty) {
+                                updatedItem.manualQty = oldManualQty; 
+                            }
+                            updatedItem.scanQty = (updatedItem.scanQty || 0) + 1;
+                            updatedItem.totalQty = updatedItem.scanQty + updatedItem.manualQty;
+                            
+                            // 🌟 [UPDATE ISSUE 1] เช็กว่ายอดพิมพ์มือมีไหม ถ้าไม่มีให้ปลดล็อกสถานะ isManual ออก (เพื่อโชว์ไอคอนบาร์โค้ด)
+                            updatedItem.isManual = (updatedItem.manualQty > 0);
+                        }
+                        
+                        if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+                        
+                        if (navigator.vibrate) navigator.vibrate(100);
+                        const toast = document.createElement("div");
+                        toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+                        toast.innerHTML = `<i class="fas fa-check-circle"></i> สแกนลงกล่องแล้ว`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+
+                    }, 50); 
+                }
+            }, 300);
+        }
+      };
+      // [addScannedItemToBox] END
+      //==================================
+
+
 //==================================
 // [Box Details View / Scanner Data Receiver] END
 // =======================================================================
