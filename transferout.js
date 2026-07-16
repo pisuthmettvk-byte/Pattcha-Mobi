@@ -1614,30 +1614,53 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
             return;
           }
 
-          // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ ตามโครงสร้างของ app.js
-          if (
-            typeof localProductDatabase !== "undefined" &&
-            localProductDatabase.length > 0
-          ) {
-            const results = localProductDatabase.filter((item) => {
+          // 📍 [NEW FIX]: ตรวจสอบสถานะกล่องก่อนว่า "ปิดแล้ว (Closed)" หรือไม่?
+          let isClosedBox = false;
+          if (window.currentBoxElement) {
+            isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
+          }
+
+          if (isClosedBox) {
+            // 🔴 โหมด Audit (กล่องปิด): เปลี่ยนช่องค้นหาให้ทำหน้าที่ "ฟิลเตอร์ของในกล่อง" แทน ห้ามดึงของจากคลังกลาง
+            const results = window.currentBoxItems.filter((item) => {
               return Object.values(item).some(
-                (val) => val != null && val.toString().toLowerCase().includes(query),
+                (val) => val != null && val.toString().toLowerCase().includes(query)
               );
             });
 
             if (results.length === 0) {
-              container.innerHTML =
-                '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้าในระบบ</div>';
+              container.innerHTML = '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้านี้ในกล่อง</div>';
               return;
             }
+            // วาดการ์ดแบบโหมด B (ไม่มีปุ่ม ADD, ไม่มีปุ่มขยะ เพราะส่ง isClosedBox = true เข้าไป)
+            container.innerHTML = results.map((item) => window.renderBoxModeBCard(item, true)).join("");
 
-            // เรนเดอร์การ์ดโหมด A (ค้นหาเพื่อเพิ่ม)
-            container.innerHTML = results
-              .map((item) => window.renderBoxModeACard(item))
-              .join("");
           } else {
-            container.innerHTML =
-              '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่มีข้อมูล (กรุณา Login ใหม่อีกครั้ง)</div>';
+            // 🟢 โหมดปกติ (กล่องเปิด): ค้นหาจากฐานข้อมูลรวม เพื่อกดปุ่ม ADD ได้ตามปกติ
+            if (
+              typeof localProductDatabase !== "undefined" &&
+              localProductDatabase.length > 0
+            ) {
+              const results = localProductDatabase.filter((item) => {
+                return Object.values(item).some(
+                  (val) => val != null && val.toString().toLowerCase().includes(query),
+                );
+              });
+
+              if (results.length === 0) {
+                container.innerHTML =
+                  '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่พบสินค้าในระบบ</div>';
+                return;
+              }
+
+              // เรนเดอร์การ์ดโหมด A (ค้นหาเพื่อเพิ่ม)
+              container.innerHTML = results
+                .map((item) => window.renderBoxModeACard(item))
+                .join("");
+            } else {
+              container.innerHTML =
+                '<div style="text-align:center; color:#999; margin-top: 50px;">❌ ไม่มีข้อมูล (กรุณา Login ใหม่อีกครั้ง)</div>';
+            }
           }
         };
 
@@ -1689,6 +1712,16 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
 
         // 4. ฟังก์ชันกดปุ่ม ADD เข้ากล่อง
         window.addSearchItemToBox = function (sku) {
+          // 📍 [เกราะป้องกันชั้นที่ 2]: ถ้ามีคนแอบกดปุ่ม ADD ผ่านโค้ดตอนกล่องปิด ให้บล็อกทันที!
+          let isClosedBox = false;
+          if (window.currentBoxElement) {
+            isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
+          }
+          if (isClosedBox) {
+              if (typeof window.safeAlert === "function") window.safeAlert("LOCKED", "กล่องถูกปิดไปแล้ว ไม่สามารถเพิ่มสินค้าได้ครับ", "warning");
+              return;
+          }
+
           // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ
           if (typeof localProductDatabase === "undefined") return;
 
@@ -1725,7 +1758,6 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
             );
           }
         });
-
 // 🔍 Phase 7.2 & 7.3: ระบบ Magic Search สำหรับ Box Details END
 // ======================================================
 
@@ -1826,21 +1858,22 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
           window.decreaseBoxItemQty = function (sku) {
             const item = window.currentBoxItems.find((p) => p.sku === sku);
             if (item) {
+              // 📍 ประทับตรา "รูปมือ" ทันที ไม่ว่าก่อนหน้านี้จะมาจากการสแกนหรือไม่ก็ตาม
+              item.isManual = true; 
+
               if (item.manualQty > 0) {
                 item.manualQty -= 1;
-                item.isManual = true;
               } else if (item.scanQty > 0) {
                 item.scanQty -= 1;
               }
 
               if (item.scanQty + item.manualQty <= 0) {
-                window.currentBoxItems = window.currentBoxItems.filter(
-                  (p) => p.sku !== sku,
-                );
+                window.currentBoxItems = window.currentBoxItems.filter((p) => p.sku !== sku);
               }
               window.renderBoxContentArea();
             }
           };
+
 
           // 3. ถังขยะ (ลบออกจากกล่อง) - แจ้งเตือนก่อนลบ
           window.removeBoxItem = async function (sku) {
@@ -2067,82 +2100,99 @@ window.submitWrapBox = async function () {
 // 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver) - [Data Source Fix]
 // ===========================================================
 
-      //===================================
-      // 📷 [addScannedItemToBox] START
-      window.currentScannerContext = "box";
+        //===================================
+        // 📷 [addScannedItemToBox] START
+        window.currentScannerContext = "box";
 
-      window.addScannedItemToBox = async function (skuInput) {
-        const boxDetailsView = document.getElementById("boxDetailsView");
-        if (boxDetailsView) boxDetailsView.classList.remove("hide");
+        window.addScannedItemToBox = async function (skuInput) {
+          const boxDetailsView = document.getElementById("boxDetailsView");
+          if (boxDetailsView) boxDetailsView.classList.remove("hide");
 
-        const sku = skuInput ? skuInput.trim() : "";
-        if (!sku) return;
+          const sku = skuInput ? skuInput.trim() : "";
+          if (!sku) return;
 
-        // 📍 [โหมด Audit: ตรวจเช็กกล่องแดง ห้ามบวกยอด]
-        let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
-        if (isClosedBox) {
-          let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
-          if (existingItem) {
-            if (navigator.vibrate) navigator.vibrate(100);
-            
-            // 🌟 [UPDATE ISSUE 3] เลื่อนจอไปหาสินค้าทันที โดยไม่แสดง Popup รบกวน
-            const targetCard = document.getElementById(`box-item-${existingItem.sku}`);
-            if (targetCard) {
-              targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
-              targetCard.style.transition = "background-color 0.3s";
-              targetCard.style.backgroundColor = "#d1e7dd"; // กระพริบไฮไลต์สีเขียวอ่อน
-              setTimeout(() => { targetCard.style.backgroundColor = "#fff"; }, 1500);
+          // 📍 [โหมด Audit: ตรวจเช็กกล่องแดง ห้ามบวกยอด]
+          let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+          if (isClosedBox) {
+            let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
+            if (existingItem) {
+              if (navigator.vibrate) navigator.vibrate(100);
+              
+              const targetCard = document.getElementById(`box-item-${existingItem.sku}`);
+              if (targetCard) {
+                targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+                targetCard.style.transition = "background-color 0.3s";
+                targetCard.style.backgroundColor = "#d1e7dd"; 
+                setTimeout(() => { targetCard.style.backgroundColor = "#fff"; }, 1500);
+              }
+            } else {
+              if (navigator.vibrate) navigator.vibrate(150);
+              if (typeof window.safeAlert === "function") window.safeAlert("❌ ไม่พบสินค้า", `ไม่มีรหัส ${sku} ในกล่องนี้`, "error");
             }
-          } else {
-            // แจ้งเตือนสีเหลืองกรณีไม่พบของ (คงไว้ตามเดิม)
-            if (navigator.vibrate) navigator.vibrate(150);
-            if (typeof window.safeAlert === "function") window.safeAlert("❌ ไม่พบสินค้า", `ไม่มีรหัส ${sku} ในกล่องนี้`, "error");
+            return; // ⛔ ห้ามบวกยอดเพิ่ม
           }
-          return; // ⛔ ห้ามบวกยอดเพิ่ม
-        }
 
-        // 📍 [โหมดปกติ: คืนชีพ The Phantom Search]
-        let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
-        let oldManualQty = existingItem ? (existingItem.manualQty || 0) : 0;
+          // 📍 [โหมดปกติ: คืนชีพ The Phantom Search]
+          let existingItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
+          let oldManualQty = existingItem ? (existingItem.manualQty || 0) : 0;
 
-        const boxSearchInput = document.getElementById("boxSearchInput");
-        if (boxSearchInput) {
-            boxSearchInput.value = sku;
-            boxSearchInput.dispatchEvent(new Event("input", { bubbles: true }));
+          const boxSearchInput = document.getElementById("boxSearchInput");
+          if (boxSearchInput) {
+              boxSearchInput.value = sku;
+              boxSearchInput.dispatchEvent(new Event("input", { bubbles: true }));
 
-            setTimeout(() => {
-                if (typeof window.addSearchItemToBox === "function") {
-                    window.addSearchItemToBox(sku); 
-                    
-                    setTimeout(() => {
-                        let updatedItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
-                        if (updatedItem) {
-                            if ((updatedItem.manualQty || 0) > oldManualQty) {
-                                updatedItem.manualQty = oldManualQty; 
-                            }
-                            updatedItem.scanQty = (updatedItem.scanQty || 0) + 1;
-                            updatedItem.totalQty = updatedItem.scanQty + updatedItem.manualQty;
-                            
-                            // 🌟 [UPDATE ISSUE 1] เช็กว่ายอดพิมพ์มือมีไหม ถ้าไม่มีให้ปลดล็อกสถานะ isManual ออก (เพื่อโชว์ไอคอนบาร์โค้ด)
-                            updatedItem.isManual = (updatedItem.manualQty > 0);
-                        }
-                        
-                        if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
-                        
-                        if (navigator.vibrate) navigator.vibrate(100);
-                        const toast = document.createElement("div");
-                        toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
-                        toast.innerHTML = `<i class="fas fa-check-circle"></i> สแกนลงกล่องแล้ว`;
-                        document.body.appendChild(toast);
-                        setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+              setTimeout(() => {
+                  // 🚨 [UPDATE FIX]: ตรวจสอบก่อนว่าสินค้านี้มีในฐานข้อมูลคลังจริงไหม!
+                  if (typeof localProductDatabase !== "undefined") {
+                      const productMatch = localProductDatabase.find(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
+                      
+                      if (productMatch) {
+                          // ✅ [พบสินค้าในระบบ] -> ดำเนินการเพิ่มลงกล่อง
+                          if (typeof window.addSearchItemToBox === "function") {
+                              window.addSearchItemToBox(sku); 
+                              
+                              setTimeout(() => {
+                                  let updatedItem = window.currentBoxItems.find(i => (i.sku || "").toString().toUpperCase() === sku.toUpperCase());
+                                  if (updatedItem) {
+                                      if ((updatedItem.manualQty || 0) > oldManualQty) {
+                                          updatedItem.manualQty = oldManualQty; 
+                                      }
+                                      updatedItem.scanQty = (updatedItem.scanQty || 0) + 1;
+                                      updatedItem.totalQty = updatedItem.scanQty + updatedItem.manualQty;
+                                      
+                                      updatedItem.isManual = (updatedItem.manualQty > 0);
+                                  }
+                                  
+                                  if (typeof window.renderBoxContentArea === "function") window.renderBoxContentArea();
+                                  
+                                  // แจ้งเตือนสีเขียว
+                                  if (navigator.vibrate) navigator.vibrate(100);
+                                  const toast = document.createElement("div");
+                                  toast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:30px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+                                  toast.innerHTML = `<i class="fas fa-check-circle"></i> สแกนลงกล่องแล้ว`;
+                                  document.body.appendChild(toast);
+                                  setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 500); }, 1500);
+                              }, 50); 
+                          }
+                      } else {
+                          // ❌ [ไม่พบสินค้าในระบบ] -> แจ้งเตือนสีเหลือง และไม่เพิ่มของ
+                          if (navigator.vibrate) navigator.vibrate(150);
+                          
+                          // คืนช่องค้นหาให้ว่างเหมือนเดิม ป้องกันบั๊กจอล็อก
+                          if (typeof window.clearBoxSearch === "function") window.clearBoxSearch(); 
 
-                    }, 50); 
-                }
-            }, 300);
-        }
-      };
-      // [addScannedItemToBox] END
-      //==================================
+                          const failToast = document.createElement("div");
+                          failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
+                          failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku} ในระบบ`;
+                          document.body.appendChild(failToast);
+                          setTimeout(() => failToast.remove(), 2500);
+                      }
+                  }
+              }, 300);
+          }
+        };
+        // [addScannedItemToBox] END
+        //==================================
 
 
 //==================================
