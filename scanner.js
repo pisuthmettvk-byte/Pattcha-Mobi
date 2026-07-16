@@ -71,8 +71,6 @@ window.toggleScanner = async function () {
 // [toggleScanner] END
 //===============
 
-
-
 //===============
 // [startScanner] START (ฉบับแก้ไขชื่อ Callback ให้ตรงกับต้นฉบับ 100%)
 async function startScanner() {
@@ -117,41 +115,40 @@ async function startScanner() {
 //===============
 
 
+          //===============
+          // [stopScanner] START
+          async function stopScanner() {
+            // 🚨 แก้บั๊กจอขาว: ถอด preventDoubleTrigger ออกจากตรงนี้
+            if (isTransitioning) return;
+            isTransitioning = true;
 
-//===============
-// [stopScanner] START
-async function stopScanner() {
-  // 🚨 แก้บั๊กจอขาว: ถอด preventDoubleTrigger ออกจากตรงนี้
-  if (isTransitioning) return;
-  isTransitioning = true;
+            try {
+              if (html5QrCode && window.isScannerMode) {
+                try {
+                  await html5QrCode.stop();
+                } catch (stopErr) {
+                  console.warn("ข้ามการหยุดฮาร์ดแวร์: เลนส์อาจจะยังไม่เปิดสมบูรณ์");
+                }
+                html5QrCode.clear();
+              }
+            } catch (err) {
+              console.warn("Stop scanner error:", err);
+            } finally {
+              window.isScannerMode = false;
+              isFlashOn = false;
 
-  try {
-    if (html5QrCode && window.isScannerMode) {
-      try {
-        await html5QrCode.stop();
-      } catch (stopErr) {
-        console.warn("ข้ามการหยุดฮาร์ดแวร์: เลนส์อาจจะยังไม่เปิดสมบูรณ์");
-      }
-      html5QrCode.clear();
-    }
-  } catch (err) {
-    console.warn("Stop scanner error:", err);
-  } finally {
-    window.isScannerMode = false;
-    isFlashOn = false;
+              const flashBtn = document.getElementById("btnToggleFlash");
+              if (flashBtn) {
+                flashBtn.style.color = "#fff";
+                flashBtn.style.borderColor = "#fff";
+              }
 
-    const flashBtn = document.getElementById("btnToggleFlash");
-    if (flashBtn) {
-      flashBtn.style.color = "#fff";
-      flashBtn.style.borderColor = "#fff";
-    }
-
-    forceResetUI();
-    isTransitioning = false;
-  }
-}
-// [stopScanner] END
-//===============
+              forceResetUI();
+              isTransitioning = false;
+            }
+          }
+          // [stopScanner] END
+          //===============
 
 //===============
 // [forceResetUI] START
