@@ -1,5 +1,5 @@
 // ======================================================
-// 🚀 Scanner Performance Optimization (OS Native + Format Lock)
+// 🚀 Scanner V.2.0 (OS Native + Format Lock + Smart Router)
 // ======================================================
 
 // 📍 [แก้ไขด่วน]: ประกาศตัวแปรหลักที่ระบบกล้องต้องใช้ เพื่อป้องกัน Error "is not defined"
@@ -9,6 +9,9 @@ let isFlashOn = false;
 
 // 📍 ตัวแปรเก็บสถานะโหมดกล้อง (ค่าเริ่มต้นคือ barcode)
 window.currentScannerMode = window.currentScannerMode || "barcode";
+
+// 📍 ตัวแปรเก็บว่าตอนนี้เปิดกล้องจากที่ไหน (ค่าเริ่มต้นคือ stock)
+window.currentScannerContext = window.currentScannerContext || "stock";
 
 function getOptimizedScannerConfig() {
   const isQRMode = window.currentScannerMode === "qr";
@@ -35,16 +38,40 @@ function getOptimizedScannerConfig() {
 }
 
 // ======================================================
+// 🎯 ตัวสลับราง (Smart Router): ส่งผลลัพธ์การสแกนไปให้ถูกหน้า
+// ======================================================
+function globalScanSuccessCallback(decodedText, decodedResult) {
+  console.log(
+    `[SCANNER] สแกนสำเร็จ: ${decodedText} | จากหน้า: ${window.currentScannerContext}`,
+  );
+
+  if (window.currentScannerContext === "box") {
+    // 📦 ถ้าเปิดกล้องจากหน้า Box Details (Transfer Out) -> ส่งไปเข้ากล่อง
+    if (typeof window.addScannedItemToBox === "function") {
+      window.addScannedItemToBox(decodedText);
+    } else {
+      console.error("ไม่พบฟังก์ชัน addScannedItemToBox สำหรับหน้า Box Details");
+    }
+  } else {
+    // 🏪 ถ้าเปิดกล้องจากหน้า Stock In-house (หรือหน้าอื่นๆ) -> ใช้การค้นหาแบบเดิม
+    if (typeof window.onScanSuccess === "function") {
+      window.onScanSuccess(decodedText, decodedResult);
+    } else if (typeof processScanResult === "function") {
+      processScanResult(decodedText);
+    } else {
+      console.warn("ไม่พบฟังก์ชันรับค่าสแกนสำหรับโหมด Stock (onScanSuccess)");
+    }
+  }
+}
+
+// ======================================================
 // 🎛️ ฟังก์ชันสำหรับให้ปุ่ม UI เรียกใช้เพื่อสลับโหมด (QR / Barcode)
 // ======================================================
 window.switchScannerFormat = async function (mode) {
-  // mode ต้องเป็น "qr" หรือ "barcode"
-  if (window.currentScannerMode === mode) return; // ถ้าเป็นโหมดเดิมอยู่แล้ว ไม่ต้องทำอะไร
-
+  if (window.currentScannerMode === mode) return;
   window.currentScannerMode = mode;
   console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
 
-  // ถ้ากล้องกำลังเปิดอยู่ ให้รีสตาร์ทกล้องเพื่อดึง Config ใหม่ไปใช้
   if (window.isScannerMode) {
     await stopScanner();
     await startScanner();
@@ -57,10 +84,8 @@ window.toggleScanner = async function () {
   const scanView = document.getElementById("scannerView");
 
   if (window.isScannerMode) {
-    // ถ้าเปิดอยู่ ให้ปิด
     await stopScanner();
   } else {
-    // ถ้าปิดอยู่ ให้เปิดและดึง UI กล้องขึ้นมา
     if (scanView) {
       scanView.classList.add("active");
       scanView.style.zIndex = "9999";
@@ -72,7 +97,7 @@ window.toggleScanner = async function () {
 //===============
 
 //===============
-// [startScanner] START (ฉบับแก้ไขชื่อ Callback ให้ตรงกับต้นฉบับ 100%)
+// [startScanner] START (ฉบับเปลี่ยนมารับค่าผ่านตัวสลับราง 100%)
 async function startScanner() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -85,19 +110,22 @@ async function startScanner() {
     const config = getOptimizedScannerConfig();
 
     try {
-      // 📍 บังคับกล้องหลัง และเรียกใช้ onScanSuccess ตามต้นฉบับเดิมของเจเลอร์
+      // 📍 บังคับกล้องหลัง และเรียกใช้ Router (globalScanSuccessCallback)
       await html5QrCode.start(
         { facingMode: "environment" },
         config,
-        onScanSuccess // 👈 จุดสำคัญ: เปลี่ยนชื่อกลับเป็นของเดิมแล้วครับ
+        globalScanSuccessCallback, // 👈 จุดสำคัญ: เปลี่ยนมาใช้ Router
       );
     } catch (camErr) {
-      console.warn("เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...", camErr);
+      console.warn(
+        "เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...",
+        camErr,
+      );
       // 📍 แผนสำรอง
       await html5QrCode.start(
         { facingMode: { exact: "environment" } },
         config,
-        onScanSuccess // 👈 เปลี่ยนตรงนี้ด้วยเช่นกัน
+        globalScanSuccessCallback, // 👈 เปลี่ยนมาใช้ Router
       );
     }
 
@@ -114,41 +142,39 @@ async function startScanner() {
 // [startScanner] END
 //===============
 
+//===============
+// [stopScanner] START
+async function stopScanner() {
+  if (isTransitioning) return;
+  isTransitioning = true;
 
-          //===============
-          // [stopScanner] START
-          async function stopScanner() {
-            // 🚨 แก้บั๊กจอขาว: ถอด preventDoubleTrigger ออกจากตรงนี้
-            if (isTransitioning) return;
-            isTransitioning = true;
+  try {
+    if (html5QrCode && window.isScannerMode) {
+      try {
+        await html5QrCode.stop();
+      } catch (stopErr) {
+        console.warn("ข้ามการหยุดฮาร์ดแวร์: เลนส์อาจจะยังไม่เปิดสมบูรณ์");
+      }
+      html5QrCode.clear();
+    }
+  } catch (err) {
+    console.warn("Stop scanner error:", err);
+  } finally {
+    window.isScannerMode = false;
+    isFlashOn = false;
 
-            try {
-              if (html5QrCode && window.isScannerMode) {
-                try {
-                  await html5QrCode.stop();
-                } catch (stopErr) {
-                  console.warn("ข้ามการหยุดฮาร์ดแวร์: เลนส์อาจจะยังไม่เปิดสมบูรณ์");
-                }
-                html5QrCode.clear();
-              }
-            } catch (err) {
-              console.warn("Stop scanner error:", err);
-            } finally {
-              window.isScannerMode = false;
-              isFlashOn = false;
+    const flashBtn = document.getElementById("btnToggleFlash");
+    if (flashBtn) {
+      flashBtn.style.color = "#fff";
+      flashBtn.style.borderColor = "#fff";
+    }
 
-              const flashBtn = document.getElementById("btnToggleFlash");
-              if (flashBtn) {
-                flashBtn.style.color = "#fff";
-                flashBtn.style.borderColor = "#fff";
-              }
-
-              forceResetUI();
-              isTransitioning = false;
-            }
-          }
-          // [stopScanner] END
-          //===============
+    forceResetUI();
+    isTransitioning = false;
+  }
+}
+// [stopScanner] END
+//===============
 
 //===============
 // [forceResetUI] START
