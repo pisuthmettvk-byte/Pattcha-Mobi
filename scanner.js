@@ -2,6 +2,9 @@
 // 🚀 Scanner Performance Optimization (OS Native + Format Lock)
 // ======================================================
 
+// ประกาศตัวแปรป้องกันการกดปุ่มซ้ำ (ตัวแปรที่หายไป)
+let isTransitioning = false;
+
 // 📍 ตัวแปรเก็บสถานะโหมดกล้อง (ค่าเริ่มต้นคือ barcode)
 window.currentScannerMode = window.currentScannerMode || "barcode";
 
