@@ -71,8 +71,10 @@ window.toggleScanner = async function () {
 // [toggleScanner] END
 //===============
 
+
+
 //===============
-// [startScanner] START
+// [startScanner] START (ฉบับแก้ไขชื่อ Callback ให้ตรงกับต้นฉบับ 100%)
 async function startScanner() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -82,26 +84,22 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // 📍 ดึงค่า Config ที่อัปเกรดแล้วมาใช้งาน
     const config = getOptimizedScannerConfig();
 
     try {
-      // 📍 บังคับกล้องหลัง (คำสั่งดั้งเดิมที่เสถียรที่สุด)
+      // 📍 บังคับกล้องหลัง และเรียกใช้ onScanSuccess ตามต้นฉบับเดิมของเจเลอร์
       await html5QrCode.start(
         { facingMode: "environment" },
         config,
-        qrCodeSuccessCallback,
+        onScanSuccess // 👈 จุดสำคัญ: เปลี่ยนชื่อกลับเป็นของเดิมแล้วครับ
       );
     } catch (camErr) {
-      console.warn(
-        "เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...",
-        camErr,
-      );
-      // 📍 แผนสำรอง: หากมือถือบางรุ่นไม่รับค่าด้านบน ก็ยังคงบังคับ "กล้องหลัง" ด้วยคำว่า exact
+      console.warn("เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...", camErr);
+      // 📍 แผนสำรอง
       await html5QrCode.start(
         { facingMode: { exact: "environment" } },
         config,
-        qrCodeSuccessCallback,
+        onScanSuccess // 👈 เปลี่ยนตรงนี้ด้วยเช่นกัน
       );
     }
 
@@ -117,6 +115,8 @@ async function startScanner() {
 }
 // [startScanner] END
 //===============
+
+
 
 //===============
 // [stopScanner] START
