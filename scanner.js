@@ -2,8 +2,10 @@
 // 🚀 Scanner Performance Optimization (OS Native + Format Lock)
 // ======================================================
 
-// ประกาศตัวแปรป้องกันการกดปุ่มซ้ำ (ตัวแปรที่หายไป)
+// 📍 [แก้ไขด่วน]: ประกาศตัวแปรหลักที่ระบบกล้องต้องใช้ เพื่อป้องกัน Error "is not defined"
+let html5QrCode;
 let isTransitioning = false;
+let isFlashOn = false;
 
 // 📍 ตัวแปรเก็บสถานะโหมดกล้อง (ค่าเริ่มต้นคือ barcode)
 window.currentScannerMode = window.currentScannerMode || "barcode";
@@ -69,10 +71,6 @@ window.toggleScanner = async function () {
 // [toggleScanner] END
 //===============
 
-
-
-
-
 //===============
 // [startScanner] START
 async function startScanner() {
@@ -120,10 +118,6 @@ async function startScanner() {
 // [startScanner] END
 //===============
 
-
-
-
-
 //===============
 // [stopScanner] START
 async function stopScanner() {
@@ -158,10 +152,6 @@ async function stopScanner() {
 }
 // [stopScanner] END
 //===============
-
-
-
-
 
 //===============
 // [forceResetUI] START
