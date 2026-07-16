@@ -1,85 +1,38 @@
-// ======================================================
-// 🚀 Scanner V.2.0 (OS Native + Format Lock + Smart Router)
-// ======================================================
+// ==============================================================================
+// 🌟 SCANNER CORE (ฉบับกู้คืนความเสถียร 100% - The Golden Standard)
+// ==============================================================================
 
-// 📍 [แก้ไขด่วน]: ประกาศตัวแปรหลักที่ระบบกล้องต้องใช้ เพื่อป้องกัน Error "is not defined"
 let html5QrCode;
 let isTransitioning = false;
 let isFlashOn = false;
 
-// 📍 ตัวแปรเก็บสถานะโหมดกล้อง (ค่าเริ่มต้นคือ barcode)
-window.currentScannerMode = window.currentScannerMode || "barcode";
-
-// 📍 ตัวแปรเก็บว่าตอนนี้เปิดกล้องจากที่ไหน (ค่าเริ่มต้นคือ stock)
+// ตัวแปรเก็บว่าตอนนี้เปิดกล้องจากที่ไหน (ค่าเริ่มต้นคือ stock)
 window.currentScannerContext = window.currentScannerContext || "stock";
 
-function getOptimizedScannerConfig() {
-  const isQRMode = window.currentScannerMode === "qr";
-
-  return {
-    fps: 15,
-    qrbox: function (viewfinderWidth, viewfinderHeight) {
-      let minEdgePercentage = 0.7;
-      let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-      let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-      if (qrboxSize > 250) qrboxSize = 250;
-      return { width: qrboxSize, height: qrboxSize };
-    },
-    useBarCodeDetectorIfSupported: true, // 🌟 เปิดใช้ AI ถอดรหัสของตัวเครื่อง (OS Native)
-    formatsToSupport: isQRMode
-      ? [Html5QrcodeSupportedFormats.QR_CODE] // 🌟 โหมด QR: อ่านเฉพาะ QR
-      : [
-          // 🌟 โหมด Barcode: อ่านเฉพาะบาร์โค้ด
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-        ],
-  };
-}
-
 // ======================================================
-// 🎯 ตัวสลับราง (Smart Router): ส่งผลลัพธ์การสแกนไปให้ถูกหน้า
+// 🎯 ตัวสลับราง: ส่งผลลัพธ์ไปให้ถูกหน้าอย่างแม่นยำ
 // ======================================================
 function globalScanSuccessCallback(decodedText, decodedResult) {
-  console.log(
-    `[SCANNER] สแกนสำเร็จ: ${decodedText} | จากหน้า: ${window.currentScannerContext}`,
-  );
+  // สั่นเตือนเบาๆ เมื่อสแกนติด (ถ้ามือถือรองรับ)
+  if (navigator.vibrate) navigator.vibrate(100);
 
   if (window.currentScannerContext === "box") {
-    // 📦 ถ้าเปิดกล้องจากหน้า Box Details (Transfer Out) -> ส่งไปเข้ากล่อง
+    // 📦 โหมด Transfer Out (Box Details): ส่งรหัสเข้ากล่อง
     if (typeof window.addScannedItemToBox === "function") {
       window.addScannedItemToBox(decodedText);
-    } else {
-      console.error("ไม่พบฟังก์ชัน addScannedItemToBox สำหรับหน้า Box Details");
     }
   } else {
-    // 🏪 ถ้าเปิดกล้องจากหน้า Stock In-house (หรือหน้าอื่นๆ) -> ใช้การค้นหาแบบเดิม
-    if (typeof window.onScanSuccess === "function") {
-      window.onScanSuccess(decodedText, decodedResult);
+    // 🏪 โหมด Stock In-house: กลับไปใช้ระบบค้นหาเดิม 100%
+    if (typeof window.qrCodeSuccessCallback === "function") {
+      window.qrCodeSuccessCallback(decodedText, decodedResult);
     } else if (typeof processScanResult === "function") {
       processScanResult(decodedText);
-    } else {
-      console.warn("ไม่พบฟังก์ชันรับค่าสแกนสำหรับโหมด Stock (onScanSuccess)");
     }
   }
 }
 
-// ======================================================
-// 🎛️ ฟังก์ชันสำหรับให้ปุ่ม UI เรียกใช้เพื่อสลับโหมด (QR / Barcode)
-// ======================================================
-window.switchScannerFormat = async function (mode) {
-  if (window.currentScannerMode === mode) return;
-  window.currentScannerMode = mode;
-  console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
-
-  if (window.isScannerMode) {
-    await stopScanner();
-    await startScanner();
-  }
-};
-
 //===============
-// [toggleScanner] START (ฟังก์ชันหลักที่ใช้เปิด/ปิดกล้อง)
+// [toggleScanner] START
 window.toggleScanner = async function () {
   const scanView = document.getElementById("scannerView");
 
@@ -97,7 +50,7 @@ window.toggleScanner = async function () {
 //===============
 
 //===============
-// [startScanner] START (ฉบับเปลี่ยนมารับค่าผ่านตัวสลับราง 100%)
+// [startScanner] START (เครื่องยนต์ดั้งเดิมที่เสถียรที่สุด)
 async function startScanner() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -107,25 +60,26 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    const config = getOptimizedScannerConfig();
+    // 📍 ใช้การตั้งค่าดั้งเดิมที่เสถียรที่สุด (ไม่ใช้ OS Native ไม่บังคับ HD)
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
     try {
-      // 📍 บังคับกล้องหลัง และเรียกใช้ Router (globalScanSuccessCallback)
+      // 📍 บังคับกล้องหลัง (คำสั่งดั้งเดิม)
       await html5QrCode.start(
         { facingMode: "environment" },
         config,
-        globalScanSuccessCallback, // 👈 จุดสำคัญ: เปลี่ยนมาใช้ Router
+        globalScanSuccessCallback, // 👈 ส่งค่าผ่านตัวสลับราง
       );
     } catch (camErr) {
       console.warn(
         "เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...",
         camErr,
       );
-      // 📍 แผนสำรอง
+      // 📍 แผนสำรองแบบดั้งเดิม
       await html5QrCode.start(
         { facingMode: { exact: "environment" } },
         config,
-        globalScanSuccessCallback, // 👈 เปลี่ยนมาใช้ Router
+        globalScanSuccessCallback,
       );
     }
 
@@ -186,9 +140,9 @@ function forceResetUI() {
   }
 
   window.isScannerMode = false;
-  window.isProcessingScan = false; // ปลดล็อกบาร์โค้ดเสมอเมื่อ UI รีเซ็ต
+  window.isProcessingScan = false;
 
-  // ดึงหน้า Box Details กลับมา
+  // คืนหน้าจอให้ถูกโหมด
   if (window.currentScannerContext === "box") {
     const boxDetailsView = document.getElementById("boxDetailsView");
     if (boxDetailsView) {
@@ -198,3 +152,45 @@ function forceResetUI() {
 }
 // [forceResetUI] END
 //===============
+
+// ==============================================================================
+// 🌟 CROSS-FILE BRIDGE & UI CONTROLS (ปุ่มควบคุมกล้องแบบดั้งเดิม 100%)
+// ==============================================================================
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. ปุ่มกากบาท ปิดกล้อง
+  const btnCloseScanner = document.getElementById("btnCloseScanner");
+  if (btnCloseScanner) {
+    btnCloseScanner.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await stopScanner();
+    });
+  }
+
+  // 2. ปุ่มเปิด-ปิดไฟแฟลช
+  const btnToggleFlash = document.getElementById("btnToggleFlash");
+  if (btnToggleFlash) {
+    btnToggleFlash.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!html5QrCode || !window.isScannerMode) return;
+
+      try {
+        isFlashOn = !isFlashOn;
+        await html5QrCode.applyVideoConstraints({
+          advanced: [{ torch: isFlashOn }],
+        });
+
+        if (isFlashOn) {
+          btnToggleFlash.style.color = "#ffeb3b";
+          btnToggleFlash.style.borderColor = "#ffeb3b";
+        } else {
+          btnToggleFlash.style.color = "#fff";
+          btnToggleFlash.style.borderColor = "#fff";
+        }
+      } catch (err) {
+        console.warn("Flash not supported:", err);
+        isFlashOn = false;
+        alert("อุปกรณ์ของคุณไม่รองรับการเปิดไฟแฟลชในเบราว์เซอร์ครับ");
+      }
+    });
+  }
+});
