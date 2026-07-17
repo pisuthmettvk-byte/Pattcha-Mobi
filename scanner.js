@@ -92,57 +92,21 @@ function globalScanSuccessCallback(decodedText, decodedResult) {
 
 //===============
 // [toggleScanner] START
-// ==============================================================================
-// 🌟 คืนชีพปุ่ม TACO (สลับโหมด QR / BARCODE พร้อมเปลี่ยน UI)
-// ==============================================================================
-document.addEventListener("DOMContentLoaded", () => {
-  const btnToggleScanMode = document.getElementById("btnToggleScanMode");
-  const scanModeIcon = document.getElementById("scanModeIcon");
-  const scanModeText = document.getElementById("scanModeText");
+window.toggleScanner = async function () {
+  const scanView = document.getElementById("scannerView");
 
-  if (btnToggleScanMode) {
-    btnToggleScanMode.addEventListener("click", async (e) => {
-      e.preventDefault(); // ป้องกันปุ่มรีเฟรชหน้าเว็บ
-
-      // 1. สลับตัวแปรโหมด
-      if (window.currentScannerMode === "qr") {
-        window.currentScannerMode = "barcode";
-      } else {
-        window.currentScannerMode = "qr";
-      }
-
-      console.log(`[SCANNER] สลับโหมดเป็น: ${window.currentScannerMode}`);
-
-      // 2. อัปเดตหน้าตา UI ของปุ่ม (ไอคอน + ข้อความ)
-      if (window.currentScannerMode === "qr") {
-        if (scanModeIcon) scanModeIcon.className = "fas fa-qrcode";
-        if (scanModeText) scanModeText.textContent = "QR CODE";
-      } else {
-        if (scanModeIcon) scanModeIcon.className = "fas fa-barcode";
-        if (scanModeText) scanModeText.textContent = "BARCODE";
-      }
-
-      // 3. รีสตาร์ทเลนส์กล้องใหม่ เพื่อให้มันล็อกเป้าตามโหมดที่เลือก (แบบมี Delay กันเลนส์ช็อก)
-      if (window.isScannerMode) {
-        await stopScanner();
-        
-        // ให้เลนส์พักหายใจ 0.5 วินาที
-        setTimeout(async () => {
-          const scanView = document.getElementById("scannerView");
-          if (scanView) {
-            scanView.classList.add("active");
-            scanView.style.zIndex = "9999";
-          }
-          await startScanner();
-        }, 500); 
-      }
-    });
+  if (window.isScannerMode) {
+    await stopScanner();
+  } else {
+    if (scanView) {
+      scanView.classList.add("active");
+      scanView.style.zIndex = "9999";
+    }
+    await startScanner();
   }
-});// [toggleScanner] END
+};
+// [toggleScanner] END
 //===============
-
-
-
 
 //===============
 // [startScanner] START (เครื่องยนต์ดั้งเดิม + Config สลับโหมด)
