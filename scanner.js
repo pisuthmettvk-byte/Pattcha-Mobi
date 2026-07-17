@@ -39,18 +39,34 @@ function getSafeScannerConfig() {
 }
 
 // ======================================================
-// 🎛️ ฟังก์ชันสำหรับสลับโหมดกล้อง (QR / Barcode)
+// 🎛️ ฟังก์ชันสำหรับสลับโหมดกล้อง (QR / Barcode) - [FIXED]
 // ======================================================
 window.switchScannerFormat = async function (mode) {
-  if (window.currentScannerMode === mode) return;
+  if (window.currentScannerMode === mode) return; 
+  
   window.currentScannerMode = mode;
   console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
 
+  // ถ้ากล้องกำลังเปิดอยู่ ให้รีสตาร์ทกล้องแบบมีดีเลย์ป้องกันเลนส์ค้าง
   if (window.isScannerMode) {
+    // 1. สั่งปิดกล้อง
     await stopScanner();
-    await startScanner();
+    
+    // 2. โชว์ UI โหลด หรือพักเลนส์ 0.5 วินาที
+    setTimeout(async () => {
+      // 3. สั่งเปิดกล้องใหม่พร้อม Config ของโหมดใหม่
+      const scanView = document.getElementById("scannerView");
+      if (scanView) {
+        scanView.classList.add("active");
+        scanView.style.zIndex = "9999";
+      }
+      await startScanner();
+    }, 500); // 👈 หน่วงเวลา 0.5 วิ ให้เลนส์หายใจก่อนสตาร์ทใหม่
   }
 };
+
+
+
 
 // ======================================================
 // 🎯 ตัวสลับราง: ส่งผลลัพธ์ไปให้ถูกหน้าอย่างแม่นยำ
