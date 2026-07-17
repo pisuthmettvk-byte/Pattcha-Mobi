@@ -1,5 +1,5 @@
 // ==============================================================================
-// 🌟 SCANNER CORE (The Perfect Hybrid: OS Native AI + CSS Frame Toggle)
+// 🌟 SCANNER CORE (The Perfect Illusion - ยืดหดกรอบในด้วย CSS + สแกนไวระดับ Snap!)
 // ==============================================================================
 
 let html5QrCode;
@@ -10,11 +10,24 @@ window.currentScannerMode = window.currentScannerMode || "barcode";
 window.currentScannerContext = window.currentScannerContext || "stock"; // ค่าเริ่มต้น
 
 // ======================================================
-// 🎯 ตัวสลับราง (ส่งข้อมูลให้ถูกหน้า)
+// 🎯 ตัวสลับราง & ดักจับชนิดบาร์โค้ด (Software Format Lock)
 // ======================================================
 function globalScanSuccessCallback(decodedText, decodedResult) {
+  // 1. จำลองการล็อกเป้าหมาย (ป้องกันสแกนผิดประเภทโดยไม่ต้องรีบูตกล้อง)
+  if (decodedResult && decodedResult.result && decodedResult.result.format) {
+    const formatName = decodedResult.result.format.formatName;
+    const isQR = formatName === "QR_CODE";
+
+    // ถ้าโหมดปัจจุบันเป็น QR แต่ดันไปสแกนโดนบาร์โค้ด ให้เมินทิ้งไปเลย
+    if (window.currentScannerMode === "qr" && !isQR) return;
+    // ถ้าโหมดปัจจุบันเป็น Barcode แต่ดันไปสแกนโดน QR ให้เมินทิ้งเช่นกัน
+    if (window.currentScannerMode === "barcode" && isQR) return;
+  }
+
+  // 2. สั่นเตือนเมื่อสแกนสำเร็จ
   if (navigator.vibrate) navigator.vibrate(100);
 
+  // 3. สับรางข้อมูลส่งไปถูกหน้า
   if (window.currentScannerContext === "box") {
     // 📦 โหมด Transfer Out (Box Details)
     if (typeof window.addScannedItemToBox === "function") {
@@ -48,7 +61,61 @@ window.toggleScanner = async function () {
 //===============
 
 //===============
-// [startScanner] START (ติดเครื่องยนต์ AI + ไม่จำกัด Format)
+// 🎨 [Custom Frame Builder] สร้างและยืดหดกรอบด้านใน
+//===============
+function ensureCustomOverlay() {
+  const reader = document.getElementById("reader");
+  if (!reader) return;
+  reader.style.position = "relative"; // ให้กรอบแดงนอกเป็นจุดอ้างอิง
+
+  let overlay = document.getElementById("custom-scanner-overlay");
+
+  // ถ้ายังไม่มีกรอบใน ให้สร้างขึ้นมาใหม่
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "custom-scanner-overlay";
+    overlay.style.cssText =
+      "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;";
+
+    const box = document.createElement("div");
+    box.id = "custom-scanner-box";
+    // 📍 นี่คือเวทมนตร์ CSS! สร้างพื้นที่สว่างตรงกลาง และถมดำรอบนอก
+    box.style.cssText =
+      "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 3px solid rgba(255, 255, 255, 0.8); border-radius: 12px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.55); transition: all 0.3s ease-in-out; overflow: hidden;";
+
+    // 📍 เพิ่มเส้นสแกนสีชมพูวิ่งขึ้นลง (ลูกเล่นความสวยงาม)
+    const scanLine = document.createElement("div");
+    scanLine.style.cssText =
+      "position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: #e7a08c; box-shadow: 0 0 10px #e7a08c; animation: scanLineAnim 2s linear infinite;";
+
+    if (!document.getElementById("scan-line-style")) {
+      const style = document.createElement("style");
+      style.id = "scan-line-style";
+      style.innerHTML = `@keyframes scanLineAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }`;
+      document.head.appendChild(style);
+    }
+
+    box.appendChild(scanLine);
+    overlay.appendChild(box);
+    reader.appendChild(overlay);
+  }
+
+  // ปรับขนาดยืด-หดของกรอบด้านใน ตามโหมดปัจจุบัน
+  const box = document.getElementById("custom-scanner-box");
+  if (box) {
+    if (window.currentScannerMode === "qr") {
+      box.style.width = "220px";
+      box.style.height = "220px";
+    } else {
+      box.style.width = "260px";
+      box.style.height = "130px";
+    }
+  }
+}
+//===============
+
+//===============
+// [startScanner] START (เปิดกล้องเต็มจอ + AI + ปิดการวาดกรอบของไลบรารี)
 async function startScanner() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -58,25 +125,11 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // 🚀 [THE GOLDEN TWEAK]: ปลุกพลัง AI ของตัวเครื่อง (OS Native) ให้อ่านบาร์โค้ดไวระดับ Snap!
+    // 📍 ไม่ใส่คำสั่ง qrbox เพื่อให้กล้องอ่านเต็มจอแบบ 100% (ไวทะลุนรก)
     const config = {
-      fps: 15, // ดันเฟรมเรตขึ้นนิดหน่อยเพื่อให้ AI ประมวลผลภาพได้ไวขึ้น
-      qrbox: { width: 250, height: 250 },
-      useBarCodeDetectorIfSupported: true, // 🔥 หัวใจหลักความไว! ปล่อยให้มือถือคิดแทนเบราว์เซอร์
+      fps: 15,
+      useBarCodeDetectorIfSupported: true,
     };
-
-    // 📍 ปรับขนาดกรอบให้ตรงกับโหมดปัจจุบันก่อนเปิดกล้อง (Visual Effect)
-    const readerContainer = document.getElementById("reader");
-    if (readerContainer) {
-      readerContainer.style.transition = "all 0.3s ease";
-      if (window.currentScannerMode === "barcode") {
-        readerContainer.style.height = "150px";
-        readerContainer.style.minHeight = "150px";
-      } else {
-        readerContainer.style.height = "300px";
-        readerContainer.style.minHeight = "300px";
-      }
-    }
 
     try {
       await html5QrCode.start(
@@ -94,6 +147,9 @@ async function startScanner() {
     }
 
     window.isScannerMode = true;
+
+    // 📍 วาดกรอบด้านในของเราเอง ทันทีที่กล้องเปิดเสร็จ
+    ensureCustomOverlay();
   } catch (err) {
     console.error("ระบบกล้องถูกปฏิเสธ:", err);
     window.isScannerMode = false;
@@ -150,7 +206,7 @@ function forceResetUI() {
   window.isScannerMode = false;
   window.isProcessingScan = false;
 
-  // คืนหน้าจอให้ถูกโหมด
+  // คืนหน้าจอให้ถูกต้อง (แก้ปัญหา Box Details โผล่ทับ)
   if (window.currentScannerContext === "box") {
     const boxDetailsView = document.getElementById("boxDetailsView");
     if (boxDetailsView) {
@@ -161,10 +217,10 @@ function forceResetUI() {
 //===============
 
 // ==============================================================================
-// 🌟 UI CONTROLS (ปุ่ม Taco หด-ขยายกรอบของแทร่!)
+// 🌟 UI CONTROLS (ปุ่ม Taco รุ่นสมบูรณ์แบบ - ยืดหดกรอบใน ไม่รีบูตกล้อง!)
 // ==============================================================================
 document.addEventListener("DOMContentLoaded", () => {
-  // 🛡️ 1. ดักหน้า Stock
+  // 🛡️ 1. ดักจับเมื่อกดเปิดกล้องจากหน้า Stock
   const btnStockScanner = document.getElementById("btnScannerOpen");
   if (btnStockScanner) {
     btnStockScanner.addEventListener("click", () => {
@@ -172,11 +228,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🌮 2. ปุ่ม Taco (หด/ขยายกรอบด้วย CSS ล้วนๆ ไม่แตะการทำงานของฮาร์ดแวร์กล้อง)
+  // 🌮 2. ปุ่ม Taco (สั่งยืดหดกรอบ Custom ของเราอย่างเดียว)
   const btnToggleScanMode = document.getElementById("btnToggleScanMode");
   const scanModeIcon = document.getElementById("scanModeIcon");
   const scanModeText = document.getElementById("scanModeText");
-  const readerContainer = document.getElementById("reader");
 
   if (btnToggleScanMode) {
     const newBtnToggle = btnToggleScanMode.cloneNode(true);
@@ -186,30 +241,20 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       e.stopPropagation();
 
+      // 1. สลับตัวแปร UI
       if (window.currentScannerMode === "qr") {
-        // สลับไปโหมด Barcode
         window.currentScannerMode = "barcode";
         if (scanModeIcon) scanModeIcon.className = "fas fa-barcode";
         if (scanModeText) scanModeText.textContent = "BARCODE";
-
-        // 📍 หดกรอบเป็นสี่เหลี่ยมผืนผ้า
-        if (readerContainer) {
-          readerContainer.style.transition = "all 0.3s ease";
-          readerContainer.style.height = "150px";
-          readerContainer.style.minHeight = "150px";
-        }
       } else {
-        // สลับไปโหมด QR
         window.currentScannerMode = "qr";
         if (scanModeIcon) scanModeIcon.className = "fas fa-qrcode";
         if (scanModeText) scanModeText.textContent = "QR CODE";
+      }
 
-        // 📍 ขยายกรอบเป็นจัตุรัส
-        if (readerContainer) {
-          readerContainer.style.transition = "all 0.3s ease";
-          readerContainer.style.height = "300px";
-          readerContainer.style.minHeight = "300px";
-        }
+      // 2. 📍 สั่งยืดหดกรอบด้านในทันที! (ไม่มีการดับกล้อง ไม่มีการสตาร์ทใหม่ กล้องลื่นไหล 100%)
+      if (window.isScannerMode) {
+        ensureCustomOverlay();
       }
     });
   }
