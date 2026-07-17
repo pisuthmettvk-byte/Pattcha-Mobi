@@ -1,5 +1,5 @@
 // ==============================================================================
-// 🌟 SCANNER CORE (ฉบับกู้คืนความเสถียร 100% - The Golden Standard)
+// 🌟 SCANNER CORE (ฉบับกู้คืนความเสถียร 100% + ระบบสลับโหมด QR/Barcode)
 // ==============================================================================
 
 let html5QrCode;
@@ -8,6 +8,49 @@ let isFlashOn = false;
 
 // ตัวแปรเก็บว่าตอนนี้เปิดกล้องจากที่ไหน (ค่าเริ่มต้นคือ stock)
 window.currentScannerContext = window.currentScannerContext || "stock";
+
+// ตัวแปรเก็บสถานะโหมดสแกนเนอร์ (QR หรือ Barcode)
+window.currentScannerMode = window.currentScannerMode || "barcode";
+
+// ======================================================
+// ⚙️ ตัวสร้าง Config แบบปลอดภัย (ไม่ใช้ OS Native ที่ทำให้แอปพัง)
+// ======================================================
+function getSafeScannerConfig() {
+  const isQRMode = window.currentScannerMode === "qr";
+
+  return {
+    fps: 10, // 📍 กลับมาใช้ FPS ที่ 10 ตามต้นฉบับ เพื่อความเสถียร
+    qrbox: function (viewfinderWidth, viewfinderHeight) {
+      let minEdgePercentage = 0.7;
+      let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+      let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+      if (qrboxSize > 250) qrboxSize = 250;
+      return { width: qrboxSize, height: qrboxSize };
+    },
+    // 📍 ล็อกเป้าหมายการอ่านตามโหมด โดยไม่ใช้ useBarCodeDetectorIfSupported
+    formatsToSupport: isQRMode
+      ? [Html5QrcodeSupportedFormats.QR_CODE]
+      : [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+        ],
+  };
+}
+
+// ======================================================
+// 🎛️ ฟังก์ชันสำหรับสลับโหมดกล้อง (QR / Barcode)
+// ======================================================
+window.switchScannerFormat = async function (mode) {
+  if (window.currentScannerMode === mode) return;
+  window.currentScannerMode = mode;
+  console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
+
+  if (window.isScannerMode) {
+    await stopScanner();
+    await startScanner();
+  }
+};
 
 // ======================================================
 // 🎯 ตัวสลับราง: ส่งผลลัพธ์ไปให้ถูกหน้าอย่างแม่นยำ
@@ -50,7 +93,7 @@ window.toggleScanner = async function () {
 //===============
 
 //===============
-// [startScanner] START (เครื่องยนต์ดั้งเดิมที่เสถียรที่สุด)
+// [startScanner] START (เครื่องยนต์ดั้งเดิม + Config สลับโหมด)
 async function startScanner() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -60,11 +103,11 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // 📍 ใช้การตั้งค่าดั้งเดิมที่เสถียรที่สุด (ไม่ใช้ OS Native ไม่บังคับ HD)
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    // 📍 ดึงการตั้งค่าแบบปลอดภัยมาใช้ (ปรับขนาดกรอบ + ล็อกชนิดบาร์โค้ด)
+    const config = getSafeScannerConfig();
 
     try {
-      // 📍 บังคับกล้องหลัง (คำสั่งดั้งเดิม)
+      // 📍 บังคับกล้องหลัง
       await html5QrCode.start(
         { facingMode: "environment" },
         config,
