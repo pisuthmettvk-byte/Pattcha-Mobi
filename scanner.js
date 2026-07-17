@@ -28,44 +28,59 @@ document.addEventListener(
   true,
 );
 
+
 // ======================================================
-// 🎯 [GLOBAL ROUTER] - ตัวสับรางข้อมูล (สแกนทีละชิ้น กล้องดับทันที)
+// 🎯 [GLOBAL ROUTER] - ตัวสับรางข้อมูล (แก้ลำดับการแสดงผลลิสต์สินค้า)
 // ======================================================
 async function globalScanSuccessCallback(decodedText, decodedResult) {
-  if (window.isProcessingScan) return;
-
   // 1. กรองรหัสผิดประเภท
   if (decodedResult && decodedResult.result && decodedResult.result.format) {
     const formatName = decodedResult.result.format.formatName;
-    const isQR = formatName === "QR_CODE";
-
-    if (window.currentScannerMode === "qr" && !isQR) return;
+    const isQR = (formatName === "QR_CODE");
+    
+    if (window.currentScannerMode === "qr" && !isQR) return; 
     if (window.currentScannerMode === "barcode" && isQR) return;
   }
 
-  window.isProcessingScan = true;
   if (navigator.vibrate) navigator.vibrate(100);
-
-  // 🔴 [พระเอกอยู่ตรงนี้]: สั่งปิดกล้องทันที 100% "ทุกกรณี" ไม่ว่าจะอยู่หน้าไหน
-  await stopScanner();
 
   // 2. 📍 สับรางข้อมูลให้ถูกต้องตามหน้าที่กดเข้ามา
   if (window.currentScannerContext === "box") {
-    // 📦 โหมด Box Detail
+    
+    // 📦 โหมด Box Detail (ล็อก 1.5 วินาทีป้องกันสแกนเบิ้ล)
+    if (window.isBoxScanning) return;
+    window.isBoxScanning = true;
+    
     if (typeof window.addScannedItemToBox === "function") {
       window.addScannedItemToBox(decodedText);
     }
+    setTimeout(() => { window.isBoxScanning = false; }, 1500);
+
   } else {
-    // 🏪 โหมด Stock In-house
+    
+    // 🏪 โหมด Stock In-house (Single Scan)
+    if (window.isStockScanning) return;
+    window.isStockScanning = true;
+
+    // 🟢 ลำดับที่ 1: โยนข้อมูลให้ Stock In-house อัปเดตหน้าจอโชว์ลิสต์สินค้า "ก่อน!"
+    // (ห้ามปิดกล้องก่อนเด็ดขาด เพื่อรักษาสถานะ UI ของระบบเดิมไว้)
     if (typeof window.qrCodeSuccessCallback === "function") {
       window.qrCodeSuccessCallback(decodedText, decodedResult);
     } else if (typeof processScanResult === "function") {
       processScanResult(decodedText);
     }
-  }
 
-  window.isProcessingScan = false;
+    // 🔴 ลำดับที่ 2: พอ Stock ได้ข้อมูลและวาดลิสต์สินค้าแล้ว ค่อยสั่งปิดกล้องตามหลังทันที
+    await stopScanner(); 
+    
+    // คืนค่าให้พร้อมสแกนรอบใหม่เมื่อเจเลอร์กดเปิดกล้องครั้งหน้า
+    setTimeout(() => { window.isStockScanning = false; }, 500);
+  }
 }
+
+
+
+
 
 // ======================================================
 // ⚙️ ตั้งค่าความแม่นยำกล้อง
@@ -92,6 +107,8 @@ function getOptimizedScannerConfig() {
   };
 }
 
+
+
 // ======================================================
 // 🎛️ ปุ่มสลับโหมด Taco
 // ======================================================
@@ -107,6 +124,9 @@ window.switchScannerFormat = async function (mode) {
     }, 300);
   }
 };
+
+
+
 
 //===============
 // [toggleScanner & startScanner & stopScanner & forceResetUI]
@@ -205,6 +225,9 @@ function forceResetUI() {
     }
   }
 }
+
+
+
 
 // ======================================================
 // 🌟 ผูก Event ให้ปุ่ม UI หน้าจอ
