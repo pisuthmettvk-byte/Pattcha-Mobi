@@ -1,87 +1,25 @@
 // ==============================================================================
-// 🌟 SCANNER CORE (ฉบับกู้คืนความเสถียร 100% + ระบบสลับโหมด QR/Barcode)
+// 🌟 SCANNER CORE (Classic Edition - เสถียร 100% + หด/ขยายกรอบด้วย CSS)
 // ==============================================================================
 
 let html5QrCode;
 let isTransitioning = false;
 let isFlashOn = false;
 
-// ตัวแปรเก็บว่าตอนนี้เปิดกล้องจากที่ไหน (ค่าเริ่มต้นคือ stock)
-window.currentScannerContext = window.currentScannerContext || "stock";
-
-// ตัวแปรเก็บสถานะโหมดสแกนเนอร์ (QR หรือ Barcode)
 window.currentScannerMode = window.currentScannerMode || "barcode";
+window.currentScannerContext = window.currentScannerContext || "stock"; // ค่าเริ่มต้น
 
 // ======================================================
-// ⚙️ ตัวสร้าง Config แบบปลอดภัย (ไม่ใช้ OS Native ที่ทำให้แอปพัง)
-// ======================================================
-function getSafeScannerConfig() {
-  const isQRMode = window.currentScannerMode === "qr";
-
-  return {
-    fps: 10, // 📍 กลับมาใช้ FPS ที่ 10 ตามต้นฉบับ เพื่อความเสถียร
-    qrbox: function (viewfinderWidth, viewfinderHeight) {
-      let minEdgePercentage = 0.7;
-      let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-      let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-      if (qrboxSize > 250) qrboxSize = 250;
-      return { width: qrboxSize, height: qrboxSize };
-    },
-    // 📍 ล็อกเป้าหมายการอ่านตามโหมด โดยไม่ใช้ useBarCodeDetectorIfSupported
-    formatsToSupport: isQRMode
-      ? [Html5QrcodeSupportedFormats.QR_CODE]
-      : [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-        ],
-  };
-}
-
-// ======================================================
-// 🎛️ ฟังก์ชันสำหรับสลับโหมดกล้อง (QR / Barcode) - [FIXED]
-// ======================================================
-window.switchScannerFormat = async function (mode) {
-  if (window.currentScannerMode === mode) return; 
-  
-  window.currentScannerMode = mode;
-  console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
-
-  // ถ้ากล้องกำลังเปิดอยู่ ให้รีสตาร์ทกล้องแบบมีดีเลย์ป้องกันเลนส์ค้าง
-  if (window.isScannerMode) {
-    // 1. สั่งปิดกล้อง
-    await stopScanner();
-    
-    // 2. โชว์ UI โหลด หรือพักเลนส์ 0.5 วินาที
-    setTimeout(async () => {
-      // 3. สั่งเปิดกล้องใหม่พร้อม Config ของโหมดใหม่
-      const scanView = document.getElementById("scannerView");
-      if (scanView) {
-        scanView.classList.add("active");
-        scanView.style.zIndex = "9999";
-      }
-      await startScanner();
-    }, 500); // 👈 หน่วงเวลา 0.5 วิ ให้เลนส์หายใจก่อนสตาร์ทใหม่
-  }
-};
-
-
-
-
-// ======================================================
-// 🎯 ตัวสลับราง: ส่งผลลัพธ์ไปให้ถูกหน้าอย่างแม่นยำ
+// 🎯 ตัวสลับราง (ส่งข้อมูลให้ถูกหน้า)
 // ======================================================
 function globalScanSuccessCallback(decodedText, decodedResult) {
-  // สั่นเตือนเบาๆ เมื่อสแกนติด (ถ้ามือถือรองรับ)
   if (navigator.vibrate) navigator.vibrate(100);
 
   if (window.currentScannerContext === "box") {
-    // 📦 โหมด Transfer Out (Box Details): ส่งรหัสเข้ากล่อง
     if (typeof window.addScannedItemToBox === "function") {
       window.addScannedItemToBox(decodedText);
     }
   } else {
-    // 🏪 โหมด Stock In-house: กลับไปใช้ระบบค้นหาเดิม 100%
     if (typeof window.qrCodeSuccessCallback === "function") {
       window.qrCodeSuccessCallback(decodedText, decodedResult);
     } else if (typeof processScanResult === "function") {
@@ -105,11 +43,10 @@ window.toggleScanner = async function () {
     await startScanner();
   }
 };
-// [toggleScanner] END
 //===============
 
 //===============
-// [startScanner] START (เครื่องยนต์ดั้งเดิม + Config สลับโหมด)
+// [startScanner] START
 async function startScanner() {
   if (isTransitioning) return;
   isTransitioning = true;
@@ -119,22 +56,29 @@ async function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
     }
 
-    // 📍 ดึงการตั้งค่าแบบปลอดภัยมาใช้ (ปรับขนาดกรอบ + ล็อกชนิดบาร์โค้ด)
-    const config = getSafeScannerConfig();
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    // 📍 รีเซ็ตขนาดกรอบให้ตรงกับโหมดปัจจุบันก่อนเปิดกล้อง
+    const readerContainer = document.getElementById("reader");
+    if (readerContainer) {
+      readerContainer.style.transition = "all 0.3s ease";
+      if (window.currentScannerMode === "barcode") {
+        readerContainer.style.height = "150px";
+        readerContainer.style.minHeight = "150px";
+      } else {
+        readerContainer.style.height = "300px";
+        readerContainer.style.minHeight = "300px";
+      }
+    }
 
     try {
-      // 📍 บังคับกล้องหลัง
       await html5QrCode.start(
         { facingMode: "environment" },
         config,
-        globalScanSuccessCallback, // 👈 ส่งค่าผ่านตัวสลับราง
+        globalScanSuccessCallback,
       );
     } catch (camErr) {
-      console.warn(
-        "เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลังด้วยวิธีที่ 2...",
-        camErr,
-      );
-      // 📍 แผนสำรองแบบดั้งเดิม
+      console.warn("เกิดข้อผิดพลาด ลองบังคับเปิดกล้องหลัง...", camErr);
       await html5QrCode.start(
         { facingMode: { exact: "environment" } },
         config,
@@ -144,7 +88,7 @@ async function startScanner() {
 
     window.isScannerMode = true;
   } catch (err) {
-    console.error("ระบบกล้องถูกปฏิเสธอย่างสมบูรณ์:", err);
+    console.error("ระบบกล้องถูกปฏิเสธ:", err);
     window.isScannerMode = false;
     forceResetUI();
     alert("ไม่สามารถเข้าถึงกล้องหลังได้ กรุณาตรวจสอบการอนุญาต (Permission)");
@@ -152,7 +96,6 @@ async function startScanner() {
     isTransitioning = false;
   }
 }
-// [startScanner] END
 //===============
 
 //===============
@@ -166,7 +109,7 @@ async function stopScanner() {
       try {
         await html5QrCode.stop();
       } catch (stopErr) {
-        console.warn("ข้ามการหยุดฮาร์ดแวร์: เลนส์อาจจะยังไม่เปิดสมบูรณ์");
+        console.warn("ข้ามการหยุดฮาร์ดแวร์...");
       }
       html5QrCode.clear();
     }
@@ -186,7 +129,6 @@ async function stopScanner() {
     isTransitioning = false;
   }
 }
-// [stopScanner] END
 //===============
 
 //===============
@@ -209,27 +151,71 @@ function forceResetUI() {
     }
   }
 }
-// [forceResetUI] END
 //===============
 
 // ==============================================================================
-// 🌟 CROSS-FILE BRIDGE & UI CONTROLS (ปุ่มควบคุมกล้องแบบดั้งเดิม 100%)
+// 🌟 UI CONTROLS (ปุ่ม Taco หด-ขยายกรอบของแทร่!)
 // ==============================================================================
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. ปุ่มกากบาท ปิดกล้อง
-  const btnCloseScanner = document.getElementById("btnCloseScanner");
-  if (btnCloseScanner) {
-    btnCloseScanner.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await stopScanner();
+  // 🛡️ 1. ดักหน้า Stock
+  const btnStockScanner = document.getElementById("btnScannerOpen");
+  if (btnStockScanner) {
+    btnStockScanner.addEventListener("click", () => {
+      window.currentScannerContext = "stock";
     });
   }
 
-  // 2. ปุ่มเปิด-ปิดไฟแฟลช
+  // 🌮 2. ปุ่ม Taco (หด/ขยายกรอบด้วย CSS ล้วนๆ ไม่แตะการทำงานของฮาร์ดแวร์กล้อง)
+  const btnToggleScanMode = document.getElementById("btnToggleScanMode");
+  const scanModeIcon = document.getElementById("scanModeIcon");
+  const scanModeText = document.getElementById("scanModeText");
+  const readerContainer = document.getElementById("reader");
+
+  if (btnToggleScanMode) {
+    const newBtnToggle = btnToggleScanMode.cloneNode(true);
+    btnToggleScanMode.parentNode.replaceChild(newBtnToggle, btnToggleScanMode);
+
+    newBtnToggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (window.currentScannerMode === "qr") {
+        // สลับไปโหมด Barcode
+        window.currentScannerMode = "barcode";
+        if (scanModeIcon) scanModeIcon.className = "fas fa-barcode";
+        if (scanModeText) scanModeText.textContent = "BARCODE";
+
+        // 📍 หดกรอบเป็นสี่เหลี่ยมผืนผ้า (Visual Effect แบบเก่าที่เพอร์เฟกต์)
+        if (readerContainer) {
+          readerContainer.style.transition = "all 0.3s ease";
+          readerContainer.style.height = "150px";
+          readerContainer.style.minHeight = "150px";
+        }
+      } else {
+        // สลับไปโหมด QR
+        window.currentScannerMode = "qr";
+        if (scanModeIcon) scanModeIcon.className = "fas fa-qrcode";
+        if (scanModeText) scanModeText.textContent = "QR CODE";
+
+        // 📍 ขยายกรอบเป็นจัตุรัส
+        if (readerContainer) {
+          readerContainer.style.transition = "all 0.3s ease";
+          readerContainer.style.height = "300px";
+          readerContainer.style.minHeight = "300px";
+        }
+      }
+    });
+  }
+
+  // ⚡ 3. คืนชีพปุ่ม Flash
   const btnToggleFlash = document.getElementById("btnToggleFlash");
   if (btnToggleFlash) {
-    btnToggleFlash.addEventListener("click", async (e) => {
+    const newBtnFlash = btnToggleFlash.cloneNode(true);
+    btnToggleFlash.parentNode.replaceChild(newBtnFlash, btnToggleFlash);
+
+    newBtnFlash.addEventListener("click", async (e) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!html5QrCode || !window.isScannerMode) return;
 
       try {
@@ -239,73 +225,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (isFlashOn) {
-          btnToggleFlash.style.color = "#ffeb3b";
-          btnToggleFlash.style.borderColor = "#ffeb3b";
+          newBtnFlash.style.color = "#ffeb3b";
+          newBtnFlash.style.borderColor = "#ffeb3b";
         } else {
-          btnToggleFlash.style.color = "#fff";
-          btnToggleFlash.style.borderColor = "#fff";
+          newBtnFlash.style.color = "#fff";
+          newBtnFlash.style.borderColor = "#fff";
         }
       } catch (err) {
         console.warn("Flash not supported:", err);
         isFlashOn = false;
-        alert("อุปกรณ์ของคุณไม่รองรับการเปิดไฟแฟลชในเบราว์เซอร์ครับ");
+        alert("อุปกรณ์ของคุณไม่รองรับไฟแฟลชครับ");
       }
     });
   }
 });
-
-
-
-// ==============================================================================
-// 🌟 ปุ่ม TACO (สลับโหมด QR / BARCODE พร้อมเปลี่ยน UI)
-// ==============================================================================
-
-      document.addEventListener("DOMContentLoaded", () => {
-        const btnToggleScanMode = document.getElementById("btnToggleScanMode");
-        const scanModeIcon = document.getElementById("scanModeIcon");
-        const scanModeText = document.getElementById("scanModeText");
-
-        if (btnToggleScanMode) {
-          btnToggleScanMode.addEventListener("click", async (e) => {
-            e.preventDefault(); // ป้องกันปุ่มรีเฟรชหน้าเว็บ
-
-            // 1. สลับตัวแปรโหมด
-            if (window.currentScannerMode === "qr") {
-              window.currentScannerMode = "barcode";
-            } else {
-              window.currentScannerMode = "qr";
-            }
-
-            console.log(`[SCANNER] สลับโหมดเป็น: ${window.currentScannerMode}`);
-
-            // 2. อัปเดตหน้าตา UI ของปุ่ม (ไอคอน + ข้อความ)
-            if (window.currentScannerMode === "qr") {
-              if (scanModeIcon) scanModeIcon.className = "fas fa-qrcode";
-              if (scanModeText) scanModeText.textContent = "QR CODE";
-            } else {
-              if (scanModeIcon) scanModeIcon.className = "fas fa-barcode";
-              if (scanModeText) scanModeText.textContent = "BARCODE";
-            }
-
-            // 3. รีสตาร์ทเลนส์กล้องใหม่ เพื่อให้มันล็อกเป้าตามโหมดที่เลือก (แบบมี Delay กันเลนส์ช็อก)
-            if (window.isScannerMode) {
-              await stopScanner();
-              
-              // ให้เลนส์พักหายใจ 0.5 วินาที
-              setTimeout(async () => {
-                const scanView = document.getElementById("scannerView");
-                if (scanView) {
-                  scanView.classList.add("active");
-                  scanView.style.zIndex = "9999";
-                }
-                await startScanner();
-              }, 500); 
-            }
-          });
-        }
-      });
-
-// ==============================================================================
-// 🌟 ปุ่ม TACO (สลับโหมด QR / BARCODE พร้อมเปลี่ยน UI)
-// ==============================================================================
-
