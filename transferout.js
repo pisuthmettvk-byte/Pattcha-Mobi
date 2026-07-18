@@ -2660,3 +2660,114 @@ window.dispatchShipment = async function(shipmentNo) {
 
 
 
+
+// =================================================================
+// 📦 [GROUP: CHECKBOX & EXPORT LOGIC] หน้าล็อบบี้สาขา (Lobby)
+// =================================================================
+
+// 1. ฟังก์ชันตรวจสอบเมื่อมีการคลิก Checkbox หน้าชิปเมนต์
+window.validateShipmentCheckbox = function(checkboxElement, shipmentNo) {
+    const colElement = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
+    if (!colElement) return;
+
+    const childBoxes = colElement.querySelectorAll(".shipment-child-box");
+    
+    // กฎข้อ 1: ถ้าไม่มีกล่องเลย ไม่อนุญาตให้ติ๊ก
+    if (childBoxes.length === 0) {
+        checkboxElement.checked = false; // เอาติ๊กออก
+        if (typeof window.safeAlert === "function") {
+            window.safeAlert("EMPTY SHIPMENT", "ยังไม่มีกล่องสินค้า ไม่สามารถเลือกเพื่อ Export ได้ครับ", "warning");
+        }
+        return;
+    }
+
+    // กฎข้อ 2: กล่องทุกใบต้องปิด (สีแดง) แล้วเท่านั้น
+    let allClosed = true;
+    childBoxes.forEach(box => {
+        if (box.getAttribute("data-status") !== "Closed") {
+            allClosed = false;
+        }
+    });
+
+    if (!allClosed) {
+        checkboxElement.checked = false; // เอาติ๊กออก
+        if (typeof window.safeAlert === "function") {
+            window.safeAlert("UNFINISHED BOXES", "มีกล่องที่ยังไม่ได้ปิด (WRAP) กรุณาปิดให้ครบก่อนเลือกครับ", "error");
+        }
+    }
+};
+
+// 2. ฟังก์ชันเมื่อกดปุ่ม EXPORT ที่ Footer ด้านล่าง
+window.processExport = async function() {
+    // หา Checkbox ที่ถูกติ๊กไว้
+    const checkedBoxes = document.querySelectorAll('.shipment-master-checkbox:checked');
+    
+    if (checkedBoxes.length === 0) {
+        if (typeof window.safeAlert === "function") {
+            window.safeAlert("NO SELECTION", "กรุณาติ๊กเลือกชิปเมนต์ที่ต้องการ Export ก่อนครับ", "warning");
+        }
+        return;
+    }
+
+    // ดึงเลขชิปเมนต์ที่ถูกเลือก (สมมติว่าทำทีละ 1 รายการก่อน)
+    const shipmentNo = checkedBoxes[0].getAttribute("data-shipment-id");
+
+    // ใช้ระบบยืนยัน (Confirmation)
+    const isConfirm = await window.safeConfirm(
+        "ยืนยันการ EXPORT?", 
+        `คุณต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ไปยังสถานะ Pending ใช่หรือไม่?`, 
+        "question"
+    );
+    if (!isConfirm) return;
+
+    if (typeof window.safeAlert === "function") window.safeAlert("PROCESSING...", "กำลังส่งข้อมูลเข้าสู่ระบบส่วนกลาง...", "info");
+
+    // ส่งข้อมูลไปหลังบ้าน
+    const payload = {
+        shipmentId: shipmentNo,
+        branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase()
+    };
+
+    fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    })
+    .then((res) => res.json())
+    .then((data) => {
+        if (data.status === "success" || data.success) {
+            
+            // ล้างความจำกระดาษทด
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`status_box_${shipmentNo}_`))) {
+                    localStorage.removeItem(key);
+                }
+            }
+
+            // ซ่อนชิปเมนต์ออกจากหน้าจอ
+            const colElement = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
+            if (colElement) {
+                colElement.style.opacity = "0";
+                setTimeout(() => {
+                    colElement.remove();
+                    if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `EXPORT สำเร็จ! งานย้ายไปที่ Pending แล้ว`, "success");
+                    
+                    // ถ้ารถหมด Lobby ให้กลับหน้า Task Hub
+                    if (document.querySelectorAll(".shipment-column").length === 0) {
+                        const btnBack = document.getElementById("btnBackToTaskHub");
+                        if(btnBack) btnBack.click(); 
+                    }
+                }, 500);
+            }
+        } else {
+            if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"), "error");
+        }
+    })
+    .catch((error) => {
+        if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
+    });
+};
+// =================================================================
+// 📦 [GROUP: CHECKBOX & EXPORT LOGIC] END
+// =================================================================
+
