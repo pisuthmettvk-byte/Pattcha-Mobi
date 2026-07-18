@@ -29,55 +29,55 @@ document.addEventListener(
 );
 
 
+
 // ======================================================
-// 🎯 [GLOBAL ROUTER] - ตัวสับรางข้อมูล (แก้ลำดับการแสดงผลลิสต์สินค้า)
+// 🎯 [GLOBAL ROUTER] - ตัวสับรางข้อมูล (THE PERFECT SINGLE SCAN FIX)
 // ======================================================
 async function globalScanSuccessCallback(decodedText, decodedResult) {
-  // 1. กรองรหัสผิดประเภท
+  if (window.isProcessingScan) return;
+  
+  // 1. กรองประเภทบาร์โค้ด (ป้องกันสแกนผิดประเภท)
   if (decodedResult && decodedResult.result && decodedResult.result.format) {
     const formatName = decodedResult.result.format.formatName;
     const isQR = (formatName === "QR_CODE");
-    
     if (window.currentScannerMode === "qr" && !isQR) return; 
     if (window.currentScannerMode === "barcode" && isQR) return;
   }
 
+  window.isProcessingScan = true;
   if (navigator.vibrate) navigator.vibrate(100);
 
-  // 2. 📍 สับรางข้อมูลให้ถูกต้องตามหน้าที่กดเข้ามา
+  // 🔴 ลำดับที่ 1: สั่ง "ปิดกล้องทันที" 100% ไม่ว่าจะอยู่หน้าไหน!
+  // (เคลียร์ปัญหา ผีกล้องซ่อนอยู่หลังหน้า Box Detail)
+  await stopScanner(); 
+
+  // 🟢 ลำดับที่ 2: สับรางส่งข้อมูลให้ถูกต้องตามหน้า
   if (window.currentScannerContext === "box") {
     
-    // 📦 โหมด Box Detail (ล็อก 1.5 วินาทีป้องกันสแกนเบิ้ล)
-    if (window.isBoxScanning) return;
-    window.isBoxScanning = true;
-    
+    // 📦 โหมด Box Detail
     if (typeof window.addScannedItemToBox === "function") {
       window.addScannedItemToBox(decodedText);
     }
-    setTimeout(() => { window.isBoxScanning = false; }, 1500);
-
+    
   } else {
     
-    // 🏪 โหมด Stock In-house (Single Scan)
-    if (window.isStockScanning) return;
-    window.isStockScanning = true;
-
-    // 🟢 ลำดับที่ 1: โยนข้อมูลให้ Stock In-house อัปเดตหน้าจอโชว์ลิสต์สินค้า "ก่อน!"
-    // (ห้ามปิดกล้องก่อนเด็ดขาด เพื่อรักษาสถานะ UI ของระบบเดิมไว้)
-    if (typeof window.qrCodeSuccessCallback === "function") {
+    // 🏪 โหมด Stock In-house (คืนชีพโค้ดคลาสสิกดั้งเดิม 100%)
+    const searchInput = document.getElementById("searchStockInput");
+    if (searchInput) {
+      searchInput.value = decodedText; // ยัดตัวเลขลงช่องค้นหา
+      // จำลองการพิมพ์เพื่อให้ระบบหน้า Stock ค้นหาข้อมูลอัตโนมัติ
+      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+    } else if (typeof window.qrCodeSuccessCallback === "function") {
       window.qrCodeSuccessCallback(decodedText, decodedResult);
     } else if (typeof processScanResult === "function") {
       processScanResult(decodedText);
     }
-
-    // 🔴 ลำดับที่ 2: พอ Stock ได้ข้อมูลและวาดลิสต์สินค้าแล้ว ค่อยสั่งปิดกล้องตามหลังทันที
-    await stopScanner(); 
     
-    // คืนค่าให้พร้อมสแกนรอบใหม่เมื่อเจเลอร์กดเปิดกล้องครั้งหน้า
-    setTimeout(() => { window.isStockScanning = false; }, 500);
   }
+  
+  // ปลดล็อกให้พร้อมกดปุ่มสแกนรอบใหม่
+  setTimeout(() => { window.isProcessingScan = false; }, 500);
 }
-
 
 
 
