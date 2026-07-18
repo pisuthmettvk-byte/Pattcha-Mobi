@@ -586,9 +586,6 @@ function showView(viewId) {
 
 
 
-
-
-
 // ======================================================
 // กลุ่มที่ 4: ระบบหน้า Lobby และการบันทึกข้อมูล (API POST)
 // ======================================================
@@ -2289,27 +2286,28 @@ window.submitWrapBox = async function () {
         wrapBtn.style.opacity = "1";
       }
 
-       if (data.status === "success" || data.success) {
+      if (data.status === "success" || data.success) {
         // 🌟 [NEW] บันทึกสถานะ "ปิดกล่องแล้ว" ลงเครื่อง
         localStorage.setItem(`status_box_${shipmentId}_${boxNumber}`, "Closed");
 
         if (window.currentBoxElement) {
           window.currentBoxElement.setAttribute("data-status", "Closed");
-          
-          // เปลี่ยนไอคอนเป็นกล่องปิดสีแดง
-          const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
+          const boxIcon = window.currentBoxElement.querySelector(
+            ".fa-box-open, .fa-box",
+          );
           if (boxIcon) {
             boxIcon.className = "fas fa-box";
             boxIcon.style.color = "#d93844";
           }
 
-          // อัปเดตตัวเลขหน้ากล่อง
-          const scanEl = window.currentBoxElement.querySelector(".child-scan-qty");
-          const manualEl = window.currentBoxElement.querySelector(".child-manual-qty");
+          const scanEl =
+            window.currentBoxElement.querySelector(".child-scan-qty");
+          const manualEl =
+            window.currentBoxElement.querySelector(".child-manual-qty");
           if (scanEl) scanEl.textContent = totalScanQty;
           if (manualEl) manualEl.textContent = totalManualQty;
 
-          // 🚨 [BUG FIX]: ปลดล็อก Checkbox ให้ติ๊กได้ทันทีโดยไม่ต้องรีเฟรช!
+          // 🚨 [BUG FIX]: ปลดล็อก Checkbox ให้ติ๊กได้ทันทีโดยไม่ต้องรีเฟรชหน้า Lobby
           const checkboxEl = window.currentBoxElement.querySelector(".child-checkbox");
           if (checkboxEl) {
             checkboxEl.disabled = false;
@@ -2318,7 +2316,10 @@ window.submitWrapBox = async function () {
           }
 
           // ฝังข้อมูลสินค้าติดไว้กับตัวกล่อง
-          window.currentBoxElement.setAttribute("data-saved-items", JSON.stringify(window.currentBoxItems));
+          window.currentBoxElement.setAttribute(
+            "data-saved-items",
+            JSON.stringify(window.currentBoxItems),
+          );
         }
 
         if (typeof window.updateMasterShipmentTotals === "function") {
@@ -2326,7 +2327,11 @@ window.submitWrapBox = async function () {
         }
         
         if (typeof window.safeAlert === "function") {
-          window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} สำเร็จ!`, "success");
+          window.safeAlert(
+            "SUCCESS",
+            `บันทึกกล่อง ${boxNumber} สำเร็จ!`,
+            "success",
+          );
         }
 
         // สั่งให้ปุ่ม Back ทำงานเพื่อกลับหน้า Lobby
@@ -2338,8 +2343,6 @@ window.submitWrapBox = async function () {
                 window.renderBoxContentArea();
             }
         }, 300);
-
-      }
 
       } else {
         if (typeof window.safeAlert === "function")
@@ -2362,6 +2365,8 @@ window.submitWrapBox = async function () {
 };
 // [Submit Wrap Box] END
 //===============
+
+
 
 
 // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (UI สีเหลืองคำถาม + Backend 100%) END
