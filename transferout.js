@@ -2661,192 +2661,190 @@ window.dispatchShipment = async function(shipmentNo) {
 
 
 // =================================================================
-// 📦 [GROUP: CHECKBOX & EXPORT LOGIC] อัปเดต: ระบบ Checkbox แม่-ลูก และสีปุ่มออริจินัล
+// 📦 [GROUP: CHECKBOX & EXPORT LOGIC] อัปเดต: UX สีแจ้งเตือน & โหลดที่ปุ่ม
 // =================================================================
 
-      // 📡 1. เรดาร์ดักจับการติ๊ก Checkbox (ดักจับทั้งแม่และลูก)
-      document.addEventListener('change', function(e) {
-          const colElement = e.target.closest('.shipment-column');
-          if (!colElement) return;
+// 📡 1. เรดาร์ดักจับการติ๊ก Checkbox (ดักจับทั้งแม่และลูก)
+document.addEventListener('change', function(e) {
+    const colElement = e.target.closest('.shipment-column');
+    if (!colElement) return;
 
-          // 🎯 กรณีที่ 1: กดติ๊ก Checkbox ที่ "ตัวแม่" (Shipment Column)
-          if (e.target.classList.contains('master-checkbox')) {
-              const childBoxes = colElement.querySelectorAll('.shipment-child-box');
-              let canCheckMaster = true;
-              let hasUnfinishedBoxes = false;
+    if (e.target.classList.contains('master-checkbox')) {
+        const childBoxes = colElement.querySelectorAll('.shipment-child-box');
+        let hasUnfinishedBoxes = false;
 
-              // เช็กก่อนว่ามีกล่องเขียวค้างอยู่ไหม
-              childBoxes.forEach(box => {
-                  if (box.getAttribute("data-status") !== "Closed") {
-                      hasUnfinishedBoxes = true;
-                  }
-              });
+        childBoxes.forEach(box => {
+            if (box.getAttribute("data-status") !== "Closed") hasUnfinishedBoxes = true;
+        });
 
-              // ถ้ามีกล่องเขียว ห้ามติ๊กแม่!
-              if (hasUnfinishedBoxes || childBoxes.length === 0) {
-                  e.target.checked = false;
-                  if (typeof window.safeAlert === "function") {
-                      window.safeAlert("UNFINISHED BOXES", "มีกล่องที่ยังไม่ได้ปิด หรือยังไม่มีกล่อง กรุณาจัดการให้เรียบร้อยก่อนครับ", "warning");
-                  }
-                  return;
-              }
+        // 🚨 บล็อกด้วยหน้าต่าง "สีแดง (error)"
+        if (hasUnfinishedBoxes || childBoxes.length === 0) {
+            e.target.checked = false;
+            if (typeof window.safeAlert === "function") {
+                window.safeAlert("UNFINISHED BOXES", "มีกล่องที่ยังไม่ได้ปิด หรือยังไม่มีกล่อง กรุณาจัดการให้เรียบร้อยก่อนครับ", "error");
+            }
+            return;
+        }
 
-              // สั่งให้ตัวลูกที่ปิดแล้วทุกตัว ทำตามตัวแม่
-              const isMasterChecked = e.target.checked;
-              const childCheckboxes = colElement.querySelectorAll('.child-checkbox');
-              childCheckboxes.forEach(cb => {
-                  if (!cb.disabled) { // เฉพาะกล่องแดงที่ปลดล็อคแล้ว
-                      cb.checked = isMasterChecked;
-                  }
-              });
-          }
+        const isMasterChecked = e.target.checked;
+        const childCheckboxes = colElement.querySelectorAll('.child-checkbox');
+        childCheckboxes.forEach(cb => {
+            if (!cb.disabled) cb.checked = isMasterChecked;
+        });
+    }
 
-          // 🎯 กรณีที่ 2: กดติ๊ก Checkbox ที่ "ตัวลูก" (Shipment List)
-          if (e.target.classList.contains('child-checkbox')) {
-              const masterCheckbox = colElement.querySelector('.master-checkbox');
-              const allChildCheckboxes = colElement.querySelectorAll('.child-checkbox');
-              
-              let allChecked = true;
-              allChildCheckboxes.forEach(cb => {
-                  if (!cb.checked) allChecked = false; // ถ้ามีลูกตัวไหนไม่ติ๊ก
-              });
+    if (e.target.classList.contains('child-checkbox')) {
+        const masterCheckbox = colElement.querySelector('.master-checkbox');
+        const allChildCheckboxes = colElement.querySelectorAll('.child-checkbox');
+        
+        let allChecked = true;
+        allChildCheckboxes.forEach(cb => {
+            if (!cb.checked) allChecked = false; 
+        });
 
-              // ถ้าลูกติ๊กครบทุกตัว ให้แม่ติ๊กด้วย (Auto-Sync)
-              if (masterCheckbox) {
-                  masterCheckbox.checked = allChecked;
-              }
-          }
+        if (masterCheckbox) masterCheckbox.checked = allChecked;
+    }
 
-          // 📍 หลังจากประมวลผลติ๊กถูกเสร็จ สั่งอัปเดตหน้าตาปุ่ม EXPORT ทันที
-          window.updateExportButtonState();
-      });
+    window.updateExportButtonState();
+});
 
-      // 🔘 2. ฟังก์ชันอัปเดตหน้าตาปุ่ม EXPORT (เช็กเงื่อนไขปลดล็อคปุ่ม)
-      window.updateExportButtonState = function() {
-          const btnExport = document.getElementById('btnSubmitLobby');
-          if (!btnExport) return;
+// 🔘 2. ฟังก์ชันอัปเดตหน้าตาปุ่ม EXPORT
+window.updateExportButtonState = function() {
+    const btnExport = document.getElementById('btnSubmitLobby');
+    if (!btnExport) return;
 
-          let hasReadyShipment = false;
-          let readyShipmentCount = 0;
+    let hasReadyShipment = false;
+    let readyShipmentCount = 0;
 
-          // กวาดดูทุกชิปเมนต์บนหน้าจอ
-          const allShipments = document.querySelectorAll('.shipment-column');
-          
-          allShipments.forEach(col => {
-              const childBoxes = col.querySelectorAll('.shipment-child-box');
-              const checkedChildCheckboxes = col.querySelectorAll('.child-checkbox:checked');
-              
-              // ชิปเมนต์นี้จะพร้อมส่งก็ต่อเมื่อ: มีกล่องอย่างน้อย 1 ใบ, กล่องทุกใบถูกติ๊ก, และไม่มีกล่องเขียวเลย
-              let allBoxesClosed = true;
-              childBoxes.forEach(box => {
-                  if (box.getAttribute("data-status") !== "Closed") allBoxesClosed = false;
-              });
+    const allShipments = document.querySelectorAll('.shipment-column');
+    
+    allShipments.forEach(col => {
+        const childBoxes = col.querySelectorAll('.shipment-child-box');
+        const checkedChildCheckboxes = col.querySelectorAll('.child-checkbox:checked');
+        
+        let allBoxesClosed = true;
+        childBoxes.forEach(box => {
+            if (box.getAttribute("data-status") !== "Closed") allBoxesClosed = false;
+        });
 
-              if (childBoxes.length > 0 && allBoxesClosed && childBoxes.length === checkedChildCheckboxes.length) {
-                  hasReadyShipment = true;
-                  readyShipmentCount++;
-              }
-          });
+        if (childBoxes.length > 0 && allBoxesClosed && childBoxes.length === checkedChildCheckboxes.length) {
+            hasReadyShipment = true;
+            readyShipmentCount++;
+        }
+    });
 
-          if (hasReadyShipment) {
-              // 🌟 ปลดล็อคปุ่ม EXPORT (สีแดงลูกระนาดแบบเดียวกับปุ่ม WRAP)
-              btnExport.disabled = false;
-              btnExport.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
-              btnExport.style.color = "white";
-              btnExport.style.borderLeft = "1px solid rgba(255,255,255,0.3)";
-              btnExport.style.cursor = "pointer";
-              btnExport.innerHTML = `EXPORT (${readyShipmentCount})`; // โชว์จำนวนชิปเมนต์ที่พร้อมส่ง
-          } else {
-              // ล็อคปุ่ม (สีดำโปร่งแสงตามออริจินัล)
-              btnExport.disabled = true;
-              btnExport.style.background = "rgba(0, 0, 0, 0.466)";
-              btnExport.style.color = "#aaa";
-              btnExport.style.borderLeft = "1px solid rgba(255,255,255,0.2)";
-              btnExport.style.cursor = "not-allowed";
-              btnExport.innerHTML = `EXPORT`;
-          }
-      };
+    if (hasReadyShipment) {
+        btnExport.disabled = false;
+        btnExport.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+        btnExport.style.color = "white";
+        btnExport.style.borderLeft = "1px solid rgba(255,255,255,0.3)";
+        btnExport.style.cursor = "pointer";
+        btnExport.innerHTML = `EXPORT (${readyShipmentCount})`; 
+    } else {
+        btnExport.disabled = true;
+        btnExport.style.background = "rgba(0, 0, 0, 0.466)";
+        btnExport.style.color = "#aaa";
+        btnExport.style.borderLeft = "1px solid rgba(255,255,255,0.2)";
+        btnExport.style.cursor = "not-allowed";
+        btnExport.innerHTML = `EXPORT`;
+    }
+};
 
-      // 📡 3. เรดาร์ดักจับการคลิกปุ่ม EXPORT
-      document.addEventListener('click', function(e) {
-          const targetBtn = e.target.closest('#btnSubmitLobby');
-          if (targetBtn) {
-              if (targetBtn.disabled) return; // ถ้าปุ่มล็อคอยู่ ให้ข้ามไปเลย
-              window.processExport();
-          }
-      });
+// 📡 3. เรดาร์ดักจับการคลิกปุ่ม EXPORT
+document.addEventListener('click', function(e) {
+    const targetBtn = e.target.closest('#btnSubmitLobby');
+    if (targetBtn) {
+        if (targetBtn.disabled) return; 
+        window.processExport();
+    }
+});
 
-      // 🚀 4. ฟังก์ชันเริ่มจัดส่ง (EXPORT)
-      window.processExport = async function() {
-          // หาคอลัมน์แรกที่พร้อมส่ง (ตัวแม่ถูกติ๊ก และกล่องลูกครบ)
-          const readyMasterCheckbox = document.querySelector('.master-checkbox:checked');
-          if (!readyMasterCheckbox) return;
+// 🚀 4. ฟังก์ชันเริ่มจัดส่ง (EXPORT) ปรับปรุง UX ใหม่
+window.processExport = async function() {
+    const readyMasterCheckbox = document.querySelector('.master-checkbox:checked');
+    if (!readyMasterCheckbox) return;
 
-          const colElement = readyMasterCheckbox.closest('.shipment-column');
-          const shipmentNo = colElement.getAttribute("data-shipment");
+    const colElement = readyMasterCheckbox.closest('.shipment-column');
+    const shipmentNo = colElement.getAttribute("data-shipment");
+    const btnExport = document.getElementById('btnSubmitLobby');
+    const originalBtnHTML = btnExport.innerHTML;
 
-          let isConfirm = false;
-          if (typeof window.safeConfirm === "function") {
-              isConfirm = await window.safeConfirm(
-                  "ยืนยันการ EXPORT?", 
-                  `ต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`, 
-                  "question"
-              );
-          } else {
-              isConfirm = confirm(`ต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`);
-          }
-          if (!isConfirm) return;
+    // ด่านเดียว: ควรถามยืนยันก่อนส่ง
+    let isConfirm = false;
+    if (typeof window.safeConfirm === "function") {
+        isConfirm = await window.safeConfirm(
+            "ยืนยันการ EXPORT?", 
+            `ส่งออกข้อมูลชิปเมนต์ ${shipmentNo} สู่ระบบส่วนกลาง ใช่หรือไม่?`, 
+            "question"
+        );
+    } else {
+        isConfirm = confirm(`ส่งออกข้อมูลชิปเมนต์ ${shipmentNo} สู่ระบบส่วนกลาง ใช่หรือไม่?`);
+    }
+    if (!isConfirm) return;
 
-          if (typeof window.safeAlert === "function") window.safeAlert("PROCESSING...", `กำลังส่งข้อมูลชิปเมนต์ ${shipmentNo}...`, "info");
+    // 🌟 เปลี่ยนหน้าตาปุ่มเป็น โหลดดิ้ง (แทนการเด้ง Popup น่ารำคาญ)
+    btnExport.disabled = true;
+    btnExport.style.background = "rgba(0, 0, 0, 0.466)";
+    btnExport.style.cursor = "wait";
+    btnExport.innerHTML = `<i class="fas fa-spinner fa-spin"></i> กำลังดำเนินการ...`;
 
-          const payload = {
-              shipmentId: shipmentNo,
-              branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase()
-          };
+    const payload = {
+        shipmentId: shipmentNo,
+        branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase()
+    };
 
-          fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
-              method: "POST",
-              body: JSON.stringify(payload),
-          })
-          .then((res) => res.json())
-          .then((data) => {
-              if (data.status === "success" || data.success) {
-                  
-                  // ล้างกระดาษทดใน Local Storage
-                  for (let i = localStorage.length - 1; i >= 0; i--) {
-                      const key = localStorage.key(i);
-                      if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`status_box_${shipmentNo}_`))) {
-                          localStorage.removeItem(key);
-                      }
-                  }
+    fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    })
+    .then((res) => res.json())
+    .then((data) => {
+        if (data.status === "success" || data.success) {
+            
+            // ล้างกระดาษทด
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`status_box_${shipmentNo}_`))) {
+                    localStorage.removeItem(key);
+                }
+            }
 
-                  // ทำ Effect ลบคอลัมน์
-                  colElement.style.opacity = "0";
-                  setTimeout(() => {
-                      colElement.remove();
-                      
-                      // รีเซ็ตปุ่มกลับเป็นสีเทาหลังส่งสำเร็จ
-                      window.updateExportButtonState();
-                      
-                      if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`, "success");
-                      
-                      // ถ้ารถใน Lobby หมดแล้ว ให้เด้งกลับไปหน้า Task Hub
-                      if (document.querySelectorAll(".shipment-column").length === 0) {
-                          const btnBack = document.getElementById("btnCancelFromLobby") || document.getElementById("btnBackToTaskHub");
-                          if(btnBack) btnBack.click(); 
-                      }
-                  }, 500);
+            // 🌟 แจ้งเตือนสีเขียว 1 ครั้งถ้วน
+            if (typeof window.safeAlert === "function") {
+                window.safeAlert("SUCCESS", `EXPORT ชิปเมนต์สำเร็จ! งานย้ายไปที่ PENDING แล้ว`, "success");
+            }
 
-              } else {
-                  if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"), "error");
-              }
-          })
-          .catch((error) => {
-              console.error(error);
-              if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
-          });
-      };
+            // ทำ Effect ลบคอลัมน์
+            colElement.style.transition = "opacity 0.4s ease";
+            colElement.style.opacity = "0";
+            setTimeout(() => {
+                colElement.remove();
+                window.updateExportButtonState(); // รีเซ็ตปุ่มกลับเป็นสีเทา
+                
+                // ถ้ารถใน Lobby หมดแล้ว ให้เด้งกลับไปหน้า Task Hub
+                if (document.querySelectorAll(".shipment-column").length === 0) {
+                    const btnBack = document.getElementById("btnCancelFromLobby") || document.getElementById("btnBackToTaskHub");
+                    if(btnBack) btnBack.click(); 
+                }
+            }, 400);
+
+        } else {
+            // คืนค่าปุ่มหากพัง
+            btnExport.disabled = false;
+            btnExport.innerHTML = originalBtnHTML;
+            btnExport.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+            if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"), "error");
+        }
+    })
+    .catch((error) => {
+        console.error(error);
+        // คืนค่าปุ่มหากพัง
+        btnExport.disabled = false;
+        btnExport.innerHTML = originalBtnHTML;
+        btnExport.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+        if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
+    });
+};
 // =================================================================
 // 📦 [GROUP: CHECKBOX & EXPORT LOGIC] END
 // =================================================================
-
