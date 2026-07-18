@@ -2094,13 +2094,7 @@ window.submitWrapBox = async function () {
 
 
 
-
-
-// ======================================================================
-// 📷 Phase 10: ระบบรับข้อมูลจากกล้อง (Scanner Receiver) - [Data Source Fix]
-// ===========================================================
-
-        //===================================
+//===================================
         // 📷 [addScannedItemToBox] START
         window.currentScannerContext = "box";
 
@@ -2147,7 +2141,23 @@ window.submitWrapBox = async function () {
                       const productMatch = localProductDatabase.find(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
                       
                       if (productMatch) {
-                          // ✅ [พบสินค้าในระบบ] -> ดำเนินการเพิ่มลงกล่อง
+                          // 🚨🚨 [NEW GATE]: เช็กสต็อกก่อนว่ามีของไหม? ถ้าสต็อก <= 0 บล็อกทันที!
+                          const stockAvail = Number(productMatch.availableStock || 0);
+                          if (stockAvail <= 0) {
+                              if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // สั่นเตือน error
+                              if (typeof window.clearBoxSearch === "function") window.clearBoxSearch(); 
+
+                              // สร้างแถบแจ้งเตือนสีแดง (เลียนแบบแถบสีเหลือง)
+                              const stockToast = document.createElement("div");
+                              stockToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
+                              stockToast.innerHTML = `<i class="fas fa-ban"></i> สต็อกหมด: ${sku} (N/A)`;
+                              document.body.appendChild(stockToast);
+                              setTimeout(() => { stockToast.style.opacity = "0"; setTimeout(() => stockToast.remove(), 500); }, 2500);
+                              
+                              return; // ⛔ ตัดการทำงาน ห้ามเอาลงกล่องเด็ดขาด
+                          }
+
+                          // ✅ [พบสินค้าในระบบ และมีสต็อก] -> ดำเนินการเพิ่มลงกล่อง
                           if (typeof window.addSearchItemToBox === "function") {
                               window.addSearchItemToBox(sku); 
                               
@@ -2178,14 +2188,13 @@ window.submitWrapBox = async function () {
                           // ❌ [ไม่พบสินค้าในระบบ] -> แจ้งเตือนสีเหลือง และไม่เพิ่มของ
                           if (navigator.vibrate) navigator.vibrate(150);
                           
-                          // คืนช่องค้นหาให้ว่างเหมือนเดิม ป้องกันบั๊กจอล็อก
                           if (typeof window.clearBoxSearch === "function") window.clearBoxSearch(); 
 
                           const failToast = document.createElement("div");
-                          failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2);";
+                          failToast.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffc107; color:#333; padding:8px 16px; border-radius:20px; font-weight:bold; z-index:99999999; box-shadow:0 4px 6px rgba(0,0,0,0.2); transition:opacity 0.5s;";
                           failToast.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ไม่พบสินค้า: ${sku} ในระบบ`;
                           document.body.appendChild(failToast);
-                          setTimeout(() => failToast.remove(), 2500);
+                          setTimeout(() => { failToast.style.opacity = "0"; setTimeout(() => failToast.remove(), 500); }, 2500);
                       }
                   }
               }, 300);
@@ -2193,6 +2202,7 @@ window.submitWrapBox = async function () {
         };
         // [addScannedItemToBox] END
         //==================================
+
 
 
 //==================================
