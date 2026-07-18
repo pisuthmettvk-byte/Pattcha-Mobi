@@ -1430,6 +1430,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+// =================================================================
+// 🔍 [Phase 3: Cross-Box Stock Radar] START
+
+window.checkCrossBoxStock = function(sku) {
+    let totalUsedInOtherBoxes = 0;
+    let usedDetails = []; // เก็บประวัติว่าอยู่กล่องไหนบ้าง
+
+    // วนลูปหาข้อมูลกล่องทั้งหมดที่เซฟไว้ในเครื่อง (localStorage)
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("draft_box_")) {
+            
+            // ข้ามกล่องปัจจุบันที่กำลังเปิดอยู่ (ป้องกันการบวกเบิ้ล)
+            const currentDraftKey = `draft_box_${window.currentActiveShipment}_${window.currentActiveBoxNo}`;
+            if (key === currentDraftKey) continue; 
+
+            try {
+                const boxData = JSON.parse(localStorage.getItem(key)) || [];
+                const foundItem = boxData.find(item => item.sku === sku);
+                
+                if (foundItem) {
+                    const qty = (foundItem.scanQty || 0) + (foundItem.manualQty || 0);
+                    if (qty > 0) {
+                        totalUsedInOtherBoxes += qty;
+                        
+                        // สกัดชื่อ Shipment และเลขกล่อง ออกมาโชว์
+                        const parts = key.replace("draft_box_", "").split("_");
+                        const shipmentName = parts[0];
+                        const boxName = parts.slice(1).join("_"); // เผื่อเลขกล่องมีขีด
+                        
+                        usedDetails.push(`- ชิปเมนต์ ${shipmentName} [กล่อง ${boxName}] = ${qty} ชิ้น`);
+                    }
+                }
+            } catch(e) {
+                console.error("Radar Parse Error:", e);
+            }
+        }
+    }
+    
+    return { totalUsedInOtherBoxes, usedDetails };
+};
+
+// 🔍 [Phase 3: Cross-Box Stock Radar] END
+// =================================================================
+
+
+
+
 
 // ===============================================================
 // 📦 Phase 5 & 6: ลอจิกหน้า Box Details และระบบปิดกล่อง (WRAP) START
@@ -1998,22 +2046,41 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
         window.increaseBoxItemQty = function (sku) {
           const item = window.currentBoxItems.find((p) => p.sku === sku);
           if (item) {
-            const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+            // 1. นับยอดในกล่องปัจจุบัน
+            const totalQtyInCurrentBox = (item.scanQty || 0) + (item.manualQty || 0);
 
-            // 📍 ใช้ลอจิกเดิมของเจเลอร์ที่ทำงานได้ดีเยี่ยมอยู่แล้ว
-            if (totalQty < item.availableStock) {
+            // 2. เรียกใช้เรดาร์เช็กยอดจาก "กล่องอื่นๆ"
+            let otherBoxesUsed = 0;
+            let otherBoxesText = "";
+            if (typeof window.checkCrossBoxStock === "function") {
+                const crossCheck = window.checkCrossBoxStock(sku);
+                otherBoxesUsed = crossCheck.totalUsedInOtherBoxes;
+                if (crossCheck.usedDetails.length > 0) {
+                    otherBoxesText = crossCheck.usedDetails.join("\n");
+                }
+            }
+
+            // 3. รวมยอดทั้งหมด (กล่องนี้ + กล่องอื่น)
+            const grandTotalUsed = totalQtyInCurrentBox + otherBoxesUsed;
+
+            // 4. เปรียบเทียบกับสต็อกจริงที่มี (Available)
+            if (grandTotalUsed < item.availableStock) {
               item.manualQty += 1;
               item.isManual = true;
               window.renderBoxContentArea();
             } else {
+              // 🚨 สร้างข้อความแจ้งเตือนแบบละเอียด
+              let alertMsg = `มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น\n(ไม่สามารถเพิ่มได้อีก)`;
+              
+              // ถ้ามีการบรรจุไปในกล่องอื่นแล้ว ให้ระบุให้พนักงานรู้เลยว่าของไปอยู่ที่ไหน!
+              if (otherBoxesUsed > 0) {
+                  alertMsg += `\n\n📦 สถานะการบรรจุตอนนี้:\n- อยู่ในกล่องนี้: ${totalQtyInCurrentBox} ชิ้น\n${otherBoxesText}`;
+              }
+
               if (typeof window.safeAlert === "function") {
-                window.safeAlert(
-                  "STOCK LIMIT",
-                  `ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`,
-                  "error"
-                );
+                window.safeAlert("STOCK LIMIT", alertMsg, "error");
               } else {
-                alert(`ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`);
+                alert(alertMsg);
               }
             }
           }
