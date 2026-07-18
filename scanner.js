@@ -85,45 +85,57 @@ async function globalScanSuccessCallback(decodedText, decodedResult) {
 // ======================================================
 // ⚙️ ตั้งค่าความแม่นยำกล้อง
 // ======================================================
+
+// ======================================================
+// ⚙️ ตั้งค่าความแม่นยำกล้อง (แก้บั๊ก config.qrbox < 50px)
+// ======================================================
 function getOptimizedScannerConfig() {
   const isQRMode = window.currentScannerMode === "qr";
   return {
     fps: 15,
     qrbox: function (viewfinderWidth, viewfinderHeight) {
+      // 🛡️ ป้องกันบั๊กจังหวะสลับโหมดแล้วขนาดหน้าจอหายไป
+      if (!viewfinderWidth || !viewfinderHeight) {
+        return { width: 250, height: 250 };
+      }
+      
       let minEdgePercentage = 0.7;
       let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
       let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-      if (qrboxSize > 250) qrboxSize = 250;
+      
+      // 🔴 ล็อกขนาดขั้นต่ำ ห้ามต่ำกว่า 150px (ป้องกัน Error 50px สมบูรณ์แบบ)
+      if (qrboxSize < 150) qrboxSize = 150; 
+      // 🔴 ล็อกขนาดสูงสุดที่ 250px
+      if (qrboxSize > 250) qrboxSize = 250; 
+      
       return { width: qrboxSize, height: qrboxSize };
     },
-    useBarCodeDetectorIfSupported: true,
+    useBarCodeDetectorIfSupported: true, 
     formatsToSupport: isQRMode
-      ? [Html5QrcodeSupportedFormats.QR_CODE]
-      : [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-        ],
+      ? [Html5QrcodeSupportedFormats.QR_CODE] 
+      : [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39],
   };
 }
 
 
-
 // ======================================================
-// 🎛️ ปุ่มสลับโหมด Taco
+// 🎛️ ปุ่มสลับโหมด Taco (เพิ่มระยะเวลาพักเลนส์ป้องกันกล้องค้าง)
 // ======================================================
 window.switchScannerFormat = async function (mode) {
-  if (window.currentScannerMode === mode) return;
+  if (window.currentScannerMode === mode) return; 
   window.currentScannerMode = mode;
   console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
 
   if (window.isScannerMode) {
     await stopScanner();
-    setTimeout(async () => {
-      await startScanner();
-    }, 300);
+    
+    // 🛡️ เพิ่มดีเลย์เป็น 500ms ให้เบราว์เซอร์เคลียร์แคชกล้องตัวเก่าให้สนิท 100% ก่อนเปิดใหม่
+    setTimeout(async () => { 
+      await startScanner(); 
+    }, 500);
   }
 };
+
 
 
 
