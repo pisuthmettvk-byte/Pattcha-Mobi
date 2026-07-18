@@ -2760,38 +2760,51 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// 🚀 4. ฟังก์ชันเริ่มจัดส่ง (EXPORT) ปรับปรุง UX ใหม่
+// 🚀 4. ฟังก์ชันเริ่มจัดส่ง (EXPORT)
 window.processExport = async function() {
     const readyMasterCheckbox = document.querySelector('.master-checkbox:checked');
     if (!readyMasterCheckbox) return;
 
     const colElement = readyMasterCheckbox.closest('.shipment-column');
     const shipmentNo = colElement.getAttribute("data-shipment");
-    const btnExport = document.getElementById('btnSubmitLobby');
-    const originalBtnHTML = btnExport.innerHTML;
 
-    // ด่านเดียว: ควรถามยืนยันก่อนส่ง
+    // 🧮 [NEW] สกัดข้อมูลนับยอดกล่องและยอดสินค้าทั้งหมดในชิปเมนต์
+    const childBoxes = colElement.querySelectorAll(".shipment-child-box");
+    let totalBoxCount = childBoxes.length;
+    let totalItemCount = 0;
+
+    childBoxes.forEach(box => {
+        const savedData = box.getAttribute("data-saved-items");
+        if (savedData) {
+            try {
+                const items = JSON.parse(savedData);
+                items.forEach(item => {
+                    totalItemCount += (item.scanQty || 0) + (item.manualQty || 0);
+                });
+            } catch(e) { console.error("Parse error counting items"); }
+        }
+    });
+
     let isConfirm = false;
     if (typeof window.safeConfirm === "function") {
         isConfirm = await window.safeConfirm(
             "ยืนยันการ EXPORT?", 
-            `ส่งออกข้อมูลชิปเมนต์ ${shipmentNo} สู่ระบบส่วนกลาง ใช่หรือไม่?`, 
+            `คุณกำลังส่งข้อมูลชิปเมนต์ ${shipmentNo}\nจำนวนกล่อง: ${totalBoxCount} ใบ\nจำนวนสินค้า: ${totalItemCount} ชิ้น\nยืนยันใช่หรือไม่?`, 
             "question"
         );
     } else {
-        isConfirm = confirm(`ส่งออกข้อมูลชิปเมนต์ ${shipmentNo} สู่ระบบส่วนกลาง ใช่หรือไม่?`);
+        isConfirm = confirm(`ต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`);
     }
     if (!isConfirm) return;
 
-    // 🌟 เปลี่ยนหน้าตาปุ่มเป็น โหลดดิ้ง (แทนการเด้ง Popup น่ารำคาญ)
-    btnExport.disabled = true;
-    btnExport.style.background = "rgba(0, 0, 0, 0.466)";
-    btnExport.style.cursor = "wait";
-    btnExport.innerHTML = `<i class="fas fa-spinner fa-spin"></i> กำลังดำเนินการ...`;
+    if (typeof window.safeAlert === "function") window.safeAlert("PROCESSING...", `กำลังส่งข้อมูลชิปเมนต์ ${shipmentNo}...`, "info");
 
+    // 📦 [NEW] แนบตัวเลข Total ยัดใส่ซองจดหมายส่งไปให้ Google Sheets
     const payload = {
         shipmentId: shipmentNo,
-        branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase()
+        branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase(),
+        totalBox: totalBoxCount,
+        totalItem: totalItemCount
     };
 
     fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
@@ -2802,7 +2815,7 @@ window.processExport = async function() {
     .then((data) => {
         if (data.status === "success" || data.success) {
             
-            // ล้างกระดาษทด
+            // ล้างกระดาษทดใน Local Storage
             for (let i = localStorage.length - 1; i >= 0; i--) {
                 const key = localStorage.key(i);
                 if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`status_box_${shipmentNo}_`))) {
@@ -2810,42 +2823,29 @@ window.processExport = async function() {
                 }
             }
 
-            // 🌟 แจ้งเตือนสีเขียว 1 ครั้งถ้วน
-            if (typeof window.safeAlert === "function") {
-                window.safeAlert("SUCCESS", `EXPORT ชิปเมนต์สำเร็จ! งานย้ายไปที่ PENDING แล้ว`, "success");
-            }
-
             // ทำ Effect ลบคอลัมน์
-            colElement.style.transition = "opacity 0.4s ease";
             colElement.style.opacity = "0";
             setTimeout(() => {
                 colElement.remove();
-                window.updateExportButtonState(); // รีเซ็ตปุ่มกลับเป็นสีเทา
+                window.updateExportButtonState();
                 
-                // ถ้ารถใน Lobby หมดแล้ว ให้เด้งกลับไปหน้า Task Hub
+                if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`, "success");
+                
                 if (document.querySelectorAll(".shipment-column").length === 0) {
                     const btnBack = document.getElementById("btnCancelFromLobby") || document.getElementById("btnBackToTaskHub");
                     if(btnBack) btnBack.click(); 
                 }
-            }, 400);
+            }, 500);
 
         } else {
-            // คืนค่าปุ่มหากพัง
-            btnExport.disabled = false;
-            btnExport.innerHTML = originalBtnHTML;
-            btnExport.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
             if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"), "error");
         }
     })
     .catch((error) => {
-        console.error(error);
-        // คืนค่าปุ่มหากพัง
-        btnExport.disabled = false;
-        btnExport.innerHTML = originalBtnHTML;
-        btnExport.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
         if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
+
 // =================================================================
 // 📦 [GROUP: CHECKBOX & EXPORT LOGIC] END
 // =================================================================
