@@ -272,12 +272,26 @@ function forceResetUI() {
 
 
 // ======================================================
-// 🌟 ผูก Event ให้ปุ่ม UI หน้าจอ
+// 🔄 ฟังก์ชันช่วยซิงก์ปุ่ม UI ให้ตรงกับโหมดปัจจุบันเสมอ
+// ======================================================
+function syncScannerUI() {
+  const scanModeIcon = document.getElementById("scanModeIcon");
+  const scanModeText = document.getElementById("scanModeText");
+  
+  if (window.currentScannerMode === "qr") {
+    if (scanModeIcon) scanModeIcon.className = "fas fa-qrcode";
+    if (scanModeText) scanModeText.textContent = "QR CODE";
+  } else {
+    if (scanModeIcon) scanModeIcon.className = "fas fa-barcode";
+    if (scanModeText) scanModeText.textContent = "BARCODE";
+  }
+}
+
+// ======================================================
+// 🌟 ผูก Event ให้ปุ่ม UI หน้าจอ 
 // ======================================================
 document.addEventListener("DOMContentLoaded", () => {
   const btnToggleScanMode = document.getElementById("btnToggleScanMode");
-  const scanModeIcon = document.getElementById("scanModeIcon");
-  const scanModeText = document.getElementById("scanModeText");
 
   if (btnToggleScanMode) {
     const newBtnToggle = btnToggleScanMode.cloneNode(true);
@@ -285,16 +299,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     newBtnToggle.addEventListener("click", (e) => {
       e.preventDefault();
-      e.stopPropagation();
+      e.stopPropagation(); 
+      
+      // 📍 สลับโหมดและอัปเดตหน้าตาปุ่มทันที
       if (window.currentScannerMode === "qr") {
-        if (scanModeIcon) scanModeIcon.className = "fas fa-barcode";
-        if (scanModeText) scanModeText.textContent = "BARCODE";
         window.switchScannerFormat("barcode");
       } else {
-        if (scanModeIcon) scanModeIcon.className = "fas fa-qrcode";
-        if (scanModeText) scanModeText.textContent = "QR CODE";
         window.switchScannerFormat("qr");
       }
+      
+      // เรียกใช้ฟังก์ชันซิงก์ UI
+      syncScannerUI(); 
     });
   }
 
@@ -305,13 +320,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     newBtnFlash.addEventListener("click", async (e) => {
       e.preventDefault();
-      e.stopPropagation();
+      e.stopPropagation(); 
       if (!html5QrCode || !window.isScannerMode) return;
       try {
         isFlashOn = !isFlashOn;
-        await html5QrCode.applyVideoConstraints({
-          advanced: [{ torch: isFlashOn }],
-        });
+        await html5QrCode.applyVideoConstraints({ advanced: [{ torch: isFlashOn }] });
         if (isFlashOn) {
           newBtnFlash.style.color = "#ffeb3b";
           newBtnFlash.style.borderColor = "#ffeb3b";
