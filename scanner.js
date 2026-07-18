@@ -82,38 +82,47 @@ async function globalScanSuccessCallback(decodedText, decodedResult) {
 
 
 
-// ======================================================
-// ⚙️ ตั้งค่าความแม่นยำกล้อง
-// ======================================================
 
 // ======================================================
-// ⚙️ ตั้งค่าความแม่นยำกล้อง (แก้บั๊ก config.qrbox < 50px)
+// ⚙️ ตั้งค่าความแม่นยำกล้อง (ดัน CODE_128 เป็นลำดับแรก)
 // ======================================================
 function getOptimizedScannerConfig() {
   const isQRMode = window.currentScannerMode === "qr";
+  
   return {
     fps: 15,
     qrbox: function (viewfinderWidth, viewfinderHeight) {
-      // 🛡️ ป้องกันบั๊กจังหวะสลับโหมดแล้วขนาดหน้าจอหายไป
       if (!viewfinderWidth || !viewfinderHeight) {
-        return { width: 250, height: 250 };
+        return isQRMode ? { width: 250, height: 250 } : { width: 300, height: 150 };
       }
       
       let minEdgePercentage = 0.7;
       let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
       let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
       
-      // 🔴 ล็อกขนาดขั้นต่ำ ห้ามต่ำกว่า 150px (ป้องกัน Error 50px สมบูรณ์แบบ)
       if (qrboxSize < 150) qrboxSize = 150; 
-      // 🔴 ล็อกขนาดสูงสุดที่ 250px
       if (qrboxSize > 250) qrboxSize = 250; 
+      
+      if (!isQRMode) {
+         return { width: Math.min(viewfinderWidth * 0.9, 350), height: 150 };
+      }
       
       return { width: qrboxSize, height: qrboxSize };
     },
     useBarCodeDetectorIfSupported: true, 
+    
     formatsToSupport: isQRMode
       ? [Html5QrcodeSupportedFormats.QR_CODE] 
-      : [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39],
+      : [
+          Html5QrcodeSupportedFormats.CODE_128,  // 📍 ดันขึ้นมาเป็นอันดับ 1 เพื่อความไวสูงสุด
+          Html5QrcodeSupportedFormats.EAN_13, 
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.ITF
+        ],
   };
 }
 
