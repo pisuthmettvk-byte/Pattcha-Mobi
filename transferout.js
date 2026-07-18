@@ -2563,3 +2563,100 @@ window.clearBoxDraft = function(shipmentId, boxNo) {
 };
 // [Auto-Save Box Draft System] END
 //===============
+
+
+// =================================================================
+// 🚚 [Phase 4: Master Shipment Dispatch - Frontend] START
+
+window.dispatchShipment = async function(shipmentNo) {
+    const colElement = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
+    if (!colElement) return;
+
+    const childBoxes = colElement.querySelectorAll(".shipment-child-box");
+    
+    // กฎข้อที่ 1: ต้องมีอย่างน้อย 1 กล่อง
+    if (childBoxes.length === 0) {
+        if (typeof window.safeAlert === "function") window.safeAlert("EMPTY SHIPMENT", "ยังไม่มีการสร้างกล่องสินค้า ไม่สามารถจัดส่งได้ครับ", "warning");
+        return;
+    }
+
+    // กฎข้อที่ 2: กล่องทุกใบต้องปิด (WRAP) แล้ว
+    let allClosed = true;
+    let openBoxes = [];
+    childBoxes.forEach(box => {
+        if (box.getAttribute("data-status") !== "Closed") {
+            allClosed = false;
+            openBoxes.push(box.getAttribute("data-box-no"));
+        }
+    });
+
+    if (!allClosed) {
+        if (typeof window.safeAlert === "function") {
+            window.safeAlert(
+                "UNFINISHED BOXES", 
+                `มีกล่องที่ยังไม่ได้ WRAP จำนวน ${openBoxes.length} ใบ\n(เลขกล่อง: ${openBoxes.join(", ")})\n\nกรุณาปิดกล่องให้ครบทุกใบก่อนจัดส่งครับ`, 
+                "error"
+            );
+        }
+        return;
+    }
+
+    // 3. ยืนยันก่อนส่ง
+    const isConfirm = await window.safeConfirm("ยืนยันการจัดส่ง (DISPATCH)?", `กล่องทั้งหมด ${childBoxes.length} ใบ (ปิดครบแล้ว)\nยืนยันการปล่อยรถชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`, "question");
+    if (!isConfirm) return;
+
+    if (typeof window.safeAlert === "function") window.safeAlert("PROCESSING...", "กำลังส่งข้อมูลเข้าสู่ระบบส่วนกลาง...", "info");
+
+    // 4. ส่งข้อมูล API ไปที่ Google Apps Script (Backend)
+    const payload = {
+        shipmentId: shipmentNo,
+        branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase()
+    };
+
+    fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    })
+    .then((res) => res.json())
+    .then((data) => {
+        if (data.status === "success" || data.success) {
+            
+            // 5. ล้างความจำ (Local Storage) ของชิปเมนต์นี้ทิ้งทั้งหมด
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`status_box_${shipmentNo}_`))) {
+                    localStorage.removeItem(key);
+                }
+            }
+
+            // 6. ลบคอลัมน์ออกจากหน้าจอ Lobby พร้อม Effect สวยงาม
+            colElement.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+            colElement.style.opacity = "0";
+            colElement.style.transform = "scale(0.9)";
+            
+            setTimeout(() => {
+                colElement.remove();
+                if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `ปล่อยรถชิปเมนต์ ${shipmentNo} สำเร็จ!`, "success");
+                
+                // ถ้ารถใน Lobby หมดแล้ว ให้เด้งกลับไปหน้า Task Hub
+                const remainingCols = document.querySelectorAll(".shipment-column");
+                if (remainingCols.length === 0) {
+                    const btnBack = document.getElementById("btnBackToTaskHub");
+                    if(btnBack) btnBack.click(); 
+                }
+            }, 500);
+
+        } else {
+            if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถจัดส่งได้"), "error");
+        }
+    })
+    .catch((error) => {
+        if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
+    });
+};
+// 🚚 [Phase 4: Master Shipment Dispatch - Frontend] END
+// =================================================================
+
+
+
+
