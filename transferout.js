@@ -1935,9 +1935,6 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
 
 
 
-
-
-
 // ==========================================================
 // 📍 [สร้างหน้าต่างยืนยันแบบป๊อปอัป ให้เข้าธีมเดียวกับ safeAlert] START
 
@@ -1995,119 +1992,73 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
 
 
 
-
-
-
 // =================================================================
-// ⚙️ ฟังก์ชันจัดการจำนวนสินค้า (เชื่อมกับ safeAlert และ safeConfirm) START
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้า (อิงตามลอจิกดั้งเดิมที่เสถียรที่สุด) START
 
-      // 📍 [NEW] เครื่องยนต์กลางสำหรับ ตัด/คืน สต็อกบนหน้าจอ (Local)
-      window.adjustLocalStock = function(sku, qtyChange) {
-          // ใช้ตัวแปรเก็บสต็อกหลักที่เจเลอร์มี (เช่น window.globalProducts หรือ inhouseStockData)
-          const stockArray = window.globalProducts || window.stockData || []; 
-          const masterItem = stockArray.find(p => p.sku === sku);
-          
-          if (masterItem) {
-              masterItem.availableStock = (masterItem.availableStock || 0) + qtyChange;
-              if (masterItem.available !== undefined) {
-                  masterItem.available = (masterItem.available || 0) + qtyChange;
-              }
-          }
-          
-          // อัปเดตยอดคงเหลือในตะกร้าปัจจุบันด้วย เพื่อให้เช็ก limit ได้ถูกต้อง
-          const boxItem = window.currentBoxItems.find((p) => p.sku === sku);
-          if (boxItem && boxItem.availableStock !== undefined) {
-              boxItem.availableStock = (boxItem.availableStock || 0) + qtyChange;
-          }
-      };
-
-      window.increaseBoxItemQty = function (sku) {
-        const item = window.currentBoxItems.find((p) => p.sku === sku);
-        if (item) {
-          const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
-
-          if (totalQty < (item.availableStock || 0) + totalQty) { // เช็กจากยอดที่เหลือจริงๆ
-            item.manualQty += 1;
-            item.isManual = true;
-            
-            // 📍 หักสต็อกลม (-1) ออกจากหน้าจอทันที
-            if (typeof window.adjustLocalStock === "function") window.adjustLocalStock(sku, -1);
-            
-            window.renderBoxContentArea();
-          } else {
-            // 📍 เปลี่ยนจาก "warning" เป็น "error" เพื่อแสดงผลเป็นสีแดง
-            if (typeof window.safeAlert === "function") {
-              window.safeAlert(
-                "STOCK LIMIT",
-                `ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียงพอแค่ยอดปัจจุบัน`,
-                "error",
-              );
-            } else {
-              alert(`ไม่สามารถเพิ่มได้ สินค้าหมดสต็อกแล้ว`);
-            }
-          }
-        }
-      };
-
-      // 2. ลดจำนวน (-) - ห้ามติดลบ
-      window.decreaseBoxItemQty = function (sku) {
-        const item = window.currentBoxItems.find((p) => p.sku === sku);
-        if (item) {
-          // 📍 ประทับตรา "รูปมือ" ทันที ไม่ว่าก่อนหน้านี้จะมาจากการสแกนหรือไม่ก็ตาม
-          item.isManual = true; 
-
-          let qtyRemoved = 0;
-          if (item.manualQty > 0) {
-            item.manualQty -= 1;
-            qtyRemoved = 1;
-          } else if (item.scanQty > 0) {
-            item.scanQty -= 1;
-            qtyRemoved = 1;
-          }
-
-          if (qtyRemoved > 0) {
-            // 📍 คืนสต็อกลม (+1) กลับสู่หน้าจอ
-            if (typeof window.adjustLocalStock === "function") window.adjustLocalStock(sku, 1);
-          }
-
-          if ((item.scanQty || 0) + (item.manualQty || 0) <= 0) {
-            window.currentBoxItems = window.currentBoxItems.filter((p) => p.sku !== sku);
-          }
-          window.renderBoxContentArea();
-        }
-      };
-
-      // 3. ถังขยะ (ลบออกจากกล่อง) - แจ้งเตือนก่อนลบ
-      window.removeBoxItem = async function (sku) {
-        let isConfirm = false;
-
-        // 📍 ใช้ safeConfirm ตัวใหม่ที่สร้างให้เข้าธีม
-        if (typeof window.safeConfirm === "function") {
-          isConfirm = await window.safeConfirm(
-            "CONFIRM DELETE",
-            "ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?",
-            "error",
-          );
-        } else {
-          isConfirm = confirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?");
-        }
-
-        if (isConfirm) {
+        window.increaseBoxItemQty = function (sku) {
           const item = window.currentBoxItems.find((p) => p.sku === sku);
           if (item) {
-              const totalRemoved = (item.scanQty || 0) + (item.manualQty || 0);
-              // 📍 คืนสต็อกลมรวดเดียวตามจำนวนที่ถูกลบทิ้งไป
-              if (typeof window.adjustLocalStock === "function") window.adjustLocalStock(sku, totalRemoved);
+            const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+
+            // 📍 ใช้ลอจิกเดิมของเจเลอร์ที่ทำงานได้ดีเยี่ยมอยู่แล้ว
+            if (totalQty < item.availableStock) {
+              item.manualQty += 1;
+              item.isManual = true;
+              window.renderBoxContentArea();
+            } else {
+              if (typeof window.safeAlert === "function") {
+                window.safeAlert(
+                  "STOCK LIMIT",
+                  `ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`,
+                  "error"
+                );
+              } else {
+                alert(`ไม่สามารถเพิ่มได้ มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น`);
+              }
+            }
+          }
+        };
+
+        window.decreaseBoxItemQty = function (sku) {
+          const item = window.currentBoxItems.find((p) => p.sku === sku);
+          if (item) {
+            item.isManual = true; 
+
+            if (item.manualQty > 0) {
+              item.manualQty -= 1;
+            } else if (item.scanQty > 0) {
+              item.scanQty -= 1;
+            }
+
+            if (item.scanQty + item.manualQty <= 0) {
+              window.currentBoxItems = window.currentBoxItems.filter((p) => p.sku !== sku);
+            }
+            window.renderBoxContentArea();
+          }
+        };
+
+        window.removeBoxItem = async function (sku) {
+          let isConfirm = false;
+          if (typeof window.safeConfirm === "function") {
+            isConfirm = await window.safeConfirm(
+              "CONFIRM DELETE",
+              "ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?",
+              "error"
+            );
+          } else {
+            isConfirm = confirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?");
           }
 
-          window.currentBoxItems = window.currentBoxItems.filter(
-            (p) => p.sku !== sku,
-          );
-          window.renderBoxContentArea();
-        }
-      };
-// ⚙️ ฟังก์ชันจัดการจำนวนสินค้าในกล่อง (อัปเดต: ใช้ UI หน้าต่างแจ้งเตือนของระบบหลัก 100%) END
-// ==========================================================================
+          if (isConfirm) {
+            window.currentBoxItems = window.currentBoxItems.filter(
+              (p) => p.sku !== sku
+            );
+            window.renderBoxContentArea();
+          }
+        };
+
+// ⚙️ ฟังก์ชันจัดการจำนวนสินค้า (อิงตามลอจิกดั้งเดิมที่เสถียรที่สุด) END
+// =================================================================
 
 
 
