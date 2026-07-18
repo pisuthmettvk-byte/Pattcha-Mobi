@@ -119,23 +119,44 @@ function getOptimizedScannerConfig() {
 
 
 // ======================================================
-// 🎛️ ปุ่มสลับโหมด Taco (เพิ่มระยะเวลาพักเลนส์ป้องกันกล้องค้าง)
+// 🎛️ ปุ่มสลับโหมด Taco (ระบบ Hot-Swap เปลี่ยนเลนส์เบื้องหลัง ไม่ปิด UI)
 // ======================================================
 window.switchScannerFormat = async function (mode) {
   if (window.currentScannerMode === mode) return; 
   window.currentScannerMode = mode;
   console.log(`[SCANNER] สลับเป็นโหมด: ${mode}`);
 
-  if (window.isScannerMode) {
-    await stopScanner();
-    
-    // 🛡️ เพิ่มดีเลย์เป็น 500ms ให้เบราว์เซอร์เคลียร์แคชกล้องตัวเก่าให้สนิท 100% ก่อนเปิดใหม่
-    setTimeout(async () => { 
-      await startScanner(); 
-    }, 500);
+  if (window.isScannerMode && html5QrCode) {
+    try {
+      isTransitioning = true; // ล็อกปุ่มชั่วคราวกันกดย้ำ
+
+      // 1. ดับเฉพาะฮาร์ดแวร์เลนส์ (แต่ไม่ปิดหน้าต่าง UI)
+      const state = html5QrCode.getState();
+      if (state === 2 || state === 3) { 
+         try { await html5QrCode.stop(); } catch (e) {}
+      }
+      html5QrCode.clear();
+
+      // 2. ดึง Config ใหม่ (ที่ AI สลับโหมด QR/Barcode แล้ว)
+      const config = getOptimizedScannerConfig();
+
+      // 3. รีสตาร์ทฮาร์ดแวร์เบื้องหลังทันที
+      setTimeout(async () => {
+        try {
+          // 📍 เรียกใช้ globalScanSuccessCallback เพื่อให้สับรางข้อมูลได้ถูกต้องเสมอ
+          await html5QrCode.start({ facingMode: "environment" }, config, globalScanSuccessCallback);
+        } catch (camErr) {
+          await html5QrCode.start({ facingMode: { exact: "environment" } }, config, globalScanSuccessCallback);
+        }
+        isTransitioning = false; // ปลดล็อกปุ่ม
+      }, 300);
+
+    } catch (err) {
+      console.error("Error swapping camera mode:", err);
+      isTransitioning = false;
+    }
   }
 };
-
 
 
 
