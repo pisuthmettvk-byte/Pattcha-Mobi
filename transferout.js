@@ -1341,120 +1341,128 @@ function showView(viewId) {
             // ==========================================
 
 //===============
-            // [openBoxDetails] START
+// [openBoxDetails] START
 
-            // 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด 100% และโหลดข้อมูลกล่องแดง)
-            window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
-              window.currentActiveShipment = shipmentNo;
-              window.currentActiveBoxNo = boxNo;
-              window.currentBoxElement = boxElement;
+// 3. ฟังก์ชันเปิดหน้า Box Details (ปรับรองรับปุ่มเหล็กลูกระนาด 100% และโหลดข้อมูลกล่องแดง)
+window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
+  window.currentActiveShipment = shipmentNo;
+  window.currentActiveBoxNo = boxNo;
+  window.currentBoxElement = boxElement;
 
-              // 🌟 [NEW] โหลดข้อมูลสินค้าจากที่ฝังไว้ (แก้ปัญหากล่องแดงว่างเปล่า)
-              const savedItems = boxElement ? boxElement.getAttribute("data-saved-items") : null;
-              if (savedItems) {
-                  window.currentBoxItems = JSON.parse(savedItems); // คืนชีพข้อมูลของในกล่อง
-              } else {
-                  window.currentBoxItems = []; // ถ้าเป็นกล่องใหม่ที่ยังไม่ WRAP ให้ล้างเป็นกล่องเปล่า
-              }
+  // 🌟 [NEW] โหลดข้อมูลสินค้าจากที่ฝังไว้ (แก้ปัญหากล่องแดงว่างเปล่า)
+  const savedItems = boxElement ? boxElement.getAttribute("data-saved-items") : null;
+  if (savedItems) {
+      window.currentBoxItems = JSON.parse(savedItems); // คืนชีพข้อมูลของในกล่อง
+  } else {
+      window.currentBoxItems = []; // ถ้าเป็นกล่องใหม่ที่ยังไม่ WRAP ให้ล้างเป็นกล่องเปล่า
+  }
 
-              //📍 [Update UI Header Data]
-              document.getElementById("boxDetailsShipmentText").textContent = `(Shipment No: ${shipmentNo})`;
-              document.getElementById("boxDetailsBoxText").textContent = boxNo;
+  // 📍 [Auto-Save Inject]: ดึงข้อมูล Draft จากหน่วยความจำมาสวมทับ (ถ้ามีของค้างอยู่ และกล่องยังไม่ปิด)
+  if (!isClosed && typeof window.loadCurrentBoxDraft === "function") {
+      const draftItems = window.loadCurrentBoxDraft(shipmentNo, boxNo);
+      if (draftItems && draftItems.length > 0) {
+          window.currentBoxItems = draftItems; // เอาของที่จำไว้กลับมาใส่ในกล่อง!
+          console.log(`[Auto-Save] ♻️ กู้คืนสินค้า ${draftItems.length} รายการที่สแกนค้างไว้สำเร็จ!`);
+      }
+  }
 
-              const btnScanner = document.getElementById("btnBoxScanner");
-              const btnWrap = document.getElementById("btnBoxWrap");
-              const searchInput = document.getElementById("boxSearchInput");
+  //📍 [Update UI Header Data]
+  const shipmentTextEl = document.getElementById("boxDetailsShipmentText");
+  const boxTextEl = document.getElementById("boxDetailsBoxText");
+  if (shipmentTextEl) shipmentTextEl.textContent = `(Shipment No: ${shipmentNo})`;
+  if (boxTextEl) boxTextEl.textContent = boxNo;
 
-              //📍 [Scanner Button Logic for Box Details]
-              if (btnScanner) {
-                const newBtnScanner = btnScanner.cloneNode(true);
-                btnScanner.parentNode.replaceChild(newBtnScanner, btnScanner);
+  const btnScanner = document.getElementById("btnBoxScanner");
+  const btnWrap = document.getElementById("btnBoxWrap");
+  const searchInput = document.getElementById("boxSearchInput");
 
-                newBtnScanner.addEventListener("click", async () => {
-                  // 🌟 [REMOVED] ลบตัวบล็อกสแกนตอนกล่องปิดทิ้งไป เพื่อปลดล็อกให้พนักงานใช้งานโหมด Audit (Read-only) ได้
+  //📍 [Scanner Button Logic for Box Details]
+  if (btnScanner) {
+    const newBtnScanner = btnScanner.cloneNode(true);
+    btnScanner.parentNode.replaceChild(newBtnScanner, btnScanner);
 
-                  // ---🔍 [Set context for scanner receiver]
-                  window.currentScannerContext = "box";
+    newBtnScanner.addEventListener("click", async () => {
+      // ---🔍 [Set context for scanner receiver]
+      window.currentScannerContext = "box";
 
-                  if (typeof window.toggleScanner === "function") {
-                    const scanView = document.getElementById("scannerView");
-                    const boxDetailsView = document.getElementById("boxDetailsView");
+      if (typeof window.toggleScanner === "function") {
+        const scanView = document.getElementById("scannerView");
+        const boxDetailsView = document.getElementById("boxDetailsView");
 
-                    // ---🔍 [DOM Relocation]
-                    if (scanView && scanView.parentNode !== document.body) {
-                      document.body.appendChild(scanView);
-                    }
+        // ---🔍 [DOM Relocation]
+        if (scanView && scanView.parentNode !== document.body) {
+          document.body.appendChild(scanView);
+        }
 
-                    // ---🔍 [Visibility Override]
-                    if (boxDetailsView) {
-                      boxDetailsView.classList.add("hide");
-                    }
+        // ---🔍 [Visibility Override]
+        if (boxDetailsView) {
+          boxDetailsView.classList.add("hide");
+        }
 
-                    // ---🔍 [Trigger Golden Standard Scanner]
-                    await window.toggleScanner();
-                  } else {
-                    alert("ไม่พบโมดูลกล้อง (toggleScanner) ในระบบ");
-                  }
-                });
-              }
+        // ---🔍 [Trigger Golden Standard Scanner]
+        await window.toggleScanner();
+      } else {
+        alert("ไม่พบโมดูลกล้อง (toggleScanner) ในระบบ");
+      }
+    });
+  }
 
-              //📍 [UI Render based on Box Status]
-              if (isClosed) {
-                // 🔴 โหมด Read-Only (ปิดกล่องแล้ว)
-                if(btnWrap) btnWrap.style.display = "none"; // ซ่อนปุ่ม WRAP
+  //📍 [UI Render based on Box Status]
+  if (isClosed) {
+    // 🔴 โหมด Read-Only (ปิดกล่องแล้ว)
+    if(btnWrap) btnWrap.style.display = "none"; // ซ่อนปุ่ม WRAP
 
-                // 🌟 [UPDATE] คงดีไซน์เหล็กลูกระนาดไว้ แต่ปรับความกว้าง 100%
-                const finalBtnScanner = document.getElementById("btnBoxScanner");
-                if (finalBtnScanner) {
-                  finalBtnScanner.style.width = "100%"; // ขยายเต็มจอ
-                  finalBtnScanner.style.background = "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
-                  finalBtnScanner.style.border = "1px solid #888";
-                  finalBtnScanner.style.color = "#333";
-                  finalBtnScanner.style.textShadow = "1px 1px 0px #fff";
-                  finalBtnScanner.style.boxShadow = "0 4px 6px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.8)";
-                }
-                if (searchInput) searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
-              } else {
-                // 🟢 โหมดปกติ (กล่องเปิดอยู่)
-                if(btnWrap) btnWrap.style.display = "flex"; // โชว์ปุ่ม WRAP
+    // 🌟 [UPDATE] คงดีไซน์เหล็กลูกระนาดไว้ แต่ปรับความกว้าง 100%
+    const finalBtnScanner = document.getElementById("btnBoxScanner");
+    if (finalBtnScanner) {
+      finalBtnScanner.style.width = "100%"; // ขยายเต็มจอ
+      finalBtnScanner.style.background = "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
+      finalBtnScanner.style.border = "1px solid #888";
+      finalBtnScanner.style.color = "#333";
+      finalBtnScanner.style.textShadow = "1px 1px 0px #fff";
+      finalBtnScanner.style.boxShadow = "0 4px 6px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.8)";
+    }
+    if (searchInput) searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
+  } else {
+    // 🟢 โหมดปกติ (กล่องเปิดอยู่)
+    if(btnWrap) btnWrap.style.display = "flex"; // โชว์ปุ่ม WRAP
 
-                // 🌟 [UPDATE] คืนร่างปุ่มกล้องเป็น "เหล็กสีเงินลูกระนาด" ขนาดปกติ
-                const finalBtnScanner = document.getElementById("btnBoxScanner");
-                if (finalBtnScanner) {
-                  finalBtnScanner.style.width = "48%"; // คืนขนาด 48% (ครึ่งจอ)
-                  finalBtnScanner.style.background = "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
-                  finalBtnScanner.style.border = "1px solid #888";
-                  finalBtnScanner.style.color = "#333";
-                  finalBtnScanner.style.textShadow = "1px 1px 0px #fff";
-                  finalBtnScanner.style.boxShadow = "0 4px 6px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.8)";
-                }
-                if (searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
+    // 🌟 [UPDATE] คืนร่างปุ่มกล้องเป็น "เหล็กสีเงินลูกระนาด" ขนาดปกติ
+    const finalBtnScanner = document.getElementById("btnBoxScanner");
+    if (finalBtnScanner) {
+      finalBtnScanner.style.width = "48%"; // คืนขนาด 48% (ครึ่งจอ)
+      finalBtnScanner.style.background = "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
+      finalBtnScanner.style.border = "1px solid #888";
+      finalBtnScanner.style.color = "#333";
+      finalBtnScanner.style.textShadow = "1px 1px 0px #fff";
+      finalBtnScanner.style.boxShadow = "0 4px 6px rgba(0,0,0,0.2), inset 0 1px 3px rgba(255,255,255,0.8)";
+    }
+    if (searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
 
-                // ---🔍 [Check and lock WRAP button if empty]
-                if (typeof window.updateBoxWrapButtonState === "function") {
-                  window.updateBoxWrapButtonState(window.currentBoxItems.length);
-                }
-              }
+    // ---🔍 [Check and lock WRAP button if empty]
+    if (typeof window.updateBoxWrapButtonState === "function") {
+      window.updateBoxWrapButtonState(window.currentBoxItems.length);
+    }
+  }
 
-              //📍 [View Transition]
-              const lobbyView =
-                document.getElementById("transferOutLobbyView") ||
-                document.getElementById("lobbyView");
-              if (lobbyView) lobbyView.classList.add("hide");
-              document.getElementById("boxDetailsView").classList.remove("hide");
-              
-              // 🌟 [NEW] วาดหน้าจอทันทีที่มีการโหลดข้อมูล (ดึงการ์ดสินค้าออกมาโชว์)
-              if (typeof window.renderBoxContentArea === "function") {
-                  window.renderBoxContentArea();
-              }
-            };
+  //📍 [View Transition]
+  const lobbyView =
+    document.getElementById("transferOutLobbyView") ||
+    document.getElementById("lobbyView");
+  if (lobbyView) lobbyView.classList.add("hide");
+  
+  const boxDetailsView = document.getElementById("boxDetailsView");
+  if (boxDetailsView) boxDetailsView.classList.remove("hide");
+  
+  // 🌟 [NEW] วาดหน้าจอทันทีที่มีการโหลดข้อมูล (ดึงการ์ดสินค้าออกมาโชว์)
+  if (typeof window.renderBoxContentArea === "function") {
+      window.renderBoxContentArea();
+  }
+};
 
-            //[openBoxDetails] END
-            //===============            
+// [openBoxDetails] END
+//===============
 
-
-            //===============
-            // [Magic Search] START
 
             // 5. ระบบช่องค้นหา Magic Search (Box Details)
             const boxSearchInput = document.getElementById("boxSearchInput");
@@ -1678,37 +1686,53 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
           window.renderBoxContentArea();
         };
 
-        // 3. ฟังก์ชันเรนเดอร์ของในกล่อง
-        window.renderBoxContentArea = function () {
-          const container = document.getElementById("boxContentArea");
-          if (!container) return;
+          //===============
+          // [Render Box Content Area] START
 
-          // 🌟 [UPDATE ISSUE 2] เช็กสถานะกล่องว่าปิดหรือยัง เพื่อส่งไปบังคับซ่อนปุ่ม
-          let isClosedBox = false;
-          if (window.currentBoxElement) {
-            isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
-          }
+          // 3. ฟังก์ชันเรนเดอร์ของในกล่อง
+          window.renderBoxContentArea = function () {
+            const container = document.getElementById("boxContentArea");
+            if (!container) return;
 
-          if (window.currentBoxItems.length === 0) {
-            container.innerHTML = `
-                <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
-                    <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
-                    <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
-                    <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
-                </div>`;
-            if (typeof window.updateBoxWrapButtonState === "function")
-              window.updateBoxWrapButtonState(0);
-            return;
-          }
+            // 🌟 [UPDATE ISSUE 2] เช็กสถานะกล่องว่าปิดหรือยัง เพื่อส่งไปบังคับซ่อนปุ่ม
+            let isClosedBox = false;
+            if (window.currentBoxElement) {
+              isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
+            }
 
-          // 🌟 [UPDATE ISSUE 2] ส่งค่า isClosedBox เข้าไปในการ์ดด้วย เพื่อปิดตายปุ่มทั้งหมด
-          container.innerHTML = window.currentBoxItems
-            .map((item) => window.renderBoxModeBCard(item, isClosedBox))
-            .join("");
-            
-          if (typeof window.updateBoxWrapButtonState === "function")
-            window.updateBoxWrapButtonState(window.currentBoxItems.length);
-        };
+            if (window.currentBoxItems.length === 0) {
+              container.innerHTML = `
+                  <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
+                      <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
+                      <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
+                      <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
+                  </div>`;
+              if (typeof window.updateBoxWrapButtonState === "function") {
+                window.updateBoxWrapButtonState(0);
+              }
+                
+              // 📍 [Auto-Save Inject] สั่งเซฟความจำ (สถานะกล่องว่าง) เพื่อเคลียร์ Draft ออกจากระบบ
+              if (typeof window.saveCurrentBoxDraft === "function") {
+                window.saveCurrentBoxDraft();
+              }
+              return;
+            }
+
+            // 🌟 [UPDATE ISSUE 2] ส่งค่า isClosedBox เข้าไปในการ์ดด้วย เพื่อปิดตายปุ่มทั้งหมด
+            container.innerHTML = window.currentBoxItems
+              .map((item) => window.renderBoxModeBCard(item, isClosedBox))
+              .join("");
+              
+            if (typeof window.updateBoxWrapButtonState === "function") {
+              window.updateBoxWrapButtonState(window.currentBoxItems.length);
+            }
+
+            // 📍 [Auto-Save Inject] สั่งเซฟความจำสินค้าลงเครื่อง (LocalStorage) ทุกครั้งที่ขยับหรือวาดหน้าจอใหม่
+            if (typeof window.saveCurrentBoxDraft === "function") {
+              window.saveCurrentBoxDraft();
+            }
+          };
+
 
         // 4. ฟังก์ชันกดปุ่ม ADD เข้ากล่อง
         window.addSearchItemToBox = function (sku) {
@@ -2247,3 +2271,42 @@ window.submitWrapBox = async function () {
                 };
 // 🖐️ Phase 10.1: ระบบจัดการยอดกดมือ (Manual Quantity Handler) END
 // ======================================================================
+
+
+
+//===============
+// [Auto-Save Box Draft System] START
+window.saveCurrentBoxDraft = function() {
+    // 1. ตรวจสอบว่ามีกล่องกำลังทำงานอยู่หรือไม่
+    if (!window.currentActiveShipment || !window.currentActiveBoxNo) return;
+    
+    // 2. ไม่ต้องเซฟ draft ถ้าเป็นกล่องที่ "ปิด (Closed)" ไปแล้ว
+    const isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+    if (isClosedBox) return;
+
+    // 3. สร้างกุญแจจำเพาะ (Key) สำหรับกล่องนี้ แล้วเซฟลงเครื่องมือถือ (localStorage)
+    const draftKey = `draft_box_${window.currentActiveShipment}_${window.currentActiveBoxNo}`;
+    localStorage.setItem(draftKey, JSON.stringify(window.currentBoxItems || []));
+    console.log(`[Auto-Save] 💾 บันทึกสินค้าในกล่อง ${window.currentActiveBoxNo} อัตโนมัติ`);
+};
+
+window.loadCurrentBoxDraft = function(shipmentId, boxNo) {
+    const draftKey = `draft_box_${shipmentId}_${boxNo}`;
+    const savedData = localStorage.getItem(draftKey);
+    if (savedData) {
+        try {
+            return JSON.parse(savedData);
+        } catch (e) {
+            console.error("Error parsing box draft", e);
+            return [];
+        }
+    }
+    return []; // ถ้าไม่มีของค้างอยู่ ส่งอาร์เรย์ว่างกลับไป
+};
+
+window.clearBoxDraft = function(shipmentId, boxNo) {
+    const draftKey = `draft_box_${shipmentId}_${boxNo}`;
+    localStorage.removeItem(draftKey); // ใช้ตอนกดปิดกล่อง (WRAP) เพื่อเคลียร์ความจำ
+};
+// [Auto-Save Box Draft System] END
+//===============
