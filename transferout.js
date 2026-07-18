@@ -2289,32 +2289,36 @@ window.submitWrapBox = async function () {
         wrapBtn.style.opacity = "1";
       }
 
-      if (data.status === "success" || data.success) {
-        // 🌟 [NEW] บันทึกสถานะ "ปิดกล่องแล้ว" ลงเครื่อง เพื่อให้จำได้แม้รีเฟรชหน้า หรือเข้าแอปใหม่
+       if (data.status === "success" || data.success) {
+        // 🌟 [NEW] บันทึกสถานะ "ปิดกล่องแล้ว" ลงเครื่อง
         localStorage.setItem(`status_box_${shipmentId}_${boxNumber}`, "Closed");
 
         if (window.currentBoxElement) {
           window.currentBoxElement.setAttribute("data-status", "Closed");
-          const boxIcon = window.currentBoxElement.querySelector(
-            ".fa-box-open, .fa-box",
-          );
+          
+          // เปลี่ยนไอคอนเป็นกล่องปิดสีแดง
+          const boxIcon = window.currentBoxElement.querySelector(".fa-box-open, .fa-box");
           if (boxIcon) {
             boxIcon.className = "fas fa-box";
             boxIcon.style.color = "#d93844";
           }
 
-          const scanEl =
-            window.currentBoxElement.querySelector(".child-scan-qty");
-          const manualEl =
-            window.currentBoxElement.querySelector(".child-manual-qty");
+          // อัปเดตตัวเลขหน้ากล่อง
+          const scanEl = window.currentBoxElement.querySelector(".child-scan-qty");
+          const manualEl = window.currentBoxElement.querySelector(".child-manual-qty");
           if (scanEl) scanEl.textContent = totalScanQty;
           if (manualEl) manualEl.textContent = totalManualQty;
 
-          // 🌟 [NEW] ฝังข้อมูลสินค้าติดไว้กับตัวกล่องแดงหน้า Lobby ทันทีที่ Wrap เสร็จ (แก้อาการกล่องว่างเปล่า)
-          window.currentBoxElement.setAttribute(
-            "data-saved-items",
-            JSON.stringify(window.currentBoxItems),
-          );
+          // 🚨 [BUG FIX]: ปลดล็อก Checkbox ให้ติ๊กได้ทันทีโดยไม่ต้องรีเฟรช!
+          const checkboxEl = window.currentBoxElement.querySelector(".child-checkbox");
+          if (checkboxEl) {
+            checkboxEl.disabled = false;
+            checkboxEl.style.cursor = "pointer";
+            checkboxEl.title = "เลือกกล่องนี้เพื่อเตรียมส่งออก";
+          }
+
+          // ฝังข้อมูลสินค้าติดไว้กับตัวกล่อง
+          window.currentBoxElement.setAttribute("data-saved-items", JSON.stringify(window.currentBoxItems));
         }
 
         if (typeof window.updateMasterShipmentTotals === "function") {
@@ -2322,23 +2326,20 @@ window.submitWrapBox = async function () {
         }
         
         if (typeof window.safeAlert === "function") {
-          window.safeAlert(
-            "SUCCESS",
-            `บันทึกกล่อง ${boxNumber} สำเร็จ!`,
-            "success",
-          );
+          window.safeAlert("SUCCESS", `บันทึกกล่อง ${boxNumber} สำเร็จ!`, "success");
         }
 
-        // 🚨 [FIX BUG 2]: สั่งให้ปุ่ม Back ทำงานก่อน เพื่อให้หน้า Lobby อัปเดตตัวเลขให้เสร็จ
+        // สั่งให้ปุ่ม Back ทำงานเพื่อกลับหน้า Lobby
         document.getElementById("btnBackFromBox").click();
 
-        // แล้วค่อยหน่วงเวลา 300ms เพื่อล้างกระดาน (ตัวเลขหน้า Lobby จะไม่หายแล้ว)
         setTimeout(() => {
             window.currentBoxItems = [];
             if (typeof window.renderBoxContentArea === "function") {
                 window.renderBoxContentArea();
             }
         }, 300);
+
+      }
 
       } else {
         if (typeof window.safeAlert === "function")
