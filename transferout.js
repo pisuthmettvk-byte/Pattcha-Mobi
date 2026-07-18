@@ -2659,115 +2659,154 @@ window.dispatchShipment = async function(shipmentNo) {
 
 
 
-
-
 // =================================================================
-// 📦 [GROUP: CHECKBOX & EXPORT LOGIC] หน้าล็อบบี้สาขา (Lobby)
+// 📦 [GROUP: CHECKBOX & EXPORT LOGIC] อัปเดต: เชื่อม ID btnSubmitLobby และควบคุมปุ่ม
 // =================================================================
 
-// 1. ฟังก์ชันตรวจสอบเมื่อมีการคลิก Checkbox หน้าชิปเมนต์
-window.validateShipmentCheckbox = function(checkboxElement, shipmentNo) {
-    const colElement = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
-    if (!colElement) return;
+          // 📡 1. เรดาร์ดักจับการติ๊ก Checkbox บนหัวคอลัมน์ (ทำงานอัตโนมัติ)
+          document.addEventListener('change', function(e) {
+              if (e.target && e.target.matches('.shipment-column-header input[type="checkbox"]')) {
+                  
+                  const colElement = e.target.closest('.shipment-column');
+                  if (!colElement) return;
+                  
+                  const shipmentNo = colElement.getAttribute('data-shipment');
+                  
+                  // กรองเงื่อนไขการติ๊ก
+                  window.validateShipmentCheckbox(e.target, shipmentNo);
+                  
+                  // 📍 สั่งอัปเดตหน้าตาปุ่ม EXPORT (ปลดล็อค/ล็อคปุ่ม)
+                  window.updateExportButtonState();
+              }
+          });
 
-    const childBoxes = colElement.querySelectorAll(".shipment-child-box");
-    
-    // กฎข้อ 1: ถ้าไม่มีกล่องเลย ไม่อนุญาตให้ติ๊ก
-    if (childBoxes.length === 0) {
-        checkboxElement.checked = false; // เอาติ๊กออก
-        if (typeof window.safeAlert === "function") {
-            window.safeAlert("EMPTY SHIPMENT", "ยังไม่มีกล่องสินค้า ไม่สามารถเลือกเพื่อ Export ได้ครับ", "warning");
-        }
-        return;
-    }
+          // 🛡️ ฟังก์ชันป้อมปราการ: ตรวจสอบความพร้อมก่อนส่ง
+          window.validateShipmentCheckbox = function(checkboxElement, shipmentNo) {
+              const colElement = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
+              if (!colElement) return;
 
-    // กฎข้อ 2: กล่องทุกใบต้องปิด (สีแดง) แล้วเท่านั้น
-    let allClosed = true;
-    childBoxes.forEach(box => {
-        if (box.getAttribute("data-status") !== "Closed") {
-            allClosed = false;
-        }
-    });
+              const childBoxes = colElement.querySelectorAll(".shipment-child-box");
+              
+              if (childBoxes.length === 0) {
+                  checkboxElement.checked = false; 
+                  if (typeof window.safeAlert === "function") {
+                      window.safeAlert("EMPTY SHIPMENT", "ยังไม่มีกล่องสินค้า ไม่สามารถเลือกเพื่อ Export ได้ครับ", "warning");
+                  } else { alert("ยังไม่มีกล่องสินค้า"); }
+                  return;
+              }
 
-    if (!allClosed) {
-        checkboxElement.checked = false; // เอาติ๊กออก
-        if (typeof window.safeAlert === "function") {
-            window.safeAlert("UNFINISHED BOXES", "มีกล่องที่ยังไม่ได้ปิด (WRAP) กรุณาปิดให้ครบก่อนเลือกครับ", "error");
-        }
-    }
-};
+              let allClosed = true;
+              childBoxes.forEach(box => {
+                  if (box.getAttribute("data-status") !== "Closed") {
+                      allClosed = false;
+                  }
+              });
 
-// 2. ฟังก์ชันเมื่อกดปุ่ม EXPORT ที่ Footer ด้านล่าง
-window.processExport = async function() {
-    // หา Checkbox ที่ถูกติ๊กไว้
-    const checkedBoxes = document.querySelectorAll('.shipment-master-checkbox:checked');
-    
-    if (checkedBoxes.length === 0) {
-        if (typeof window.safeAlert === "function") {
-            window.safeAlert("NO SELECTION", "กรุณาติ๊กเลือกชิปเมนต์ที่ต้องการ Export ก่อนครับ", "warning");
-        }
-        return;
-    }
+              if (!allClosed) {
+                  checkboxElement.checked = false;
+                  if (typeof window.safeAlert === "function") {
+                      window.safeAlert("UNFINISHED BOXES", "มีกล่องที่ยังไม่ได้ปิด (WRAP) กรุณาปิดให้ครบก่อนเลือกครับ", "error");
+                  } else { alert("มีกล่องที่ยังไม่ได้ปิด"); }
+              }
+          };
 
-    // ดึงเลขชิปเมนต์ที่ถูกเลือก (สมมติว่าทำทีละ 1 รายการก่อน)
-    const shipmentNo = checkedBoxes[0].getAttribute("data-shipment-id");
+          // 🔘 [ฟังก์ชันใหม่] อัปเดตหน้าตาปุ่ม EXPORT อัตโนมัติ
+          window.updateExportButtonState = function() {
+              const btnExport = document.getElementById('btnSubmitLobby');
+              if (!btnExport) return;
 
-    // ใช้ระบบยืนยัน (Confirmation)
-    const isConfirm = await window.safeConfirm(
-        "ยืนยันการ EXPORT?", 
-        `คุณต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ไปยังสถานะ Pending ใช่หรือไม่?`, 
-        "question"
-    );
-    if (!isConfirm) return;
+              const checkedBoxes = document.querySelectorAll('.shipment-column-header input[type="checkbox"]:checked');
+              
+              if (checkedBoxes.length > 0) {
+                  // มีชิปเมนต์ที่พร้อมส่ง -> ปลดล็อคปุ่ม
+                  btnExport.disabled = false;
+                  btnExport.style.background = ""; // คืนค่าสีตาม CSS หลัก
+                  btnExport.style.color = "";
+                  btnExport.style.cursor = "pointer";
+              } else {
+                  // ไม่มีชิปเมนต์พร้อมส่ง -> ล็อคปุ่มให้เป็นสีเทา
+                  btnExport.disabled = true;
+                  btnExport.style.background = "rgba(0, 0, 0, 0.466)";
+                  btnExport.style.color = "#aaa";
+                  btnExport.style.cursor = "not-allowed";
+              }
+          };
 
-    if (typeof window.safeAlert === "function") window.safeAlert("PROCESSING...", "กำลังส่งข้อมูลเข้าสู่ระบบส่วนกลาง...", "info");
+          // 📡 2. เรดาร์ดักจับปุ่ม EXPORT (เปลี่ยนเป้าหมายเป็น btnSubmitLobby)
+          document.addEventListener('click', function(e) {
+              const targetBtn = e.target.closest('#btnSubmitLobby');
+              if (targetBtn) {
+                  if (targetBtn.disabled) return; // ถ้าปุ่มล็อคอยู่ ให้ข้ามไปเลย
+                  window.processExport();
+              }
+          });
 
-    // ส่งข้อมูลไปหลังบ้าน
-    const payload = {
-        shipmentId: shipmentNo,
-        branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase()
-    };
+          // 🚀 ฟังก์ชันเริ่มจัดส่ง (EXPORT)
+          window.processExport = async function() {
+              const checkedBoxes = document.querySelectorAll('.shipment-column-header input[type="checkbox"]:checked');
+              
+              if (checkedBoxes.length === 0) return; // ดักไว้เผื่อเหนียว
 
-    fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
-        method: "POST",
-        body: JSON.stringify(payload),
-    })
-    .then((res) => res.json())
-    .then((data) => {
-        if (data.status === "success" || data.success) {
-            
-            // ล้างความจำกระดาษทด
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`status_box_${shipmentNo}_`))) {
-                    localStorage.removeItem(key);
-                }
-            }
+              const colElement = checkedBoxes[0].closest('.shipment-column');
+              const shipmentNo = colElement.getAttribute("data-shipment");
 
-            // ซ่อนชิปเมนต์ออกจากหน้าจอ
-            const colElement = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
-            if (colElement) {
-                colElement.style.opacity = "0";
-                setTimeout(() => {
-                    colElement.remove();
-                    if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `EXPORT สำเร็จ! งานย้ายไปที่ Pending แล้ว`, "success");
-                    
-                    // ถ้ารถหมด Lobby ให้กลับหน้า Task Hub
-                    if (document.querySelectorAll(".shipment-column").length === 0) {
-                        const btnBack = document.getElementById("btnBackToTaskHub");
-                        if(btnBack) btnBack.click(); 
-                    }
-                }, 500);
-            }
-        } else {
-            if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"), "error");
-        }
-    })
-    .catch((error) => {
-        if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
-    });
-};
+              let isConfirm = false;
+              if (typeof window.safeConfirm === "function") {
+                  isConfirm = await window.safeConfirm(
+                      "ยืนยันการ EXPORT?", 
+                      `ต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`, 
+                      "question"
+                  );
+              } else {
+                  isConfirm = confirm(`ต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`);
+              }
+              if (!isConfirm) return;
+
+              if (typeof window.safeAlert === "function") window.safeAlert("PROCESSING...", "กำลังส่งข้อมูล...", "info");
+
+              const payload = {
+                  shipmentId: shipmentNo,
+                  branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase()
+              };
+
+              fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
+                  method: "POST",
+                  body: JSON.stringify(payload),
+              })
+              .then((res) => res.json())
+              .then((data) => {
+                  if (data.status === "success" || data.success) {
+                      
+                      for (let i = localStorage.length - 1; i >= 0; i--) {
+                          const key = localStorage.key(i);
+                          if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`status_box_${shipmentNo}_`))) {
+                              localStorage.removeItem(key);
+                          }
+                      }
+
+                      colElement.style.opacity = "0";
+                      setTimeout(() => {
+                          colElement.remove();
+                          if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", `EXPORT สำเร็จ!`, "success");
+                          
+                          // รีเซ็ตปุ่มกลับเป็นสีเทาหลังส่งสำเร็จ
+                          window.updateExportButtonState();
+                          
+                          if (document.querySelectorAll(".shipment-column").length === 0) {
+                              const btnBack = document.getElementById("btnCancelFromLobby") || document.getElementById("btnBackToTaskHub");
+                              if(btnBack) btnBack.click(); 
+                          }
+                      }, 500);
+
+                  } else {
+                      if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"), "error");
+                  }
+              })
+              .catch((error) => {
+                  console.error(error);
+                  if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
+              });
+          };
 // =================================================================
 // 📦 [GROUP: CHECKBOX & EXPORT LOGIC] END
 // =================================================================
-
