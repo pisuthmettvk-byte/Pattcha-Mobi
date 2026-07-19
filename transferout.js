@@ -2960,13 +2960,16 @@ window.processExport = async function() {
 
 
 // ====================================================================
-// 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้ปัญหาโชว์เลขเดิม) START
-
+// 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้บั๊ก Scope) START
 window.updateLocalStockMemory = function(sku, qty, isWrap) {
     const skuStr = sku.toString().trim().toUpperCase();
     
-    // 🧹 กวาดหาทุกตัวแปรที่แอปอาจจะใช้เก็บข้อมูลสินค้า (ครอบคลุมทั้งหน้าค้นหา และหน้า In-House)
-    const arraysToUpdate = [window.products, window.productData, window.localProductDatabase, window.inHouseStock];
+    // 🧹 [FIXED]: โจมตีฐานข้อมูลตรงๆ โดยไม่ต้องพึ่ง window. (ทะลุกำแพง Scope)
+    const arraysToUpdate = [];
+    if (typeof localProductDatabase !== "undefined") arraysToUpdate.push(localProductDatabase);
+    if (typeof window.products !== "undefined") arraysToUpdate.push(window.products);
+    if (typeof window.productData !== "undefined") arraysToUpdate.push(window.productData);
+    if (typeof window.inHouseStock !== "undefined") arraysToUpdate.push(window.inHouseStock);
     
     arraysToUpdate.forEach(arr => {
         if (arr && Array.isArray(arr)) {
@@ -2976,11 +2979,11 @@ window.updateLocalStockMemory = function(sku, qty, isWrap) {
                 let currentHold = Number(product.holdQty || product.Hold_Qty || 0);
                 
                 if (isWrap) {
-                    // หัก Available เพิ่ม Hold
+                    // ปิดกล่อง: หัก Available จริงจัง, เพิ่ม Hold
                     product.availableStock = currentAvail - qty;
                     product.holdQty = currentHold + qty;
                 } else {
-                    // คืน Hold กลับ Available
+                    // ลบกล่องทิ้ง: คืน Hold กลับ Available
                     product.availableStock = currentAvail + qty;
                     product.holdQty = currentHold - qty;
                 }
@@ -2989,6 +2992,5 @@ window.updateLocalStockMemory = function(sku, qty, isWrap) {
     });
     console.log(`✅ [Memory Sync] อัปเดตสต๊อก SKU: ${skuStr} เรียบร้อยแล้ว`);
 };
-
-// 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้ปัญหาโชว์เลขเดิม) END
+// 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้บั๊ก Scope) END
 // =====================================================================

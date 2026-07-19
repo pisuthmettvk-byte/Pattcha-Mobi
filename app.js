@@ -508,10 +508,45 @@ function renderProducts(products) {
   });
 }
 
+// ==============================================================
+// 🌟 ฟังก์ชันเปิดหน้าต่างรายละเอียดสินค้า (อัปเกรด Real-Time 100%)
+// ==============================================================
 function openProductDetail(sku) {
+  // 1. หาข้อมูลตั้งต้นจากฐานข้อมูล
   const item = localProductDatabase.find((p) => p.sku === sku);
   if (!item) return;
 
+  // 2. ดึงค่ายอดดั้งเดิม (Base Stock)
+  let baseAvail = Number(item.availableStock || 0);
+  let baseHold = Number(item.holdQty || 0);
+
+  // 3. 🔍 [REAL-TIME RADAR] คำนวณยอดที่สแกนค้างไว้ในกล่องที่ "ยังไม่ปิด (WRAP)"
+  let pendingInOpenBoxes = 0;
+  if (typeof window.checkCrossBoxStock === "function") {
+      const radar = window.checkCrossBoxStock(sku);
+      pendingInOpenBoxes = radar.totalUsedInOtherBoxes;
+      
+      // ถ้าเปิดหน้านี้จากในกล่องที่กำลังแพ็คอยู่ ต้องบวกของที่อยู่ในหน้านี้เข้าไปด้วย
+      if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
+         const activeItem = window.currentBoxItems.find(i => i.sku === sku);
+         if (activeItem) {
+             // เช็กสถานะกล่อง ถ้ายังไม่ปิด (ไม่เท่ากับ Closed) ถึงจะเอามารวมคำนวณ
+             let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+             if (!isClosedBox) {
+                 pendingInOpenBoxes += (activeItem.scanQty || 0) + (activeItem.manualQty || 0);
+             }
+         }
+      }
+  }
+
+  // 4. 🧮 คำนวณยอดสุทธิสดๆ (Net Stock) = ยอดเดิม - ของที่อยู่ในกล่องยังไม่ปิด
+  let displayAvail = baseAvail - pendingInOpenBoxes;
+  let displayHold = baseHold + pendingInOpenBoxes;
+
+  // ป้องกันยอดติดลบ (Safety Net)
+  if (displayAvail < 0) displayAvail = 0;
+
+  // 5. อัปเดต UI รูปภาพและบาร์โค้ด
   const detailImg = document.getElementById("detailImage");
   if (detailImg) detailImg.src = parseDriveImage(item.imageUrl);
 
@@ -529,14 +564,13 @@ function openProductDetail(sku) {
         fontWeight: "bold",
         background: "transparent",
       });
-
       barcodeElement.style.display = "inline-block";
     } catch (e) {
-      console.warn("Barcode error:", e);
       barcodeElement.style.display = "none";
     }
   }
 
+  // 6. อัปเดตข้อมูลข้อความ (Text) ลงหน้าจอ
   const safeSetText = (id, text) => {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
@@ -547,39 +581,36 @@ function openProductDetail(sku) {
   safeSetText("detailName", item.name || "-");
   safeSetText("detailPrice", "฿" + Number(item.price || 0).toLocaleString());
   safeSetText("detailCurrent", item.currentStock || 0);
-  safeSetText("detailAvail", item.availableStock || 0);
-  safeSetText("detailHold", item.holdQty || 0);
+  
+  // 🚨 นำยอด Real-Time ที่คำนวณใหม่มาแสดงผล
+  safeSetText("detailAvail", displayAvail);
+  safeSetText("detailHold", displayHold);
+  
   safeSetText("detailDefect", item.defectiveQty || 0);
   safeSetText("detailSold", item.saleStock || 0);
 
   document.getElementById("productDetailModal").classList.remove("hide");
 
+  // 7. ส่วนของ Cross Branch (ยังคงไว้เหมือนเดิม)
   const btnCrossBranch = document.getElementById("btnCrossBranch");
   if (btnCrossBranch) {
     btnCrossBranch.classList.add("hide");
-
-    fetch(
-      `${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`,
-    )
+    fetch(`${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
       .then((res) => res.json())
       .then((response) => {
         if (response.status === "success" && response.data) {
-          const otherBranches = response.data.filter(
-            (b) => b.branch !== currentBranch,
-          );
-
+          const otherBranches = response.data.filter((b) => b.branch !== currentBranch);
           if (otherBranches.length > 0) {
             btnCrossBranch.classList.remove("hide");
-
-            btnCrossBranch.onclick = () => {
-              renderCrossBranchModal(otherBranches);
-            };
+            btnCrossBranch.onclick = () => { renderCrossBranchModal(otherBranches); };
           }
         }
       })
       .catch((err) => console.warn("Cross branch fetch failed:", err));
   }
 }
+
+
 
 function closeProductDetail() {
   document.getElementById("productDetailModal").classList.add("hide");
