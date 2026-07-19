@@ -2960,37 +2960,15 @@ window.processExport = async function() {
 
 
 // ====================================================================
-// 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้บั๊ก Scope) START
+// 🧠 ฟังก์ชันสั่งการอัปเดตสต๊อกข้ามไฟล์ (Bridge Sync Engine)
+// ====================================================================
 window.updateLocalStockMemory = function(sku, qty, isWrap) {
-    const skuStr = sku.toString().trim().toUpperCase();
-    
-    // 🧹 [FIXED]: โจมตีฐานข้อมูลตรงๆ โดยไม่ต้องพึ่ง window. (ทะลุกำแพง Scope)
-    const arraysToUpdate = [];
-    if (typeof localProductDatabase !== "undefined") arraysToUpdate.push(localProductDatabase);
-    if (typeof window.products !== "undefined") arraysToUpdate.push(window.products);
-    if (typeof window.productData !== "undefined") arraysToUpdate.push(window.productData);
-    if (typeof window.inHouseStock !== "undefined") arraysToUpdate.push(window.inHouseStock);
-    
-    arraysToUpdate.forEach(arr => {
-        if (arr && Array.isArray(arr)) {
-            let product = arr.find(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === skuStr);
-            if (product) {
-                let currentAvail = Number(product.availableStock || product.Available_Stock || 0);
-                let currentHold = Number(product.holdQty || product.Hold_Qty || 0);
-                
-                if (isWrap) {
-                    // ปิดกล่อง: หัก Available จริงจัง, เพิ่ม Hold
-                    product.availableStock = currentAvail - qty;
-                    product.holdQty = currentHold + qty;
-                } else {
-                    // ลบกล่องทิ้ง: คืน Hold กลับ Available
-                    product.availableStock = currentAvail + qty;
-                    product.holdQty = currentHold - qty;
-                }
-            }
-        }
-    });
-    console.log(`✅ [Memory Sync] อัปเดตสต๊อก SKU: ${skuStr} เรียบร้อยแล้ว`);
+    // วิ่งข้ามไปเรียกฟังก์ชันหลักใน app.js ที่มีสิทธิ์ทะลวงกำแพงเข้าไปแก้ไขสต๊อกได้โดยตรง
+    if (typeof window.forceUpdateStockDatabase === "function") {
+        window.forceUpdateStockDatabase(sku, qty, isWrap);
+    } else {
+        console.error("🚨 ไม่พบสะพานเชื่อม forceUpdateStockDatabase!");
+    }
 };
 // 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้บั๊ก Scope) END
 // =====================================================================

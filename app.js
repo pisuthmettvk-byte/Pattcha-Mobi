@@ -509,107 +509,146 @@ function renderProducts(products) {
 }
 
 // ==============================================================
-// 🌟 ฟังก์ชันเปิดหน้าต่างรายละเอียดสินค้า (อัปเกรด Real-Time 100%)
+// 🌟 ระบบจัดการสต๊อกแบบเจาะลึก (Real-Time Engine & Scope Bridge)
 // ==============================================================
-function openProductDetail(sku) {
-  // 1. หาข้อมูลตั้งต้นจากฐานข้อมูล
-  const item = localProductDatabase.find((p) => p.sku === sku);
-  if (!item) return;
 
-  // 2. ดึงค่ายอดดั้งเดิม (Base Stock)
-  let baseAvail = Number(item.availableStock || 0);
-  let baseHold = Number(item.holdQty || 0);
-
-  // 3. 🔍 [REAL-TIME RADAR] คำนวณยอดที่สแกนค้างไว้ในกล่องที่ "ยังไม่ปิด (WRAP)"
-  let pendingInOpenBoxes = 0;
-  if (typeof window.checkCrossBoxStock === "function") {
-      const radar = window.checkCrossBoxStock(sku);
-      pendingInOpenBoxes = radar.totalUsedInOtherBoxes;
-      
-      // ถ้าเปิดหน้านี้จากในกล่องที่กำลังแพ็คอยู่ ต้องบวกของที่อยู่ในหน้านี้เข้าไปด้วย
-      if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
-         const activeItem = window.currentBoxItems.find(i => i.sku === sku);
-         if (activeItem) {
-             // เช็กสถานะกล่อง ถ้ายังไม่ปิด (ไม่เท่ากับ Closed) ถึงจะเอามารวมคำนวณ
-             let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
-             if (!isClosedBox) {
-                 pendingInOpenBoxes += (activeItem.scanQty || 0) + (activeItem.manualQty || 0);
-             }
-         }
-      }
-  }
-
-  // 4. 🧮 คำนวณยอดสุทธิสดๆ (Net Stock) = ยอดเดิม - ของที่อยู่ในกล่องยังไม่ปิด
-  let displayAvail = baseAvail - pendingInOpenBoxes;
-  let displayHold = baseHold + pendingInOpenBoxes;
-
-  // ป้องกันยอดติดลบ (Safety Net)
-  if (displayAvail < 0) displayAvail = 0;
-
-  // 5. อัปเดต UI รูปภาพและบาร์โค้ด
-  const detailImg = document.getElementById("detailImage");
-  if (detailImg) detailImg.src = parseDriveImage(item.imageUrl);
-
-  const barcodeElement = document.getElementById("detailBarcode");
-  if (barcodeElement && item.sku) {
-    try {
-      JsBarcode("#detailBarcode", item.sku, {
-        format: "CODE128",
-        lineColor: "#333",
-        width: 2,
-        height: 45,
-        displayValue: true,
-        fontSize: 16,
-        textMargin: 8,
-        fontWeight: "bold",
-        background: "transparent",
-      });
-      barcodeElement.style.display = "inline-block";
-    } catch (e) {
-      barcodeElement.style.display = "none";
-    }
-  }
-
-  // 6. อัปเดตข้อมูลข้อความ (Text) ลงหน้าจอ
-  const safeSetText = (id, text) => {
-    const el = document.getElementById(id);
-    if (el) el.innerText = text;
-  };
-
-  safeSetText("detailCategory", item.category || "NO CATEGORY");
-  safeSetText("detailSku", item.sku || "-");
-  safeSetText("detailName", item.name || "-");
-  safeSetText("detailPrice", "฿" + Number(item.price || 0).toLocaleString());
-  safeSetText("detailCurrent", item.currentStock || 0);
-  
-  // 🚨 นำยอด Real-Time ที่คำนวณใหม่มาแสดงผล
-  safeSetText("detailAvail", displayAvail);
-  safeSetText("detailHold", displayHold);
-  
-  safeSetText("detailDefect", item.defectiveQty || 0);
-  safeSetText("detailSold", item.saleStock || 0);
-
-  document.getElementById("productDetailModal").classList.remove("hide");
-
-  // 7. ส่วนของ Cross Branch (ยังคงไว้เหมือนเดิม)
-  const btnCrossBranch = document.getElementById("btnCrossBranch");
-  if (btnCrossBranch) {
-    btnCrossBranch.classList.add("hide");
-    fetch(`${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
-      .then((res) => res.json())
-      .then((response) => {
-        if (response.status === "success" && response.data) {
-          const otherBranches = response.data.filter((b) => b.branch !== currentBranch);
-          if (otherBranches.length > 0) {
-            btnCrossBranch.classList.remove("hide");
-            btnCrossBranch.onclick = () => { renderCrossBranchModal(otherBranches); };
-          }
+// 1. ฟังก์ชันสะพานเชื่อม ให้ไฟล์อื่น(transferout.js) สั่งอัปเดตฐานข้อมูลหลักได้!
+window.forceUpdateStockDatabase = function(sku, qty, isWrap) {
+    if (typeof localProductDatabase === "undefined") return;
+    const skuStr = String(sku).trim().toUpperCase();
+    
+    // พุ่งเป้าไปแก้ที่คลังหลักโดยตรง
+    let product = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
+    if (product) {
+        let currentAvail = Number(product.availableStock || 0);
+        let currentHold = Number(product.holdQty || 0);
+        if (isWrap) {
+            product.availableStock = currentAvail - qty;
+            product.holdQty = currentHold + qty;
+        } else {
+            product.availableStock = currentAvail + qty;
+            product.holdQty = currentHold - qty;
         }
-      })
-      .catch((err) => console.warn("Cross branch fetch failed:", err));
-  }
-}
+        console.log(`✅ [Database Sync] อัปเดตสต๊อก ${skuStr} สำเร็จ! (Avail: ${product.availableStock})`);
+    }
+};
 
+// 2. ฟังก์ชันคำนวณและเปิดหน้าต่างรายละเอียดสินค้า (เวอร์ชันสมบูรณ์ 100%)
+window.openProductDetail = function(sku) {
+  try {
+    const skuStr = String(sku).trim().toUpperCase();
+    let item = null;
+    
+    // 1. หาข้อมูลตั้งต้นจากฐานข้อมูลหลัก
+    if (typeof localProductDatabase !== "undefined") {
+        item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
+    }
+    
+    // 1.2 ถ้าหาในคลังไม่เจอ ให้หาจาก "ของที่อยู่ในกล่องปัจจุบัน" (เผื่อสแกนของแปลกปลอมเข้ามา)
+    if (!item && typeof window.currentBoxItems !== "undefined" && window.currentBoxItems.length > 0) {
+        item = window.currentBoxItems.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
+    }
+    
+    if (!item) {
+        if (typeof window.safeAlert === "function") window.safeAlert("ข้อผิดพลาด", `ไม่พบข้อมูลสินค้ารหัส: ${skuStr}`, "error");
+        return;
+    }
+
+    // 2. ดึงค่ายอดดั้งเดิมล่าสุดที่แอปจำไว้ (Base Stock)
+    let baseAvail = Number(item.availableStock || item.Available_Stock || 0);
+    let baseHold = Number(item.holdQty || item.Hold_Qty || 0);
+
+    // 3. 🔍 [REAL-TIME RADAR] คำนวณยอดที่สแกนค้างไว้ในกล่องที่ "ยังไม่ปิด (WRAP)"
+    let pendingInOpenBoxes = 0;
+    if (typeof window.checkCrossBoxStock === "function") {
+        const radar = window.checkCrossBoxStock(skuStr);
+        pendingInOpenBoxes = radar.totalUsedInOtherBoxes;
+        
+        // ถ้าเปิดหน้านี้จากในกล่องที่กำลังแพ็คอยู่ ต้องบวกของที่อยู่ในหน้านี้เข้าไปด้วย
+        if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
+           const activeItem = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
+           if (activeItem) {
+               // เช็กสถานะกล่อง ถ้ายังไม่ปิด (ไม่เท่ากับ Closed) ถึงจะเอามารวมคำนวณ
+               let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+               if (!isClosedBox) {
+                   pendingInOpenBoxes += (activeItem.scanQty || 0) + (activeItem.manualQty || 0);
+               }
+           }
+        }
+    }
+
+    // 4. 🧮 คำนวณยอดสุทธิสดๆ (Net Stock) = ยอดเดิม - ของที่อยู่ในกล่องยังไม่ปิด
+    let displayAvail = baseAvail - pendingInOpenBoxes;
+    let displayHold = baseHold + pendingInOpenBoxes;
+
+    // ป้องกันยอดติดลบ (Safety Net)
+    if (displayAvail < 0) displayAvail = 0;
+
+    // 5. อัปเดต UI รูปภาพและบาร์โค้ด (คงความสมบูรณ์ของเดิมไว้ 100%)
+    const detailImg = document.getElementById("detailImage");
+    if (detailImg) {
+        detailImg.src = (typeof parseDriveImage === "function") ? parseDriveImage(item.imageUrl) : item.imageUrl;
+    }
+
+    const barcodeElement = document.getElementById("detailBarcode");
+    if (barcodeElement && item.sku) {
+      try {
+        if (typeof JsBarcode !== "undefined") {
+            JsBarcode("#detailBarcode", item.sku, {
+              format: "CODE128", lineColor: "#333", width: 2, height: 45,
+              displayValue: true, fontSize: 16, textMargin: 8, fontWeight: "bold", background: "transparent",
+            });
+            barcodeElement.style.display = "inline-block";
+        }
+      } catch (e) { barcodeElement.style.display = "none"; }
+    }
+
+    // 6. อัปเดตข้อมูลข้อความ (Text) ลงหน้าจอ
+    const safeSetText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.innerText = text;
+    };
+
+    safeSetText("detailCategory", item.category || "NO CATEGORY");
+    safeSetText("detailSku", item.sku || "-");
+    safeSetText("detailName", item.name || "-");
+    safeSetText("detailPrice", "฿" + Number(item.price || 0).toLocaleString());
+    safeSetText("detailCurrent", item.currentStock || 0);
+    
+    // 🚨 นำยอด Real-Time ที่คำนวณใหม่มาแสดงผลทันที!
+    safeSetText("detailAvail", displayAvail);
+    safeSetText("detailHold", displayHold);
+    
+    safeSetText("detailDefect", item.defectiveQty || 0);
+    safeSetText("detailSold", item.saleStock || 0);
+
+    const modal = document.getElementById("productDetailModal");
+    if (modal) modal.classList.remove("hide");
+
+    // 7. ส่วนของ Cross Branch (คงความสมบูรณ์ของเดิมไว้ 100%)
+    const btnCrossBranch = document.getElementById("btnCrossBranch");
+    if (btnCrossBranch && typeof CONFIG !== "undefined" && CONFIG.CROSS_BRANCH_URL) {
+      btnCrossBranch.classList.add("hide");
+      fetch(`${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
+        .then((res) => res.json())
+        .then((response) => {
+          if (response.status === "success" && response.data) {
+            const myBranch = (typeof currentBranch !== "undefined") ? currentBranch : "";
+            const otherBranches = response.data.filter((b) => b.branch !== myBranch);
+            if (otherBranches.length > 0) {
+              btnCrossBranch.classList.remove("hide");
+              btnCrossBranch.onclick = () => { 
+                  if(typeof renderCrossBranchModal === "function") renderCrossBranchModal(otherBranches); 
+              };
+            }
+          }
+        })
+        .catch((err) => console.warn("Cross branch fetch failed:", err));
+    }
+  } catch (err) {
+    console.error("Open Detail Error:", err);
+  }
+};
 
 
 function closeProductDetail() {
