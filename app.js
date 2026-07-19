@@ -454,6 +454,56 @@ function clearSearch() {
   handleMagicSearch();
 }
 
+
+
+
+
+// ==============================================================
+// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth)
+// ==============================================================
+window.getRealTimeLiveStock = function(sku) {
+    const skuStr = String(sku).trim().toUpperCase();
+    let baseAvail = 0;
+    let baseHold = 0;
+    
+    // 1. ดึงยอดตั้งต้นจากฐานข้อมูล
+    if (typeof localProductDatabase !== "undefined") {
+        const item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
+        if (item) {
+            baseAvail = Number(item.availableStock || item.Available_Stock || 0);
+            baseHold = Number(item.holdQty || item.Hold_Qty || 0);
+        }
+    }
+
+    // 2. กวาดหายอดค้างในตะกร้า (ที่ยังไม่ได้ WRAP)
+    let pendingInOpenBoxes = 0;
+    if (typeof window.checkCrossBoxStock === "function") {
+        const radar = window.checkCrossBoxStock(skuStr);
+        pendingInOpenBoxes = radar.totalUsedInOtherBoxes || 0;
+        
+        // เช็กยอดในกล่องที่กำลังเปิดใช้งานอยู่
+        if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
+           const activeItem = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
+           if (activeItem) {
+               let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+               if (!isClosedBox) {
+                   pendingInOpenBoxes += (Number(activeItem.scanQty) || 0) + (Number(activeItem.manualQty) || 0);
+               }
+           }
+        }
+    }
+
+    // 3. หักลบยอดสุทธิ
+    let displayAvail = baseAvail - pendingInOpenBoxes;
+    let displayHold = baseHold + pendingInOpenBoxes;
+    if (displayAvail < 0) displayAvail = 0; // กันยอดติดลบ
+
+    return { avail: displayAvail, hold: displayHold };
+};
+
+// ==============================================================
+// 🛒 ฟังก์ชันแสดงลิสต์รายการสินค้า (อัปเกรดเชื่อมต่อ Real-Time Radar 100%)
+// ==============================================================
 function renderProducts(products) {
   const container = document.getElementById("productListContainer");
   container.innerHTML = "";
@@ -472,9 +522,21 @@ function renderProducts(products) {
     const safeSku = escapeHTML(item.sku || "-");
     const safeName = escapeHTML(item.name || "-");
     const priceStr = Number(item.price || 0).toLocaleString();
-    const stockAvail = escapeHTML(item.availableStock || 0);
-    const stockHold = escapeHTML(item.holdQty || 0);
-    const stockDefect = escapeHTML(item.defectiveQty || 0);
+    
+    // 🚨 [REAL-TIME ENGINE]: ดึงตัวเลขสุทธิสดๆ จากเครื่องยนต์ศูนย์กลาง
+    let displayAvail = item.availableStock || 0;
+    let displayHold = item.holdQty || 0;
+    
+    if (typeof window.getRealTimeLiveStock === "function") {
+        const liveStock = window.getRealTimeLiveStock(item.sku);
+        displayAvail = liveStock.avail;
+        displayHold = liveStock.hold;
+    }
+
+    // แทนที่ตัวเลขเดิม ด้วยตัวเลข Real-Time ที่คำนวณแล้ว
+    const stockAvail = escapeHTML(displayAvail);
+    const stockHold = escapeHTML(displayHold);
+    const stockDefect = escapeHTML(item.defectiveQty || 0); // Defect ใช้ยอดเดิม
 
     div.innerHTML = `
       <img class="prod-img" src="${parseDriveImage(item.imageUrl)}">
@@ -508,6 +570,9 @@ function renderProducts(products) {
   });
 }
 
+
+
+
 // ==============================================================
 // 🌟 ระบบจัดการสต๊อกแบบเจาะลึก (Real-Time Engine & Scope Bridge)
 // ==============================================================
@@ -533,147 +598,251 @@ window.forceUpdateStockDatabase = function(sku, qty, isWrap) {
     }
 };
 
-// 2. ฟังก์ชันคำนวณและเปิดหน้าต่างรายละเอียดสินค้า (เวอร์ชันสมบูรณ์ 100%)
-window.openProductDetail = function(sku) {
-  try {
-    const skuStr = String(sku).trim().toUpperCase();
-    let item = null;
-    
-    // 1. หาข้อมูลตั้งต้นจากฐานข้อมูลหลัก
-    if (typeof localProductDatabase !== "undefined") {
-        item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
-    }
-    
-    // 1.2 ถ้าหาในคลังไม่เจอ ให้หาจาก "ของที่อยู่ในกล่องปัจจุบัน" (เผื่อสแกนของแปลกปลอมเข้ามา)
-    if (!item && typeof window.currentBoxItems !== "undefined" && window.currentBoxItems.length > 0) {
-        item = window.currentBoxItems.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
-    }
-    
-    if (!item) {
-        if (typeof window.safeAlert === "function") window.safeAlert("ข้อผิดพลาด", `ไม่พบข้อมูลสินค้ารหัส: ${skuStr}`, "error");
-        return;
-    }
 
-    // 2. ดึงค่ายอดดั้งเดิมล่าสุดที่แอปจำไว้ (Base Stock)
-    let baseAvail = Number(item.availableStock || item.Available_Stock || 0);
-    let baseHold = Number(item.holdQty || item.Hold_Qty || 0);
 
-    // 3. 🔍 [REAL-TIME RADAR] คำนวณยอดที่สแกนค้างไว้ในกล่องที่ "ยังไม่ปิด (WRAP)"
-    let pendingInOpenBoxes = 0;
-    if (typeof window.checkCrossBoxStock === "function") {
-        const radar = window.checkCrossBoxStock(skuStr);
-        pendingInOpenBoxes = radar.totalUsedInOtherBoxes;
-        
-        // ถ้าเปิดหน้านี้จากในกล่องที่กำลังแพ็คอยู่ ต้องบวกของที่อยู่ในหน้านี้เข้าไปด้วย
-        if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
-           const activeItem = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
-           if (activeItem) {
-               // เช็กสถานะกล่อง ถ้ายังไม่ปิด (ไม่เท่ากับ Closed) ถึงจะเอามารวมคำนวณ
-               let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
-               if (!isClosedBox) {
-                   pendingInOpenBoxes += (activeItem.scanQty || 0) + (activeItem.manualQty || 0);
-               }
-           }
-        }
-    }
 
-    // 4. 🧮 คำนวณยอดสุทธิสดๆ (Net Stock) = ยอดเดิม - ของที่อยู่ในกล่องยังไม่ปิด
-    let displayAvail = baseAvail - pendingInOpenBoxes;
-    let displayHold = baseHold + pendingInOpenBoxes;
+  // ==============================================================
+  // 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth)
+  // ==============================================================
+      window.getRealTimeLiveStock = function(sku) {
+          const skuStr = String(sku).trim().toUpperCase();
+          let baseAvail = 0;
+          let baseHold = 0;
+          
+          // 1. ดึงยอดตั้งต้นจากฐานข้อมูล
+          if (typeof localProductDatabase !== "undefined") {
+              const item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
+              if (item) {
+                  baseAvail = Number(item.availableStock || item.Available_Stock || 0);
+                  baseHold = Number(item.holdQty || item.Hold_Qty || 0);
+              }
+          }
 
-    // ป้องกันยอดติดลบ (Safety Net)
-    if (displayAvail < 0) displayAvail = 0;
+          // 2. กวาดหายอดค้างในตะกร้า (ที่ยังไม่ได้ WRAP)
+          let pendingInOpenBoxes = 0;
+          if (typeof window.checkCrossBoxStock === "function") {
+              const radar = window.checkCrossBoxStock(skuStr);
+              pendingInOpenBoxes = radar.totalUsedInOtherBoxes || 0;
+              
+              // เช็กยอดในกล่องที่กำลังเปิดใช้งานอยู่ (เผื่อกำลังกด + / -)
+              if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
+                const activeItem = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
+                if (activeItem) {
+                    let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+                    if (!isClosedBox) {
+                        pendingInOpenBoxes += (Number(activeItem.scanQty) || 0) + (Number(activeItem.manualQty) || 0);
+                    }
+                }
+              }
+          }
 
-    // 5. อัปเดต UI รูปภาพและบาร์โค้ด (คงความสมบูรณ์ของเดิมไว้ 100%)
-    const detailImg = document.getElementById("detailImage");
-    if (detailImg) {
-        detailImg.src = (typeof parseDriveImage === "function") ? parseDriveImage(item.imageUrl) : item.imageUrl;
-    }
+          // 3. หักลบกลบหนี้
+          let displayAvail = baseAvail - pendingInOpenBoxes;
+          let displayHold = baseHold + pendingInOpenBoxes;
+          if (displayAvail < 0) displayAvail = 0; // กันยอดติดลบ
 
-    const barcodeElement = document.getElementById("detailBarcode");
-    if (barcodeElement && item.sku) {
-      try {
-        if (typeof JsBarcode !== "undefined") {
-            JsBarcode("#detailBarcode", item.sku, {
-              format: "CODE128", lineColor: "#333", width: 2, height: 45,
-              displayValue: true, fontSize: 16, textMargin: 8, fontWeight: "bold", background: "transparent",
-            });
-            barcodeElement.style.display = "inline-block";
-        }
-      } catch (e) { barcodeElement.style.display = "none"; }
-    }
+          // ส่งออกตัวเลขที่ถูกต้องที่สุดไปใช้งาน
+          return { avail: displayAvail, hold: displayHold };
+      };
 
-    // 6. อัปเดตข้อมูลข้อความ (Text) ลงหน้าจอ
-    const safeSetText = (id, text) => {
-      const el = document.getElementById(id);
-      if (el) el.innerText = text;
-    };
+  // 2. ฟังก์ชันคำนวณและเปิดหน้าต่างรายละเอียดสินค้า (เวอร์ชันสมบูรณ์ 100%)
+      window.openProductDetail = function(sku) {
+        try {
+          const skuStr = String(sku).trim().toUpperCase();
+          let item = null;
 
-    safeSetText("detailCategory", item.category || "NO CATEGORY");
-    safeSetText("detailSku", item.sku || "-");
-    safeSetText("detailName", item.name || "-");
-    safeSetText("detailPrice", "฿" + Number(item.price || 0).toLocaleString());
-    safeSetText("detailCurrent", item.currentStock || 0);
-    
-    // 🚨 นำยอด Real-Time ที่คำนวณใหม่มาแสดงผลทันที!
-    safeSetText("detailAvail", displayAvail);
-    safeSetText("detailHold", displayHold);
-    
-    safeSetText("detailDefect", item.defectiveQty || 0);
-    safeSetText("detailSold", item.saleStock || 0);
+          // 1. หาข้อมูลตั้งต้นจากฐานข้อมูลหลัก
+          if (typeof localProductDatabase !== "undefined") {
+            item = localProductDatabase.find(
+              (p) =>
+                String(p.sku || "")
+                  .trim()
+                  .toUpperCase() === skuStr,
+            );
+          }
 
-    const modal = document.getElementById("productDetailModal");
-    if (modal) modal.classList.remove("hide");
+          // 1.2 ถ้าหาในคลังไม่เจอ ให้หาจาก "ของที่อยู่ในกล่องปัจจุบัน" (เผื่อสแกนของแปลกปลอมเข้ามา)
+          if (
+            !item &&
+            typeof window.currentBoxItems !== "undefined" &&
+            window.currentBoxItems.length > 0
+          ) {
+            item = window.currentBoxItems.find(
+              (p) =>
+                String(p.sku || "")
+                  .trim()
+                  .toUpperCase() === skuStr,
+            );
+          }
 
-    // 7. ส่วนของ Cross Branch (คงความสมบูรณ์ของเดิมไว้ 100%)
-    const btnCrossBranch = document.getElementById("btnCrossBranch");
-    if (btnCrossBranch && typeof CONFIG !== "undefined" && CONFIG.CROSS_BRANCH_URL) {
-      btnCrossBranch.classList.add("hide");
-      fetch(`${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`)
-        .then((res) => res.json())
-        .then((response) => {
-          if (response.status === "success" && response.data) {
-            const myBranch = (typeof currentBranch !== "undefined") ? currentBranch : "";
-            const otherBranches = response.data.filter((b) => b.branch !== myBranch);
-            if (otherBranches.length > 0) {
-              btnCrossBranch.classList.remove("hide");
-              btnCrossBranch.onclick = () => { 
-                  if(typeof renderCrossBranchModal === "function") renderCrossBranchModal(otherBranches); 
-              };
+          if (!item) {
+            if (typeof window.safeAlert === "function")
+              window.safeAlert(
+                "ข้อผิดพลาด",
+                `ไม่พบข้อมูลสินค้ารหัส: ${skuStr}`,
+                "error",
+              );
+            return;
+          }
+
+          // 2. ดึงค่ายอดดั้งเดิมล่าสุดที่แอปจำไว้ (Base Stock)
+          let baseAvail = Number(
+            item.availableStock || item.Available_Stock || 0,
+          );
+          let baseHold = Number(item.holdQty || item.Hold_Qty || 0);
+
+          // 3. 🔍 [REAL-TIME RADAR] คำนวณยอดที่สแกนค้างไว้ในกล่องที่ "ยังไม่ปิด (WRAP)"
+          let pendingInOpenBoxes = 0;
+          if (typeof window.checkCrossBoxStock === "function") {
+            const radar = window.checkCrossBoxStock(skuStr);
+            pendingInOpenBoxes = radar.totalUsedInOtherBoxes;
+
+            // ถ้าเปิดหน้านี้จากในกล่องที่กำลังแพ็คอยู่ ต้องบวกของที่อยู่ในหน้านี้เข้าไปด้วย
+            if (
+              window.currentActiveShipment &&
+              window.currentActiveBoxNo &&
+              window.currentBoxItems
+            ) {
+              const activeItem = window.currentBoxItems.find(
+                (i) =>
+                  String(i.sku || "")
+                    .trim()
+                    .toUpperCase() === skuStr,
+              );
+              if (activeItem) {
+                // เช็กสถานะกล่อง ถ้ายังไม่ปิด (ไม่เท่ากับ Closed) ถึงจะเอามารวมคำนวณ
+                let isClosedBox =
+                  window.currentBoxElement &&
+                  window.currentBoxElement.getAttribute("data-status") ===
+                    "Closed";
+                if (!isClosedBox) {
+                  pendingInOpenBoxes +=
+                    (activeItem.scanQty || 0) + (activeItem.manualQty || 0);
+                }
+              }
             }
           }
-        })
-        .catch((err) => console.warn("Cross branch fetch failed:", err));
-    }
-  } catch (err) {
-    console.error("Open Detail Error:", err);
-  }
-};
+
+          // 4. 🚨 ใช้เครื่องยนต์ศูนย์กลางดึงยอด Real-Time
+          const liveStock = window.getRealTimeLiveStock(skuStr);
+          safeSetText("detailAvail", liveStock.avail);
+          safeSetText("detailHold", liveStock.hold);
+
+          // 5. อัปเดต UI รูปภาพและบาร์โค้ด (คงความสมบูรณ์ของเดิมไว้ 100%)
+          const detailImg = document.getElementById("detailImage");
+          if (detailImg) {
+            detailImg.src =
+              typeof parseDriveImage === "function"
+                ? parseDriveImage(item.imageUrl)
+                : item.imageUrl;
+          }
+
+          const barcodeElement = document.getElementById("detailBarcode");
+          if (barcodeElement && item.sku) {
+            try {
+              if (typeof JsBarcode !== "undefined") {
+                JsBarcode("#detailBarcode", item.sku, {
+                  format: "CODE128",
+                  lineColor: "#333",
+                  width: 2,
+                  height: 45,
+                  displayValue: true,
+                  fontSize: 16,
+                  textMargin: 8,
+                  fontWeight: "bold",
+                  background: "transparent",
+                });
+                barcodeElement.style.display = "inline-block";
+              }
+            } catch (e) {
+              barcodeElement.style.display = "none";
+            }
+          }
+
+          // 6. อัปเดตข้อมูลข้อความ (Text) ลงหน้าจอ
+          const safeSetText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+          };
+
+          safeSetText("detailCategory", item.category || "NO CATEGORY");
+          safeSetText("detailSku", item.sku || "-");
+          safeSetText("detailName", item.name || "-");
+          safeSetText(
+            "detailPrice",
+            "฿" + Number(item.price || 0).toLocaleString(),
+          );
+          safeSetText("detailCurrent", item.currentStock || 0);
+
+          // 🚨 นำยอด Real-Time ที่คำนวณใหม่มาแสดงผลทันที!
+          safeSetText("detailAvail", displayAvail);
+          safeSetText("detailHold", displayHold);
+
+          safeSetText("detailDefect", item.defectiveQty || 0);
+          safeSetText("detailSold", item.saleStock || 0);
+
+          const modal = document.getElementById("productDetailModal");
+          if (modal) modal.classList.remove("hide");
+
+          // 7. ส่วนของ Cross Branch (คงความสมบูรณ์ของเดิมไว้ 100%)
+          const btnCrossBranch = document.getElementById("btnCrossBranch");
+          if (
+            btnCrossBranch &&
+            typeof CONFIG !== "undefined" &&
+            CONFIG.CROSS_BRANCH_URL
+          ) {
+            btnCrossBranch.classList.add("hide");
+            fetch(
+              `${CONFIG.CROSS_BRANCH_URL}?action=check_cross_branch&sku=${encodeURIComponent(item.sku)}`,
+            )
+              .then((res) => res.json())
+              .then((response) => {
+                if (response.status === "success" && response.data) {
+                  const myBranch =
+                    typeof currentBranch !== "undefined" ? currentBranch : "";
+                  const otherBranches = response.data.filter(
+                    (b) => b.branch !== myBranch,
+                  );
+                  if (otherBranches.length > 0) {
+                    btnCrossBranch.classList.remove("hide");
+                    btnCrossBranch.onclick = () => {
+                      if (typeof renderCrossBranchModal === "function")
+                        renderCrossBranchModal(otherBranches);
+                    };
+                  }
+                }
+              })
+              .catch((err) => console.warn("Cross branch fetch failed:", err));
+          }
+        } catch (err) {
+          console.error("Open Detail Error:", err);
+        }
+      };
 
 
-function closeProductDetail() {
-  document.getElementById("productDetailModal").classList.add("hide");
-}
+      function closeProductDetail() {
+        document.getElementById("productDetailModal").classList.add("hide");
+      }
 
-function renderCrossBranchModal(branchData) {
-  const listContainer = document.getElementById("crossBranchList");
-  const modal = document.getElementById("crossBranchModal");
-  if (!listContainer || !modal) return;
+      function renderCrossBranchModal(branchData) {
+        const listContainer = document.getElementById("crossBranchList");
+        const modal = document.getElementById("crossBranchModal");
+        if (!listContainer || !modal) return;
 
-  listContainer.innerHTML = "";
+        listContainer.innerHTML = "";
 
-  branchData.forEach((item) => {
-    const div = document.createElement("div");
-    div.className = "cross-branch-item";
-    div.innerHTML = `
-      <span><i class="fas fa-store"></i> สาขา ${escapeHTML(item.branch)}</span>
-      <span class="branch-stock-badge">${escapeHTML(item.stock)} ชิ้น</span>
-    `;
-    listContainer.appendChild(div);
-  });
+        branchData.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "cross-branch-item";
+          div.innerHTML = `
+            <span><i class="fas fa-store"></i> สาขา ${escapeHTML(item.branch)}</span>
+            <span class="branch-stock-badge">${escapeHTML(item.stock)} ชิ้น</span>
+          `;
+          listContainer.appendChild(div);
+        });
 
-  modal.classList.remove("hide-modal");
-}
+        modal.classList.remove("hide-modal");
+      }
 
 // ==========================================
 // ENGINE STARTER
