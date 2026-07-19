@@ -459,14 +459,14 @@ function clearSearch() {
 
 
 // ==============================================================
-// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth)
+// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth) - V.2 ป้องกันหักเบิ้ล!
 // ==============================================================
 window.getRealTimeLiveStock = function(sku) {
     const skuStr = String(sku).trim().toUpperCase();
     let baseAvail = 0;
     let baseHold = 0;
     
-    // 1. ดึงยอดตั้งต้นจากฐานข้อมูล
+    // 1. ดึงยอดตั้งต้นจากฐานข้อมูลหลัก
     if (typeof localProductDatabase !== "undefined") {
         const item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
         if (item) {
@@ -475,31 +475,57 @@ window.getRealTimeLiveStock = function(sku) {
         }
     }
 
-    // 2. กวาดหายอดค้างในตะกร้า (ที่ยังไม่ได้ WRAP)
-    let pendingInOpenBoxes = 0;
-    if (typeof window.checkCrossBoxStock === "function") {
-        const radar = window.checkCrossBoxStock(skuStr);
-        pendingInOpenBoxes = radar.totalUsedInOtherBoxes || 0;
-        
-        // เช็กยอดในกล่องที่กำลังเปิดใช้งานอยู่
-        if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
-           const activeItem = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
-           if (activeItem) {
-               let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
-               if (!isClosedBox) {
-                   pendingInOpenBoxes += (Number(activeItem.scanQty) || 0) + (Number(activeItem.manualQty) || 0);
-               }
-           }
+    // 2. 🔍 สร้างเรดาร์ใหม่ (สแกนตะกร้าด้วยตัวเอง ป้องกันการนับเบิ้ล 100%)
+    let pendingQty = 0;
+    const activeShip = typeof window.currentActiveShipment !== "undefined" ? window.currentActiveShipment : "";
+    const activeBox = typeof window.currentActiveBoxNo !== "undefined" ? window.currentActiveBoxNo : "";
+
+    // กวาดข้อมูลกล่องทั้งหมดในเครื่อง (LocalStorage)
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("draft_box_")) {
+            const parts = key.replace("draft_box_", "").split("_");
+            if (parts.length >= 2) {
+                const shipNo = parts[0];
+                const boxNo = parts.slice(1).join("_");
+                const isClosed = localStorage.getItem(`status_box_${shipNo}_${boxNo}`) === "Closed";
+
+                // 🚨 กฎเหล็ก: นับเฉพาะกล่องที่ "ยังไม่ปิด (Not Closed)" เท่านั้น!
+                if (!isClosed) {
+                    // ถ้าเป็นกล่องที่กำลังเปิดอยู่หน้าจอตอนนี้ ให้ข้ามไปก่อน (เดี๋ยวไปนับจาก Memory แทนเพื่อให้สดที่สุด)
+                    if (shipNo === activeShip && boxNo === activeBox) continue;
+
+                    try {
+                        const boxData = JSON.parse(localStorage.getItem(key)) || [];
+                        const found = boxData.find(b => String(b.sku || "").trim().toUpperCase() === skuStr);
+                        if (found) {
+                            pendingQty += (Number(found.scanQty) || 0) + (Number(found.manualQty) || 0);
+                        }
+                    } catch(e) {}
+                }
+            }
+        }
+    }
+
+    // บวกยอดจากกล่องที่กำลังเปิดอยู่หน้าจอ ณ วินาทีนี้ (Memory)
+    if (activeShip && activeBox && typeof window.currentBoxItems !== "undefined") {
+        let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+        if (!isClosedBox) {
+            const found = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
+            if (found) {
+                 pendingQty += (Number(found.scanQty) || 0) + (Number(found.manualQty) || 0);
+            }
         }
     }
 
     // 3. หักลบยอดสุทธิ
-    let displayAvail = baseAvail - pendingInOpenBoxes;
-    let displayHold = baseHold + pendingInOpenBoxes;
+    let displayAvail = baseAvail - pendingQty;
+    let displayHold = baseHold + pendingQty;
     if (displayAvail < 0) displayAvail = 0; // กันยอดติดลบ
 
     return { avail: displayAvail, hold: displayHold };
 };
+
 
 // ==============================================================
 // 🛒 ฟังก์ชันแสดงลิสต์รายการสินค้า (อัปเกรดเชื่อมต่อ Real-Time Radar 100%)
