@@ -457,29 +457,42 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     // เรียกใช้ UI แจ้งเตือนของเจเลอร์
     const isConfirmed = await safeConfirm(
       "ยืนยันการลบชิปเมนต์?",
-      `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งใช่หรือไม่?`,
+      `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
     );
 
     if (isConfirmed) {
-      // โชว์ Loading
+      // โชว์ Loading (เพิ่ม ID เข้าไปเพื่อป้องกันการลบไม่ออก)
       const loadingOverlay = document.createElement("div");
+      loadingOverlay.id = "masterDeleteSpinner";
       loadingOverlay.style.cssText =
         "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
       loadingOverlay.innerHTML =
-        "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบข้อมูล...";
+        "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบและคืนสต๊อก...";
       document.body.appendChild(loadingOverlay);
+
+      // 🚨 ดึงสาขาต้นทางเพื่อส่งให้หลังบ้านคืนสต๊อกถูกที่
+      const currentBranchCode = String(
+        localStorage.getItem("pattcha_branch") || "",
+      )
+        .trim()
+        .toUpperCase();
 
       const apiUrl =
         "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
-      // ยิง API ผ่าน POST (เหมือน save_new_task)
-      fetch(`${CONFIG.API_URL}?action=delete_shipment`, {
+      // 🚨 จุดที่แก้บั๊ก: เปลี่ยนกลับมาใช้ apiUrl ให้ถูกต้อง และเพิ่ม branch เข้าไปในวงเล็บ
+      fetch(`${apiUrl}?action=delete_shipment`, {
         method: "POST",
-        body: JSON.stringify({ shipmentNo: safeShipmentNo }),
+        body: JSON.stringify({
+          shipmentNo: safeShipmentNo,
+          branch: currentBranchCode, // ส่งชื่อสาขาไปด้วย
+        }),
       })
         .then((response) => response.json())
         .then((data) => {
-          document.body.removeChild(loadingOverlay); // ปิด Loading
+          // ปิด Loading ทันทีที่เซิร์ฟเวอร์ตอบกลับ
+          const spinner = document.getElementById("masterDeleteSpinner");
+          if (spinner) spinner.remove();
 
           if (data.success || data.status === "success") {
             // 🌟 [NEW] คืนสต๊อกในความจำมือถือแบบ Real-time (คืนทุกกล่องในคันที่ถูกลบ)
@@ -524,19 +537,29 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
             ) {
               emptyState.style.display = "block";
             }
+            if (typeof window.safeAlert === "function")
+              window.safeAlert("SUCCESS", "ลบชิปเมนต์สำเร็จ!", "success");
           } else {
-            safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+            if (typeof window.safeAlert === "function")
+              window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
           }
         })
         .catch((error) => {
-          document.body.removeChild(loadingOverlay);
-          safeAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
+          // 🚨 ปิด Loading แบบปลอดภัยสุดๆ แม้เน็ตหลุดหรือแอปพัง
+          const spinner = document.getElementById("masterDeleteSpinner");
+          if (spinner) spinner.remove();
+          if (typeof window.safeAlert === "function")
+            window.safeAlert(
+              "ข้อผิดพลาด",
+              "ไม่สามารถติดต่อฐานข้อมูลได้",
+              "error",
+            );
         });
     }
   });
 
   // 3. สร้างกล่องลูก
- 
+
   let boxIdCounter = 0;
   btnAddChildBox.addEventListener("click", () => {
     boxIdCounter++;
