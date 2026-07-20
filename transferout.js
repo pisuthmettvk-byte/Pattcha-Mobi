@@ -1046,63 +1046,106 @@ function showView(viewId) {
 // ======================================================
 
       // 1. ฟังก์ชันกู้คืนกล่อง + เริ่มทำงานวิทยุ Realtime
-      window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
-          if (!colElement) return 0;
-          const childrenContainer = colElement.querySelector(".shipment-children-container");
-          if (!childrenContainer) return 0;
-          const baseBoxNo = colElement.getAttribute("data-shipment").split("-").length >= 5 ? colElement.getAttribute("data-shipment").split("-").slice(2).join("-") : colElement.getAttribute("data-shipment");
+      window.restoreDraftBoxesForShipment = function (shipmentNo, colElement) {
+        if (!colElement) return 0;
+        const childrenContainer = colElement.querySelector(
+          ".shipment-children-container",
+        );
+        if (!childrenContainer) return 0;
+        const baseBoxNo =
+          colElement.getAttribute("data-shipment").split("-").length >= 5
+            ? colElement
+                .getAttribute("data-shipment")
+                .split("-")
+                .slice(2)
+                .join("-")
+            : colElement.getAttribute("data-shipment");
 
-          let maxBoxIndex = 0;
-          let hasDrafts = false;
+        let maxBoxIndex = 0;
+        let hasDrafts = false;
 
-          for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`wrapped_box_${shipmentNo}_`)) {
-                  hasDrafts = true;
-                  let draftData = [];
-                  try { draftData = JSON.parse(localStorage.getItem(key)) || []; } catch(e){}
-                  const exactBoxNo = key.startsWith(`wrapped_box_`) ? key.replace(`wrapped_box_${shipmentNo}_`, "") : key.replace(`draft_box_${shipmentNo}_`, "");
-                  
-                  const parts = exactBoxNo.split("-");
-                  const indexNum = parseInt(parts[parts.length - 1], 10) || 0; 
-                  if (indexNum > maxBoxIndex) maxBoxIndex = indexNum;
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (
+            key.startsWith(`draft_box_${shipmentNo}_`) ||
+            key.startsWith(`wrapped_box_${shipmentNo}_`)
+          ) {
+            hasDrafts = true;
+            let draftData = [];
+            try {
+              draftData = JSON.parse(localStorage.getItem(key)) || [];
+            } catch (e) {}
+            const exactBoxNo = key.startsWith(`wrapped_box_`)
+              ? key.replace(`wrapped_box_${shipmentNo}_`, "")
+              : key.replace(`draft_box_${shipmentNo}_`, "");
 
-                  if (!childrenContainer.querySelector(`.shipment-child-box[data-box-no="${exactBoxNo}"]`)) {
-                      if (typeof createShipmentChildBox === "function") {
-                          const childEl = createShipmentChildBox(baseBoxNo, exactBoxNo, true); 
-                          
-                          let totalScan = 0, totalManual = 0;
-                          draftData.forEach(item => { totalScan += (item.scanQty || 0); totalManual += (item.manualQty || 0); });
-                          const scanEl = childEl.querySelector('.child-scan-qty');
-                          const manualEl = childEl.querySelector('.child-manual-qty');
-                          if (scanEl) scanEl.textContent = totalScan;
-                          if (manualEl) manualEl.textContent = totalManual;
+            const parts = exactBoxNo.split("-");
+            const indexNum = parseInt(parts[parts.length - 1], 10) || 0;
+            if (indexNum > maxBoxIndex) maxBoxIndex = indexNum;
 
-                          const isClosed = localStorage.getItem(`status_box_${shipmentNo}_${exactBoxNo}`) === "Closed";
-                          if (isClosed) {
-                              childEl.setAttribute("data-status", "Closed");
-                              childEl.setAttribute("data-saved-items", JSON.stringify(draftData));
-                              const boxIcon = childEl.querySelector(".box-status-icon");
-                              if (boxIcon) { boxIcon.className = "fas fa-box box-status-icon"; boxIcon.style.color = "#dc3545"; }
-                          }
-                          childrenContainer.appendChild(childEl);
-                      }
+            if (
+              !childrenContainer.querySelector(
+                `.shipment-child-box[data-box-no="${exactBoxNo}"]`,
+              )
+            ) {
+              if (typeof createShipmentChildBox === "function") {
+                const childEl = createShipmentChildBox(
+                  baseBoxNo,
+                  exactBoxNo,
+                  true,
+                );
+
+                let totalScan = 0,
+                  totalManual = 0;
+                draftData.forEach((item) => {
+                  totalScan += item.scanQty || 0;
+                  totalManual += item.manualQty || 0;
+                });
+                const scanEl = childEl.querySelector(".child-scan-qty");
+                const manualEl = childEl.querySelector(".child-manual-qty");
+                if (scanEl) scanEl.textContent = totalScan;
+                if (manualEl) manualEl.textContent = totalManual;
+
+                const isClosed =
+                  localStorage.getItem(
+                    `status_box_${shipmentNo}_${exactBoxNo}`,
+                  ) === "Closed";
+                if (isClosed) {
+                  childEl.setAttribute("data-status", "Closed");
+                  childEl.setAttribute(
+                    "data-saved-items",
+                    JSON.stringify(draftData),
+                  );
+                  const boxIcon = childEl.querySelector(".box-status-icon");
+                  if (boxIcon) {
+                    boxIcon.className = "fas fa-box box-status-icon";
+                    boxIcon.style.color = "#dc3545";
                   }
+                }
+                childrenContainer.appendChild(childEl);
               }
+            }
           }
+        }
 
-          if (hasDrafts) {
-              childrenContainer.classList.remove("hide");
-              colElement.querySelector('.master-truck-count').textContent = childrenContainer.querySelectorAll(".shipment-child-box").length;
-          }
+        if (hasDrafts) {
+          childrenContainer.classList.remove("hide");
+          colElement.querySelector(".master-truck-count").textContent =
+            childrenContainer.querySelectorAll(".shipment-child-box").length;
+        }
 
-          // 🚨 📡 ยิงวิทยุ: สั่งเปิดหูฟังดักฟังความเคลื่อนไหวจาก Firebase!
-          if (typeof window.fbListenToShipment === "function") {
-              window.fbListenToShipment(shipmentNo, colElement);
-          }
-          
-          return maxBoxIndex;
-      };
+        // 🚨 📡 ยิงวิทยุ: สั่งเปิดหูฟังดักฟังความเคลื่อนไหวจาก Firebase!
+        if (typeof window.fbListenToShipment === "function") {
+          window.fbListenToShipment(shipmentNo, colElement);
+        }
+
+        // สั่งอัปเดตยอดรถบรรทุกและยอดสินค้าที่คอลัมน์แม่
+        if (typeof window.updateMasterShipmentTotals === "function") {
+          window.updateMasterShipmentTotals(shipmentNo);
+        }
+
+        return maxBoxIndex;
+      };;
 
 
       // 2. อัปเดตปุ่ม Back (ย้อนกลับ) ให้อัปเดตตัวเลขหน้า Lobby ก่อนออก
@@ -2921,63 +2964,80 @@ window.processExport = async function() {
 // ====================================================================
 // 📡 FIREBASE UI RECEIVERS (รับสัญญาณวิทยุมาวาดหน้าจอแบบ Real-time)
 
-        window.uiSyncBoxFromFirebase = function(shipmentNo, boxNo, status, items, colElement) {
-            if (!colElement) {
-                colElement = document.querySelector(`.shipment-column[data-shipment="${shipmentNo}"]`);
+        window.uiSyncBoxFromFirebase = function (
+          shipmentNo,
+          boxNo,
+          status,
+          items,
+          colElement,
+        ) {
+          if (!colElement) {
+            colElement = document.querySelector(
+              `.shipment-column[data-shipment="${shipmentNo}"]`,
+            );
+          }
+          if (!colElement) return;
+
+          const childrenContainer = colElement.querySelector(
+            ".shipment-children-container",
+          );
+          if (!childrenContainer) return;
+
+          let childEl = childrenContainer.querySelector(
+            `.shipment-child-box[data-box-no="${boxNo}"]`,
+          );
+
+          // 🟢 ถ้ายังไม่มีกล่องนี้บนจอ (เพื่อนเพิ่งกดสร้าง) ให้สร้างเด้งขึ้นมาใหม่เลย!
+          if (!childEl) {
+            const baseBoxNo =
+              shipmentNo.split("-").length >= 5
+                ? shipmentNo.split("-").slice(2).join("-")
+                : shipmentNo;
+            if (typeof createShipmentChildBox === "function") {
+              childEl = createShipmentChildBox(baseBoxNo, boxNo, true); // true = แค่แสดงผล ไม่ต้องส่งวิทยุซ้ำ
+              childrenContainer.appendChild(childEl);
+              childrenContainer.classList.remove("hide");
             }
-            if (!colElement) return;
+          }
 
-            const childrenContainer = colElement.querySelector(".shipment-children-container");
-            if (!childrenContainer) return;
-
-            let childEl = childrenContainer.querySelector(`.shipment-child-box[data-box-no="${boxNo}"]`);
-            
-            // 🟢 ถ้ายังไม่มีกล่องนี้บนจอ (เพื่อนเพิ่งกดสร้าง) ให้สร้างเด้งขึ้นมาใหม่เลย!
-            if (!childEl) {
-                const baseBoxNo = shipmentNo.split("-").length >= 5 ? shipmentNo.split("-").slice(2).join("-") : shipmentNo;
-                if (typeof createShipmentChildBox === "function") {
-                    childEl = createShipmentChildBox(baseBoxNo, boxNo, true); // true = แค่แสดงผล ไม่ต้องส่งวิทยุซ้ำ
-                    childrenContainer.appendChild(childEl);
-                    childrenContainer.classList.remove("hide");
-                }
+          if (childEl) {
+            // 🔄 อัปเดตตัวเลขจำนวนของ (ที่เพื่อนสแกนอยู่) ให้วิ้งๆ แบบเรียลไทม์
+            let totalScan = 0,
+              totalManual = 0;
+            if (items && items.length > 0) {
+              items.forEach((item) => {
+                totalScan += item.scanQty || 0;
+                totalManual += item.manualQty || 0;
+              });
             }
+            const scanEl = childEl.querySelector(".child-scan-qty");
+            const manualEl = childEl.querySelector(".child-manual-qty");
+            if (scanEl) scanEl.textContent = totalScan;
+            if (manualEl) manualEl.textContent = totalManual;
 
-            if (childEl) {
-                // 🔄 อัปเดตตัวเลขจำนวนของ (ที่เพื่อนสแกนอยู่) ให้วิ้งๆ แบบเรียลไทม์
-                let totalScan = 0, totalManual = 0;
-                if (items && items.length > 0) {
-                    items.forEach(item => {
-                        totalScan += (item.scanQty || 0);
-                        totalManual += (item.manualQty || 0);
-                    });
-                }
-                const scanEl = childEl.querySelector('.child-scan-qty');
-                const manualEl = childEl.querySelector('.child-manual-qty');
-                if (scanEl) scanEl.textContent = totalScan;
-                if (manualEl) manualEl.textContent = totalManual;
-
-                // 🔴 ถ้าเพื่อนกดปิดกล่อง (WRAP) ให้เปลี่ยนกล่องเราเป็นสีแดงทันที
-                if (status === "Closed") {
-                    childEl.setAttribute("data-status", "Closed");
-                    childEl.setAttribute("data-saved-items", JSON.stringify(items));
-                    const boxIcon = childEl.querySelector(".box-status-icon");
-                    const checkboxEl = childEl.querySelector(".child-checkbox");
-                    if (boxIcon) {
-                        boxIcon.className = "fas fa-box box-status-icon";
-                        boxIcon.style.color = "#dc3545"; // แดง
-                    }
-                    if (checkboxEl) {
-                        checkboxEl.disabled = false;
-                        checkboxEl.style.cursor = "pointer";
-                    }
-                } else {
-                    childEl.setAttribute("data-status", "open");
-                }
+            // 🔴 ถ้าเพื่อนกดปิดกล่อง (WRAP) ให้เปลี่ยนกล่องเราเป็นสีแดงทันที
+            if (status === "Closed") {
+              childEl.setAttribute("data-status", "Closed");
+              childEl.setAttribute("data-saved-items", JSON.stringify(items));
+              const boxIcon = childEl.querySelector(".box-status-icon");
+              const checkboxEl = childEl.querySelector(".child-checkbox");
+              if (boxIcon) {
+                boxIcon.className = "fas fa-box box-status-icon";
+                boxIcon.style.color = "#dc3545"; // แดง
+              }
+              if (checkboxEl) {
+                checkboxEl.disabled = false;
+                checkboxEl.style.cursor = "pointer";
+              }
+            } else {
+              childEl.setAttribute("data-status", "open");
             }
-            
-            // อัปเดตยอดรถบรรทุก
-            const masterTruckEl = colElement.querySelector('.master-truck-count');
-            if (masterTruckEl) masterTruckEl.textContent = childrenContainer.querySelectorAll(".shipment-child-box").length;
+          }
+
+          // อัปเดตยอดรถบรรทุกและยอดสินค้าที่คอลัมน์แม่
+          if (typeof window.updateMasterShipmentTotals === "function") {
+            window.updateMasterShipmentTotals(shipmentNo);
+          }
         };
 
         // 💣 ถ้าเพื่อนกดลบกล่อง ให้ลบกล่องบนจอเราทิ้งด้วย
