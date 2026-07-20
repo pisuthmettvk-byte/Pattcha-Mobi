@@ -180,76 +180,130 @@ async function loadBranchesIntoDropdown() {
 
 // ======================================================
 // [Phase 3 Final - Realtime] 📦 ฟังก์ชันสร้างกล่องลูก START
+
+
 function createShipmentChildBox(baseBoxNo, suffixOrFullId, isRestore = false) {
-  const childBoxNo = isRestore ? suffixOrFullId : `${baseBoxNo}-${suffixOrFullId}`;
+  const childBoxNo = isRestore
+    ? suffixOrFullId
+    : `${baseBoxNo}-${suffixOrFullId}`;
   const childDiv = document.createElement("div");
   childDiv.className = "shipment-child-box";
   childDiv.dataset.boxNo = childBoxNo;
   childDiv.dataset.status = "open";
 
-  childDiv.style.cssText = `display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745; padding: 16px 15px; width: 100%; box-sizing: border-box; cursor: pointer; transition: all 0.2s;`;
-  childDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 15px; flex: 1; min-width: 200px;"><input type="checkbox" class="child-checkbox" disabled style="width: 18px; height: 18px; border-radius: 4px; cursor: not-allowed;" onclick="event.stopPropagation();"><i class="fas fa-box-open box-status-icon" style="color: #28a745; font-size: 18px;"></i><span style="font-weight: bold; font-size: 14px; color: #333;">${childBoxNo}</span></div><div style="display: flex; align-items: center; justify-content: flex-end; gap: 18px; font-size: 13px; font-weight: bold; color: #555;"><span><i class="fas fa-barcode" style="color: #666;"></i> (<span class="child-scan-qty">0</span>)</span><span><i class="fas fa-hand-paper" style="color: #8d6e63;"></i> (<span class="child-manual-qty">0</span>)</span><i class="fas fa-trash-alt child-btn-delete hide" style="color: #dc3545; font-size: 18px; cursor: pointer; padding-left: 5px;" onclick="event.stopPropagation();"></i></div>`;
+  // 🌟 [NEW] เช็กโหมดปัจจุบัน
+  const currentMode = sessionStorage.getItem("lobbyMode") || "ASSIGN";
+  const isPending = currentMode === "PENDING";
+  const displayStyle = isPending ? "display: none !important;" : "";
 
-  // 📡 ยิงวิทยุ: ถ้ากดสร้างกล่องใหม่ (ไม่ได้กู้คืน) ให้ตะโกนบอก Firebase ทันที!
-  if (!isRestore) {
-      setTimeout(() => {
-          const parentCol = childDiv.closest(".shipment-column");
-          const shipmentNo = parentCol ? parentCol.getAttribute("data-shipment") : baseBoxNo;
-          if (typeof window.fbSyncBoxData === "function") window.fbSyncBoxData(shipmentNo, childBoxNo, "open", []);
-      }, 100);
+  childDiv.style.cssText = `display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745; padding: 16px 15px; width: 100%; box-sizing: border-box; cursor: pointer; transition: all 0.2s;`;
+
+  // 🌟 [NEW] ฝัง ${displayStyle} ไปที่ checkbox และ ถังขยะ
+  childDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 15px; flex: 1; min-width: 200px;"><input type="checkbox" class="child-checkbox" disabled style="width: 18px; height: 18px; border-radius: 4px; cursor: not-allowed; ${displayStyle}" onclick="event.stopPropagation();"><i class="fas fa-box-open box-status-icon" style="color: #28a745; font-size: 18px;"></i><span style="font-weight: bold; font-size: 14px; color: #333;">${childBoxNo}</span></div><div style="display: flex; align-items: center; justify-content: flex-end; gap: 18px; font-size: 13px; font-weight: bold; color: #555;"><span><i class="fas fa-barcode" style="color: #666;"></i> (<span class="child-scan-qty">0</span>)</span><span><i class="fas fa-hand-paper" style="color: #8d6e63;"></i> (<span class="child-manual-qty">0</span>)</span><i class="fas fa-trash-alt child-btn-delete hide" style="color: #dc3545; font-size: 18px; cursor: pointer; padding-left: 5px; ${displayStyle}" onclick="event.stopPropagation();"></i></div>`;
+
+  if (!isRestore && !isPending) {
+    setTimeout(() => {
+      const parentCol = childDiv.closest(".shipment-column");
+      const shipmentNo = parentCol
+        ? parentCol.getAttribute("data-shipment")
+        : baseBoxNo;
+      if (typeof window.fbSyncBoxData === "function")
+        window.fbSyncBoxData(shipmentNo, childBoxNo, "open", []);
+    }, 100);
   }
 
   childDiv.addEventListener("click", function (e) {
-    if (window.isGlobalDeleteMode || e.target.closest(".child-btn-delete") || e.target.closest(".child-checkbox")) return;
+    if (
+      window.isGlobalDeleteMode ||
+      e.target.closest(".child-btn-delete") ||
+      e.target.closest(".child-checkbox")
+    )
+      return;
     const parentCol = childDiv.closest(".shipment-column");
-    const shipmentNo = parentCol ? parentCol.getAttribute("data-shipment") : baseBoxNo;
-    const isClosed = childDiv.dataset.status === "Closed";
-    if (typeof window.openBoxDetails === "function") window.openBoxDetails(shipmentNo, childBoxNo, childDiv, isClosed);
+    const shipmentNo = parentCol
+      ? parentCol.getAttribute("data-shipment")
+      : baseBoxNo;
+
+    // 🌟 [NEW] ถ้าเป็น Pending ให้ส่งสถานะว่า "ปิดแล้ว" (Read-only) เข้าไปเสมอ
+    const isClosed = childDiv.dataset.status === "Closed" || isPending;
+    if (typeof window.openBoxDetails === "function")
+      window.openBoxDetails(shipmentNo, childBoxNo, childDiv, isClosed);
   });
 
   const btnDeleteChild = childDiv.querySelector(".child-btn-delete");
   btnDeleteChild.addEventListener("click", async (e) => {
+    if (isPending) return; // ห้ามลบเด็ดขาด
     e.stopPropagation();
     const parentCol = childDiv.closest(".shipment-column");
-    const shipmentNo = parentCol ? parentCol.getAttribute("data-shipment") : baseBoxNo;
+    const shipmentNo = parentCol
+      ? parentCol.getAttribute("data-shipment")
+      : baseBoxNo;
     const isClosed = childDiv.dataset.status === "Closed";
-    const isConfirm = await window.safeConfirm("ยืนยันลบกล่อง?", `ลบกล่อง ${childBoxNo} ทิ้งใช่หรือไม่?`, "error");
+    const isConfirm = await window.safeConfirm(
+      "ยืนยันลบกล่อง?",
+      `ลบกล่อง ${childBoxNo} ทิ้งใช่หรือไม่?`,
+      "error",
+    );
 
     if (isConfirm) {
       if (isClosed) {
         const loadingOverlay = document.createElement("div");
-        loadingOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white;";
-        loadingOverlay.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบ...";
+        loadingOverlay.style.cssText =
+          "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white;";
+        loadingOverlay.innerHTML =
+          "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบ...";
         document.body.appendChild(loadingOverlay);
 
         fetch(CONFIG.API_URL + "?action=delete_box", {
-          method: "POST", body: JSON.stringify({ shipmentId: shipmentNo, boxNo: childBoxNo, branch: localStorage.getItem("pattcha_branch").toUpperCase() }),
-        }).then(res => res.json()).then(data => {
+          method: "POST",
+          body: JSON.stringify({
+            shipmentId: shipmentNo,
+            boxNo: childBoxNo,
+            branch: localStorage.getItem("pattcha_branch").toUpperCase(),
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
             document.body.removeChild(loadingOverlay);
             if (data.status === "success" || data.success) {
               const savedItemsStr = childDiv.getAttribute("data-saved-items");
-              if (savedItemsStr) JSON.parse(savedItemsStr).forEach(item => { if (window.updateLocalStockMemory) window.updateLocalStockMemory(item.sku, item.totalQty, false); });
-              
-              childDiv.remove();
-              localStorage.removeItem(`wrapped_box_${shipmentNo}_${childBoxNo}`);
-              // 💣 ยิงวิทยุ: บอก Firebase ว่ากล่องแดงโดนลบแล้ว!
-              if (typeof window.fbDeleteBox === "function") window.fbDeleteBox(shipmentNo, childBoxNo);
+              if (savedItemsStr)
+                JSON.parse(savedItemsStr).forEach((item) => {
+                  if (window.updateLocalStockMemory)
+                    window.updateLocalStockMemory(
+                      item.sku,
+                      item.totalQty,
+                      false,
+                    );
+                });
 
-              if (parentCol) parentCol.querySelector(".master-truck-count").textContent = parentCol.querySelectorAll(".shipment-child-box").length;
+              childDiv.remove();
+              localStorage.removeItem(
+                `wrapped_box_${shipmentNo}_${childBoxNo}`,
+              );
+              if (typeof window.fbDeleteBox === "function")
+                window.fbDeleteBox(shipmentNo, childBoxNo);
+
+              if (parentCol)
+                parentCol.querySelector(".master-truck-count").textContent =
+                  parentCol.querySelectorAll(".shipment-child-box").length;
               window.safeAlert("SUCCESS", `ลบกล่องสำเร็จ!`, "success");
             } else window.safeAlert("ERROR", "เกิดข้อผิดพลาด", "error");
           });
       } else {
         childDiv.remove();
         localStorage.removeItem(`draft_box_${shipmentNo}_${childBoxNo}`);
-        // 💣 ยิงวิทยุ: บอก Firebase ว่ากล่องเขียวโดนลบแล้ว!
-        if (typeof window.fbDeleteBox === "function") window.fbDeleteBox(shipmentNo, childBoxNo);
-        if (parentCol) parentCol.querySelector(".master-truck-count").textContent = parentCol.querySelectorAll(".shipment-child-box").length;
+        if (typeof window.fbDeleteBox === "function")
+          window.fbDeleteBox(shipmentNo, childBoxNo);
+        if (parentCol)
+          parentCol.querySelector(".master-truck-count").textContent =
+            parentCol.querySelectorAll(".shipment-child-box").length;
       }
     }
   });
   return childDiv;
 }
+
 // [Phase 3 Final - Realtime] 📦 ฟังก์ชันสร้างกล่องลูก END
 // ======================================================
 
@@ -274,18 +328,31 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   const baseBoxNo =
     parts.length >= 5 ? parts.slice(2).join("-") : safeShipmentNo;
 
+  // 🌟 [NEW] เช็กโหมดปัจจุบัน
+  const currentMode = sessionStorage.getItem("lobbyMode") || "ASSIGN";
+  const isPending = currentMode === "PENDING";
+
+  // 🌟 [NEW] เปลี่ยนสีลูกระนาดตามโหมด
+  const headerGradient = isPending
+    ? "linear-gradient(to bottom, #ffe066 0%, #fff3cd 50%, #ffc107 100%)" // สีเหลืองลูกระนาดสำหรับ Pending
+    : "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)"; // สีเงินลูกระนาดสำหรับ Assign
+
+  // 🌟 [NEW] ซ่อนปุ่มต่างๆ ถ้าเป็นโหมด Pending
+  const displayStyle = isPending ? "display: none !important;" : "";
+  const badgeColor = isPending ? "#e0a800" : "#d93844";
+
   col.style.cssText = `width: 100%; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;`;
 
   col.innerHTML = `
     <!-- 🟢 Header แม่ -->
     <div class="shipment-column-header" style="
-      background: linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%);
+      background: ${headerGradient};
       border: 1px solid #ccc; border-top: 1px solid #fff; border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; padding: 12px 20px; 
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; box-sizing: border-box; transition: all 0.3s ease;
     ">
       <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-        <input type="checkbox" class="master-checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer;">
+        <input type="checkbox" class="master-checkbox" style="width: 18px; height: 18px; border-radius: 4px; cursor: pointer; ${displayStyle}">
         <span style="font-weight: 900; font-size: 15px; color: #222;">${displayDate}</span>
         <span style="font-weight: bold; font-size: 15px; color: #0033cc; letter-spacing: 0.5px;">${safeShipmentNo}</span>
       </div>
@@ -304,9 +371,9 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
           <i class="fas fa-times-circle"></i> ลบทั้งคัน
         </div>
         
-        <i class="fas fa-box-open btn-add-child-box" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff);" title="สร้างกล่องใหม่"></i>
-        <i class="fas fa-trash-alt btn-master-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff); transition: all 0.2s;" title="สวิตช์ เปิด/ปิด โหมดลบ"></i>
-        <span style="background: #d93844; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold;">Assign</span>
+        <i class="fas fa-box-open btn-add-child-box" style="color: #2e8b57; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff); ${displayStyle}" title="สร้างกล่องใหม่"></i>
+        <i class="fas fa-trash-alt btn-master-delete" style="color: #c9302c; font-size: 20px; cursor: pointer; filter: drop-shadow(1px 1px 1px #fff); transition: all 0.2s; ${displayStyle}" title="สวิตช์ เปิด/ปิด โหมดลบ"></i>
+        <span style="background: ${badgeColor}; color: white; padding: 6px 18px; border-radius: 15px; font-size: 13px; font-weight: bold;">${currentMode}</span>
       </div>
     </div>
     
@@ -321,14 +388,14 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   const btnAddChildBox = col.querySelector(".btn-add-child-box");
   const masterTruckCount = col.querySelector(".master-truck-count");
 
-  // 1. สวิตช์สลับโหมดลบ
+  // 1. สวิตช์สลับโหมดลบ (ปิดการทำงานถ้าเป็น Pending)
   btnMasterDelete.addEventListener("click", () => {
+    if (isPending) return;
     if (
       window.isGlobalDeleteMode &&
       window.activeDeleteShipment !== safeShipmentNo
-    ) {
+    )
       return;
-    }
     const isDeleteMode = btnMasterDelete.classList.toggle("delete-mode-active");
     window.isGlobalDeleteMode = isDeleteMode;
     window.activeDeleteShipment = isDeleteMode ? safeShipmentNo : null;
@@ -355,16 +422,14 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 2. ปุ่มกดลบแม่ของจริง (ใช้ safeConfirm และ POST API)
+  // 2. ปุ่มกดลบแม่ของจริง
   btnParentDelete.addEventListener("click", async () => {
-    // เรียกใช้ UI แจ้งเตือนของเจเลอร์
+    if (isPending) return;
     const isConfirmed = await safeConfirm(
       "ยืนยันการลบชิปเมนต์?",
       `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
     );
-
     if (isConfirmed) {
-      // โชว์ Loading (เพิ่ม ID เข้าไปเพื่อป้องกันการลบไม่ออก)
       const loadingOverlay = document.createElement("div");
       loadingOverlay.id = "masterDeleteSpinner";
       loadingOverlay.style.cssText =
@@ -373,32 +438,27 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
         "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบและคืนสต๊อก...";
       document.body.appendChild(loadingOverlay);
 
-      // 🚨 ดึงสาขาต้นทางเพื่อส่งให้หลังบ้านคืนสต๊อกถูกที่
       const currentBranchCode = String(
         localStorage.getItem("pattcha_branch") || "",
       )
         .trim()
         .toUpperCase();
-
       const apiUrl =
         "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
-      // 🚨 จุดที่แก้บั๊ก: เปลี่ยนกลับมาใช้ apiUrl ให้ถูกต้อง และเพิ่ม branch เข้าไปในวงเล็บ
       fetch(`${apiUrl}?action=delete_shipment`, {
         method: "POST",
         body: JSON.stringify({
           shipmentNo: safeShipmentNo,
-          branch: currentBranchCode, // ส่งชื่อสาขาไปด้วย
+          branch: currentBranchCode,
         }),
       })
         .then((response) => response.json())
         .then((data) => {
-          // ปิด Loading ทันทีที่เซิร์ฟเวอร์ตอบกลับ
           const spinner = document.getElementById("masterDeleteSpinner");
           if (spinner) spinner.remove();
 
           if (data.success || data.status === "success") {
-            // 🌟 [NEW] คืนสต๊อกในความจำมือถือแบบ Real-time (คืนทุกกล่องในคันที่ถูกลบ)
             const closedBoxes = col.querySelectorAll(
               ".shipment-child-box[data-status='Closed']",
             );
@@ -408,24 +468,23 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
                 try {
                   const savedItems = JSON.parse(savedItemsStr);
                   savedItems.forEach((item) => {
-                    if (typeof window.updateLocalStockMemory === "function") {
+                    if (typeof window.updateLocalStockMemory === "function")
                       window.updateLocalStockMemory(
                         item.sku,
                         item.totalQty,
                         false,
                       );
-                    }
                   });
                 } catch (e) {}
               }
             });
 
-            col.remove(); // ลบกราฟิกแม่
+            col.remove();
             const taskCards = document.querySelectorAll(
               "#transferOutTaskHubView .task-card",
             );
             taskCards.forEach((card) => {
-              if (card.innerHTML.includes(safeShipmentNo)) card.remove(); // ลบ Task Card
+              if (card.innerHTML.includes(safeShipmentNo)) card.remove();
             });
 
             window.isGlobalDeleteMode = false;
@@ -448,7 +507,6 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
           }
         })
         .catch((error) => {
-          // 🚨 ปิด Loading แบบปลอดภัยสุดๆ แม้เน็ตหลุดหรือแอปพัง
           const spinner = document.getElementById("masterDeleteSpinner");
           if (spinner) spinner.remove();
           if (typeof window.safeAlert === "function")
@@ -461,20 +519,14 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     }
   });
 
-  // 3. สร้างกล่องลูก
+  // 3. สร้างกล่องลูก (ปิดการทำงานถ้าเป็น Pending)
   let boxIdCounter = 0;
   btnAddChildBox.addEventListener("click", () => {
+    if (isPending) return;
     boxIdCounter++;
-
-    // 🎲 [NEW FEATURE]: สร้างตัวอักษรภาษาอังกฤษสุ่ม 3 ตัว (เช่น AFK) ป้องกันกล่องชนกัน!
     const randomText = Math.random().toString(36).substring(2, 5).toUpperCase();
-
-    // 📦 ประกอบร่างเลข Running + อักษรสุ่ม (ผลลัพธ์: 0001AFK)
     const newBoxSuffix = String(boxIdCounter).padStart(4, "0") + randomText;
-
-    // 🚨 ส่งรหัสเข้าไปสร้างกล่อง
     const childEl = createShipmentChildBox(baseBoxNo, newBoxSuffix);
-
     childrenContainer.appendChild(childEl);
     childrenContainer.classList.remove("hide");
     masterTruckCount.textContent = childrenContainer.querySelectorAll(
@@ -482,20 +534,19 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
     ).length;
   });
 
-  // 📍 [NEW] กู้คืนกล่อง (ทั้งแบบเปิดค้างและปิดแล้ว) กลับมาแสดงที่หน้าจออัตโนมัติ
   setTimeout(() => {
     if (typeof window.restoreDraftBoxesForShipment === "function") {
       const restoredMaxId = window.restoreDraftBoxesForShipment(
         safeShipmentNo,
         col,
       );
-      // อัปเดตเลข running ของกล่องให้ต่อจากกล่องล่าสุด
       if (restoredMaxId > boxIdCounter) boxIdCounter = restoredMaxId;
     }
   }, 50);
 
   return col;
 }
+
 
 //[Phase 4 ] 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่  END
 // ======================================================
@@ -529,24 +580,33 @@ function showView(viewId) {
   }
 }
 
-
-
           //===============
           // [Load Lobby Header] START
           function loadLobbyHeader() {
-            const branchID = sessionStorage.getItem("selectedBranchID") || ""; // ค่าที่ได้จะเป็น 02KK
+            const branchID = sessionStorage.getItem("selectedBranchID") || ""; 
             const headerEl = document.getElementById("lobbyBranchHeaderName");
+            
+            // 🌟 [NEW] ดึงปุ่ม EXPORT มาเพื่อเตรียมซ่อน
+            const btnExport = document.getElementById("btnSubmitLobby");
+            const currentMode = sessionStorage.getItem("lobbyMode") || "ASSIGN";
+
+            if (btnExport) {
+                if (currentMode === "PENDING") {
+                    btnExport.style.display = "none"; // ซ่อนปุ่ม EXPORT หายวับไปเลย
+                } else {
+                    btnExport.style.display = "flex"; // คืนค่าปุ่มกลับมาเมื่อเป็นโหมดปกติ
+                }
+            }
+
             if (!headerEl) return;
 
             let branchName = "ไม่ระบุชื่อสาขา";
-            let displayId = branchID; // ตั้งต้นเป็น 02KK
+            let displayId = branchID; 
 
-            // 🟢 แปลงรหัส 02KK กลับให้เป็นรหัสสาขาจริง (เช่น KKN02)
             if (typeof getRealBranchCode === "function") {
               displayId = getRealBranchCode(branchID);
             }
 
-            // 🟢 นำรหัสสาขาจริง ไปค้นหา "ชื่อสาขา" ในแคชให้ตรงเป๊ะ
             if (window.appBranches && Array.isArray(window.appBranches)) {
               const matched = window.appBranches.find((b) => {
                 const bId = String(b.id || b.Branch_ID || b.BranchID || "")
@@ -561,7 +621,6 @@ function showView(viewId) {
               }
             }
 
-            // 🟢 จุดแก้ไขข้อ 3: แสดงผลเป็น [KKN02] - ชื่อสาขา
             headerEl.textContent = `[${displayId}] - ${branchName}`;
           }
           // [Load Lobby Header] END
@@ -767,69 +826,70 @@ function showView(viewId) {
           return { hasLocalData, localBoxCount, localItemCount };
         };
 
-        function createTransferOutTaskCard(
-          date,
-          shipmentNo,
-          originType,
-          destBranch,
-          apiTotalBox,
-          apiTotalItem,
-          status,
-        ) {
-          const colorMap = {
-            assign: "#dc3545",
-            pending: "#e0a800",
-            complete: "#28a745",
-          };
-          const statusKey = (status || "").toLowerCase();
-          const leftBorderColor = colorMap[statusKey] || "#ccc";
+function createTransferOutTaskCard(
+  date,
+  shipmentNo,
+  originType,
+  destBranch,
+  apiTotalBox,
+  apiTotalItem,
+  status,
+) {
+  const colorMap = {
+    assign: "#dc3545",
+    pending: "#e0a800",
+    complete: "#28a745",
+  };
+  const statusKey = (status || "").toLowerCase();
+  const leftBorderColor = colorMap[statusKey] || "#ccc";
 
-          // 🟢 ค้นหาชื่อสาขาเต็ม จากแคช (เช่น [CTW03] Central World)
-          let displayDestText = destBranch;
-          if (window.appBranches && Array.isArray(window.appBranches)) {
-            const matched = window.appBranches.find((b) => {
-              const bId = String(b.id || b.Branch_ID || b.BranchID || "")
-                .trim()
-                .toUpperCase();
-              return (
-                bId === destBranch || String(destBranch).includes(bId.substring(0, 2))
-              );
-            });
-            if (matched) {
-              const branchName =
-                matched.name || matched.Branch_Name || matched.BranchName || "";
-              const branchId =
-                matched.id || matched.Branch_ID || matched.BranchID || destBranch;
-              displayDestText = `[${branchId}] ${branchName}`;
-            }
-          }
+  // 🟢 ค้นหาชื่อสาขาเต็ม จากแคช
+  let displayDestText = destBranch;
+  if (window.appBranches && Array.isArray(window.appBranches)) {
+    const matched = window.appBranches.find((b) => {
+      const bId = String(b.id || b.Branch_ID || b.BranchID || "")
+        .trim()
+        .toUpperCase();
+      return (
+        bId === destBranch || String(destBranch).includes(bId.substring(0, 2))
+      );
+    });
+    if (matched) {
+      const branchName =
+        matched.name || matched.Branch_Name || matched.BranchName || "";
+      const branchId =
+        matched.id || matched.Branch_ID || matched.BranchID || destBranch;
+      displayDestText = `[${branchId}] ${branchName}`;
+    }
+  }
 
-          // Fallback ถ้าหาไม่เจอจริงๆ ให้ใช้ getRealBranchCode
-          if (
-            displayDestText === destBranch &&
-            typeof getRealBranchCode === "function"
-          ) {
-            displayDestText = getRealBranchCode(destBranch);
-          }
+  if (
+    displayDestText === destBranch &&
+    typeof getRealBranchCode === "function"
+  ) {
+    displayDestText = getRealBranchCode(destBranch);
+  }
 
-          // 🚨 [NEW] คำนวณยอดสดๆ แบบ Smart Sync ก่อนวาดการ์ด!
-          const localTotals = window.getLocalShipmentTotals(shipmentNo);
-          
-          // เลือกว่าจะใช้ยอดจากในเครื่อง (ถ้ากำลังทำงานอยู่) หรือยอดจาก API (ถ้ายังไม่เคยแพ็ก/มาจากคลังกลาง)
-          const displayTotalBox = localTotals.hasLocalData ? localTotals.localBoxCount : (apiTotalBox || 0);
-          const displayTotalItem = localTotals.hasLocalData ? localTotals.localItemCount : (apiTotalItem || 0);
+  // 🚨 คำนวณยอดสดๆ แบบ Smart Sync
+  const localTotals = window.getLocalShipmentTotals(shipmentNo);
+  const displayTotalBox = localTotals.hasLocalData
+    ? localTotals.localBoxCount
+    : apiTotalBox || 0;
+  const displayTotalItem = localTotals.hasLocalData
+    ? localTotals.localItemCount
+    : apiTotalItem || 0;
 
-          const card = document.createElement("div");
-          card.className = "task-card";
-          card.dataset.destination = destBranch;
+  const card = document.createElement("div");
+  card.className = "task-card";
+  card.dataset.destination = destBranch;
 
-          card.style.cssText = `
+  card.style.cssText = `
             width: 100%; background: #ffffff; border: 1px solid #e0e0e0; border-bottom: none;
             border-left: 6px solid ${leftBorderColor}; padding: 16px 15px; margin-bottom: 0px;
             box-sizing: border-box; cursor: pointer; 
           `;
 
-          card.innerHTML = `
+  card.innerHTML = `
             <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
                 <span style="background: #e9ecef; color: #495057; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; border: 1px solid #ced4da;">${originType || "Store"}</span>
@@ -839,49 +899,50 @@ function showView(viewId) {
                 <span style="font-weight: bold; font-size: 16px; color: #0044ff; letter-spacing: 0.5px;">${shipmentNo || "-"}</span>
               </div>
               <div style="display: flex; align-items: center; justify-content: flex-end; gap: 15px; flex-grow: 1; min-width: 250px;">
-                <!-- 🟢 เปลี่ยนตัวแปรให้แสดงชื่อสาขาเต็มตรงนี้ -->
                 <span style="font-size: 14px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${displayDestText}</span>
-                
-                <!-- 🚨 [UPDATE] อัปเดตการแสดงผลตัวเลขกล่องและชิ้น ให้ดึงจากตัวแปรใหม่และเป็นสีแดงเด่นชัด -->
                 <span style="font-size: 13px; color: #555; font-weight: bold;">
                   <i class="fas fa-box" style="color: #8d6e63;"></i> 
                   (<span style="color:#d93844;">${displayTotalBox}</span>) TOTAL (<span style="color:#d93844;">${displayTotalItem}</span>)
                 </span>
-
                 <span style="background: ${leftBorderColor}; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${status || "Assign"}</span>
               </div>
             </div>
           `;
 
-          card.addEventListener("click", async () => {
-            sessionStorage.setItem("jump_to_shipment", shipmentNo);
-            sessionStorage.setItem("selectedBranchID", destBranch);
-            if (!sessionStorage.getItem("selectedBranchName"))
-              sessionStorage.setItem("selectedBranchName", "");
+  card.addEventListener("click", async () => {
+    sessionStorage.setItem("jump_to_shipment", shipmentNo);
+    sessionStorage.setItem("selectedBranchID", destBranch);
 
-            try {
-              const viewTaskHub = document.getElementById("transferOutTaskHubView");
-              const viewLobby = document.getElementById("transferOutLobbyView");
+    // 🌟 [NEW] จำโหมดไว้! ถ้าการ์ดเป็น Pending ให้เปิด Lobby ในโหมด Pending
+    sessionStorage.setItem("lobbyMode", statusKey.toUpperCase());
 
-              if (typeof navigationTo === "function" && viewTaskHub && viewLobby)
-                navigationTo(viewTaskHub, viewLobby);
-              else if (typeof showView === "function") showView("transferOutLobbyView");
+    if (!sessionStorage.getItem("selectedBranchName"))
+      sessionStorage.setItem("selectedBranchName", "");
 
-              if (typeof loadLobbyHeader === "function") loadLobbyHeader();
-              if (typeof renderLobbyTasks === "function")
-                await renderLobbyTasks(destBranch);
+    try {
+      const viewTaskHub = document.getElementById("transferOutTaskHubView");
+      const viewLobby = document.getElementById("transferOutLobbyView");
 
-              setTimeout(() => {
-                if (typeof focusShipmentInLobby === "function")
-                  focusShipmentInLobby(shipmentNo);
-              }, 500);
-            } catch (error) {
-              console.error("🚨 วาร์ปเข้า Lobby ล้มเหลว:", error);
-            }
-          });
+      if (typeof navigationTo === "function" && viewTaskHub && viewLobby)
+        navigationTo(viewTaskHub, viewLobby);
+      else if (typeof showView === "function") showView("transferOutLobbyView");
 
-          return card;
-        }
+      if (typeof loadLobbyHeader === "function") loadLobbyHeader();
+      if (typeof renderLobbyTasks === "function")
+        await renderLobbyTasks(destBranch);
+
+      setTimeout(() => {
+        if (typeof focusShipmentInLobby === "function")
+          focusShipmentInLobby(shipmentNo);
+      }, 500);
+    } catch (error) {
+      console.error("🚨 วาร์ปเข้า Lobby ล้มเหลว:", error);
+    }
+  });
+
+  return card;
+}
+
 
  // 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
 

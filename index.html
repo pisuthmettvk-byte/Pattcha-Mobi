@@ -806,40 +806,39 @@
                     </div>
                   </div>
 
+
                   <div id="transferOutLobbyView" class="view-screen hide master-layout">
-                    <div class="master-header" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); z-index: 20;">
+                    
+                    <!-- 🟢 1. ส่วน Header (เพิ่ม ID: lobbyMasterHeader และ lobbyMasterTitle พร้อม transition) -->
+                    <div id="lobbyMasterHeader" class="master-header" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); z-index: 20; transition: background 0.3s ease;">
                       <div class="master-header-content">
-                        <h3 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">SHIPMENT LOBBY</h3>
+                        <h3 id="lobbyMasterTitle" style="color: #ffffff; margin: 0; font-size: 16px; font-weight: bold; letter-spacing: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">SHIPMENT LOBBY</h3>
                         <p id="lobbyBranchHeaderName" style="color: #ffe6e8; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">[XXXX] - ชื่อสาขา</p>
                       </div>
                     </div>
 
+                    <!-- ส่วนพื้นที่เนื้อหากลางจอ (คงเดิม) -->
                     <div id="lobbyContentContainer" class="master-content" style="padding: 15px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; background: #f5f4f0; gap: 12px;">
                       <div id="lobbyEmptyState" style="text-align: center; padding: 40px 20px; margin: auto;">
-                        
-                        
                         <i class="fas fa-truck-loading" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
                         <p style="color: #888; font-weight: bold;">ยังไม่มีข้อมูลการส่งออกในสาขานี้</p>
                         <p style="color: #aaa; font-size: 14px;">กดปุ่ม + เพื่อสร้างรายการ</p>
                       </div>
                     </div>
 
-            
+                    <!-- ปุ่มเพิ่มรถบรรทุก (คงเดิม) -->
                     <button id="btnAddShipmentTruck" style="position: absolute; bottom: calc(10vh + 20px); right: 20px; width: 68px; height: 68px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #669cff 0%, #0044ff 40%, #002f85 100%); color: white; border: none; box-shadow: 0 8px 15px rgba(0,0,0,0.4), inset 0 -5px 10px rgba(0,0,0,0.5), inset 0 5px 10px rgba(255,255,255,0.6); font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 50; transition: transform 0.1s;">
                       <i class="fas fa-truck"></i><i class="fas fa-plus" style="font-size: 12px; margin-left: 2px; margin-top: -10px;"></i>
                     </button>
 
-
-
-
-
-
-                    
-                    <div class="master-footer" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99;">
+                    <!-- 🟢 2. ส่วน Footer (เพิ่ม ID: lobbyMasterFooter พร้อม transition) -->
+                    <div id="lobbyMasterFooter" class="master-footer" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99; transition: background 0.3s ease;">
                       <button id="btnCancelFromLobby" class="master-btn-half" style="background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; font-weight: bold; font-size: 16px; border-top: 1px solid #ccc;">CANCEL</button>
                       <button id="btnSubmitLobby" class="master-btn-half" disabled style="background: rgba(0, 0, 0, 0.466); color: #aaa; font-weight: bold; border-left: 1px solid rgba(255,255,255,0.2); cursor: not-allowed; transition: all 0.3s;">EXPORT</button>
                     </div>
-                  </div> 
+                  </div>
+
+
                           <div id="customAlertModal" class="hide" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000005; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
                             <div style="background: white; width: 90%; max-width: 350px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column;">
                               <div id="modalAlertHeader" style="background: #dc3545; padding: 20px; text-align: center;">
@@ -875,23 +874,23 @@
                           </div>
 
                                
-                                  <div id="boxDetailsView" class="hide" style="width: 100%; height: 100vh; display: flex; flex-direction: column; background: #f4f7f6; position: fixed; top: 0; left: 0; z-index: 100000; overflow: hidden;">
+<div id="boxDetailsView" class="hide" style="width: 100%; height: 100vh; display: flex; flex-direction: column; background: #f4f7f6; position: fixed; top: 0; left: 0; z-index: 100000; overflow: hidden;">
                                       
-                                      <!-- 🟢 1. Header (สัดส่วนเดิม 100% เปลี่ยนแค่พื้นหลังเป็นสีแดงลูกระนาดแบบ Transfer Out) -->
-                                      <div style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); padding: 20px 0 15px 0; border-bottom: 2px solid #8a1a1b; z-index: 10;">
+                                      <!-- 🟢 1. Header (เพิ่ม ID: boxDetailsHeader และ transition: background 0.3s ease;) -->
+                                      <div id="boxDetailsHeader" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); padding: 20px 0 15px 0; border-bottom: 2px solid rgba(0,0,0,0.1); z-index: 10; transition: background 0.3s ease;">
                                           
                                           <div style="display: flex; align-items: center; padding: 0 20px; margin-bottom: 15px; gap: 15px;">
-                                              <button id="btnBackFromBox" style="background: none; border: none; font-size: 24px; color: white; cursor: pointer; padding: 0;">
+                                              <button id="btnBackFromBox" style="background: none; border: none; font-size: 24px; color: white; cursor: pointer; padding: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
                                                   <i class="fas fa-chevron-left"></i>
                                               </button>
                                               <div style="display: flex; flex-direction: column;">
                                                   <span id="boxDetailsShipmentText" style="font-size: 12px; color: rgba(255,255,255,0.9); font-weight: bold;">(Shipment No: XXXXXX)</span>
-                                                  <span id="boxDetailsBoxText" style="font-size: 20px; color: white; font-weight: 900;">BOX-XXX</span>
+                                                  <span id="boxDetailsBoxText" style="font-size: 20px; color: white; font-weight: 900; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">BOX-XXX</span>
                                               </div>
                                           </div>
 
                                                 <!-- ช่อง Magic Search -->
-                                                  <div id="unifiedInputAreaBox" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
+                                                <div id="unifiedInputAreaBox" style="width: 100%; padding: 0px 20px; box-sizing: border-box;">
                                                       <div id="boxSearchContainer" style="position: relative;">
                                                           <i class="fas fa-search" style="position: absolute; left: 20px; top: 16px; color: #b02a37;"></i>
                                                           
@@ -902,13 +901,10 @@
                                                               <i class="fas fa-times" style="font-size: 12px;"></i>
                                                           </div>
                                                       </div>
-                                                  </div>
                                                 </div>
+                                      </div>
 
-
-
-                                                
-                                      <!-- 🟢 2. Content Area -->
+                                      <!-- 🟢 2. Content Area (คงเดิม) -->
                                       <div id="boxContentArea" style="flex: 1; overflow-y: auto; width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;">
                                           <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
                                               <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
@@ -917,23 +913,20 @@
                                           </div>
                                       </div>
 
-
-
-                                      <!-- 🟢 3. Footer (โคลน Class และ Style จากหน้า Lobby 100%) -->
-                                      <div class="master-footer" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid #ff8e99; z-index: 10;">
+                                      <!-- 🟢 3. Footer (เพิ่ม ID: boxDetailsFooter และ transition: background 0.3s ease;) -->
+                                      <div id="boxDetailsFooter" class="master-footer" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; font-weight: bold; font-size: 16px; border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid rgba(0,0,0,0.1); z-index: 10; transition: background 0.3s ease;">
                                           
-                                          <!-- ปุ่มรูปกล้อง (โคลน Style ปุ่ม CANCEL) -->
+                                          <!-- ปุ่มรูปกล้อง -->
                                           <button id="btnBoxScanner" class="master-btn-half" style="background: linear-gradient(to bottom, #5a6268 0%, #aab2b7 50%, #5a6268 100%); color: white; font-weight: bold; font-size: 16px; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center;">
                                               <i class="fas fa-camera" style="font-size: 22px;"></i>
                                           </button>
                                           
-                                          <!-- ปุ่ม WRAP (ผูกคำสั่ง onclick แล้ว) -->
+                                          <!-- ปุ่ม WRAP -->
                                           <button id="btnBoxWrap" onclick="submitWrapBox()" class="master-btn-half" disabled style="background: rgba(0, 0, 0, 0.466); color: #aaa; font-weight: bold; border-left: 1px solid rgba(255,255,255,0.2); cursor: not-allowed; transition: all 0.3s; display: flex; justify-content: center; align-items: center;">
                                               <i class="fas fa-box" style="margin-right: 8px;"></i> WRAP
                                           </button>
                                       </div>  
-                                    </div>
-
+                                  </div>
 
 
 
