@@ -1727,6 +1727,21 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   const btnWrap = document.getElementById("btnBoxWrap");
   const searchInput = document.getElementById("boxSearchInput");
 
+  // 🌟 [NEW] ดึงโหมดปัจจุบัน แล้วสั่งเปลี่ยนสี Header/Footer หน้า Box Details ให้เข้าธีม
+  const currentMode = sessionStorage.getItem("lobbyMode") || "ASSIGN";
+  const boxDetailsHeader = document.getElementById("boxDetailsHeader");
+  const boxDetailsFooter = document.getElementById("boxDetailsFooter");
+
+  if (currentMode === "PENDING") {
+      // โหมด Pending -> เปลี่ยนเป็นสีเหลืองทองลูกระนาด
+      if(boxDetailsHeader) boxDetailsHeader.style.background = "linear-gradient(to bottom, #ffe066 0%, #fff3cd 50%, #ffc107 100%)";
+      if(boxDetailsFooter) boxDetailsFooter.style.background = "linear-gradient(to bottom, #ffe066 0%, #fff3cd 50%, #ffc107 100%)";
+  } else {
+      // โหมด Assign -> เปลี่ยนกลับเป็นสีแดงลูกระนาด (Transfer Out ปกติ)
+      if(boxDetailsHeader) boxDetailsHeader.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+      if(boxDetailsFooter) boxDetailsFooter.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+  }
+
   //📍 [Scanner Button Logic for Box Details]
   if (btnScanner) {
     const newBtnScanner = btnScanner.cloneNode(true);
@@ -1814,8 +1829,7 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
 // [openBoxDetails] END
 //===============
 
-
-            // 5. ระบบช่องค้นหา Magic Search (Box Details)
+// 5. ระบบช่องค้นหา Magic Search (Box Details)
             const boxSearchInput = document.getElementById("boxSearchInput");
             const boxClearSearchBtn = document.getElementById("boxClearSearchBtn");
             if (boxSearchInput && boxClearSearchBtn) {
