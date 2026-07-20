@@ -732,15 +732,26 @@ function showView(viewId) {
             try {
               let tasks = null;
 
+              // ⚡ [Cache Buster] บังคับเบราว์เซอร์ให้ดึงข้อมูลสดใหม่เสมอ (ป้องกันหน้า Lobby ย่อยไม่ซิงก์)
+              const timestamp = new Date().getTime();
+
               // 📍 [The Resilience Fix: ระบบ Retry ป้องกัน Fetch ล้มเหลวชั่วขณะจากเซิร์ฟเวอร์ Google]
               try {
-                const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
+                const response = await fetch(
+                  CONFIG.API_URL + "?action=get_tasks&t=" + timestamp,
+                );
                 if (!response.ok) throw new Error("Network Fetch Failed");
                 tasks = await response.json();
               } catch (firstTryError) {
-                console.warn("🚨 [API RETRY] ดึงข้อมูลครั้งแรกขัดข้อง กำลังพยายามดึงข้อมูลอีกครั้ง...", firstTryError);
-                // ลองดึงใหม่อีก 1 ครั้ง
-                const retryResponse = await fetch(CONFIG.API_URL + "?action=get_tasks");
+                console.warn(
+                  "🚨 [API RETRY] ดึงข้อมูลครั้งแรกขัดข้อง กำลังพยายามดึงข้อมูลอีกครั้ง...",
+                  firstTryError,
+                );
+                // ลองดึงใหม่อีก 1 ครั้ง (ใส่ timestamp ด้วย)
+                const retryTimestamp = new Date().getTime();
+                const retryResponse = await fetch(
+                  CONFIG.API_URL + "?action=get_tasks&t=" + retryTimestamp,
+                );
                 tasks = await retryResponse.json();
               }
 
@@ -947,71 +958,73 @@ function showView(viewId) {
         // 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
         //===============
         // [Load Tasks & Filter by Origin] START
-        async function loadExistingTasks() {
-          const containers = [
-            "assignContainer",
-            "pendingContainer",
-            "completeContainer",
-          ];
-          const assignContainer = document.getElementById("assignContainer");
-          if (!assignContainer) return;
+                async function loadExistingTasks() {
+                  const containers = [
+                    "assignContainer",
+                    "pendingContainer",
+                    "completeContainer",
+                  ];
+                  const assignContainer = document.getElementById("assignContainer");
+                  if (!assignContainer) return;
 
-          try {
-            const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
-            const tasks = await response.json();
-            if (!Array.isArray(tasks)) return;
+                  try {
+                    // ⚡ [Cache Buster] บังคับเบราว์เซอร์ให้ดึงข้อมูลสดใหม่เสมอ (ป้องกันหน้า Task Hub ไม่ซิงก์)
+                    const timestamp = new Date().getTime();
+                    const response = await fetch(CONFIG.API_URL + "?action=get_tasks&t=" + timestamp);
+                    const tasks = await response.json();
+                    if (!Array.isArray(tasks)) return;
 
-            containers.forEach((id) => {
-              const el = document.getElementById(id);
-              if (el) el.innerHTML = "";
-            });
+                    containers.forEach((id) => {
+                      const el = document.getElementById(id);
+                      if (el) el.innerHTML = "";
+                    });
 
-            // 📍 ดึงรหัสสาขาของตัวเองที่ล็อกอินอยู่
-            const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-              .trim()
-              .toUpperCase();
-            let counts = { assign: 0, pending: 0, complete: 0 };
+                    // 📍 ดึงรหัสสาขาของตัวเองที่ล็อกอินอยู่
+                    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
+                      .trim()
+                      .toUpperCase();
+                    let counts = { assign: 0, pending: 0, complete: 0 };
 
-            tasks.forEach((task) => {
-              // 📍 ดึงรหัสสาขาต้นทาง (Origin) จากฐานข้อมูล
-              const originBranch = String(task.Origin_Branch || "")
-                .trim()
-                .toUpperCase();
+                    tasks.forEach((task) => {
+                      // 📍 ดึงรหัสสาขาต้นทาง (Origin) จากฐานข้อมูล
+                      const originBranch = String(task.Origin_Branch || "")
+                        .trim()
+                        .toUpperCase();
 
-              // 🟢 เงื่อนไขที่ 1: แสดงเฉพาะงานที่ "สาขาต้นทาง (Origin)" ตรงกับสาขาของตัวเองเท่านั้น!
-              if (originBranch === myBranch) {
-                const statusKey = (task.Status || "").toLowerCase();
+                      // 🟢 เงื่อนไขที่ 1: แสดงเฉพาะงานที่ "สาขาต้นทาง (Origin)" ตรงกับสาขาของตัวเองเท่านั้น!
+                      if (originBranch === myBranch) {
+                        const statusKey = (task.Status || "").toLowerCase();
 
-                if (typeof createTransferOutTaskCard === "function") {
-                  const card = createTransferOutTaskCard(
-                    task.Date,
-                    task.Shipment_No,
-                    task.Origin_Type,
-                    task.Destination,
-                    task.Total_Box,
-                    task.Total_Item,
-                    task.Status,
-                  );
+                        if (typeof createTransferOutTaskCard === "function") {
+                          const card = createTransferOutTaskCard(
+                            task.Date,
+                            task.Shipment_No,
+                            task.Origin_Type,
+                            task.Destination,
+                            task.Total_Box,
+                            task.Total_Item,
+                            task.Status,
+                          );
 
-                  const target = document.getElementById(statusKey + "Container");
-                  if (target) {
-                    target.appendChild(card);
-                    counts[statusKey]++;
+                          const target = document.getElementById(statusKey + "Container");
+                          if (target) {
+                            target.appendChild(card);
+                            counts[statusKey]++;
+                          }
+                        }
+                      }
+                    });
+
+                    // 🟢 อัปเดตตัวเลขจำนวนงานตอนโหลดหน้า
+                    Object.keys(counts).forEach((key) => {
+                      const el = document.getElementById(key + "TaskCount");
+                      if (el)
+                        el.innerHTML = `Task (${counts[key]}) <i class="fas fa-chevron-down"></i>`;
+                    });
+                  } catch (error) {
+                    console.error("Error loading tasks:", error);
                   }
                 }
-              }
-            });
-
-            // 🟢 อัปเดตตัวเลขจำนวนงานตอนโหลดหน้า
-            Object.keys(counts).forEach((key) => {
-              const el = document.getElementById(key + "TaskCount");
-              if (el)
-                el.innerHTML = `Task (${counts[key]}) <i class="fas fa-chevron-down"></i>`;
-            });
-          } catch (error) {
-            console.error("Error loading tasks:", error);
-          }
-        }
         // [Load Tasks & Filter by Origin] END
         //===============
 
@@ -1028,7 +1041,9 @@ function showView(viewId) {
 // กลุ่มที่ 6: Utility & Global Initializers (ส่วนเชื่อมประสาน)
 // ======================================================
 
-        // 1. ฟังก์ชันค้นหาและวาร์ป (แก้ไขคืนค่าสีลูกระนาดให้ถูกต้อง)
+       
+
+// 1. ฟังก์ชันค้นหาและวาร์ป (แก้ไขคืนค่าสีลูกระนาดให้ถูกต้อง)
         function focusShipmentInLobby(shipmentNo) {
           const columns = document.querySelectorAll(".shipment-column");
           columns.forEach((col) => {
