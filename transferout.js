@@ -336,10 +336,9 @@ function createShipmentColumn(
   const statusText = (status || "Assign").toUpperCase();
   const isPending = statusText === "PENDING";
 
-  // 🌟 [NEW] เปลี่ยนสีลูกระนาดตามโหมด
-  const headerGradient = isPending
-    ? "linear-gradient(to bottom, #ffe066 0%, #fff3cd 50%, #ffc107 100%)" // สีเหลืองลูกระนาดสำหรับ Pending
-    : "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)"; // สีเงินลูกระนาดสำหรับ Assign
+  // 🚨 [FIX] คืนค่าแถบคอลัมน์แม่เป็นสีเงินลูกระนาดต้นฉบับ 100% ตลอดกาลตามคำสั่ง (ไม่ใช้สีเหลืองแล้ว)
+  const headerGradient =
+    "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)";
 
   // 🌟 [NEW] ซ่อนปุ่มต่างๆ และตั้งสี Tag ถ้าเป็นโหมด Pending
   const displayStyle = isPending ? "display: none !important;" : "";
@@ -550,6 +549,7 @@ function createShipmentColumn(
 
   return col;
 }
+
 //[Phase 4 ] 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่  END
 // ======================================================
 
