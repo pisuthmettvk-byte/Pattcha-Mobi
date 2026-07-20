@@ -847,78 +847,86 @@ function showView(viewId) {
           return card;
         }
 
-        // 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
-        //===============
-        // [Load Tasks & Filter by Origin] START
-                async function loadExistingTasks() {
-                  const containers = [
-                    "assignContainer",
-                    "pendingContainer",
-                    "completeContainer",
-                  ];
-                  const assignContainer = document.getElementById("assignContainer");
-                  if (!assignContainer) return;
+ // 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
 
-                  try {
-                    // ⚡ [Cache Buster] บังคับเบราว์เซอร์ให้ดึงข้อมูลสดใหม่เสมอ (ป้องกันหน้า Task Hub ไม่ซิงก์)
-                    const timestamp = new Date().getTime();
-                    const response = await fetch(CONFIG.API_URL + "?action=get_tasks&t=" + timestamp);
-                    const tasks = await response.json();
-                    if (!Array.isArray(tasks)) return;
+      //===============
+      // [Load Tasks & Filter by Origin] START
+      async function loadExistingTasks() {
+        const containers = [
+          "assignContainer",
+          "pendingContainer",
+          "completeContainer",
+        ];
+        const assignContainer = document.getElementById("assignContainer");
+        if (!assignContainer) return;
 
-                    containers.forEach((id) => {
-                      const el = document.getElementById(id);
-                      if (el) el.innerHTML = "";
-                    });
+        try {
+          // ⚡ [Cache Buster] บังคับเบราว์เซอร์ให้ดึงข้อมูลสดใหม่เสมอ (ป้องกันหน้า Task Hub ไม่ซิงก์)
+          const timestamp = new Date().getTime();
+          const response = await fetch(CONFIG.API_URL + "?action=get_tasks&t=" + timestamp);
+          const tasks = await response.json();
+          if (!Array.isArray(tasks)) return;
 
-                    // 📍 ดึงรหัสสาขาของตัวเองที่ล็อกอินอยู่
-                    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-                      .trim()
-                      .toUpperCase();
-                    let counts = { assign: 0, pending: 0, complete: 0 };
+          containers.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = "";
+          });
 
-                    tasks.forEach((task) => {
-                      // 📍 ดึงรหัสสาขาต้นทาง (Origin) จากฐานข้อมูล
-                      const originBranch = String(task.Origin_Branch || "")
-                        .trim()
-                        .toUpperCase();
+          // 📍 ดึงรหัสสาขาของตัวเองที่ล็อกอินอยู่
+          const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
+          let counts = { assign: 0, pending: 0, complete: 0 };
 
-                      // 🟢 เงื่อนไขที่ 1: แสดงเฉพาะงานที่ "สาขาต้นทาง (Origin)" ตรงกับสาขาของตัวเองเท่านั้น!
-                      if (originBranch === myBranch) {
-                        const statusKey = (task.Status || "").toLowerCase();
+          tasks.forEach((task) => {
+            // 📍 ดึงรหัสสาขาต้นทาง (Origin) จากฐานข้อมูล
+            const originBranch = String(task.Origin_Branch || "").trim().toUpperCase();
+            
+            // 🚨 [BUG FIX]: สกัดและแปลงรหัสสาขาปลายทาง (Destination) เพื่อนำมาตรวจสอบ
+            const rawDest = String(task.Destination || "").trim().toUpperCase();
+            let actualDestBranch = rawDest;
+            if (typeof getRealBranchCode === "function") {
+                actualDestBranch = getRealBranchCode(rawDest);
+            } else if (rawDest.includes(myBranch.substring(0, 2))) {
+                actualDestBranch = myBranch;
+            }
 
-                        if (typeof createTransferOutTaskCard === "function") {
-                          const card = createTransferOutTaskCard(
-                            task.Date,
-                            task.Shipment_No,
-                            task.Origin_Type,
-                            task.Destination,
-                            task.Total_Box,
-                            task.Total_Item,
-                            task.Status,
-                          );
+            // 🟢 เงื่อนไขที่ 1: สาขาต้นทางต้องเป็นสาขาเรา (งานที่เราเป็นคนส่ง)
+            // 🚫 เงื่อนไขที่ 2: สาขาปลายทาง "ต้องไม่ใช่สาขาเรา" เด็ดขาด (บล็อกข้อมูล Test เก่าที่เคยสร้างผิดไว้ในฐานข้อมูล)
+            if (originBranch === myBranch && actualDestBranch !== myBranch) {
+              const statusKey = (task.Status || "").toLowerCase();
 
-                          const target = document.getElementById(statusKey + "Container");
-                          if (target) {
-                            target.appendChild(card);
-                            counts[statusKey]++;
-                          }
-                        }
-                      }
-                    });
+              if (typeof createTransferOutTaskCard === "function") {
+                const card = createTransferOutTaskCard(
+                  task.Date,
+                  task.Shipment_No,
+                  task.Origin_Type,
+                  task.Destination,
+                  task.Total_Box,
+                  task.Total_Item,
+                  task.Status,
+                );
 
-                    // 🟢 อัปเดตตัวเลขจำนวนงานตอนโหลดหน้า
-                    Object.keys(counts).forEach((key) => {
-                      const el = document.getElementById(key + "TaskCount");
-                      if (el)
-                        el.innerHTML = `Task (${counts[key]}) <i class="fas fa-chevron-down"></i>`;
-                    });
-                  } catch (error) {
-                    console.error("Error loading tasks:", error);
-                  }
+                const target = document.getElementById(statusKey + "Container");
+                if (target) {
+                  target.appendChild(card);
+                  counts[statusKey]++;
                 }
-        // [Load Tasks & Filter by Origin] END
-        //===============
+              }
+            }
+          });
+
+          // 🟢 อัปเดตตัวเลขจำนวนงานตอนโหลดหน้า
+          Object.keys(counts).forEach((key) => {
+            const el = document.getElementById(key + "TaskCount");
+            if (el)
+              el.innerHTML = `Task (${counts[key]}) <i class="fas fa-chevron-down"></i>`;
+          });
+        } catch (error) {
+          console.error("Error loading tasks:", error);
+        }
+      }
+      // [Load Tasks & Filter by Origin] END
+      //===============
+
 
 // ======================================================
 // 🚀 END กลุ่มที่ 5
@@ -932,9 +940,6 @@ function showView(viewId) {
 // ======================================================
 // กลุ่มที่ 6: Utility & Global Initializers (ส่วนเชื่อมประสาน)
 // ======================================================
-
-       
-
 // 1. ฟังก์ชันค้นหาและวาร์ป (แก้ไขคืนค่าสีลูกระนาดให้ถูกต้อง)
         function focusShipmentInLobby(shipmentNo) {
           const columns = document.querySelectorAll(".shipment-column");
@@ -1121,7 +1126,9 @@ function showView(viewId) {
           }
       });
 
-// ======================================================
+
+
+      // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
 // ======================================================
 
