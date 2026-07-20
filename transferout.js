@@ -176,18 +176,19 @@ async function loadBranchesIntoDropdown() {
 // =================================================================
 
 
-
 // ======================================================
 // [Phase 3 Final] 📦 ฟังก์ชันสร้างกล่องลูก START
 
-function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
-  const childBoxNo = `${baseBoxNo}-${String(boxRunningIndex).padStart(4, "0")}`;
+// 🚨 [UPDATE FIX]: เปลี่ยนมารับค่า boxSuffixStr (เลขวิ่ง+รหัสสุ่ม) แทนเลขธรรมดา
+function createShipmentChildBox(baseBoxNo, boxSuffixStr) {
+  // 🚨 [UPDATE FIX]: ประกอบร่างชื่อกล่องแบบไม่ต้องเติม 0000 ซ้ำซ้อน
+  const childBoxNo = `${baseBoxNo}-${boxSuffixStr}`;
   const childDiv = document.createElement("div");
   childDiv.className = "shipment-child-box";
   childDiv.dataset.boxNo = childBoxNo;
   childDiv.dataset.status = "open";
 
-  // 🟢 ปรับดีไซน์เป็น Task Card
+  // 🟢 ปรับดีไซน์เป็น Task Card (คงเดิมของเจเลอร์)
   childDiv.style.cssText = `
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
     background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745;
@@ -209,7 +210,7 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
     </div>
   `;
 
-  // 🚨 [แก้ไขส่วนนี้] การกดเปิดหน้า Box Details แบบใหม่
+  // 🚨 การกดเปิดหน้า Box Details แบบใหม่ (คงเดิม)
   childDiv.addEventListener("click", function (e) {
     // ป้องกันไม่ให้เปิดหน้าต่าง ถ้าเปิดโหมดลบอยู่ หรือกดโดนปุ่มลบ/เช็คบ็อกซ์
     if (
@@ -234,7 +235,7 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
     }
   });
 
-  // ♻️ ลอจิกปุ่มลบ (ลบกล่อง + คืนสต๊อก)
+  // ♻️ ลอจิกปุ่มลบ (ลบกล่อง + คืนสต๊อก) (คงเดิม)
   const btnDeleteChild = childDiv.querySelector(".child-btn-delete");
   btnDeleteChild.addEventListener("click", async (e) => {
     e.stopPropagation();
@@ -347,7 +348,6 @@ function createShipmentChildBox(baseBoxNo, boxRunningIndex) {
 
 // [Phase 3 Final]📦 ฟังก์ชันสร้างกล่องลูก END
 // ======================================================
-
 
 
 
@@ -559,11 +559,19 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
   });
 
   // 3. สร้างกล่องลูก
-
   let boxIdCounter = 0;
   btnAddChildBox.addEventListener("click", () => {
     boxIdCounter++;
-    const childEl = createShipmentChildBox(baseBoxNo, boxIdCounter);
+
+    // 🎲 [NEW FEATURE]: สร้างตัวอักษรภาษาอังกฤษสุ่ม 3 ตัว (เช่น AFK) ป้องกันกล่องชนกัน!
+    const randomText = Math.random().toString(36).substring(2, 5).toUpperCase();
+
+    // 📦 ประกอบร่างเลข Running + อักษรสุ่ม (ผลลัพธ์: 0001AFK)
+    const newBoxSuffix = String(boxIdCounter).padStart(4, "0") + randomText;
+
+    // 🚨 ส่งรหัสเข้าไปสร้างกล่อง
+    const childEl = createShipmentChildBox(baseBoxNo, newBoxSuffix);
+
     childrenContainer.appendChild(childEl);
     childrenContainer.classList.remove("hide");
     masterTruckCount.textContent = childrenContainer.querySelectorAll(
@@ -588,6 +596,10 @@ function createShipmentColumn(shipmentNo, originType = "Store") {
 
 //[Phase 4 ] 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่  END
 // ======================================================
+
+
+
+
 
 
 // =================================================================
@@ -1124,7 +1136,6 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
     let maxBoxIndex = 0;
     let hasDrafts = false;
 
-    // ค้นหากล่องทั้งหมดของชิปเมนต์นี้ในเครื่อง
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key.startsWith(`draft_box_${shipmentNo}_`)) {
@@ -1134,15 +1145,20 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
             
             const boxNo = key.replace(`draft_box_${shipmentNo}_`, "");
             const parts = boxNo.split("-");
-            const indexNum = parseInt(parts[parts.length - 1], 10) || 0;
+            
+            // 🚨 [UPDATE FIX]: ดึงรหัสกล่องพร้อมตัวสุ่มออกมา (เช่น 0001AFK)
+            const suffixStr = parts[parts.length - 1]; 
+            
+            // ความฉลาดของ parseInt คือมันจะตัดตัวอักษรภาษาอังกฤษออกให้เอง เหลือแค่ 1, 2, 3 เพื่อเอาไปทำ Running นับยอดต่อได้เลย!
+            const indexNum = parseInt(suffixStr, 10) || 0; 
             if (indexNum > maxBoxIndex) maxBoxIndex = indexNum;
 
-            // ถ้ากล่องนี้ยังไม่ถูกวาดบนหน้าจอ ให้วาดขึ้นมา
             if (!childrenContainer.querySelector(`.shipment-child-box[data-box-no="${boxNo}"]`)) {
                 if (typeof createShipmentChildBox === "function") {
-                    const childEl = createShipmentChildBox(baseBoxNo, indexNum);
                     
-                    // คำนวณยอดรวมของกล่องนั้น
+                    // 🚨 โยน suffixStr (0001AFK) เข้าไปวาดกล่องกู้คืน แทน indexNum ธรรมดา
+                    const childEl = createShipmentChildBox(baseBoxNo, suffixStr); 
+                    
                     let totalScan = 0, totalManual = 0;
                     draftData.forEach(item => {
                         totalScan += (item.scanQty || 0);
@@ -1154,7 +1170,6 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
                     if (scanEl) scanEl.textContent = totalScan;
                     if (manualEl) manualEl.textContent = totalManual;
 
-                    // 🌟 ตรวจสอบว่ากล่องนี้เคยกด WRAP ไปหรือยัง? ถ้าใช่ ให้เปลี่ยนเป็นกล่องแดง
                     const isClosed = localStorage.getItem(`status_box_${shipmentNo}_${boxNo}`) === "Closed";
                     if (isClosed) {
                         childEl.setAttribute("data-status", "Closed");
@@ -1163,7 +1178,7 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
                         const checkboxEl = childEl.querySelector(".child-checkbox");
                         if (boxIcon) {
                             boxIcon.className = "fas fa-box box-status-icon";
-                            boxIcon.style.color = "#dc3545"; // สีแดง
+                            boxIcon.style.color = "#dc3545"; 
                         }
                         if (checkboxEl) {
                             checkboxEl.disabled = false;
@@ -1178,7 +1193,6 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
         }
     }
 
-    // ถ้ามีกล่อง ให้โชว์คอนเทนเนอร์และอัปเดตยอดรวม Master
     if (hasDrafts) {
         childrenContainer.classList.remove("hide");
         const masterTruckEl = colElement.querySelector('.master-truck-count');
@@ -1188,6 +1202,7 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
 
     return maxBoxIndex;
 };
+
 
 // 2. อัปเดตปุ่ม Back (ย้อนกลับ) ให้อัปเดตตัวเลขหน้า Lobby ก่อนออก
 document.addEventListener("DOMContentLoaded", () => {
