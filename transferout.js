@@ -1294,7 +1294,9 @@ function createTransferOutTaskCard(
 
       document.addEventListener("DOMContentLoaded", () => {
         // 1. ประกาศตัวแปรหน้าจอ (View Containers)
-        const productMovementView = document.getElementById("productMovementView");
+        const productMovementView = document.getElementById(
+          "productMovementView",
+        );
         const viewTaskHub = document.getElementById("transferOutTaskHubView");
         const viewDest = document.getElementById("transferOutDestView");
         const viewLobby = document.getElementById("transferOutLobbyView");
@@ -1340,13 +1342,19 @@ function createTransferOutTaskCard(
         // ปุ่ม Cancel กลับจากหน้าเลือกสาขา
         document
           .getElementById("btnCancelDest")
-          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+          ?.addEventListener("click", () =>
+            navigationTo(viewDest, viewTaskHub),
+          );
         document
           .getElementById("btnBackFromDest")
-          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+          ?.addEventListener("click", () =>
+            navigationTo(viewDest, viewTaskHub),
+          );
         document
           .getElementById("btnBackToDest")
-          ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+          ?.addEventListener("click", () =>
+            navigationTo(viewLobby, viewTaskHub),
+          );
 
         // 🟢 พระเอกของงาน 1: กด Cancel จากหน้า Lobby ต้องกลับไป Task Hub และ "รีเฟรชข้อมูล"
         document
@@ -1386,10 +1394,16 @@ function createTransferOutTaskCard(
             // บันทึก SessionStorage
             sessionStorage.setItem("selectedBranchID", branchID);
 
+            // 🚨 [HOT FIX]: ล้างสมอง! บังคับให้เป็นโหมด ASSIGN (สีแดง) เสมอเมื่อสร้างงานใหม่!
+            sessionStorage.setItem("lobbyMode", "ASSIGN");
+            if (typeof window.applyLobbyTheme === "function") {
+              window.applyLobbyTheme();
+            }
+
             // วาร์ปไปหน้า Lobby แบบ Smooth Animation
             navigationTo(viewDest, viewLobby);
 
-            // 🟢 พระเอกของงาน 2: โหลด Header และ "ดึงข้อมูล Lobby" ของสาขานั้นมาแสดง
+            // โหลด Header และ "ดึงข้อมูล Lobby" ของสาขานั้นมาแสดง
             if (typeof loadLobbyHeader === "function") loadLobbyHeader();
             if (typeof renderLobbyTasks === "function") {
               await renderLobbyTasks(branchID);
@@ -1400,7 +1414,9 @@ function createTransferOutTaskCard(
         // ==========================================
         // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
         // ==========================================
-        const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+        const btnAddShipmentTruck = document.getElementById(
+          "btnAddShipmentTruck",
+        );
         const shipmentBoxModal = document.getElementById("shipmentBoxModal");
         const selectType = document.getElementById("selectTransferType");
         const inputBoxNumber = document.getElementById("inputBoxNumber");
@@ -1427,9 +1443,13 @@ function createTransferOutTaskCard(
             const selectedBranchID =
               sessionStorage.getItem("selectedBranchID") || "KKN02";
             const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
-            const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+            const dateStr = new Date()
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "");
             let previewNum =
-              parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
+              parseInt(
+                localStorage.getItem("shipment_running_counter") || "0",
+              ) + 1;
             if (previewNum > 9999) previewNum = 1;
             const previewRunning = previewNum.toString().padStart(4, "0");
 
@@ -1451,12 +1471,15 @@ function createTransferOutTaskCard(
               return;
             }
 
-            const myBranch = String(localStorage.getItem("pattcha_branch") || "CK")
+            const myBranch = String(
+              localStorage.getItem("pattcha_branch") || "CK",
+            )
               .trim()
               .toUpperCase();
 
             // 🟢 1. ดึงรหัสจากหน่วยความจำ (อาจเป็น CTW03 หรือ 02CT)
-            const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
+            const rawSelected =
+              sessionStorage.getItem("selectedBranchID") || "KKN02";
 
             // 🟢 2. บังคับแปลงให้เป็นรหัสจริงเสมอ (ถ้าเป็น 02CT จะถูกแปลงกลับเป็น CTW03)
             const actualBranchID =
@@ -1517,10 +1540,13 @@ function createTransferOutTaskCard(
                     );
                     taskHubAssignContainer.appendChild(newCard);
 
-                    const assignCountEl = document.getElementById("assignTaskCount");
+                    const assignCountEl =
+                      document.getElementById("assignTaskCount");
                     if (assignCountEl) {
                       const currentCount =
-                        taskHubAssignContainer.querySelectorAll(".task-card").length;
+                        taskHubAssignContainer.querySelectorAll(
+                          ".task-card",
+                        ).length;
                       assignCountEl.innerHTML = `Task (${currentCount}) <i class="fas fa-chevron-down"></i>`;
                     }
                   }
@@ -1543,7 +1569,7 @@ function createTransferOutTaskCard(
             sessionStorage.removeItem("jump_to_shipment");
           }, 500);
         }
-      });
+      };);
 
 // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
@@ -3174,25 +3200,38 @@ window.processExport = async function() {
 
 
 
+
 // ==========================================
 // 🎨 ฟังก์ชันจัดการ Theme (สลับสีเหลือง/แดง)
 // ==========================================
-      window.applyLobbyTheme = function() {
-          const mode = (sessionStorage.getItem("lobbyMode") || "ASSIGN").toUpperCase();
-          const headers = [document.getElementById("lobbyMasterHeader"), document.getElementById("boxDetailsHeader")];
-          const footers = [document.getElementById("lobbyMasterFooter"), document.getElementById("boxDetailsFooter")];
+window.applyLobbyTheme = function() {
+    const mode = (sessionStorage.getItem("lobbyMode") || "ASSIGN").toUpperCase();
+    const headers = [document.getElementById("lobbyMasterHeader"), document.getElementById("boxDetailsHeader")];
+    const footers = [document.getElementById("lobbyMasterFooter"), document.getElementById("boxDetailsFooter")];
 
-          const redGradient = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
-          const yellowGradient = "linear-gradient(to bottom, #d39e00 0%, #ffc107 50%, #d39e00 100%)";
-          const targetGradient = mode === "PENDING" ? yellowGradient : redGradient;
+    // สีแดงลูกระนาด (Assign)
+    const redGradient = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+    // สีเหลืองทองลูกระนาด (Pending)
+    const yellowGradient = "linear-gradient(to bottom, #d39e00 0%, #ffc107 50%, #d39e00 100%)";
 
-          headers.forEach(el => { if(el) el.style.background = targetGradient; });
-          footers.forEach(el => { if(el) el.style.background = targetGradient; });
+    const targetGradient = mode === "PENDING" ? yellowGradient : redGradient;
 
-          const isPending = mode === "PENDING";
-          const btnAddTruck = document.getElementById("btnAddShipmentTruck");
-          const btnExport = document.getElementById("btnSubmitLobby");
-          
-          if (btnAddTruck) btnAddTruck.style.display = isPending ? "none" : "flex";
-          if (btnExport) btnExport.style.display = isPending ? "none" : "inline-block";
-      };
+    // สลับสีแถบลูกระนาด
+    headers.forEach(el => { if(el) el.style.background = targetGradient; });
+    footers.forEach(el => { if(el) el.style.background = targetGradient; });
+
+    const isPending = mode === "PENDING";
+    
+    // 🚨 ควบคุมการซ่อน/โชว์ปุ่มหน้า Lobby
+    const btnAddTruck = document.getElementById("btnAddShipmentTruck");
+    const btnExport = document.getElementById("btnSubmitLobby");
+    
+    // ปุ่มรถบรรทุกต้องใช้ flex เพื่อให้ไอคอนอยู่ตรงกลางสวยงาม
+    if (btnAddTruck) {
+        btnAddTruck.style.display = isPending ? "none" : "flex"; 
+    }
+    
+    if (btnExport) {
+        btnExport.style.display = isPending ? "none" : "flex";
+    }
+};
