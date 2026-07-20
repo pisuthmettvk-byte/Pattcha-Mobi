@@ -179,16 +179,16 @@ async function loadBranchesIntoDropdown() {
 // ======================================================
 // [Phase 3 Final] 📦 ฟังก์ชันสร้างกล่องลูก START
 
-// 🚨 [UPDATE FIX]: เปลี่ยนมารับค่า boxSuffixStr (เลขวิ่ง+รหัสสุ่ม) แทนเลขธรรมดา
-function createShipmentChildBox(baseBoxNo, boxSuffixStr) {
-  // 🚨 [UPDATE FIX]: ประกอบร่างชื่อกล่องแบบไม่ต้องเติม 0000 ซ้ำซ้อน
-  const childBoxNo = `${baseBoxNo}-${boxSuffixStr}`;
+// 🚨 [UPDATE FIX]: เพิ่มพารามิเตอร์ isRestore เพื่อแยกว่าเป็นการสร้างใหม่ หรือ กู้คืน
+function createShipmentChildBox(baseBoxNo, suffixOrFullId, isRestore = false) {
+  // ถ้ากู้คืน (isRestore = true) ให้ใช้รหัสเดิมเต็มๆ เลย ไม่ต้องสร้างใหม่
+  const childBoxNo = isRestore ? suffixOrFullId : `${baseBoxNo}-${suffixOrFullId}`;
+  
   const childDiv = document.createElement("div");
   childDiv.className = "shipment-child-box";
   childDiv.dataset.boxNo = childBoxNo;
   childDiv.dataset.status = "open";
 
-  // 🟢 ปรับดีไซน์เป็น Task Card (คงเดิมของเจเลอร์)
   childDiv.style.cssText = `
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
     background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745;
@@ -210,39 +210,23 @@ function createShipmentChildBox(baseBoxNo, boxSuffixStr) {
     </div>
   `;
 
-  // 🚨 การกดเปิดหน้า Box Details แบบใหม่ (คงเดิม)
   childDiv.addEventListener("click", function (e) {
-    // ป้องกันไม่ให้เปิดหน้าต่าง ถ้าเปิดโหมดลบอยู่ หรือกดโดนปุ่มลบ/เช็คบ็อกซ์
-    if (
-      window.isGlobalDeleteMode ||
-      e.target.closest(".child-btn-delete") ||
-      e.target.closest(".child-checkbox")
-    )
-      return;
+    if (window.isGlobalDeleteMode || e.target.closest(".child-btn-delete") || e.target.closest(".child-checkbox")) return;
 
-    // ดึงรหัสชิปเมนต์ตัวแม่
     const parentCol = childDiv.closest(".shipment-column");
-    const shipmentNo = parentCol
-      ? parentCol.getAttribute("data-shipment")
-      : baseBoxNo;
-
-    // เช็กสถานะว่ากล่องปิดหรือยัง
+    const shipmentNo = parentCol ? parentCol.getAttribute("data-shipment") : baseBoxNo;
     const isClosed = childDiv.dataset.status === "Closed";
 
-    // โยนข้อมูลไปที่ฟังก์ชันเปิดหน้า
     if (typeof window.openBoxDetails === "function") {
       window.openBoxDetails(shipmentNo, childBoxNo, childDiv, isClosed);
     }
   });
 
-  // ♻️ ลอจิกปุ่มลบ (ลบกล่อง + คืนสต๊อก) (คงเดิม)
   const btnDeleteChild = childDiv.querySelector(".child-btn-delete");
   btnDeleteChild.addEventListener("click", async (e) => {
     e.stopPropagation();
     const parentCol = childDiv.closest(".shipment-column");
-    const shipmentNo = parentCol
-      ? parentCol.getAttribute("data-shipment")
-      : baseBoxNo;
+    const shipmentNo = parentCol ? parentCol.getAttribute("data-shipment") : baseBoxNo;
     const isClosed = childDiv.dataset.status === "Closed";
 
     const isConfirm = await window.safeConfirm(
@@ -253,42 +237,27 @@ function createShipmentChildBox(baseBoxNo, boxSuffixStr) {
 
     if (isConfirm) {
       if (isClosed) {
-        // 🚨 กล่องปิดแล้ว: ยิง API ไปลบข้อมูลหลังบ้านและคืนสต๊อก
         const loadingOverlay = document.createElement("div");
-        loadingOverlay.style.cssText =
-          "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
-        loadingOverlay.innerHTML =
-          "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังคืนสต๊อกและลบกล่อง...";
+        loadingOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
+        loadingOverlay.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังคืนสต๊อกและลบกล่อง...";
         document.body.appendChild(loadingOverlay);
 
-        const branchCode = String(localStorage.getItem("pattcha_branch") || "")
-          .trim()
-          .toUpperCase();
+        const branchCode = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
 
         fetch(CONFIG.API_URL + "?action=delete_box", {
-          method: "POST",
-          body: JSON.stringify({
-            shipmentId: shipmentNo,
-            boxNo: childBoxNo,
-            branch: branchCode,
-          }),
+          method: "POST", body: JSON.stringify({ shipmentId: shipmentNo, boxNo: childBoxNo, branch: branchCode }),
         })
           .then((res) => res.json())
           .then((data) => {
             document.body.removeChild(loadingOverlay);
             if (data.status === "success" || data.success) {
-              // 🌟 [NEW] คืนสต๊อกในความจำมือถือแบบ Real-time ทันที
               const savedItemsStr = childDiv.getAttribute("data-saved-items");
               if (savedItemsStr) {
                 try {
                   const savedItems = JSON.parse(savedItemsStr);
                   savedItems.forEach((item) => {
                     if (typeof window.updateLocalStockMemory === "function") {
-                      window.updateLocalStockMemory(
-                        item.sku,
-                        item.totalQty,
-                        false,
-                      ); // false = คืนสต๊อก
+                      window.updateLocalStockMemory(item.sku, item.totalQty, false); 
                     }
                   });
                 } catch (e) {}
@@ -299,29 +268,15 @@ function createShipmentChildBox(baseBoxNo, boxSuffixStr) {
               localStorage.removeItem(`status_box_${shipmentNo}_${childBoxNo}`);
 
               if (parentCol) {
-                const truckCountEl = parentCol.querySelector(
-                  ".master-truck-count",
-                );
-                const remainingBoxes = parentCol.querySelectorAll(
-                  ".shipment-child-box",
-                ).length;
+                const truckCountEl = parentCol.querySelector(".master-truck-count");
+                const remainingBoxes = parentCol.querySelectorAll(".shipment-child-box").length;
                 if (truckCountEl) truckCountEl.textContent = remainingBoxes;
-                if (typeof window.updateMasterShipmentTotals === "function")
-                  window.updateMasterShipmentTotals(shipmentNo);
+                if (typeof window.updateMasterShipmentTotals === "function") window.updateMasterShipmentTotals(shipmentNo);
               }
-              if (typeof window.updateExportButtonState === "function")
-                window.updateExportButtonState();
-              window.safeAlert(
-                "SUCCESS",
-                `ลบกล่องและคืนสต๊อกเรียบร้อย!`,
-                "success",
-              );
+              if (typeof window.updateExportButtonState === "function") window.updateExportButtonState();
+              window.safeAlert("SUCCESS", `ลบกล่องและคืนสต๊อกเรียบร้อย!`, "success");
             } else {
-              window.safeAlert(
-                "ERROR",
-                "เกิดข้อผิดพลาด: " + data.message,
-                "error",
-              );
+              window.safeAlert("ERROR", "เกิดข้อผิดพลาด: " + data.message, "error");
             }
           })
           .catch((err) => {
@@ -329,14 +284,11 @@ function createShipmentChildBox(baseBoxNo, boxSuffixStr) {
             window.safeAlert("ERROR", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
           });
       } else {
-        // กล่องยังเปิดอยู่ (ยังไม่ได้หักสต๊อก): ลบกราฟิกบนหน้าจอทิ้งได้เลย
         childDiv.remove();
         localStorage.removeItem(`draft_box_${shipmentNo}_${childBoxNo}`);
         if (parentCol) {
           const truckCountEl = parentCol.querySelector(".master-truck-count");
-          const remainingBoxes = parentCol.querySelectorAll(
-            ".shipment-child-box",
-          ).length;
+          const remainingBoxes = parentCol.querySelectorAll(".shipment-child-box").length;
           if (truckCountEl) truckCountEl.textContent = remainingBoxes;
         }
       }
@@ -345,11 +297,8 @@ function createShipmentChildBox(baseBoxNo, boxSuffixStr) {
 
   return childDiv;
 }
-
 // [Phase 3 Final]📦 ฟังก์ชันสร้างกล่องลูก END
 // ======================================================
-
-
 
 // ======================================================
 //[Phase 4 ] 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่  START
@@ -1123,6 +1072,7 @@ function showView(viewId) {
 // ♻️ [Phase 1.5] ระบบซิงก์ตัวเลขและกู้คืนกล่องที่หายไป (Lobby Sync & Restore)
 // ======================================================
 
+// ======================================================
 // 1. ฟังก์ชันกู้คืนกล่อง (ทั้งที่เปิดอยู่และปิดแล้ว) มาเรียงบนหน้าจออัตโนมัติ
 window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
     if (!colElement) return 0;
@@ -1143,21 +1093,20 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
             let draftData = [];
             try { draftData = JSON.parse(localStorage.getItem(key)) || []; } catch(e){}
             
-            const boxNo = key.replace(`draft_box_${shipmentNo}_`, "");
-            const parts = boxNo.split("-");
+            // 🚨 [UPDATE FIX]: ดึงชื่อกล่องเต็มๆ มาใช้เลย ห้ามหั่น!
+            const exactBoxNo = key.replace(`draft_box_${shipmentNo}_`, "");
             
-            // 🚨 [UPDATE FIX]: ดึงรหัสกล่องพร้อมตัวสุ่มออกมา (เช่น 0001AFK)
+            // หาเลข Index เพื่อไปรันตัวเลขกล่องใหม่ต่อให้ถูกต้อง
+            const parts = exactBoxNo.split("-");
             const suffixStr = parts[parts.length - 1]; 
-            
-            // ความฉลาดของ parseInt คือมันจะตัดตัวอักษรภาษาอังกฤษออกให้เอง เหลือแค่ 1, 2, 3 เพื่อเอาไปทำ Running นับยอดต่อได้เลย!
             const indexNum = parseInt(suffixStr, 10) || 0; 
             if (indexNum > maxBoxIndex) maxBoxIndex = indexNum;
 
-            if (!childrenContainer.querySelector(`.shipment-child-box[data-box-no="${boxNo}"]`)) {
+            if (!childrenContainer.querySelector(`.shipment-child-box[data-box-no="${exactBoxNo}"]`)) {
                 if (typeof createShipmentChildBox === "function") {
                     
-                    // 🚨 โยน suffixStr (0001AFK) เข้าไปวาดกล่องกู้คืน แทน indexNum ธรรมดา
-                    const childEl = createShipmentChildBox(baseBoxNo, suffixStr); 
+                    // 🚨 [UPDATE FIX]: ส่ง exactBoxNo และใส่ค่า true ไปบอกว่านี่คือการ Restore!
+                    const childEl = createShipmentChildBox(baseBoxNo, exactBoxNo, true); 
                     
                     let totalScan = 0, totalManual = 0;
                     draftData.forEach(item => {
@@ -1170,7 +1119,7 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
                     if (scanEl) scanEl.textContent = totalScan;
                     if (manualEl) manualEl.textContent = totalManual;
 
-                    const isClosed = localStorage.getItem(`status_box_${shipmentNo}_${boxNo}`) === "Closed";
+                    const isClosed = localStorage.getItem(`status_box_${shipmentNo}_${exactBoxNo}`) === "Closed";
                     if (isClosed) {
                         childEl.setAttribute("data-status", "Closed");
                         childEl.setAttribute("data-saved-items", JSON.stringify(draftData));
@@ -1186,7 +1135,6 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
                             checkboxEl.title = "เลือกกล่องนี้เพื่อเตรียมส่งออก";
                         }
                     }
-
                     childrenContainer.appendChild(childEl);
                 }
             }
@@ -1199,10 +1147,8 @@ window.restoreDraftBoxesForShipment = function(shipmentNo, colElement) {
         if (masterTruckEl) masterTruckEl.textContent = childrenContainer.querySelectorAll(".shipment-child-box").length;
         if (typeof window.updateMasterShipmentTotals === "function") window.updateMasterShipmentTotals(shipmentNo);
     }
-
     return maxBoxIndex;
 };
-
 
 // 2. อัปเดตปุ่ม Back (ย้อนกลับ) ให้อัปเดตตัวเลขหน้า Lobby ก่อนออก
 document.addEventListener("DOMContentLoaded", () => {
@@ -2990,16 +2936,34 @@ window.processExport = async function() {
 
 
 // ====================================================================
-// 🧠 ฟังก์ชันสั่งการอัปเดตสต๊อกข้ามไฟล์ (Bridge Sync Engine)
-// ====================================================================
-window.updateLocalStockMemory = function(sku, qty, isWrap) {
-    console.log(`[Bridge] TransferOut ส่งคำสั่งหักสต๊อก SKU: ${sku}, QTY: ${qty}`);
-    // วิ่งข้ามไปเรียกฟังก์ชันหลักใน app.js ที่มีสิทธิ์ทะลวงกำแพงเข้าไปแก้ไขสต๊อกได้โดยตรง
-    if (typeof window.forceUpdateStockDatabase === "function") {
-        window.forceUpdateStockDatabase(sku, qty, isWrap);
-    } else {
-        console.error("🚨 [Error] ไม่พบสะพานเชื่อม forceUpdateStockDatabase ใน app.js!");
-    }
-};
+// 🧠 ฟังก์ชันสั่งการอัปเดตสต๊อกข้ามไฟล์ (Bridge Sync Engine) - THE ULTIMATE FIX
+
+
+      window.updateLocalStockMemory = function(sku, qty, isWrap) {
+          console.log(`[Bridge] TransferOut ส่งคำสั่งหักสต๊อก SKU: ${sku}, QTY: ${qty}`);
+          
+          // 🚨 1. บังคับหักตัวเลขในฐานข้อมูลแอปโดยตรงทันที! (แก้บั๊กเปิดหน้าต่างแล้วเลขไม่ยอมลด)
+          if (typeof localProductDatabase !== "undefined") {
+              const productIndex = localProductDatabase.findIndex(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
+              if (productIndex > -1) {
+                  if (isWrap) {
+                      // ถ้ากด WRAP (ปิดกล่อง) ให้หัก Available ลง
+                      localProductDatabase[productIndex].availableStock = Number(localProductDatabase[productIndex].availableStock || 0) - qty;
+                      if (localProductDatabase[productIndex].availableStock < 0) localProductDatabase[productIndex].availableStock = 0;
+                  } else {
+                      // ถ้ากดคืนค่า (ลบกล่อง) ให้บวก Available คืน
+                      localProductDatabase[productIndex].availableStock = Number(localProductDatabase[productIndex].availableStock || 0) + qty;
+                  }
+                  console.log(`[Bridge] อัปเดตสต๊อกในความจำสำเร็จ! ยอดปัจจุบัน: ${localProductDatabase[productIndex].availableStock}`);
+              }
+          }
+
+          // 2. ส่งคำสั่งไปกระตุ้นฐานข้อมูล Google Sheets ผ่าน app.js (ถ้ามี)
+          if (typeof window.forceUpdateStockDatabase === "function") {
+              window.forceUpdateStockDatabase(sku, qty, isWrap);
+          }
+      };
+
+
 // 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้บั๊ก Scope) END
 // =====================================================================
