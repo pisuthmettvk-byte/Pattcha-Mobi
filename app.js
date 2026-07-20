@@ -695,43 +695,6 @@ window.forceUpdateStockDatabase = function(sku, qty, isWrap) {
     }
 };
 
-// 2. เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth)
-window.getRealTimeLiveStock = function(sku) {
-    const skuStr = String(sku).trim().toUpperCase();
-    let baseAvail = 0;
-    let baseHold = 0;
-    
-    if (typeof localProductDatabase !== "undefined") {
-        const item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
-        if (item) {
-            baseAvail = Number(item.availableStock || item.Available_Stock || 0);
-            baseHold = Number(item.holdQty || item.Hold_Qty || 0);
-        }
-    }
-
-    let pendingInOpenBoxes = 0;
-    if (typeof window.checkCrossBoxStock === "function") {
-        const radar = window.checkCrossBoxStock(skuStr);
-        pendingInOpenBoxes = radar.totalUsedInOtherBoxes || 0;
-        
-        if (window.currentActiveShipment && window.currentActiveBoxNo && window.currentBoxItems) {
-           const activeItem = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
-           if (activeItem) {
-               let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
-               if (!isClosedBox) {
-                   pendingInOpenBoxes += (Number(activeItem.scanQty) || 0) + (Number(activeItem.manualQty) || 0);
-               }
-           }
-        }
-    }
-
-    let displayAvail = baseAvail - pendingInOpenBoxes;
-    let displayHold = baseHold + pendingInOpenBoxes;
-    if (displayAvail < 0) displayAvail = 0; 
-
-    return { avail: displayAvail, hold: displayHold };
-};
-
 // ==============================================================
 // 🌟 ฟังก์ชันคำนวณและเปิดหน้าต่างรายละเอียดสินค้า (เวอร์ชันสมบูรณ์ 100%)
 // ==============================================================
