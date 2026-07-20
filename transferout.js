@@ -926,18 +926,19 @@ function showView(viewId) {
             }
 
             // 🟢 เงื่อนไขที่ 1: สาขาต้นทางต้องเป็นสาขาเรา (งานที่เราเป็นคนส่ง)
-            // 🚫 เงื่อนไขที่ 2: สาขาปลายทาง "ต้องไม่ใช่สาขาเรา" เด็ดขาด (บล็อกข้อมูล Test เก่าที่เคยสร้างผิดไว้ในฐานข้อมูล)
+            // 🚫 เงื่อนไขที่ 2: สาขาปลายทาง "ต้องไม่ใช่สาขาเรา" เด็ดขาด
             if (originBranch === myBranch && actualDestBranch !== myBranch) {
               const statusKey = (task.Status || "").toLowerCase();
 
               if (typeof createTransferOutTaskCard === "function") {
+                // 🚨 [UPDATE FIX]: ส่งตัวเลขยอดกล่องและยอดชิ้นจาก Database เข้าไปด้วย!
                 const card = createTransferOutTaskCard(
                   task.Date,
                   task.Shipment_No,
                   task.Origin_Type,
                   task.Destination,
-                  task.Total_Box,
-                  task.Total_Item,
+                  task.Total_Box || 0, // ส่งยอดกล่อง
+                  task.Total_Item || 0, // ส่งยอดสินค้า
                   task.Status,
                 );
 
@@ -962,7 +963,6 @@ function showView(viewId) {
       }
       // [Load Tasks & Filter by Origin] END
       //===============
-
 
 // ======================================================
 // 🚀 END กลุ่มที่ 5
