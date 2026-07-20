@@ -732,24 +732,28 @@ window.getRealTimeLiveStock = function(sku) {
     return { avail: displayAvail, hold: displayHold };
 };
 
-// 3. ฟังก์ชันคำนวณและเปิดหน้าต่างรายละเอียดสินค้า (เวอร์ชันสมบูรณ์ 100%)
+// ==============================================================
+// 🌟 ฟังก์ชันคำนวณและเปิดหน้าต่างรายละเอียดสินค้า (เวอร์ชันสมบูรณ์ 100%)
+// ==============================================================
 window.openProductDetail = function(sku) {
   try {
     const skuStr = String(sku).trim().toUpperCase();
     let item = null;
 
-    // 🚨 ประกาศฟังก์ชันตัวช่วยอัปเดตข้อความก่อนเรียกใช้งาน (แก้บั๊ก Error แดง)
+    // 🚨 1. ประกาศฟังก์ชันตัวช่วยอัปเดตข้อความก่อน! (ห้ามย้ายลงไปข้างล่าง)
     const safeSetText = (id, text) => {
       const el = document.getElementById(id);
       if (el) el.innerText = text;
     };
 
+    // 2. หาข้อมูลตั้งต้นจากฐานข้อมูลหลัก
     if (typeof localProductDatabase !== "undefined") {
       item = localProductDatabase.find(
         (p) => String(p.sku || "").trim().toUpperCase() === skuStr
       );
     }
 
+    // 2.2 ถ้าหาในคลังไม่เจอ ให้หาจาก "ของที่อยู่ในกล่องปัจจุบัน" (เผื่อสแกนของแปลกปลอมเข้ามา)
     if (!item && typeof window.currentBoxItems !== "undefined" && window.currentBoxItems.length > 0) {
       item = window.currentBoxItems.find(
         (p) => String(p.sku || "").trim().toUpperCase() === skuStr
@@ -763,22 +767,33 @@ window.openProductDetail = function(sku) {
       return;
     }
 
-    // 🚨 ใช้เครื่องยนต์ศูนย์กลางดึงยอด Real-Time
-    const liveStock = window.getRealTimeLiveStock(skuStr);
+    // 3. 🚨 ใช้เครื่องยนต์ศูนย์กลางดึงยอด Real-Time (ห้ามใช้ยอดเดิม)
+    let liveAvail = 0;
+    let liveHold = 0;
+    if (typeof window.getRealTimeLiveStock === "function") {
+        const liveStock = window.getRealTimeLiveStock(skuStr);
+        liveAvail = liveStock.avail;
+        liveHold = liveStock.hold;
+    } else {
+        liveAvail = Number(item.availableStock || 0);
+        liveHold = Number(item.holdQty || 0);
+    }
 
+    // 4. อัปเดตข้อมูลข้อความ (Text) ลงหน้าจอ
     safeSetText("detailCategory", item.category || "NO CATEGORY");
     safeSetText("detailSku", item.sku || "-");
     safeSetText("detailName", item.name || "-");
     safeSetText("detailPrice", "฿" + Number(item.price || 0).toLocaleString());
     safeSetText("detailCurrent", item.currentStock || 0);
 
-    // 🚨 นำยอด Real-Time ที่คำนวณแล้วมาแสดงผลทันที
-    safeSetText("detailAvail", liveStock.avail);
-    safeSetText("detailHold", liveStock.hold);
+    // 🚨 นำยอด Real-Time ที่คำนวณแล้วมาแสดงผลทันที!
+    safeSetText("detailAvail", liveAvail);
+    safeSetText("detailHold", liveHold);
 
     safeSetText("detailDefect", item.defectiveQty || 0);
     safeSetText("detailSold", item.saleStock || 0);
 
+    // 5. อัปเดต UI รูปภาพและบาร์โค้ด
     const detailImg = document.getElementById("detailImage");
     if (detailImg) {
       detailImg.src = typeof parseDriveImage === "function" ? parseDriveImage(item.imageUrl) : item.imageUrl;
@@ -798,10 +813,11 @@ window.openProductDetail = function(sku) {
       }
     }
 
+    // เปิดหน้าต่าง Modal
     const modal = document.getElementById("productDetailModal");
     if (modal) modal.classList.remove("hide");
 
-    // ส่วนของ Cross Branch (คงของเดิมไว้ 100%)
+    // 6. ส่วนของ Cross Branch
     const btnCrossBranch = document.getElementById("btnCrossBranch");
     if (btnCrossBranch && typeof CONFIG !== "undefined" && CONFIG.CROSS_BRANCH_URL) {
       btnCrossBranch.classList.add("hide");
@@ -825,6 +841,7 @@ window.openProductDetail = function(sku) {
     console.error("Open Detail Error:", err);
   }
 };
+
 
 function closeProductDetail() {
   document.getElementById("productDetailModal").classList.add("hide");

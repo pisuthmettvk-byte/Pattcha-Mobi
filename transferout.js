@@ -1816,106 +1816,110 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
 
 
 
-
 // ======================================================
 // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (อัปเดตให้กดดูสต็อกได้) START
 
-              // 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (อัปเดต: เช็กสต็อก = 0 ล็อกปุ่ม ADD)
-              window.renderBoxModeACard = function (item) {
-                const safeSku = escapeHTML(item.sku || "-");
-                const safeName = escapeHTML(item.name || "-");
-                const priceStr = Number(item.price || 0).toLocaleString();
-                const stockAvail = Number(item.availableStock || 0); // แปลงเป็นตัวเลข
+      // 🟢 โหมด A: ค้นหาเพื่อเพิ่ม (อัปเดต: เชื่อมเรดาร์ Real-Time + ล็อกปุ่มอัตโนมัติ)
+      window.renderBoxModeACard = function (item) {
+        const safeSku = escapeHTML(item.sku || "-");
+        const safeName = escapeHTML(item.name || "-");
+        const priceStr = Number(item.price || 0).toLocaleString();
+        
+        // 🚨 [REAL-TIME ENGINE]: ดึงตัวเลขสุทธิสดๆ จากเครื่องยนต์ศูนย์กลาง
+        let stockAvail = Number(item.availableStock || 0);
+        if (typeof window.getRealTimeLiveStock === "function") {
+            const liveStock = window.getRealTimeLiveStock(item.sku);
+            stockAvail = liveStock.avail; // ใช้ยอดจริงที่หักลบในตะกร้าแล้ว!
+        }
 
-                // ลอจิกปุ่ม ADD (ถ้าสต็อกมากกว่า 0 ให้กดได้ ถ้าเป็น 0 หรือติดลบให้ล็อก)
-                let actionButtonHtml = "";
-                if (stockAvail > 0) {
-                  actionButtonHtml = `
-                                <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                  <i class="fas fa-plus"></i> ADD
-                                </button>`;
-                } else {
-                  actionButtonHtml = `
-                                <button disabled style="background: #ccc; color: #888; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: not-allowed;">
-                                  <i class="fas fa-ban"></i> N/A
-                                </button>`;
-                }
+        // ลอจิกปุ่ม ADD (ถ้าสต็อกมากกว่า 0 ให้กดได้ ถ้าเป็น 0 หรือติดลบให้ล็อก)
+        let actionButtonHtml = "";
+        if (stockAvail > 0) {
+          actionButtonHtml = `
+            <button onclick="addSearchItemToBox('${safeSku}')" style="background: linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%); color: white; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+              <i class="fas fa-plus"></i> ADD
+            </button>`;
+        } else {
+          actionButtonHtml = `
+            <button disabled style="background: #ccc; color: #888; border: none; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: not-allowed;">
+              <i class="fas fa-ban"></i> N/A
+            </button>`;
+        }
 
-                return `
-                          <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
-                            <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
-                            <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
-                              <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-                                <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
-                                  <div class="prod-name" style="margin-top: 0;">${safeName}</div>
-                                  <div class="prod-sku">${safeSku}</div>
-                                </div>
-                                <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
-                              </div>
-                              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-                                <span style="${stockAvail > 0 ? "color: #10b981;" : "color: #ef4444;"} font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
-                                  <i class="fas ${stockAvail > 0 ? "fa-thumbs-up" : "fa-times-circle"}"></i> ${stockAvail}
-                                </span>
-                                ${actionButtonHtml}
-                              </div>
-                            </div>
-                          </div>`;
-              };
-
-// 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
-window.renderBoxModeBCard = function (item, isClosedBox) {
-  const safeSku = escapeHTML(item.sku || "-");
-  const safeName = escapeHTML(item.name || "-");
-  const priceStr = Number(item.price || 0).toLocaleString();
-
-  // 🌟 [UPDATE ISSUE 1] เปลี่ยนไอคอนบาร์โค้ดเป็นสีดำ และสลับไอคอนตามการกดปุ่ม +/- 
-  const isManualModified = item.manualQty > 0 || item.isManual === true;
-  const iconHtml = isManualModified
-      ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>'
-      : '<i class="fas fa-barcode" style="color: #000000;" title="สแกนผ่านกล้อง"></i>'; // เปลี่ยนเป็นสีดำ
-
-  const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
-
-  // 🌟 ซ่อนปุ่มต่างๆ ทันทีถ้ากล่องถูกปิดแล้ว
-  const controlsHtml = isClosedBox
-      ? "" 
-      : `
-          <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
-                  <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
-                  <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
-                  <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
-              </div>
-              <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
-                  <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
-              </button>
-          </div>`;
-
-  return `
-      <!-- 🌟 [UPDATE ISSUE 3] เพิ่ม ID: box-item-xxx เพื่อให้กล้องสามารถเลื่อนจอมาหาได้ -->
-      <div id="box-item-${safeSku}" class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
-          <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
-          <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
+        return `
+          <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
+            <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+            <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
-                  <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
-                      <div class="prod-name" style="margin-top: 0;">${safeName}</div>
-                      <div class="prod-sku">${safeSku}</div>
-                  </div>
-                  <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
+                <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
+                  <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+                  <div class="prod-sku">${safeSku}</div>
+                </div>
+                <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-                  <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
-                      ${iconHtml} ยอดรวม: ${totalQty}
-                  </span>
-                  ${controlsHtml}
+                <span style="${stockAvail > 0 ? "color: #10b981;" : "color: #ef4444;"} font-weight: bold; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+                  <i class="fas ${stockAvail > 0 ? "fa-thumbs-up" : "fa-times-circle"}"></i> ${stockAvail}
+                </span>
+                ${actionButtonHtml}
               </div>
-          </div>
-      </div>`;
-};
+            </div>
+          </div>`;
+      };
 
-              // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
+      // 🔴 โหมด B: สินค้าในกล่อง (In-Box Item)
+      window.renderBoxModeBCard = function (item, isClosedBox) {
+        const safeSku = escapeHTML(item.sku || "-");
+        const safeName = escapeHTML(item.name || "-");
+        const priceStr = Number(item.price || 0).toLocaleString();
+
+        // 🌟 [UPDATE ISSUE 1] เปลี่ยนไอคอนบาร์โค้ดเป็นสีดำ และสลับไอคอนตามการกดปุ่ม +/- 
+        const isManualModified = item.manualQty > 0 || item.isManual === true;
+        const iconHtml = isManualModified
+            ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>'
+            : '<i class="fas fa-barcode" style="color: #000000;" title="สแกนผ่านกล้อง"></i>';
+
+        const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
+
+        // 🌟 ซ่อนปุ่มต่างๆ ทันทีถ้ากล่องถูกปิดแล้ว
+        const controlsHtml = isClosedBox
+            ? "" 
+            : `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
+                        <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                        <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
+                        <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+                    </div>
+                    <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                        <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+                    </button>
+                </div>`;
+
+        return `
+            <!-- 🌟 [UPDATE ISSUE 3] เพิ่ม ID: box-item-xxx เพื่อให้กล้องสามารถเลื่อนจอมาหาได้ -->
+            <div id="box-item-${safeSku}" class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
+                <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+                <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
+                        <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
+                            <div class="prod-name" style="margin-top: 0;">${safeName}</div>
+                            <div class="prod-sku">${safeSku}</div>
+                        </div>
+                        <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
+                        <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
+                            ${iconHtml} ยอดรวม: ${totalQty}
+                        </span>
+                        ${controlsHtml}
+                    </div>
+                </div>
+            </div>`;
+      };
+
+// 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
 // ======================================================
-
 
 
 
@@ -2963,11 +2967,12 @@ window.processExport = async function() {
 // 🧠 ฟังก์ชันสั่งการอัปเดตสต๊อกข้ามไฟล์ (Bridge Sync Engine)
 // ====================================================================
 window.updateLocalStockMemory = function(sku, qty, isWrap) {
+    console.log(`[Bridge] TransferOut ส่งคำสั่งหักสต๊อก SKU: ${sku}, QTY: ${qty}`);
     // วิ่งข้ามไปเรียกฟังก์ชันหลักใน app.js ที่มีสิทธิ์ทะลวงกำแพงเข้าไปแก้ไขสต๊อกได้โดยตรง
     if (typeof window.forceUpdateStockDatabase === "function") {
         window.forceUpdateStockDatabase(sku, qty, isWrap);
     } else {
-        console.error("🚨 ไม่พบสะพานเชื่อม forceUpdateStockDatabase!");
+        console.error("🚨 [Error] ไม่พบสะพานเชื่อม forceUpdateStockDatabase ใน app.js!");
     }
 };
 // 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้บั๊ก Scope) END
