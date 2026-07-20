@@ -459,7 +459,7 @@ function clearSearch() {
 
 
 // ==============================================================
-// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth) - V.2 ป้องกันหักเบิ้ล!
+// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth) - V.3 ร่างทองคำ!
 // ==============================================================
 window.getRealTimeLiveStock = function(sku) {
     const skuStr = String(sku).trim().toUpperCase();
@@ -475,7 +475,7 @@ window.getRealTimeLiveStock = function(sku) {
         }
     }
 
-    // 2. 🔍 สร้างเรดาร์ใหม่ (สแกนตะกร้าด้วยตัวเอง ป้องกันการนับเบิ้ล 100%)
+    // 2. 🔍 สร้างเรดาร์ใหม่
     let pendingQty = 0;
     const activeShip = typeof window.currentActiveShipment !== "undefined" ? window.currentActiveShipment : "";
     const activeBox = typeof window.currentActiveBoxNo !== "undefined" ? window.currentActiveBoxNo : "";
@@ -490,9 +490,8 @@ window.getRealTimeLiveStock = function(sku) {
                 const boxNo = parts.slice(1).join("_");
                 const isClosed = localStorage.getItem(`status_box_${shipNo}_${boxNo}`) === "Closed";
 
-                // 🚨 กฎเหล็ก: นับเฉพาะกล่องที่ "ยังไม่ปิด (Not Closed)" เท่านั้น!
                 if (!isClosed) {
-                    // ถ้าเป็นกล่องที่กำลังเปิดอยู่หน้าจอตอนนี้ ให้ข้ามไปก่อน (เดี๋ยวไปนับจาก Memory แทนเพื่อให้สดที่สุด)
+                    // ถ้าเป็นกล่องที่กำลังเปิดอยู่หน้าจอตอนนี้ ให้ข้ามไปก่อน (ไปนับจาก Memory แทน)
                     if (shipNo === activeShip && boxNo === activeBox) continue;
 
                     try {
@@ -509,7 +508,9 @@ window.getRealTimeLiveStock = function(sku) {
 
     // บวกยอดจากกล่องที่กำลังเปิดอยู่หน้าจอ ณ วินาทีนี้ (Memory)
     if (activeShip && activeBox && typeof window.currentBoxItems !== "undefined") {
-        let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+        // 🚨 จุดแก้บั๊ก (V.3): เช็กสถานะ "Closed" จาก LocalStorage โดยตรง (ไม่พึ่งหน้าจอ HTML แล้ว!)
+        let isClosedBox = localStorage.getItem(`status_box_${activeShip}_${activeBox}`) === "Closed";
+        
         if (!isClosedBox) {
             const found = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
             if (found) {
@@ -525,7 +526,6 @@ window.getRealTimeLiveStock = function(sku) {
 
     return { avail: displayAvail, hold: displayHold };
 };
-
 
 // ==============================================================
 // 🛒 ฟังก์ชันแสดงลิสต์รายการสินค้า (อัปเกรดเชื่อมต่อ Real-Time Radar 100%)
