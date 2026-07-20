@@ -2360,7 +2360,7 @@ window.submitWrapBox = async function () {
   );
   if (!isConfirmed) return;
 
-  // 🚨 [UI LOCKING]: แช่แข็งหน้าจอ ห้ามกดบวก/ลบ/สแกนสินค้า ระหว่างที่กำลังบันทึก (แก้ปัญหาข้อ 4)
+  // 🚨 [UI LOCKING]: แช่แข็งหน้าจอ ห้ามกดบวก/ลบ/สแกนสินค้า ระหว่างที่กำลังบันทึก
   const boxContentArea = document.getElementById("boxContentArea");
   if (boxContentArea) {
       boxContentArea.style.pointerEvents = "none";
@@ -2407,14 +2407,11 @@ window.submitWrapBox = async function () {
         // 🌟 บันทึกสถานะ "ปิดกล่องแล้ว" ลงเครื่อง
         localStorage.setItem(`status_box_${shipmentId}_${boxNumber}`, "Closed");
 
-        // 🌟 [Real-time Memory]: หักสต๊อกในความจำมือถือทันที
-        if (window.currentBoxItems && window.currentBoxItems.length > 0) {
-            window.currentBoxItems.forEach(item => {
-                if (typeof window.updateLocalStockMemory === "function") {
-                    window.updateLocalStockMemory(item.sku, item.totalQty, true); 
-                }
-            });
-        }
+        // ======================================================
+        // 🧹 [THE FINAL FIX]: เคลียร์ขยะ (ตะกร้าชั่วคราว) ทิ้งทันที! ป้องกันการหักเบิ้ล
+        // ======================================================
+        localStorage.removeItem(`draft_box_${shipmentId}_${boxNumber}`);
+        // ❌ เอาการเรียกฟังก์ชัน updateLocalStockMemory ออก เพราะ Google Sheets ทำการหักให้แล้ว ไม่ต้องให้ฝั่งมือถือหักซ้ำซ้อน
 
         if (window.currentBoxElement) {
           window.currentBoxElement.setAttribute("data-status", "Closed");
@@ -2470,7 +2467,6 @@ window.submitWrapBox = async function () {
 
     // 🚀 Phase 8: ระบบบันทึกข้อมูลกล่อง (UI สีเหลืองคำถาม + Backend 100%) END
 // ======================================================================
-
 
 
 
