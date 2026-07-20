@@ -744,13 +744,36 @@ function showView(viewId) {
           return destCode;
         }
 
+        // 🧮 [Smart Sync Engine] เครื่องคิดเลขคำนวณยอดกล่องและสินค้าจากความจำมือถือ
+        window.getLocalShipmentTotals = function(shipmentNo) {
+          let localBoxCount = 0;
+          let localItemCount = 0;
+          let hasLocalData = false;
+
+          // กวาดสายตาหาความจำทุกกล่องที่ผูกกับรหัส Shipment นี้
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith(`draft_box_${shipmentNo}_`) || key.startsWith(`wrapped_box_${shipmentNo}_`))) {
+              hasLocalData = true;
+              localBoxCount++;
+              try {
+                const items = JSON.parse(localStorage.getItem(key)) || [];
+                items.forEach(item => {
+                  localItemCount += (item.scanQty || 0) + (item.manualQty || 0); // รวมยอดสแกนและยอดกดมือ
+                });
+              } catch(e) {}
+            }
+          }
+          return { hasLocalData, localBoxCount, localItemCount };
+        };
+
         function createTransferOutTaskCard(
           date,
           shipmentNo,
           originType,
           destBranch,
-          totalBox,
-          totalItem,
+          apiTotalBox,
+          apiTotalItem,
           status,
         ) {
           const colorMap = {
@@ -789,6 +812,13 @@ function showView(viewId) {
             displayDestText = getRealBranchCode(destBranch);
           }
 
+          // 🚨 [NEW] คำนวณยอดสดๆ แบบ Smart Sync ก่อนวาดการ์ด!
+          const localTotals = window.getLocalShipmentTotals(shipmentNo);
+          
+          // เลือกว่าจะใช้ยอดจากในเครื่อง (ถ้ากำลังทำงานอยู่) หรือยอดจาก API (ถ้ายังไม่เคยแพ็ก/มาจากคลังกลาง)
+          const displayTotalBox = localTotals.hasLocalData ? localTotals.localBoxCount : (apiTotalBox || 0);
+          const displayTotalItem = localTotals.hasLocalData ? localTotals.localItemCount : (apiTotalItem || 0);
+
           const card = document.createElement("div");
           card.className = "task-card";
           card.dataset.destination = destBranch;
@@ -811,7 +841,13 @@ function showView(viewId) {
               <div style="display: flex; align-items: center; justify-content: flex-end; gap: 15px; flex-grow: 1; min-width: 250px;">
                 <!-- 🟢 เปลี่ยนตัวแปรให้แสดงชื่อสาขาเต็มตรงนี้ -->
                 <span style="font-size: 14px; color: #333; font-weight: bold;"><i class="fas fa-truck" style="color: #dc3545;"></i> ${displayDestText}</span>
-                <span style="font-size: 13px; color: #555; font-weight: bold;"><i class="fas fa-box" style="color: #8d6e63;"></i> (${totalBox || 0}) TOTAL (${totalItem || 0})</span>
+                
+                <!-- 🚨 [UPDATE] อัปเดตการแสดงผลตัวเลขกล่องและชิ้น ให้ดึงจากตัวแปรใหม่และเป็นสีแดงเด่นชัด -->
+                <span style="font-size: 13px; color: #555; font-weight: bold;">
+                  <i class="fas fa-box" style="color: #8d6e63;"></i> 
+                  (<span style="color:#d93844;">${displayTotalBox}</span>) TOTAL (<span style="color:#d93844;">${displayTotalItem}</span>)
+                </span>
+
                 <span style="background: ${leftBorderColor}; color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase;">${status || "Assign"}</span>
               </div>
             </div>
@@ -931,7 +967,6 @@ function showView(viewId) {
 // ======================================================
 // 🚀 END กลุ่มที่ 5
 // ======================================================
-
 
 
 
