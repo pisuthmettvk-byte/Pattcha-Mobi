@@ -391,9 +391,10 @@ function createShipmentColumn(
   const btnAddChildBox = col.querySelector(".btn-add-child-box");
   const masterTruckCount = col.querySelector(".master-truck-count");
 
-  // 1. สวิตช์สลับโหมดลบ (ปิดการทำงานถ้าเป็น Pending)
+  // 1. สวิตช์สลับโหมดลบ
   btnMasterDelete.addEventListener("click", () => {
-    if (isPending) return;
+    if (isReadOnly) return;
+
     if (
       window.isGlobalDeleteMode &&
       window.activeDeleteShipment !== safeShipmentNo
@@ -427,7 +428,8 @@ function createShipmentColumn(
 
   // 2. ปุ่มกดลบแม่ของจริง
   btnParentDelete.addEventListener("click", async () => {
-    if (isPending) return;
+    if (isReadOnly) return;
+
     const isConfirmed = await safeConfirm(
       "ยืนยันการลบชิปเมนต์?",
       `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
@@ -543,7 +545,8 @@ function createShipmentColumn(
   // 3. สร้างกล่องลูก (ปิดการทำงานถ้าเป็น Pending)
   let boxIdCounter = 0;
   btnAddChildBox.addEventListener("click", () => {
-    if (isPending) return;
+    if (isReadOnly) return;
+
     boxIdCounter++;
     const randomText = Math.random().toString(36).substring(2, 5).toUpperCase();
     const newBoxSuffix = String(boxIdCounter).padStart(4, "0") + randomText;
