@@ -677,35 +677,67 @@ function showView(viewId) {
             const currentMode = (sessionStorage.getItem("lobbyMode") || "ASSIGN").toUpperCase();
 
             try {
-              let tasks = window.cachedTransferTasks; 
+              let tasks = window.cachedTransferTasks;
               if (!tasks) {
-                container.innerHTML = '<div style="text-align:center; padding: 40px 20px;"><i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i></div>';
-                const response = await fetch(CONFIG.API_URL + "?action=get_tasks&t=" + new Date().getTime());
+                container.innerHTML =
+                  '<div style="text-align:center; padding: 40px 20px;"><i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i></div>';
+                const response = await fetch(
+                  CONFIG.API_URL +
+                    "?action=get_tasks&t=" +
+                    new Date().getTime(),
+                );
                 tasks = await response.json();
+
+                // 🚨 [HOT FIX 2: ANTI-GHOST SHIELD] กรองผีออกก่อนจำลงสมอง
+                if (
+                  window.deletedShipments &&
+                  window.deletedShipments.size > 0
+                ) {
+                  tasks = tasks.filter(
+                    (t) => !window.deletedShipments.has(t.Shipment_No),
+                  );
+                }
                 window.cachedTransferTasks = tasks;
               }
 
               container.innerHTML = ""; // 🚨 เคลียร์หน้าจอก่อนวาด ป้องกันคอลัมน์ซ้อน
-              if (!Array.isArray(tasks)) { if (emptyState) emptyState.style.display = "block"; return; }
+              if (!Array.isArray(tasks)) {
+                if (emptyState) emptyState.style.display = "block";
+                return;
+              }
 
-              const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
+              const myBranch = String(
+                localStorage.getItem("pattcha_branch") || "",
+              )
+                .trim()
+                .toUpperCase();
               const branchTasks = tasks.filter((task) => {
                 const isMatchBranch = task.Destination === branchID;
-                const isMatchStatus = (task.Status || "").toUpperCase() === currentMode; 
-                const isMyOrigin = String(task.Origin_Branch || "").trim().toUpperCase() === myBranch;
+                const isMatchStatus =
+                  (task.Status || "").toUpperCase() === currentMode;
+                const isMyOrigin =
+                  String(task.Origin_Branch || "")
+                    .trim()
+                    .toUpperCase() === myBranch;
                 return isMatchBranch && isMatchStatus && isMyOrigin;
               });
 
               if (branchTasks.length > 0) {
                 if (emptyState) emptyState.style.display = "none";
                 const renderedShipments = new Set(); // 🚨 ป้องกันรหัสซ้ำ
-                
+
                 branchTasks.forEach((task) => {
                   if (typeof createShipmentColumn === "function") {
                     const safeNo = String(task.Shipment_No || "");
                     if (!renderedShipments.has(safeNo)) {
                       renderedShipments.add(safeNo);
-                      container.appendChild(createShipmentColumn(safeNo, task.Origin_Type || "Store", task.Status || "Assign"));
+                      container.appendChild(
+                        createShipmentColumn(
+                          safeNo,
+                          task.Origin_Type || "Store",
+                          task.Status || "Assign",
+                        ),
+                      );
                     }
                   }
                 });
@@ -713,7 +745,8 @@ function showView(viewId) {
                 if (emptyState) emptyState.style.display = "block";
               }
             } catch (error) {
-              container.innerHTML = '<div style="text-align:center; color:#dc3545; padding: 20px;"><i class="fas fa-wifi"></i><br>เกิดข้อผิดพลาด กรุณารีเฟรช</div>';
+              container.innerHTML =
+                '<div style="text-align:center; color:#dc3545; padding: 20px;"><i class="fas fa-wifi"></i><br>เกิดข้อผิดพลาด กรุณารีเฟรช</div>';
             }
           }
           // [Render Lobby Tasks] END
@@ -921,15 +954,22 @@ function createTransferOutTaskCard(
         if (!assignContainer) return;
 
         try {
-          // ⚡ [Cache Buster] บังคับเบราว์เซอร์ให้ดึงข้อมูลสดใหม่เสมอ (ป้องกันหน้า Task Hub ไม่ซิงก์)
+          // ⚡ [Cache Buster] บังคับเบราว์เซอร์ให้ดึงข้อมูลสดใหม่เสมอ
           const timestamp = new Date().getTime();
           const response = await fetch(
             CONFIG.API_URL + "?action=get_tasks&t=" + timestamp,
           );
-          const tasks = await response.json();
+          let tasks = await response.json();
           if (!Array.isArray(tasks)) return;
 
-          // 🚨 [NEW] เพิ่มบรรทัดนี้: เก็บ Cache ไว้ให้หน้า Lobby ดึงไปใช้ จะได้ไม่ต้องรอหมุน!
+          // 🚨 [HOT FIX 1: ANTI-GHOST SHIELD] กรองชิปเมนต์ที่ติด Blacklist (ถูกลบ) ออกไปก่อนเลย!
+          if (window.deletedShipments && window.deletedShipments.size > 0) {
+            tasks = tasks.filter(
+              (t) => !window.deletedShipments.has(t.Shipment_No),
+            );
+          }
+
+          // เก็บ Cache ที่สะอาดบริสุทธิ์ไว้ให้หน้า Lobby ใช้
           window.cachedTransferTasks = tasks;
 
           containers.forEach((id) => {
