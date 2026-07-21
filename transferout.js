@@ -1959,7 +1959,7 @@ window.checkCrossBoxStock = function(sku) {
             stockAvail = liveStock.avail; // ใช้ยอดจริงที่หักลบในตะกร้าแล้ว!
         }
 
-        // ลอจิกปุ่ม ADD (ถ้าสต็อกมากกว่า 0 ให้กดได้ ถ้าเป็น 0 หรือติดลบให้ล็อก)
+        // ลอจิกปุ่ม ADD
         let actionButtonHtml = "";
         if (stockAvail > 0) {
           actionButtonHtml = `
@@ -1973,9 +1973,12 @@ window.checkCrossBoxStock = function(sku) {
             </button>`;
         }
 
+        // 🚨 [HOT FIX]: ดึงรูปภาพผ่าน window.parseDriveImage ป้องกัน ReferenceError 100%
+        const finalImageUrl = typeof window.parseDriveImage === "function" ? window.parseDriveImage(item.imageUrl) : item.imageUrl;
+
         return `
           <div class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee;">
-            <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+            <img class="prod-img" src="${finalImageUrl}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
             <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
                 <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
@@ -2000,7 +2003,6 @@ window.checkCrossBoxStock = function(sku) {
         const safeName = escapeHTML(item.name || "-");
         const priceStr = Number(item.price || 0).toLocaleString();
 
-        // 🌟 [UPDATE ISSUE 1] เปลี่ยนไอคอนบาร์โค้ดเป็นสีดำ และสลับไอคอนตามการกดปุ่ม +/- 
         const isManualModified = item.manualQty > 0 || item.isManual === true;
         const iconHtml = isManualModified
             ? '<i class="fas fa-hand-paper" style="color: #f59e0b;" title="แก้ไขด้วยมือ"></i>'
@@ -2008,7 +2010,6 @@ window.checkCrossBoxStock = function(sku) {
 
         const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
 
-        // 🌟 ซ่อนปุ่มต่างๆ ทันทีถ้ากล่องถูกปิดแล้ว
         const controlsHtml = isClosedBox
             ? "" 
             : `
@@ -2023,10 +2024,12 @@ window.checkCrossBoxStock = function(sku) {
                     </button>
                 </div>`;
 
+        // 🚨 [HOT FIX]: ดึงรูปภาพผ่าน window.parseDriveImage
+        const finalImageUrl = typeof window.parseDriveImage === "function" ? window.parseDriveImage(item.imageUrl) : item.imageUrl;
+
         return `
-            <!-- 🌟 [UPDATE ISSUE 3] เพิ่ม ID: box-item-xxx เพื่อให้กล้องสามารถเลื่อนจอมาหาได้ -->
             <div id="box-item-${safeSku}" class="product-row" style="display: flex; gap: 15px; padding: 15px; background: #fff; border-bottom: 1px solid #eee; border-left: 4px solid #b02a37;">
-                <img class="prod-img" src="${parseDriveImage(item.imageUrl)}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+                <img class="prod-img" src="${finalImageUrl}" onclick="openProductDetail('${safeSku}')" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; cursor: pointer;">
                 <div class="prod-info-wrapper" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 0 !important;">
                         <div class="prod-text" onclick="openProductDetail('${safeSku}')" style="cursor: pointer; flex: 1;">
@@ -2047,7 +2050,6 @@ window.checkCrossBoxStock = function(sku) {
 
 // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
 // ======================================================
-
 
 
 
