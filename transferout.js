@@ -893,6 +893,101 @@ function showView(viewId) {
 
 
 
+// ==========================================
+// 🛑 READ-ONLY LOBBY RENDERER
+window.renderReadOnlyLobby = function(shipmentNo, status) {
+    const container = document.getElementById("readOnlyLobbyContentContainer");
+    const header = document.getElementById("readOnlyLobbyHeader");
+    const title = document.getElementById("readOnlyLobbyTitle");
+    if (!container) return;
+
+    // เปลี่ยนสี Header ตามสถานะ
+    if (status === "COMPLETE") {
+        header.style.background = "linear-gradient(to bottom, #198754 0%, #20c997 50%, #198754 100%)";
+        title.innerText = `[COMPLETE] ${shipmentNo}`;
+    } else {
+        header.style.background = "linear-gradient(to bottom, #4b5563 0%, #6c757d 50%, #4b5563 100%)";
+        title.innerText = `[PENDING] ${shipmentNo}`;
+    }
+
+    // ดึงข้อมูลลูกๆ ของ Shipment นี้มาโชว์แบบล็อกปุ่ม 100%
+    const childrenKey = `children_${shipmentNo}`;
+    let children = JSON.parse(localStorage.getItem(childrenKey)) || [];
+
+    if (children.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#888;">ไม่มีกล่องในชิปเมนต์นี้</div>`;
+        return;
+    }
+
+    let html = "";
+    children.forEach(box => {
+        const boxStatus = localStorage.getItem(`status_box_${shipmentNo}_${box.boxNo}`) || "Open";
+        const isClosed = boxStatus === "Closed";
+        const iconColor = isClosed ? "#10b981" : "#888"; // สีเขียวถ้าปิดแล้ว
+        const iconType = isClosed ? "fa-box" : "fa-box-open";
+
+        // วาดการ์ดกล่องแบบกดลบไม่ได้ แต่กดเข้าไปดูของข้างในได้ (Read-Only Box Details)
+        html += `
+        <div style="background: #fff; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-left: 4px solid ${iconColor};" 
+                 onclick="openReadOnlyBox('${shipmentNo}', '${box.boxNo}')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas ${iconType}" style="color: ${iconColor}; font-size: 18px;"></i>
+                    <div style="font-weight: bold; font-size: 14px; color: #333;">${box.boxNo}</div>
+                </div>
+                <i class="fas fa-chevron-right" style="color: #ccc;"></i>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+};
+
+// ปุ่ม Back ของ Read-Only Lobby
+document.getElementById("btnBackFromReadOnlyLobby")?.addEventListener("click", () => {
+    navigationTo(document.getElementById("transferOutReadOnlyLobbyView"), document.getElementById("transferOutTaskHubView"));
+});
+
+// ฟังก์ชันเปิดกล่องเพื่อดูข้างในแบบ Read-Only
+window.openReadOnlyBox = function(shipmentNo, boxNo) {
+    window.isReadOnly = true; // ย้ำสถานะล็อก
+    window.currentActiveShipment = shipmentNo;
+    window.currentActiveBoxNo = boxNo;
+    
+    const boxView = document.getElementById("boxDetailsView");
+    const readOnlyLobby = document.getElementById("transferOutReadOnlyLobbyView");
+    
+    // บังคับเปลี่ยนสี Header กล่อง
+    const boxHeader = document.getElementById("boxDetailsHeader");
+    const status = sessionStorage.getItem("lobbyMode") || "PENDING";
+    if (boxHeader) {
+         boxHeader.style.background = status === "COMPLETE" 
+            ? "linear-gradient(to bottom, #198754 0%, #20c997 50%, #198754 100%)" 
+            : "linear-gradient(to bottom, #4b5563 0%, #6c757d 50%, #4b5563 100%)";
+    }
+
+    // ซ่อนปุ่ม WRAP
+    const btnWrap = document.getElementById("btnBoxWrap");
+    if (btnWrap) btnWrap.style.display = "none";
+    
+    // เปลี่ยนปุ่มสแกนเป็น Read Only
+    const boxScannerBtn = document.getElementById("btnBoxScanner");
+    if (boxScannerBtn) {
+        boxScannerBtn.style.width = "100%";
+        boxScannerBtn.style.background = "#ccc";
+        boxScannerBtn.style.pointerEvents = "none";
+        boxScannerBtn.innerHTML = `<i class="fas fa-lock"></i> ${status} (READ ONLY)`;
+    }
+
+    if (typeof navigationTo === "function") navigationTo(readOnlyLobby, boxView);
+    if (typeof loadBoxDetailsData === "function") loadBoxDetailsData();
+};
+
+// 🛑 READ-ONLY LOBBY RENDERER
+// ==========================================
+
+
+
 
 // ======================================================
 // กลุ่มที่ 5: ระบบจัดการ Task Hub (สร้างการ์ด และดึงข้อมูล)
@@ -2297,17 +2392,18 @@ window.checkCrossBoxStock = function(sku) {
           const item = window.currentBoxItems.find((p) => p.sku === sku);
           if (item) {
             // 1. นับยอดในกล่องปัจจุบัน
-            const totalQtyInCurrentBox = (item.scanQty || 0) + (item.manualQty || 0);
+            const totalQtyInCurrentBox =
+              (item.scanQty || 0) + (item.manualQty || 0);
 
             // 2. เรียกใช้เรดาร์เช็กยอดจาก "กล่องอื่นๆ"
             let otherBoxesUsed = 0;
             let otherBoxesText = "";
             if (typeof window.checkCrossBoxStock === "function") {
-                const crossCheck = window.checkCrossBoxStock(sku);
-                otherBoxesUsed = crossCheck.totalUsedInOtherBoxes;
-                if (crossCheck.usedDetails.length > 0) {
-                    otherBoxesText = crossCheck.usedDetails.join("\n");
-                }
+              const crossCheck = window.checkCrossBoxStock(sku);
+              otherBoxesUsed = crossCheck.totalUsedInOtherBoxes;
+              if (crossCheck.usedDetails.length > 0) {
+                otherBoxesText = crossCheck.usedDetails.join("\n");
+              }
             }
 
             // 3. รวมยอดทั้งหมด (กล่องนี้ + กล่องอื่น)
@@ -2321,10 +2417,10 @@ window.checkCrossBoxStock = function(sku) {
             } else {
               // 🚨 สร้างข้อความแจ้งเตือนแบบละเอียด
               let alertMsg = `มีสินค้าในสต็อกเพียง ${item.availableStock} ชิ้น\n(ไม่สามารถเพิ่มได้อีก)`;
-              
+
               // ถ้ามีการบรรจุไปในกล่องอื่นแล้ว ให้ระบุให้พนักงานรู้เลยว่าของไปอยู่ที่ไหน!
               if (otherBoxesUsed > 0) {
-                  alertMsg += `\n\n📦 สถานะการบรรจุตอนนี้:\n- อยู่ในกล่องนี้: ${totalQtyInCurrentBox} ชิ้น\n${otherBoxesText}`;
+                alertMsg += `\n\n📦 สถานะการบรรจุตอนนี้:\n- อยู่ในกล่องนี้: ${totalQtyInCurrentBox} ชิ้น\n${otherBoxesText}`;
               }
 
               if (typeof window.safeAlert === "function") {
@@ -2334,12 +2430,18 @@ window.checkCrossBoxStock = function(sku) {
               }
             }
           }
+          fbSyncBoxData(
+            window.currentActiveShipment,
+            window.currentActiveBoxNo,
+            window.currentBoxItems,
+          );
+          window.triggerRealTimeUIRefresh(); // 🚨 เพิ่มบรรทัดนี้
         };
 
         window.decreaseBoxItemQty = function (sku) {
           const item = window.currentBoxItems.find((p) => p.sku === sku);
           if (item) {
-            item.isManual = true; 
+            item.isManual = true;
 
             if (item.manualQty > 0) {
               item.manualQty -= 1;
@@ -2348,10 +2450,18 @@ window.checkCrossBoxStock = function(sku) {
             }
 
             if (item.scanQty + item.manualQty <= 0) {
-              window.currentBoxItems = window.currentBoxItems.filter((p) => p.sku !== sku);
+              window.currentBoxItems = window.currentBoxItems.filter(
+                (p) => p.sku !== sku,
+              );
             }
             window.renderBoxContentArea();
           }
+          fbSyncBoxData(
+            window.currentActiveShipment,
+            window.currentActiveBoxNo,
+            window.currentBoxItems,
+          );
+          window.triggerRealTimeUIRefresh(); // 🚨 เพิ่มบรรทัดนี้
         };
 
         window.removeBoxItem = async function (sku) {
@@ -2360,7 +2470,7 @@ window.checkCrossBoxStock = function(sku) {
             isConfirm = await window.safeConfirm(
               "CONFIRM DELETE",
               "ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?",
-              "error"
+              "error",
             );
           } else {
             isConfirm = confirm("ต้องการลบสินค้านี้ออกจากกล่องใช่หรือไม่?");
@@ -2368,10 +2478,16 @@ window.checkCrossBoxStock = function(sku) {
 
           if (isConfirm) {
             window.currentBoxItems = window.currentBoxItems.filter(
-              (p) => p.sku !== sku
+              (p) => p.sku !== sku,
             );
             window.renderBoxContentArea();
           }
+          fbSyncBoxData(
+            window.currentActiveShipment,
+            window.currentActiveBoxNo,
+            window.currentBoxItems,
+          );
+          window.triggerRealTimeUIRefresh(); // 🚨 เพิ่มบรรทัดนี้
         };
 
 // ⚙️ ฟังก์ชันจัดการจำนวนสินค้า (อิงตามลอจิกดั้งเดิมที่เสถียรที่สุด) END

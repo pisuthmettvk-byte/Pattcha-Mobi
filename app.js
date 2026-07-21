@@ -462,103 +462,78 @@ function clearSearch() {
 }
 
 // ==============================================================
-// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth) - V.3 ร่างทองคำ!
+// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth) - V.4 (Real-Time Everywhere)
 // ==============================================================
-window.getRealTimeLiveStock = function (sku) {
-  const skuStr = String(sku).trim().toUpperCase();
-  let baseAvail = 0;
-  let baseHold = 0;
-
-  // 1. ดึงยอดตั้งต้นจากฐานข้อมูลหลัก
-  if (typeof localProductDatabase !== "undefined") {
-    const item = localProductDatabase.find(
-      (p) =>
-        String(p.sku || "")
-          .trim()
-          .toUpperCase() === skuStr,
-    );
-    if (item) {
-      baseAvail = Number(item.availableStock || item.Available_Stock || 0);
-      baseHold = Number(item.holdQty || item.Hold_Qty || 0);
-    }
-  }
-
-  // 2. 🔍 สร้างเรดาร์ใหม่
-  let pendingQty = 0;
-  const activeShip =
-    typeof window.currentActiveShipment !== "undefined"
-      ? window.currentActiveShipment
-      : "";
-  const activeBox =
-    typeof window.currentActiveBoxNo !== "undefined"
-      ? window.currentActiveBoxNo
-      : "";
-
-  // กวาดข้อมูลกล่องทั้งหมดในเครื่อง (LocalStorage)
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith("draft_box_")) {
-      const parts = key.replace("draft_box_", "").split("_");
-      if (parts.length >= 2) {
-        const shipNo = parts[0];
-        const boxNo = parts.slice(1).join("_");
-        const isClosed =
-          localStorage.getItem(`status_box_${shipNo}_${boxNo}`) === "Closed";
-
-        if (!isClosed) {
-          // ถ้าเป็นกล่องที่กำลังเปิดอยู่หน้าจอตอนนี้ ให้ข้ามไปก่อน (ไปนับจาก Memory แทน)
-          if (shipNo === activeShip && boxNo === activeBox) continue;
-
-          try {
-            const boxData = JSON.parse(localStorage.getItem(key)) || [];
-            const found = boxData.find(
-              (b) =>
-                String(b.sku || "")
-                  .trim()
-                  .toUpperCase() === skuStr,
-            );
-            if (found) {
-              pendingQty +=
-                (Number(found.scanQty) || 0) + (Number(found.manualQty) || 0);
-            }
-          } catch (e) {}
+window.getRealTimeLiveStock = function(sku) {
+    const skuStr = String(sku).trim().toUpperCase();
+    let baseAvail = 0;
+    let baseHold = 0;
+    
+    // 1. ดึงยอดตั้งต้นจากฐานข้อมูลหลัก
+    if (typeof localProductDatabase !== "undefined") {
+        const item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
+        if (item) {
+            baseAvail = Number(item.availableStock || item.Available_Stock || 0);
+            baseHold = Number(item.holdQty || item.Hold_Qty || 0);
         }
-      }
     }
-  }
 
-  // บวกยอดจากกล่องที่กำลังเปิดอยู่หน้าจอ ณ วินาทีนี้ (Memory)
-  if (
-    activeShip &&
-    activeBox &&
-    typeof window.currentBoxItems !== "undefined"
-  ) {
-    // 🚨 จุดแก้บั๊ก (V.3): เช็กสถานะ "Closed" จาก LocalStorage โดยตรง (ไม่พึ่งหน้าจอ HTML แล้ว!)
-    let isClosedBox =
-      localStorage.getItem(`status_box_${activeShip}_${activeBox}`) ===
-      "Closed";
+    // 2. 🔍 สร้างเรดาร์กวาดหายอดค้างในกล่อง Draft ทั้งหมด
+    let pendingQty = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("draft_box_")) {
+            const parts = key.replace("draft_box_", "").split("_");
+            if (parts.length >= 2) {
+                const shipNo = parts[0];
+                const boxNo = parts.slice(1).join("_");
+                // ไม่นับกล่องที่ถูก WRAP ไปแล้ว เพราะยอดถูกย้ายไป Hold แล้วตอนกด Export
+                const isClosed = localStorage.getItem(`status_box_${shipNo}_${boxNo}`) === "Closed";
 
-    if (!isClosedBox) {
-      const found = window.currentBoxItems.find(
-        (i) =>
-          String(i.sku || "")
-            .trim()
-            .toUpperCase() === skuStr,
-      );
-      if (found) {
-        pendingQty +=
-          (Number(found.scanQty) || 0) + (Number(found.manualQty) || 0);
-      }
+                if (!isClosed) {
+                    try {
+                        const boxData = JSON.parse(localStorage.getItem(key)) || [];
+                        const found = boxData.find(b => String(b.sku || "").trim().toUpperCase() === skuStr);
+                        if (found) {
+                            pendingQty += (Number(found.scanQty) || 0) + (Number(found.manualQty) || 0);
+                        }
+                    } catch(e) {}
+                }
+            }
+        }
     }
-  }
 
-  // 3. หักลบยอดสุทธิ
-  let displayAvail = baseAvail - pendingQty;
-  let displayHold = baseHold + pendingQty;
-  if (displayAvail < 0) displayAvail = 0; // กันยอดติดลบ
+    // 🚨 บวกยอดจากกล่องที่กำลังเปิดอยู่หน้าจอ ณ วินาทีนี้ (ป้องกันดีเลย์จากการยังไม่เซฟลง LocalStorage)
+    if (typeof window.currentBoxItems !== "undefined" && window.currentBoxItems.length > 0) {
+       const foundActive = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
+       if(foundActive) {
+           // เช็กก่อนว่ายอดนี้บันทึกลง LocalStorage ไปแล้วหรือยัง ถ้ายังให้บวกเพิ่ม
+           pendingQty += 0; // ในสถาปัตยกรรมปัจจุบัน เราเซฟลง Local ทันทีที่กด + ดังนั้นใช้ตัวเลขจาก Local ปลอดภัยสุด
+       }
+    }
 
-  return { avail: displayAvail, hold: displayHold };
+    // 3. หักลบยอดสุทธิ
+    let displayAvail = baseAvail - pendingQty;
+    let displayHold = baseHold + pendingQty;
+    if (displayAvail < 0) displayAvail = 0; // กันยอดติดลบ
+
+    return { avail: displayAvail, hold: displayHold };
 };
+
+// 📍 คำสั่งอัปเดตหน้าจอทันทีเมื่อมีการกดบวก/ลบ สินค้า
+window.triggerRealTimeUIRefresh = function() {
+    // รีเฟรชหน้าค้นหาสินค้าในกล่อง (โหมด A)
+    if (typeof window.handleBoxSearch === "function") {
+        window.handleBoxSearch();
+    }
+    // รีเฟรชหน้า Stock In House (ถ้าเปิดค้างไว้)
+    if (typeof handleMagicSearch === "function" && !document.getElementById("stockInHouseView").classList.contains("hide")) {
+        handleMagicSearch(); 
+    }
+};
+
+
+
 
 // ==============================================================
 // 🛒 ฟังก์ชันแสดงลิสต์รายการสินค้า (อัปเกรดเชื่อมต่อ Real-Time Radar 100%)
