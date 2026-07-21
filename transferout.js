@@ -3173,37 +3173,90 @@ window.processExport = async function() {
 
 
 // ==========================================
-// 🎨 ฟังก์ชันจัดการ Theme (สลับสีเหลือง/แดง) [ล็อกสีแดง 100%]
+// 🎨 ฟังก์ชันจัดการ Theme (รองรับ ASSIGN, PENDING และ COMPLETE)
 // ==========================================
 window.applyLobbyTheme = function() {
     const mode = (sessionStorage.getItem("lobbyMode") || "ASSIGN").toUpperCase();
     const headers = [document.getElementById("lobbyMasterHeader"), document.getElementById("boxDetailsHeader")];
     const footers = [document.getElementById("lobbyMasterFooter"), document.getElementById("boxDetailsFooter")];
 
-    // 🔴 ล็อกให้เป็นสีแดงเสมอตามสเปก
-    const redGradient = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
-    headers.forEach(el => { if(el) el.style.background = redGradient; });
-    footers.forEach(el => { if(el) el.style.background = redGradient; });
-
-    const isPending = mode === "PENDING";
-    
-    // ควบคุมการแสดงผลปุ่ม
+    // ตัวแปรปุ่มต่างๆ ที่ต้องควบคุม
     const btnAddTruck = document.getElementById("btnAddShipmentTruck");
-    if (btnAddTruck) btnAddTruck.style.display = isPending ? "none" : "flex"; 
-    
     const btnExport = document.getElementById("btnSubmitLobby");
-    if (btnExport) btnExport.style.display = isPending ? "none" : "flex";
-
-    // ปรับสีกล้อง
     const scanIcon = document.querySelector("#btnBoxScanner i");
+
+    if (mode === "ASSIGN") {
+        // 🔴 โหมด 1: ASSIGN (สร้างงาน) -> แดงลูกระนาด + โชว์ปุ่มครบ
+        const redGradient = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+        headers.forEach(el => { if(el) el.style.background = redGradient; });
+        footers.forEach(el => { if(el) el.style.background = redGradient; });
+        
+        if (btnAddTruck) btnAddTruck.style.display = "flex"; 
+        if (btnExport) btnExport.style.display = "flex";
+        
+    } 
+    else if (mode === "PENDING") {
+        // 🟡 โหมด 2: PENDING (รอดำเนินการ) -> แดงลูกระนาด (ล็อกธีม) + ซ่อนปุ่มเด็ดขาด
+        const redGradient = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
+        headers.forEach(el => { if(el) el.style.background = redGradient; });
+        footers.forEach(el => { if(el) el.style.background = redGradient; });
+        
+        if (btnAddTruck) btnAddTruck.style.display = "none"; 
+        if (btnExport) btnExport.style.display = "none";
+        
+    } 
+    else if (mode === "COMPLETE") {
+        // 🟢 โหมด 3: COMPLETE (ร่างทองรับของแล้ว) -> เขียวลูกระนาด + ซ่อนปุ่มเด็ดขาด
+        const greenGradient = "linear-gradient(to bottom, #198754 0%, #20c997 50%, #198754 100%)";
+        headers.forEach(el => { if(el) el.style.background = greenGradient; });
+        footers.forEach(el => { if(el) el.style.background = greenGradient; });
+        
+        if (btnAddTruck) btnAddTruck.style.display = "none"; 
+        if (btnExport) btnExport.style.display = "none";
+        
+        // 🚨 ป้องกันขั้นสุด: ซ่อนปุ่มเพิ่ม/ลด/ลบสินค้าในหน้า Box Details ด้วย
+        document.querySelectorAll(".btn-minus, .btn-plus, .btn-delete-item").forEach(btn => {
+            btn.style.display = "none";
+        });
+    }
+
+    // ปรับสีไอคอนกล้อง
     if (scanIcon) scanIcon.style.color = "#333"; 
 };
 
-// 🚨 [HOT FIX] ล้างปุ่มรถบรรทุกลอยๆ ตอนสลับหน้าจอ 
+// 🚨 [HOT FIX] ล้างปุ่มรถบรรทุกลอยๆ ตอนสลับหน้าจอ (คงไว้เหมือนเดิม)
 function hideLobbyView() {
     const btnAddTruck = document.getElementById("btnAddShipmentTruck");
     if (btnAddTruck) btnAddTruck.style.display = "none";
 }
-// นำ 2 บรรทัดนี้ไปวางไว้บริเวณล่างสุดของไฟล์หรือที่กลุ่ม Global Initializers
+// ผูก Event ให้ปุ่มกดกลับ
 document.getElementById("btnCancelFromLobby")?.addEventListener("click", hideLobbyView);
 document.getElementById("btnBackToTaskHub")?.addEventListener("click", hideLobbyView);
+
+
+    // ===============================================
+  // ===============================================
+// 🧪 เครื่องมือ Developer: กดรับของทิพย์ (F12 Simulator)
+  // ===============================================
+    // ===============================================
+
+      window.mockComplete = function(shipmentNo) {
+          if (!window.cachedTransferTasks) {
+              console.error("❌ ไม่พบข้อมูลใน Cache");
+              return;
+          }
+          let task = window.cachedTransferTasks.find(t => t.Shipment_No === shipmentNo);
+          if (task) {
+              task.Status = "Complete"; // เสกสถานะเป็น Complete
+              console.log(`✅ [Simulator] เสกชิปเมนต์ ${shipmentNo} เป็น COMPLETE สำเร็จ!`);
+              console.log(`💡 กรุณากด F5 หรือกดกลับไปหน้า Task Hub เพื่อดูการ์ดย้ายคอลัมน์และเปลี่ยนเป็นสีเขียว!`);
+          } else {
+              console.error(`❌ ไม่พบชิปเมนต์หมายเลข ${shipmentNo} ในระบบ`);
+          }
+      };
+
+    // ===============================================
+  // ================================================
+// 🧪 เครื่องมือ Developer: กดรับของทิพย์ (F12 Simulator) 
+  // ================================================
+    // ===============================================
