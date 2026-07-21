@@ -2259,101 +2259,94 @@ window.checkCrossBoxStock = function(sku) {
           }
         };
 
-        // 2. ฟังก์ชันล้างช่องค้นหา (ปุ่ม X)
-        window.clearBoxSearch = function () {
-          const inputElem = document.getElementById("boxSearchInput");
-          const clearBtn = document.getElementById("boxClearSearchBtn");
-
-          if (inputElem) {
-            inputElem.value = "";
-            inputElem.focus();
-          }
-          if (clearBtn) clearBtn.style.display = "none";
-
-          window.renderBoxContentArea();
-        };
-
-          //===============
-          // [Render Box Content Area] START
-
-          // 3. ฟังก์ชันเรนเดอร์ของในกล่อง
-          window.renderBoxContentArea = function () {
-            const container = document.getElementById("boxContentArea");
-            if (!container) return;
-
-            // 🌟 [UPDATE ISSUE 2] เช็กสถานะกล่องว่าปิดหรือยัง เพื่อส่งไปบังคับซ่อนปุ่ม
-            let isClosedBox = false;
-            if (window.currentBoxElement) {
-              isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
-            }
-
-            if (window.currentBoxItems.length === 0) {
-              container.innerHTML = `
-                  <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
-                      <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
-                      <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
-                      <p style="font-size: 12px;">ค้นหาหรือกดปุ่มสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
-                  </div>`;
-              if (typeof window.updateBoxWrapButtonState === "function") {
-                window.updateBoxWrapButtonState(0);
-              }
-                
-              // 📍 [Auto-Save Inject] สั่งเซฟความจำ (สถานะกล่องว่าง) เพื่อเคลียร์ Draft ออกจากระบบ
-              if (typeof window.saveCurrentBoxDraft === "function") {
-                window.saveCurrentBoxDraft();
-              }
-              return;
-            }
-
-            // 🌟 [UPDATE ISSUE 2] ส่งค่า isClosedBox เข้าไปในการ์ดด้วย เพื่อปิดตายปุ่มทั้งหมด
-            container.innerHTML = window.currentBoxItems
-              .map((item) => window.renderBoxModeBCard(item, isClosedBox))
-              .join("");
-              
-            if (typeof window.updateBoxWrapButtonState === "function") {
-              window.updateBoxWrapButtonState(window.currentBoxItems.length);
-            }
-
-            // 📍 [Auto-Save Inject] สั่งเซฟความจำสินค้าลงเครื่อง (LocalStorage) ทุกครั้งที่ขยับหรือวาดหน้าจอใหม่
-            if (typeof window.saveCurrentBoxDraft === "function") {
-              window.saveCurrentBoxDraft();
-            }
-          };
 
 
-        // 4. ฟังก์ชันกดปุ่ม ADD เข้ากล่อง
-        window.addSearchItemToBox = function (sku) {
-          // 📍 [เกราะป้องกันชั้นที่ 2]: ถ้ามีคนแอบกดปุ่ม ADD ผ่านโค้ดตอนกล่องปิด ให้บล็อกทันที!
-          let isClosedBox = false;
-          if (window.currentBoxElement) {
-            isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
-          }
-          if (isClosedBox) {
-              if (typeof window.safeAlert === "function") window.safeAlert("LOCKED", "กล่องถูกปิดไปแล้ว ไม่สามารถเพิ่มสินค้าได้ครับ", "warning");
-              return;
-          }
 
-          // 🚨 FIX: เรียกใช้ localProductDatabase ตรงๆ
-          if (typeof localProductDatabase === "undefined") return;
 
-          const product = localProductDatabase.find((p) => p.sku === sku);
-          if (!product) return;
+              // ==============================================================
+              // 📦 วาดการ์ดในกล่อง และจัดการปุ่ม + / -
+              // ==============================================================
+              window.renderBoxContentArea = function () {
+                  const container = document.getElementById("boxContentArea");
+                  if (!container) return;
 
-          const existingItem = window.currentBoxItems.find((item) => item.sku === sku);
-          if (existingItem) {
-            existingItem.manualQty += 1;
-            existingItem.isManual = true;
-          } else {
-            window.currentBoxItems.push({
-              ...product,
-              scanQty: 0,
-              manualQty: 1,
-              isManual: true,
-            });
-          }
+                  // เช็กสถานะจากกล่องโดยตรง ไม่อิงโหมด Lobby
+                  let isClosedBox = false;
+                  if (window.currentBoxElement) {
+                      isClosedBox = window.currentBoxElement.getAttribute("data-status") === "Closed";
+                  }
 
-          window.clearBoxSearch();
-        };
+                  if (window.currentBoxItems.length === 0) {
+                      container.innerHTML = `
+                          <div id="boxEmptyState" style="text-align: center; color: #999; margin-top: 50px;">
+                              <i class="fas fa-box-open" style="font-size: 40px; margin-bottom: 10px; color: #ccc;"></i>
+                              <p style="font-weight: bold; margin: 0;">กล่องยังว่างเปล่า</p>
+                              <p style="font-size: 12px;">ค้นหาหรือสแกนด้านล่างเพื่อเพิ่มสินค้า</p>
+                          </div>`;
+                      if (typeof window.updateBoxWrapButtonState === "function") window.updateBoxWrapButtonState(0);
+                      return;
+                  }
+
+                  // วาดการ์ด (ถ้ากล่องเปิดอยู่ isClosedBox=false ปุ่ม + - จะโผล่มาอัตโนมัติ)
+                  container.innerHTML = window.currentBoxItems
+                      .map((item) => window.renderBoxModeBCard(item, isClosedBox))
+                      .join("");
+                      
+                  if (typeof window.updateBoxWrapButtonState === "function") {
+                      window.updateBoxWrapButtonState(window.currentBoxItems.length);
+                  }
+              };
+
+              // ==============================================================
+              // 🔍 ลอจิกการกด Add สินค้าจากช่องค้นหา
+              // ==============================================================
+              window.addSearchItemToBox = function (sku) {
+                  let isClosedBox = window.currentBoxElement && window.currentBoxElement.getAttribute("data-status") === "Closed";
+                  if (isClosedBox) {
+                      if (typeof window.safeAlert === "function") window.safeAlert("LOCKED", "กล่องปิดแล้ว ไม่สามารถเพิ่มสินค้าได้", "warning");
+                      return;
+                  }
+
+                  if (typeof localProductDatabase === "undefined") return;
+                  const product = localProductDatabase.find((p) => (p.sku||p.SKU||"").toString().toUpperCase() === sku.toUpperCase());
+                  if (!product) return;
+
+                  const existingItem = window.currentBoxItems.find((item) => (item.sku||"").toString().toUpperCase() === sku.toUpperCase());
+                  
+                  if (existingItem) {
+                      existingItem.manualQty += 1;
+                      existingItem.isManual = true;
+                  } else {
+                      window.currentBoxItems.unshift({
+                          ...product,
+                          scanQty: 0,
+                          manualQty: 1,
+                          isManual: true,
+                      });
+                  }
+
+                  // 🚨 เคลียร์ช่องค้นหา แล้วบังคับกลับมาโชว์หน้ากล่องทันที
+                  const searchInput = document.getElementById("boxSearchInput");
+                  const clearBtn = document.getElementById("boxClearSearchBtn");
+                  if (searchInput) searchInput.value = "";
+                  if (clearBtn) clearBtn.style.display = "none";
+                  
+                  window.renderBoxContentArea();
+                  if (typeof window.saveCurrentBoxDraft === "function") window.saveCurrentBoxDraft();
+                  if (typeof window.triggerRealTimeUIRefresh === "function") window.triggerRealTimeUIRefresh();
+              };
+
+              window.clearBoxSearch = function () {
+                  const inputElem = document.getElementById("boxSearchInput");
+                  const clearBtn = document.getElementById("boxClearSearchBtn");
+                  if (inputElem) inputElem.value = "";
+                  if (clearBtn) clearBtn.style.display = "none";
+                  
+                  // กดยกเลิก (X) ต้องกลับมาโชว์ของในกล่อง
+                  window.renderBoxContentArea();
+              };
+
+
 
         // 5. ผูก Event Listener (Debounce)
         document.addEventListener("DOMContentLoaded", () => {
@@ -3351,48 +3344,37 @@ window.processExport = async function () {
 
 
 
-
-
-
-
       // 📦 [GROUP: CHECKBOX & EXPORT LOGIC] END
 // ====================================================================
 
 
 
 // ====================================================================
-// 🧠 ฟังก์ชันสั่งการอัปเดตสต๊อกข้ามไฟล์ (Bridge Sync Engine) - THE ULTIMATE FIX
+// 🧠 ฟังก์ชันสั่งการอัปเดตสต๊อกข้ามไฟล์ (Bridge Sync Engine)
+        window.updateLocalStockMemory = function(sku, qty, isWrap) {
+            if (typeof localProductDatabase !== "undefined") {
+                const productIndex = localProductDatabase.findIndex(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
+                if (productIndex > -1) {
+                    
+                    if (isWrap) {
+                        // 🟢 กด WRAP (ปิดกล่อง): หัก Available ถาวร และบวกเพิ่มใน Hold
+                        localProductDatabase[productIndex].availableStock = Math.max(0, Number(localProductDatabase[productIndex].availableStock || 0) - qty);
+                        localProductDatabase[productIndex].holdQty = Number(localProductDatabase[productIndex].holdQty || 0) + qty;
+                    } else {
+                        // 🔴 ลบทิ้ง (ถังขยะ): คืนยอด Available และดึงยอด Hold กลับออกมา
+                        localProductDatabase[productIndex].availableStock = Number(localProductDatabase[productIndex].availableStock || 0) + qty;
+                        localProductDatabase[productIndex].holdQty = Math.max(0, Number(localProductDatabase[productIndex].holdQty || 0) - qty);
+                    }
+                }
+            }
 
-
-      window.updateLocalStockMemory = function(sku, qty, isWrap) {
-          console.log(`[Bridge] TransferOut ส่งคำสั่งหักสต๊อก SKU: ${sku}, QTY: ${qty}`);
-          
-          // 🚨 1. บังคับหักตัวเลขในฐานข้อมูลแอปโดยตรงทันที! (แก้บั๊กเปิดหน้าต่างแล้วเลขไม่ยอมลด)
-          if (typeof localProductDatabase !== "undefined") {
-              const productIndex = localProductDatabase.findIndex(p => (p.sku || p.SKU || "").toString().trim().toUpperCase() === sku.toUpperCase());
-              if (productIndex > -1) {
-                  if (isWrap) {
-                      // ถ้ากด WRAP (ปิดกล่อง) ให้หัก Available ลง
-                      localProductDatabase[productIndex].availableStock = Number(localProductDatabase[productIndex].availableStock || 0) - qty;
-                      if (localProductDatabase[productIndex].availableStock < 0) localProductDatabase[productIndex].availableStock = 0;
-                  } else {
-                      // ถ้ากดคืนค่า (ลบกล่อง) ให้บวก Available คืน
-                      localProductDatabase[productIndex].availableStock = Number(localProductDatabase[productIndex].availableStock || 0) + qty;
-                  }
-                  console.log(`[Bridge] อัปเดตสต๊อกในความจำสำเร็จ! ยอดปัจจุบัน: ${localProductDatabase[productIndex].availableStock}`);
-              }
-          }
-
-          // 2. ส่งคำสั่งไปกระตุ้นฐานข้อมูล Google Sheets ผ่าน app.js (ถ้ามี)
-          if (typeof window.forceUpdateStockDatabase === "function") {
-              window.forceUpdateStockDatabase(sku, qty, isWrap);
-          }
-      };
-
-
-// 🧠 ฟังก์ชันอัปเดตสต๊อกในความจำแอปแบบ Real-time (แก้บั๊ก Scope) END
-// =====================================================================
-
+            // ส่งสัญญาณไปให้ Backend (ถ้ามีการผูกไว้)
+            if (typeof window.forceUpdateStockDatabase === "function") {
+                window.forceUpdateStockDatabase(sku, qty, isWrap);
+            }
+        };
+// 🧠 ฟังก์ชันสั่งการอัปเดตสต๊อกข้ามไฟล์ (Bridge Sync Engine)
+// ====================================================================
 
 
 // ====================================================================

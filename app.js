@@ -787,6 +787,10 @@ window.openProductDetail = function (sku) {
   }
 };
 
+
+
+
+
 function closeProductDetail() {
   document.getElementById("productDetailModal").classList.add("hide");
 }
