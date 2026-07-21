@@ -1477,7 +1477,7 @@ function createTransferOutTaskCard(
             sessionStorage.removeItem("jump_to_shipment");
           }, 500);
         }
-      };); // ✅ เปลี่ยนเป็น }); แค่นี้เลยครับ
+      }); // ✅ เปลี่ยนเป็น }); แค่นี้เลยครับ
 
 // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
