@@ -327,44 +327,50 @@ btnDeleteChild.addEventListener("click", async (e) => {
 // ======================================================
 //[Phase 4 ] 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่  START
 
-function createShipmentColumn(
-  shipmentNo,
-  originType = "Store",
-  status = "Assign",
-) {
-  const col = document.createElement("div");
-  col.className = "shipment-column";
+  function createShipmentColumn(
+    shipmentNo,
+    originType = "Store",
+    status = "Assign",
+  ) {
+    const col = document.createElement("div");
+    col.className = "shipment-column";
 
-  const safeShipmentNo = shipmentNo || "UNKNOWN-00000000-00XX-0000-00XX";
-  col.setAttribute("data-shipment", safeShipmentNo);
+    // 🚨 [HOT FIX UI]: จัดระเบียบกล่องแม่ ไม่ให้ซ้อนทับหรือเกยกันเด็ดขาด
+    col.style.cssText =
+      "display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; width: 100%; position: relative; z-index: 1;";
 
-  const parts = safeShipmentNo.split("-");
-  const dateParts = parts.length > 1 ? parts[1] : "";
-  const displayDate =
-    dateParts && dateParts.length === 8
-      ? `${dateParts.substring(0, 2)}/${dateParts.substring(2, 4)}/${dateParts.substring(6, 8)}`
-      : new Date().toLocaleDateString("en-GB").substring(0, 8);
+    const safeShipmentNo = shipmentNo || "UNKNOWN-00000000-00XX-0000-00XX";
 
-  const baseBoxNo =
-    parts.length >= 5 ? parts.slice(2).join("-") : safeShipmentNo;
 
-  // 🌟 [UPDATE] เช็กโหมดจาก Status ที่ถูกส่งเข้ามา (แม่นยำกว่าดึงจาก Session)
-  const statusText = (status || "Assign").toUpperCase();
-  // 🚨 [FIX]: ล็อกทั้งสองโหมด
-  const isReadOnly = statusText === "PENDING" || statusText === "COMPLETE";
+    col.setAttribute("data-shipment", safeShipmentNo);
 
-  // 🚨 [FIX] คืนค่าแถบคอลัมน์แม่เป็นสีเงินลูกระนาดต้นฉบับ 100% ตลอดกาลตามคำสั่ง
-  const headerGradient =
-    "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)";
+    const parts = safeShipmentNo.split("-");
+    const dateParts = parts.length > 1 ? parts[1] : "";
+    const displayDate =
+      dateParts && dateParts.length === 8
+        ? `${dateParts.substring(0, 2)}/${dateParts.substring(2, 4)}/${dateParts.substring(6, 8)}`
+        : new Date().toLocaleDateString("en-GB").substring(0, 8);
 
-  // 🌟 [NEW] ซ่อนปุ่มต่างๆ และตั้งสี Tag
-  const displayStyle = isReadOnly ? "display: none !important;" : "";
+    const baseBoxNo =
+      parts.length >= 5 ? parts.slice(2).join("-") : safeShipmentNo;
 
-  // 🟢 [NEW]: เพิ่มสีป้าย Tag ของโหมด COMPLETE ให้เป็นสีเขียว
-  let badgeColor = "#d93844"; // แดง (ASSIGN)
-  if (statusText === "PENDING") badgeColor = "#e0a800"; // เหลือง
-  if (statusText === "COMPLETE") badgeColor = "#198754"; // เขียว
-  col.innerHTML = `
+    // 🌟 [UPDATE] เช็กโหมดจาก Status ที่ถูกส่งเข้ามา (แม่นยำกว่าดึงจาก Session)
+    const statusText = (status || "Assign").toUpperCase();
+    // 🚨 [FIX]: ล็อกทั้งสองโหมด
+    const isReadOnly = statusText === "PENDING" || statusText === "COMPLETE";
+
+    // 🚨 [FIX] คืนค่าแถบคอลัมน์แม่เป็นสีเงินลูกระนาดต้นฉบับ 100% ตลอดกาลตามคำสั่ง
+    const headerGradient =
+      "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)";
+
+    // 🌟 [NEW] ซ่อนปุ่มต่างๆ และตั้งสี Tag
+    const displayStyle = isReadOnly ? "display: none !important;" : "";
+
+    // 🟢 [NEW]: เพิ่มสีป้าย Tag ของโหมด COMPLETE ให้เป็นสีเขียว
+    let badgeColor = "#d93844"; // แดง (ASSIGN)
+    if (statusText === "PENDING") badgeColor = "#e0a800"; // เหลือง
+    if (statusText === "COMPLETE") badgeColor = "#198754"; // เขียว
+    col.innerHTML = `
 
     <!-- 🟢 Header แม่ -->
     <div class="shipment-column-header" style="
@@ -403,215 +409,221 @@ function createShipmentColumn(
     <div class="shipment-children-container hide" style="width: 100%; display: flex; flex-direction: column; gap: 5px;"></div>
   `;
 
-  const headerDiv = col.querySelector(".shipment-column-header");
-  const childrenContainer = col.querySelector(".shipment-children-container");
-  const btnMasterDelete = col.querySelector(".btn-master-delete");
-  const btnParentDelete = col.querySelector(".parent-btn-delete");
-  const btnAddChildBox = col.querySelector(".btn-add-child-box");
-  const masterTruckCount = col.querySelector(".master-truck-count");
+    const headerDiv = col.querySelector(".shipment-column-header");
+    const childrenContainer = col.querySelector(".shipment-children-container");
+    const btnMasterDelete = col.querySelector(".btn-master-delete");
+    const btnParentDelete = col.querySelector(".parent-btn-delete");
+    const btnAddChildBox = col.querySelector(".btn-add-child-box");
+    const masterTruckCount = col.querySelector(".master-truck-count");
 
-  // 1. สวิตช์สลับโหมดลบ
-  btnMasterDelete.addEventListener("click", () => {
-    if (isReadOnly) return;
+    // 1. สวิตช์สลับโหมดลบ
+    btnMasterDelete.addEventListener("click", () => {
+      if (isReadOnly) return;
 
-    if (
-      window.isGlobalDeleteMode &&
-      window.activeDeleteShipment !== safeShipmentNo
-    )
-      return;
-    const isDeleteMode = btnMasterDelete.classList.toggle("delete-mode-active");
-    window.isGlobalDeleteMode = isDeleteMode;
-    window.activeDeleteShipment = isDeleteMode ? safeShipmentNo : null;
-    const childBoxes = childrenContainer.querySelectorAll(
-      ".shipment-child-box",
-    );
-
-    if (isDeleteMode) {
-      btnMasterDelete.style.color = "#ffc107";
-      btnMasterDelete.style.transform = "scale(1.2)";
-      headerDiv.style.border = "2px dashed #ffc107";
-      btnParentDelete.classList.remove("hide");
-      childBoxes.forEach((child) =>
-        child.querySelector(".child-btn-delete").classList.remove("hide"),
-      );
-    } else {
-      btnMasterDelete.style.color = "#c9302c";
-      btnMasterDelete.style.transform = "scale(1)";
-      headerDiv.style.border = "1px solid #ccc";
-      btnParentDelete.classList.add("hide");
-      childBoxes.forEach((child) =>
-        child.querySelector(".child-btn-delete").classList.add("hide"),
-      );
-    }
-  });
-
-  // 2. ปุ่มกดลบแม่ของจริง
-  btnParentDelete.addEventListener("click", async () => {
-    if (isReadOnly) return;
-
-    const isConfirmed = await safeConfirm(
-      "ยืนยันการลบชิปเมนต์?",
-      `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
-    );
-
-    if (isConfirmed) {
-      const loadingOverlay = document.createElement("div");
-      loadingOverlay.id = "masterDeleteSpinner";
-      loadingOverlay.style.cssText =
-        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
-      loadingOverlay.innerHTML =
-        "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบและคืนสต๊อก...";
-      document.body.appendChild(loadingOverlay);
-
-      const currentBranchCode = String(
-        localStorage.getItem("pattcha_branch") || "",
+      if (
+        window.isGlobalDeleteMode &&
+        window.activeDeleteShipment !== safeShipmentNo
       )
-        .trim()
-        .toUpperCase();
-      const apiUrl =
-        "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+        return;
+      const isDeleteMode =
+        btnMasterDelete.classList.toggle("delete-mode-active");
+      window.isGlobalDeleteMode = isDeleteMode;
+      window.activeDeleteShipment = isDeleteMode ? safeShipmentNo : null;
+      const childBoxes = childrenContainer.querySelectorAll(
+        ".shipment-child-box",
+      );
 
-      fetch(`${apiUrl}?action=delete_shipment`, {
-        method: "POST",
-        body: JSON.stringify({
-          shipmentNo: safeShipmentNo,
-          branch: currentBranchCode,
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          const spinner = document.getElementById("masterDeleteSpinner");
-          if (spinner) spinner.remove();
+      if (isDeleteMode) {
+        btnMasterDelete.style.color = "#ffc107";
+        btnMasterDelete.style.transform = "scale(1.2)";
+        headerDiv.style.border = "2px dashed #ffc107";
+        btnParentDelete.classList.remove("hide");
+        childBoxes.forEach((child) =>
+          child.querySelector(".child-btn-delete").classList.remove("hide"),
+        );
+      } else {
+        btnMasterDelete.style.color = "#c9302c";
+        btnMasterDelete.style.transform = "scale(1)";
+        headerDiv.style.border = "1px solid #ccc";
+        btnParentDelete.classList.add("hide");
+        childBoxes.forEach((child) =>
+          child.querySelector(".child-btn-delete").classList.add("hide"),
+        );
+      }
+    });
 
-          if (data.success || data.status === "success") {
-            // 🚨 TATTOO 2: บันทึกลง Hard Disk ว่าลบแล้วเด็ดขาด!
-            let deletedList = JSON.parse(
-              localStorage.getItem("ghost_deleted_list") || "[]",
-            );
-            if (!deletedList.includes(safeShipmentNo))
-              deletedList.push(safeShipmentNo);
-            localStorage.setItem(
-              "ghost_deleted_list",
-              JSON.stringify(deletedList),
-            );
+    // 2. ปุ่มกดลบแม่ของจริง
+    btnParentDelete.addEventListener("click", async () => {
+      if (isReadOnly) return;
 
-            // 🚨 NUKE 2: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที!
-            if (typeof window.nukeShipmentCache === "function") {
-              window.nukeShipmentCache(safeShipmentNo);
-            }
+      const isConfirmed = await safeConfirm(
+        "ยืนยันการลบชิปเมนต์?",
+        `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
+      );
 
-            const closedBoxes = col.querySelectorAll(
-              ".shipment-child-box[data-status='Closed']",
-            );
-            closedBoxes.forEach((box) => {
-              const savedItemsStr = box.getAttribute("data-saved-items");
-              if (savedItemsStr) {
-                try {
-                  const savedItems = JSON.parse(savedItemsStr);
-                  savedItems.forEach((item) => {
-                    if (typeof window.updateLocalStockMemory === "function") {
-                      window.updateLocalStockMemory(
-                        item.sku,
-                        item.totalQty,
-                        false,
-                      );
-                    }
-                  });
-                } catch (e) {}
+      if (isConfirmed) {
+        const loadingOverlay = document.createElement("div");
+        loadingOverlay.id = "masterDeleteSpinner";
+        loadingOverlay.style.cssText =
+          "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
+        loadingOverlay.innerHTML =
+          "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบและคืนสต๊อก...";
+        document.body.appendChild(loadingOverlay);
+
+        const currentBranchCode = String(
+          localStorage.getItem("pattcha_branch") || "",
+        )
+          .trim()
+          .toUpperCase();
+        const apiUrl =
+          "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+
+        fetch(`${apiUrl}?action=delete_shipment`, {
+          method: "POST",
+          body: JSON.stringify({
+            shipmentNo: safeShipmentNo,
+            branch: currentBranchCode,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const spinner = document.getElementById("masterDeleteSpinner");
+            if (spinner) spinner.remove();
+
+            if (data.success || data.status === "success") {
+              // 🚨 TATTOO 2: บันทึกลง Hard Disk ว่าลบแล้วเด็ดขาด!
+              let deletedList = JSON.parse(
+                localStorage.getItem("ghost_deleted_list") || "[]",
+              );
+              if (!deletedList.includes(safeShipmentNo))
+                deletedList.push(safeShipmentNo);
+              localStorage.setItem(
+                "ghost_deleted_list",
+                JSON.stringify(deletedList),
+              );
+
+              // 🚨 NUKE 2: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที!
+              if (typeof window.nukeShipmentCache === "function") {
+                window.nukeShipmentCache(safeShipmentNo);
               }
-            });
 
-            col.remove();
-            const taskCards = document.querySelectorAll(
-              "#transferOutTaskHubView .task-card",
-            );
-            taskCards.forEach((card) => {
-              if (card.innerHTML.includes(safeShipmentNo)) card.remove();
-            });
+              const closedBoxes = col.querySelectorAll(
+                ".shipment-child-box[data-status='Closed']",
+              );
+              closedBoxes.forEach((box) => {
+                const savedItemsStr = box.getAttribute("data-saved-items");
+                if (savedItemsStr) {
+                  try {
+                    const savedItems = JSON.parse(savedItemsStr);
+                    savedItems.forEach((item) => {
+                      if (typeof window.updateLocalStockMemory === "function") {
+                        window.updateLocalStockMemory(
+                          item.sku,
+                          item.totalQty,
+                          false,
+                        );
+                      }
+                    });
+                  } catch (e) {}
+                }
+              });
 
-            // 🚨 [HOT FIX]: ล้างข้อมูลขยะและ Cache ออกจาก RAM ด้วย
-            if (window.cachedTransferTasks) {
-              window.cachedTransferTasks = window.cachedTransferTasks.filter(
-                (t) => t.Shipment_No !== safeShipmentNo,
+              col.remove();
+              const taskCards = document.querySelectorAll(
+                "#transferOutTaskHubView .task-card",
+              );
+              taskCards.forEach((card) => {
+                if (card.innerHTML.includes(safeShipmentNo)) card.remove();
+              });
+
+              // 🚨 [HOT FIX]: ล้างข้อมูลขยะและ Cache ออกจาก RAM ด้วย
+              if (window.cachedTransferTasks) {
+                window.cachedTransferTasks = window.cachedTransferTasks.filter(
+                  (t) => t.Shipment_No !== safeShipmentNo,
+                );
+              }
+
+              for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (
+                  key &&
+                  (key.startsWith(`draft_box_${safeShipmentNo}_`) ||
+                    key.startsWith(`status_box_${safeShipmentNo}_`) ||
+                    key.startsWith(`wrapped_box_${safeShipmentNo}_`))
+                ) {
+                  localStorage.removeItem(key);
+                }
+              }
+
+              window.isGlobalDeleteMode = false;
+              window.activeDeleteShipment = null;
+
+              const container = document.getElementById(
+                "lobbyContentContainer",
+              );
+              const emptyState = document.getElementById("lobbyEmptyState");
+              if (
+                container &&
+                container.querySelectorAll(".shipment-column").length === 0 &&
+                emptyState
+              ) {
+                emptyState.style.display = "block";
+              }
+
+              if (typeof window.safeAlert === "function") {
+                window.safeAlert("SUCCESS", "ลบชิปเมนต์สำเร็จ!", "success");
+              }
+            } else {
+              if (typeof window.safeAlert === "function") {
+                window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+              }
+            }
+          })
+          .catch((error) => {
+            const spinner = document.getElementById("masterDeleteSpinner");
+            if (spinner) spinner.remove();
+            if (typeof window.safeAlert === "function") {
+              window.safeAlert(
+                "ข้อผิดพลาด",
+                "ไม่สามารถติดต่อฐานข้อมูลได้",
+                "error",
               );
             }
+          });
+      }
+    });
 
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-              const key = localStorage.key(i);
-              if (
-                key &&
-                (key.startsWith(`draft_box_${safeShipmentNo}_`) ||
-                  key.startsWith(`status_box_${safeShipmentNo}_`) ||
-                  key.startsWith(`wrapped_box_${safeShipmentNo}_`))
-              ) {
-                localStorage.removeItem(key);
-              }
-            }
+    // 3. สร้างกล่องลูก (ปิดการทำงานถ้าเป็น Pending)
+    let boxIdCounter = 0;
+    btnAddChildBox.addEventListener("click", () => {
+      if (isReadOnly) return;
 
-            window.isGlobalDeleteMode = false;
-            window.activeDeleteShipment = null;
+      boxIdCounter++;
+      const randomText = Math.random()
+        .toString(36)
+        .substring(2, 5)
+        .toUpperCase();
+      const newBoxSuffix = String(boxIdCounter).padStart(4, "0") + randomText;
+      const childEl = createShipmentChildBox(baseBoxNo, newBoxSuffix);
+      childrenContainer.appendChild(childEl);
+      childrenContainer.classList.remove("hide");
+      masterTruckCount.textContent = childrenContainer.querySelectorAll(
+        ".shipment-child-box",
+      ).length;
+    });
 
-            const container = document.getElementById("lobbyContentContainer");
-            const emptyState = document.getElementById("lobbyEmptyState");
-            if (
-              container &&
-              container.querySelectorAll(".shipment-column").length === 0 &&
-              emptyState
-            ) {
-              emptyState.style.display = "block";
-            }
+    setTimeout(() => {
+      if (typeof window.restoreDraftBoxesForShipment === "function") {
+        const restoredMaxId = window.restoreDraftBoxesForShipment(
+          safeShipmentNo,
+          col,
+        );
+        if (restoredMaxId > boxIdCounter) boxIdCounter = restoredMaxId;
+      }
+    }, 50);
 
-            if (typeof window.safeAlert === "function") {
-              window.safeAlert("SUCCESS", "ลบชิปเมนต์สำเร็จ!", "success");
-            }
-          } else {
-            if (typeof window.safeAlert === "function") {
-              window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
-            }
-          }
-        })
-        .catch((error) => {
-          const spinner = document.getElementById("masterDeleteSpinner");
-          if (spinner) spinner.remove();
-          if (typeof window.safeAlert === "function") {
-            window.safeAlert(
-              "ข้อผิดพลาด",
-              "ไม่สามารถติดต่อฐานข้อมูลได้",
-              "error",
-            );
-          }
-        });
-    }
-  });
-
-  // 3. สร้างกล่องลูก (ปิดการทำงานถ้าเป็น Pending)
-  let boxIdCounter = 0;
-  btnAddChildBox.addEventListener("click", () => {
-    if (isReadOnly) return;
-
-    boxIdCounter++;
-    const randomText = Math.random().toString(36).substring(2, 5).toUpperCase();
-    const newBoxSuffix = String(boxIdCounter).padStart(4, "0") + randomText;
-    const childEl = createShipmentChildBox(baseBoxNo, newBoxSuffix);
-    childrenContainer.appendChild(childEl);
-    childrenContainer.classList.remove("hide");
-    masterTruckCount.textContent = childrenContainer.querySelectorAll(
-      ".shipment-child-box",
-    ).length;
-  });
-
-  setTimeout(() => {
-    if (typeof window.restoreDraftBoxesForShipment === "function") {
-      const restoredMaxId = window.restoreDraftBoxesForShipment(
-        safeShipmentNo,
-        col,
-      );
-      if (restoredMaxId > boxIdCounter) boxIdCounter = restoredMaxId;
-    }
-  }, 50);
-
-  return col;
-}
+    return col;
+  }
 
 //[Phase 4 ] 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่  END
 // ======================================================
@@ -2943,6 +2955,7 @@ document.addEventListener('change', function(e) {
     window.updateExportButtonState();
 });
 
+
 // 🔘 2. ฟังก์ชันอัปเดตหน้าตาปุ่ม EXPORT
 window.updateExportButtonState = function() {
     const btnExport = document.getElementById('btnSubmitLobby');
@@ -2968,6 +2981,10 @@ window.updateExportButtonState = function() {
         }
     });
 
+    // 🚨 [HOT FIX 1]: ปลดล็อกการสัมผัสปุ่มทุกครั้งที่มีการรันฟังก์ชันนี้ เพื่อให้พร้อมสำหรับ Export รอบต่อไป
+    btnExport.style.pointerEvents = "auto";
+    btnExport.style.opacity = "1";
+
     if (hasReadyShipment) {
         btnExport.disabled = false;
         btnExport.style.background = "linear-gradient(to bottom, #b02a37 0%, #ff6b6b 50%, #b02a37 100%)";
@@ -2985,6 +3002,7 @@ window.updateExportButtonState = function() {
     }
 };
 
+
 // 📡 3. เรดาร์ดักจับการคลิกปุ่ม EXPORT
 document.addEventListener('click', function(e) {
     const targetBtn = e.target.closest('#btnSubmitLobby');
@@ -2995,167 +3013,188 @@ document.addEventListener('click', function(e) {
 });
 
 // 🚀 4. ฟังก์ชันเริ่มจัดส่ง (EXPORT)
-window.processExport = async function() {
-    const readyMasterCheckbox = document.querySelector('.master-checkbox:checked');
-    if (!readyMasterCheckbox) return;
+window.processExport = async function () {
+  const readyMasterCheckbox = document.querySelector(
+    ".master-checkbox:checked",
+  );
+  if (!readyMasterCheckbox) return;
 
-    const colElement = readyMasterCheckbox.closest('.shipment-column');
-    const shipmentNo = colElement.getAttribute("data-shipment");
+  const colElement = readyMasterCheckbox.closest(".shipment-column");
+  const shipmentNo = colElement.getAttribute("data-shipment");
 
-    // 🧮 สกัดข้อมูลนับยอดกล่องและยอดสินค้า
-    const childBoxes = colElement.querySelectorAll(".shipment-child-box");
-    let totalBoxCount = childBoxes.length;
-    let totalItemCount = 0;
+  // 🧮 สกัดข้อมูลนับยอดกล่องและยอดสินค้า
+  const childBoxes = colElement.querySelectorAll(".shipment-child-box");
+  let totalBoxCount = childBoxes.length;
+  let totalItemCount = 0;
 
-    childBoxes.forEach(box => {
-        const savedData = box.getAttribute("data-saved-items");
-        if (savedData) {
-            try {
-                const items = JSON.parse(savedData);
-                items.forEach(item => {
-                    totalItemCount += (item.scanQty || 0) + (item.manualQty || 0);
-                });
-            } catch(e) {}
-        }
-    });
-
-    let isConfirm = false;
-    if (typeof window.safeConfirm === "function") {
-        isConfirm = await window.safeConfirm(
-            "ยืนยันการ EXPORT?", 
-            `ส่งข้อมูลชิปเมนต์ ${shipmentNo}\nจำนวนกล่อง: ${totalBoxCount} ใบ\nจำนวนสินค้า: ${totalItemCount} ชิ้น\nยืนยันใช่หรือไม่?`, 
-            "question"
-        );
-    } else {
-        isConfirm = confirm(`ต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`);
+  childBoxes.forEach((box) => {
+    const savedData = box.getAttribute("data-saved-items");
+    if (savedData) {
+      try {
+        const items = JSON.parse(savedData);
+        items.forEach((item) => {
+          totalItemCount += (item.scanQty || 0) + (item.manualQty || 0);
+        });
+      } catch (e) {}
     }
-    if (!isConfirm) return;
+  });
 
-    // 🌟 [ปรับปรุง UI]: ลบ Popup แจ้งเตือนตรงกลางออก เปลี่ยนเป็นตัวหมุนที่ปุ่ม
-    const btnExport = document.getElementById('btnSubmitLobby');
-    let originalBtnHtml = btnExport ? btnExport.innerHTML : "EXPORT";
-    if (btnExport) {
-        btnExport.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> กำลังดำเนินการ...';
-        btnExport.style.pointerEvents = "none";
-        btnExport.style.opacity = "0.7";
-    }
+  let isConfirm = false;
+  if (typeof window.safeConfirm === "function") {
+    isConfirm = await window.safeConfirm(
+      "ยืนยันการ EXPORT?",
+      `ส่งข้อมูลชิปเมนต์ ${shipmentNo}\nจำนวนกล่อง: ${totalBoxCount} ใบ\nจำนวนสินค้า: ${totalItemCount} ชิ้น\nยืนยันใช่หรือไม่?`,
+      "question",
+    );
+  } else {
+    isConfirm = confirm(`ต้องการส่งข้อมูลชิปเมนต์ ${shipmentNo} ใช่หรือไม่?`);
+  }
+  if (!isConfirm) return;
 
-    // 🚨 [HOT FIX Safety]: กางม่านพลังป้องกันการกดรัวๆ (Overlay) บล็อกทั้งหน้าจอจนกว่าจะย้ายการ์ดเสร็จ
-    const exportOverlay = document.createElement("div");
+  // 🌟 [ปรับปรุง UI]: ลบ Popup แจ้งเตือนตรงกลางออก เปลี่ยนเป็นตัวหมุนที่ปุ่ม
+  const btnExport = document.getElementById("btnSubmitLobby");
+  let originalBtnHtml = btnExport ? btnExport.innerHTML : "EXPORT";
+  if (btnExport) {
+    btnExport.innerHTML =
+      '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> กำลังดำเนินการ...';
+    btnExport.style.pointerEvents = "none";
+    btnExport.style.opacity = "0.7";
+  }
+
+  // 🚨 [HOT FIX Safety]: กางม่านพลังป้องกันการกดรัวๆ (Overlay) บล็อกทั้งหน้าจอจนกว่าจะย้ายการ์ดเสร็จ
+  let exportOverlay = document.getElementById("exportSpinnerOverlay");
+  if (!exportOverlay) {
+    exportOverlay = document.createElement("div");
     exportOverlay.id = "exportSpinnerOverlay";
-    exportOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
-    exportOverlay.innerHTML = "<i class='fas fa-truck-loading' style='margin-right: 10px; font-size: 24px;'></i> กำลังแพ็กข้อมูลลงกล่องและย้ายสถานะ...";
     document.body.appendChild(exportOverlay);
-
+  }
+  // ดัน z-index ให้สูงสุด (2147483647) บังทุกสิ่งในแอป 100%
+  exportOverlay.style.cssText =
+    "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 2147483647 !important; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(5px);";
+  exportOverlay.innerHTML =
+    "<i class='fas fa-truck-loading fa-3x fa-bounce' style='margin-bottom: 20px; color: #ffc107;'></i><div style='text-align: center; text-shadow: 1px 1px 3px #000;'>กำลังแพ็กข้อมูลและส่งออก...<br><span style='font-size: 14px; color: #ddd; font-weight: normal;'>ห้ามปิดหน้าจอ กรุณารอสักครู่</span></div>";
+  
+  
     const payload = {
-        shipmentId: shipmentNo,
-        branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase(),
-        totalBox: totalBoxCount,
-        totalItem: totalItemCount
-    };
+    shipmentId: shipmentNo,
+    branch: String(localStorage.getItem("pattcha_branch") || "")
+      .trim()
+      .toUpperCase(),
+    totalBox: totalBoxCount,
+    totalItem: totalItemCount,
+  };
 
-    fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
-        method: "POST",
-        body: JSON.stringify(payload),
-    })
+  fetch(CONFIG.API_URL + "?action=dispatch_shipment", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
     .then((res) => res.json())
     .then((data) => {
-        if (data.status === "success" || data.success) {
-            
-            // 🚨 TATTOO: บันทึกลง Hard Disk ว่าคันนี้ส่งออกแล้วเด็ดขาด!
-            let exportedList = JSON.parse(localStorage.getItem("ghost_exported_list") || "[]");
-            if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
-            localStorage.setItem("ghost_exported_list", JSON.stringify(exportedList));
+      if (data.status === "success" || data.success) {
+        // 🚨 TATTOO: บันทึกลง Hard Disk ว่าคันนี้ส่งออกแล้วเด็ดขาด!
+        let exportedList = JSON.parse(
+          localStorage.getItem("ghost_exported_list") || "[]",
+        );
+        if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
+        localStorage.setItem(
+          "ghost_exported_list",
+          JSON.stringify(exportedList),
+        );
 
-            // 🚨 NUKE: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที! (ดักผีรหัสซ้ำ)
-            if (typeof window.nukeShipmentCache === "function") {
-                window.nukeShipmentCache(shipmentNo); 
-            }
-
-            // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (
-                    key &&
-                    (key.startsWith(`draft_box_${shipmentNo}_`) ||
-                     key.startsWith(`status_box_${shipmentNo}_`) ||
-                     key.startsWith(`wrapped_box_${shipmentNo}_`))
-                ) {
-                    localStorage.removeItem(key);
-                }
-            }
-
-            // เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป
-            colElement.style.opacity = "0";
-            
-            // 🚨 เพิ่มเวลาหน่วง (Delay) เล็กน้อยให้ระบบเคลียร์ตัวเอง ก่อนวาร์ปออกไป
-            setTimeout(() => {
-                colElement.remove();
-                window.updateExportButtonState();
-
-                // เปลี่ยนสถานะในสมอง (Cache) ให้เป็น PENDING ทันที
-                if (window.cachedTransferTasks) {
-                    const exportedTask = window.cachedTransferTasks.find(
-                        (t) => t.Shipment_No === shipmentNo,
-                    );
-                    if (exportedTask) {
-                        exportedTask.Status = "Pending";
-                    }
-                }
-
-                // 🚨 ถอดม่านพลังออกเมื่อเคลียร์ทุกอย่างเสร็จสิ้น
-                const spinner = document.getElementById("exportSpinnerOverlay");
-                if (spinner) spinner.remove();
-
-                // แจ้งเตือนเมื่อกระบวนการเสร็จสมบูรณ์
-                if (typeof window.safeAlert === "function") {
-                    window.safeAlert(
-                        "SUCCESS",
-                        `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`,
-                        "success"
-                    );
-                }
-
-                // เด้งกลับหน้าหลักถ้ารถชิปเมนต์ใน Lobby ถูกส่งออกหมดแล้ว
-                if (document.querySelectorAll(".shipment-column").length === 0) {
-                    const btnBack =
-                        document.getElementById("btnCancelFromLobby") ||
-                        document.getElementById("btnBackToTaskHub");
-                    if (btnBack) btnBack.click();
-                    
-                    // 🚨 Force Render Task Hub ทันที เพื่อป้องกันการกดการ์ดผิดจังหวะ
-                    if (typeof window.renderTaskHubAssignPending === "function") {
-                         window.renderTaskHubAssignPending();
-                    }
-                }
-            }, 800); // หน่วงไว้ 0.8 วินาทีให้หน้าจอเคลียร์ตัวเองปลอดภัยที่สุด
-            
-        } else {
-            // กรณี API แจ้งเตือน Error
-            const spinner = document.getElementById("exportSpinnerOverlay");
-            if (spinner) spinner.remove();
-            
-            if (btnExport) { 
-                btnExport.innerHTML = originalBtnHtml; 
-                btnExport.style.pointerEvents = "auto"; 
-                btnExport.style.opacity = "1"; 
-            }
-            if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"), "error");
+        // 🚨 NUKE: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที! (ดักผีรหัสซ้ำ)
+        if (typeof window.nukeShipmentCache === "function") {
+          window.nukeShipmentCache(shipmentNo);
         }
-    })
-    .catch((error) => {
-        // กรณีเชื่อมต่อเซิร์ฟเวอร์ไม่ได้
+
+        // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            (key.startsWith(`draft_box_${shipmentNo}_`) ||
+              key.startsWith(`status_box_${shipmentNo}_`) ||
+              key.startsWith(`wrapped_box_${shipmentNo}_`))
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+
+        // เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป
+        colElement.style.opacity = "0";
+
+        // 🚨 เพิ่มเวลาหน่วง (Delay) เล็กน้อยให้ระบบเคลียร์ตัวเอง ก่อนวาร์ปออกไป
+        setTimeout(() => {
+          colElement.remove();
+          window.updateExportButtonState();
+
+          // เปลี่ยนสถานะในสมอง (Cache) ให้เป็น PENDING ทันที
+          if (window.cachedTransferTasks) {
+            const exportedTask = window.cachedTransferTasks.find(
+              (t) => t.Shipment_No === shipmentNo,
+            );
+            if (exportedTask) {
+              exportedTask.Status = "Pending";
+            }
+          }
+
+          // 🚨 ถอดม่านพลังออกเมื่อเคลียร์ทุกอย่างเสร็จสิ้น
+          const spinner = document.getElementById("exportSpinnerOverlay");
+          if (spinner) spinner.remove();
+
+          // แจ้งเตือนเมื่อกระบวนการเสร็จสมบูรณ์
+          if (typeof window.safeAlert === "function") {
+            window.safeAlert(
+              "SUCCESS",
+              `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`,
+              "success",
+            );
+          }
+
+          // เด้งกลับหน้าหลักถ้ารถชิปเมนต์ใน Lobby ถูกส่งออกหมดแล้ว
+          if (document.querySelectorAll(".shipment-column").length === 0) {
+            const btnBack =
+              document.getElementById("btnCancelFromLobby") ||
+              document.getElementById("btnBackToTaskHub");
+            if (btnBack) btnBack.click();
+
+            // 🚨 Force Render Task Hub ทันที เพื่อป้องกันการกดการ์ดผิดจังหวะ
+            if (typeof window.renderTaskHubAssignPending === "function") {
+              window.renderTaskHubAssignPending();
+            }
+          }
+        }, 800); // หน่วงไว้ 0.8 วินาทีให้หน้าจอเคลียร์ตัวเองปลอดภัยที่สุด
+      } else {
+        // กรณี API แจ้งเตือน Error
         const spinner = document.getElementById("exportSpinnerOverlay");
         if (spinner) spinner.remove();
 
-        if (btnExport) { 
-            btnExport.innerHTML = originalBtnHtml; 
-            btnExport.style.pointerEvents = "auto"; 
-            btnExport.style.opacity = "1"; 
+        if (btnExport) {
+          btnExport.innerHTML = originalBtnHtml;
+          btnExport.style.pointerEvents = "auto";
+          btnExport.style.opacity = "1";
         }
-        if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
+        if (typeof window.safeAlert === "function")
+          window.safeAlert(
+            "ERROR",
+            "ข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"),
+            "error",
+          );
+      }
+    })
+    .catch((error) => {
+      // กรณีเชื่อมต่อเซิร์ฟเวอร์ไม่ได้
+      const spinner = document.getElementById("exportSpinnerOverlay");
+      if (spinner) spinner.remove();
+
+      if (btnExport) {
+        btnExport.innerHTML = originalBtnHtml;
+        btnExport.style.pointerEvents = "auto";
+        btnExport.style.opacity = "1";
+      }
+      if (typeof window.safeAlert === "function")
+        window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
-};
+};;
 
 
 
