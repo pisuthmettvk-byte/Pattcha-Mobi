@@ -305,6 +305,25 @@ btnDeleteChild.addEventListener("click", async (e) => {
 // ======================================================
 
 
+    // 🚨 ฟังก์ชันทำลายล้างข้อมูลกล่องที่ผูกกับรหัสชิปเมนต์
+    window.nukeShipmentCache = function(shipmentNo) {
+        let keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            // ถ้า Key ในเครื่องมีรหัสชิปเมนต์นี้รวมอยู่ด้วย ให้เตรียมลบทิ้ง
+            if (key && key.includes(shipmentNo)) {
+                keysToRemove.push(key);
+            }
+        }
+        // ลบข้อมูลขยะของคันนี้ทิ้งให้หมด
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        console.log(`💥 [Nuked] ล้างความจำกล่องและสินค้าของชิปเมนต์ ${shipmentNo} เกลี้ยงแล้ว!`);
+    };
+
+
+
+
+
 // ======================================================
 //[Phase 4 ] 📦 ฟังก์ชันสร้างคอลัมน์ Shipment แม่  START
 
@@ -434,6 +453,7 @@ function createShipmentColumn(
       "ยืนยันการลบชิปเมนต์?",
       `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
     );
+
     if (isConfirmed) {
       const loadingOverlay = document.createElement("div");
       loadingOverlay.id = "masterDeleteSpinner";
@@ -464,6 +484,22 @@ function createShipmentColumn(
           if (spinner) spinner.remove();
 
           if (data.success || data.status === "success") {
+            // 🚨 TATTOO 2: บันทึกลง Hard Disk ว่าลบแล้วเด็ดขาด!
+            let deletedList = JSON.parse(
+              localStorage.getItem("ghost_deleted_list") || "[]",
+            );
+            if (!deletedList.includes(safeShipmentNo))
+              deletedList.push(safeShipmentNo);
+            localStorage.setItem(
+              "ghost_deleted_list",
+              JSON.stringify(deletedList),
+            );
+
+            // 🚨 NUKE 2: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที!
+            if (typeof window.nukeShipmentCache === "function") {
+              window.nukeShipmentCache(safeShipmentNo);
+            }
+
             const closedBoxes = col.querySelectorAll(
               ".shipment-child-box[data-status='Closed']",
             );
@@ -473,12 +509,13 @@ function createShipmentColumn(
                 try {
                   const savedItems = JSON.parse(savedItemsStr);
                   savedItems.forEach((item) => {
-                    if (typeof window.updateLocalStockMemory === "function")
+                    if (typeof window.updateLocalStockMemory === "function") {
                       window.updateLocalStockMemory(
                         item.sku,
                         item.totalQty,
                         false,
                       );
+                    }
                   });
                 } catch (e) {}
               }
@@ -492,12 +529,13 @@ function createShipmentColumn(
               if (card.innerHTML.includes(safeShipmentNo)) card.remove();
             });
 
-            // 🚨 [HOT FIX]: ล้างข้อมูลขยะและ Cache
+            // 🚨 [HOT FIX]: ล้างข้อมูลขยะและ Cache ออกจาก RAM ด้วย
             if (window.cachedTransferTasks) {
               window.cachedTransferTasks = window.cachedTransferTasks.filter(
                 (t) => t.Shipment_No !== safeShipmentNo,
               );
             }
+
             for (let i = localStorage.length - 1; i >= 0; i--) {
               const key = localStorage.key(i);
               if (
@@ -522,22 +560,26 @@ function createShipmentColumn(
             ) {
               emptyState.style.display = "block";
             }
-            if (typeof window.safeAlert === "function")
+
+            if (typeof window.safeAlert === "function") {
               window.safeAlert("SUCCESS", "ลบชิปเมนต์สำเร็จ!", "success");
+            }
           } else {
-            if (typeof window.safeAlert === "function")
+            if (typeof window.safeAlert === "function") {
               window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+            }
           }
         })
         .catch((error) => {
           const spinner = document.getElementById("masterDeleteSpinner");
           if (spinner) spinner.remove();
-          if (typeof window.safeAlert === "function")
+          if (typeof window.safeAlert === "function") {
             window.safeAlert(
               "ข้อผิดพลาด",
               "ไม่สามารถติดต่อฐานข้อมูลได้",
               "error",
             );
+          }
         });
     }
   });
@@ -733,17 +775,25 @@ function showView(viewId) {
                     "?action=get_tasks&t=" +
                     new Date().getTime(),
                 );
-                tasks = await response.json();
 
-                // 🚨 [HOT FIX 2: ANTI-GHOST SHIELD] กรองผีออกก่อนจำลงสมอง
-                if (
-                  window.deletedShipments &&
-                  window.deletedShipments.size > 0
-                ) {
-                  tasks = tasks.filter(
-                    (t) => !window.deletedShipments.has(t.Shipment_No),
-                  );
+
+                
+                tasks = await response.json();
+                
+                // 🚨 ดึงยันต์จาก Hard Disk มาใช้งาน
+                const deletedList = JSON.parse(localStorage.getItem("ghost_deleted_list") || "[]");
+                const exportedList = JSON.parse(localStorage.getItem("ghost_exported_list") || "[]");
+
+                if (deletedList.length > 0) {
+                    tasks = tasks.filter(t => !deletedList.includes(t.Shipment_No));
                 }
+
+                if (exportedList.length > 0) {
+                    tasks.forEach(t => {
+                        if (exportedList.includes(t.Shipment_No)) t.Status = "Pending";
+                    });
+                }
+
                 window.cachedTransferTasks = tasks;
               }
 
@@ -989,7 +1039,7 @@ function createTransferOutTaskCard(
 
  // 🟢 ฟังก์ชันโหลดข้อมูลงานเข้าหน้า Transfer Out Task Hub พร้อมตัวกรองตรรกะ
 
-      //===============
+//===============
       // [Load Tasks & Filter by Origin] START
       async function loadExistingTasks() {
         const containers = [
@@ -1009,12 +1059,29 @@ function createTransferOutTaskCard(
           let tasks = await response.json();
           if (!Array.isArray(tasks)) return;
 
-          // 🚨 [HOT FIX 1: ANTI-GHOST SHIELD] กรองชิปเมนต์ที่ติด Blacklist (ถูกลบ) ออกไปก่อนเลย!
-          if (window.deletedShipments && window.deletedShipments.size > 0) {
+          // =================================================================
+          // 🚨 [HOT FIX: THE ULTIMATE ANTI-GHOST] ระบบกันผีระดับ Hard Disk
+          // =================================================================
+          // ดึงประวัติที่ถูกสักไว้ใน LocalStorage (ลบแล้ว / ส่งออกแล้ว)
+          const deletedList = JSON.parse(localStorage.getItem("ghost_deleted_list") || "[]");
+          const exportedList = JSON.parse(localStorage.getItem("ghost_exported_list") || "[]");
+
+          // 1. 🛡️ เตะผีที่ลบทิ้งแล้วออกไป (Blacklist)
+          if (deletedList.length > 0) {
             tasks = tasks.filter(
-              (t) => !window.deletedShipments.has(t.Shipment_No),
+              (t) => !deletedList.includes(t.Shipment_No)
             );
           }
+
+          // 2. 🟡 ตบสเตตัสผีส่งออก ให้กลายเป็น Pending ทันที (ฝืนคำสั่งหลังบ้านที่ประมวลผลอืด)
+          if (exportedList.length > 0) {
+            tasks.forEach((t) => {
+              if (exportedList.includes(t.Shipment_No)) {
+                t.Status = "Pending"; // สั่งเปลี่ยนเป็นสีเหลือง ห้ามกลับไปแดงเด็ดขาด
+              }
+            });
+          }
+          // =================================================================
 
           // เก็บ Cache ที่สะอาดบริสุทธิ์ไว้ให้หน้า Lobby ใช้
           window.cachedTransferTasks = tasks;
@@ -1050,6 +1117,7 @@ function createTransferOutTaskCard(
             // 🟢 เงื่อนไขที่ 1: สาขาต้นทางต้องเป็นสาขาเรา (งานที่เราเป็นคนส่ง)
             // 🚫 เงื่อนไขที่ 2: สาขาปลายทาง "ต้องไม่ใช่สาขาเรา" เด็ดขาด
             if (originBranch === myBranch && actualDestBranch !== myBranch) {
+              // เนื่องจากเราดักเปลี่ยน t.Status = "Pending" ไว้ด้านบนแล้ว บรรทัดนี้จะจับค่าไปลงถูกกล่องทันที
               const statusKey = (task.Status || "").toLowerCase();
 
               if (typeof createTransferOutTaskCard === "function") {
@@ -1084,9 +1152,7 @@ function createTransferOutTaskCard(
         }
       }
       // [Load Tasks & Filter by Origin] END
-      //===============
-
-// ======================================================
+      //===============// ======================================================
 // 🚀 END กลุ่มที่ 5
 // ======================================================
 
@@ -2996,6 +3062,16 @@ window.processExport = async function() {
     .then((data) => {
         if (data.status === "success" || data.success) {
             
+            // 🚨 TATTOO: บันทึกลง Hard Disk ว่าคันนี้ส่งออกแล้วเด็ดขาด!
+            let exportedList = JSON.parse(localStorage.getItem("ghost_exported_list") || "[]");
+            if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
+            localStorage.setItem("ghost_exported_list", JSON.stringify(exportedList));
+
+            // 🚨 NUKE: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที! (ดักผีรหัสซ้ำ)
+            if (typeof window.nukeShipmentCache === "function") {
+                window.nukeShipmentCache(shipmentNo); 
+            }
+
             // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
             for (let i = localStorage.length - 1; i >= 0; i--) {
                 const key = localStorage.key(i);
@@ -3083,10 +3159,8 @@ window.processExport = async function() {
 
 
 
-// =================================================================
-// 📦 [GROUP: CHECKBOX & EXPORT LOGIC] END
-// =================================================================
-
+      // 📦 [GROUP: CHECKBOX & EXPORT LOGIC] END
+// ====================================================================
 
 
 
