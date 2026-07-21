@@ -451,13 +451,17 @@ btnDeleteChild.addEventListener("click", async (e) => {
       }
     });
 
-    // 2. ปุ่มกดลบแม่ของจริง
+
+
+
+    
+// 2. ปุ่มกดลบแม่ของจริง
     btnParentDelete.addEventListener("click", async () => {
       if (isReadOnly) return;
 
       const isConfirmed = await safeConfirm(
         "ยืนยันการลบชิปเมนต์?",
-        `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
+        `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`
       );
 
       if (isConfirmed) {
@@ -470,29 +474,15 @@ btnDeleteChild.addEventListener("click", async (e) => {
         document.body.appendChild(loadingOverlay);
 
         const currentBranchCode = String(
-          localStorage.getItem("pattcha_branch") || "",
-        )
-          .trim()
-          .toUpperCase();
+          localStorage.getItem("pattcha_branch") || ""
+        ).trim().toUpperCase();
 
-        // =================================================================
-        // 🚨 [HOT FIX FIREBASE NUKE]: ระเบิดข้อมูลกล่องลูกใน Firebase ทิ้งให้เกลี้ยงก่อน!
-        // ป้องกันปัญหา Ghost Data เมื่อรันเลข Shipment กลับมาเริ่มต้นใหม่ (0001)
-        // =================================================================
-        const childBoxesToKill = col.querySelectorAll(".shipment-child-box");
-        childBoxesToKill.forEach((box) => {
-          const bNo = box.getAttribute("data-box-no");
-          if (typeof window.fbDeleteBox === "function") {
-            window.fbDeleteBox(safeShipmentNo, bNo);
-          }
-        });
-        // =================================================================
+        // 💣🚨 [HOT FIX FIREBASE NUKE]: ระเบิดข้อมูลกล่องลูกใน Firebase ทิ้งให้เกลี้ยง 100%
+        if (typeof window.fbNukeShipment === "function") {
+            window.fbNukeShipment(safeShipmentNo);
+        }
 
-        // แนะนำให้ใช้ตัวแปร CONFIG.API_URL เพื่อความเสถียร หากในไฟล์มีประกาศไว้แล้ว
-        const apiUrl =
-          typeof CONFIG !== "undefined"
-            ? CONFIG.API_URL
-            : "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+        const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
         fetch(`${apiUrl}?action=delete_shipment`, {
           method: "POST",
@@ -502,36 +492,24 @@ btnDeleteChild.addEventListener("click", async (e) => {
           }),
         })
           .then((response) => response.json())
-
           .then((data) => {
             const spinner = document.getElementById("masterDeleteSpinner");
             if (spinner) spinner.remove();
 
             if (data.success || data.status === "success") {
-              // 🚨 [HOT FIX FIREBASE]: สั่งปิดหูฟังดักฟังทันทีที่ลบคันนี้ทิ้ง!
-              if (typeof window.fbStopListening === "function")
-                window.fbStopListening();
+              
+              // 🚨 [HOT FIX FIREBASE]: สั่งปิดหูฟังดักฟังทันที
+              if (typeof window.fbStopListening === "function") window.fbStopListening();
 
               // 🚨 TATTOO 2: บันทึกลง Hard Disk ว่าลบแล้วเด็ดขาด!
-              let deletedList = JSON.parse(
-                localStorage.getItem("ghost_deleted_list") || "[]",
-              );
-              // ... โค้ดเดิม ...
-              if (!deletedList.includes(safeShipmentNo))
-                deletedList.push(safeShipmentNo);
-              localStorage.setItem(
-                "ghost_deleted_list",
-                JSON.stringify(deletedList),
-              );
+              let deletedList = JSON.parse(localStorage.getItem("ghost_deleted_list") || "[]");
+              if (!deletedList.includes(safeShipmentNo)) deletedList.push(safeShipmentNo);
+              localStorage.setItem("ghost_deleted_list", JSON.stringify(deletedList));
 
               // 🚨 NUKE 2: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที!
-              if (typeof window.nukeShipmentCache === "function") {
-                window.nukeShipmentCache(safeShipmentNo);
-              }
+              if (typeof window.nukeShipmentCache === "function") window.nukeShipmentCache(safeShipmentNo);
 
-              const closedBoxes = col.querySelectorAll(
-                ".shipment-child-box[data-status='Closed']",
-              );
+              const closedBoxes = col.querySelectorAll(".shipment-child-box[data-status='Closed']");
               closedBoxes.forEach((box) => {
                 const savedItemsStr = box.getAttribute("data-saved-items");
                 if (savedItemsStr) {
@@ -539,11 +517,7 @@ btnDeleteChild.addEventListener("click", async (e) => {
                     const savedItems = JSON.parse(savedItemsStr);
                     savedItems.forEach((item) => {
                       if (typeof window.updateLocalStockMemory === "function") {
-                        window.updateLocalStockMemory(
-                          item.sku,
-                          item.totalQty,
-                          false,
-                        );
+                        window.updateLocalStockMemory(item.sku, item.totalQty, false);
                       }
                     });
                   } catch (e) {}
@@ -551,28 +525,20 @@ btnDeleteChild.addEventListener("click", async (e) => {
               });
 
               col.remove();
-              const taskCards = document.querySelectorAll(
-                "#transferOutTaskHubView .task-card",
-              );
+              const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
               taskCards.forEach((card) => {
                 if (card.innerHTML.includes(safeShipmentNo)) card.remove();
               });
 
-              // 🚨 [HOT FIX]: ล้างข้อมูลขยะและ Cache ออกจาก RAM ด้วย
               if (window.cachedTransferTasks) {
                 window.cachedTransferTasks = window.cachedTransferTasks.filter(
-                  (t) => t.Shipment_No !== safeShipmentNo,
+                  (t) => t.Shipment_No !== safeShipmentNo
                 );
               }
 
               for (let i = localStorage.length - 1; i >= 0; i--) {
                 const key = localStorage.key(i);
-                if (
-                  key &&
-                  (key.startsWith(`draft_box_${safeShipmentNo}_`) ||
-                    key.startsWith(`status_box_${safeShipmentNo}_`) ||
-                    key.startsWith(`wrapped_box_${safeShipmentNo}_`))
-                ) {
+                if (key && (key.startsWith(`draft_box_${safeShipmentNo}_`) || key.startsWith(`status_box_${safeShipmentNo}_`) || key.startsWith(`wrapped_box_${safeShipmentNo}_`))) {
                   localStorage.removeItem(key);
                 }
               }
@@ -580,44 +546,26 @@ btnDeleteChild.addEventListener("click", async (e) => {
               window.isGlobalDeleteMode = false;
               window.activeDeleteShipment = null;
 
-              const container = document.getElementById(
-                "lobbyContentContainer",
-              );
+              const container = document.getElementById("lobbyContentContainer");
               const emptyState = document.getElementById("lobbyEmptyState");
-              if (
-                container &&
-                container.querySelectorAll(".shipment-column").length === 0 &&
-                emptyState
-              ) {
+              if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
                 emptyState.style.display = "block";
               }
 
-              if (typeof window.safeAlert === "function") {
-                window.safeAlert(
-                  "SUCCESS",
-                  "ลบชิปเมนต์และเคลียร์ Firebase สำเร็จ!",
-                  "success",
-                );
-              }
+              if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", "ลบชิปเมนต์และเคลียร์ Firebase สำเร็จ!", "success");
             } else {
-              if (typeof window.safeAlert === "function") {
-                window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
-              }
+              if (typeof window.safeAlert === "function") window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
             }
           })
           .catch((error) => {
             const spinner = document.getElementById("masterDeleteSpinner");
             if (spinner) spinner.remove();
-            if (typeof window.safeAlert === "function") {
-              window.safeAlert(
-                "ข้อผิดพลาด",
-                "ไม่สามารถติดต่อฐานข้อมูลได้",
-                "error",
-              );
-            }
+            if (typeof window.safeAlert === "function") window.safeAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
           });
       }
     });
+
+
 
     // 3. สร้างกล่องลูก (ปิดการทำงานถ้าเป็น Pending)
     let boxIdCounter = 0;
@@ -3176,36 +3124,47 @@ window.processExport = async function () {
   })
     .then((res) => res.json())
     .then((data) => {
-    if (data.status === "success" || data.success) {
-      // 🚨 [HOT FIX FIREBASE]: สั่งปิดหูฟังดักฟังทันที เพื่อไม่ให้กิน RAM และดักฟังขยะ
-      if (typeof window.fbStopListening === "function") window.fbStopListening();
 
-      // 🚨 TATTOO: บันทึกลง Hard Disk ว่าคันนี้ส่งออกแล้วเด็ดขาด!
-      let exportedList = JSON.parse(
-        localStorage.getItem("ghost_exported_list") || "[]",
-      );
-      // ... โค้ดเดิม ...
 
-  if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
-  localStorage.setItem("ghost_exported_list", JSON.stringify(exportedList));
 
-  // 🚨 NUKE: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที! (ดักผีรหัสซ้ำ)
-  if (typeof window.nukeShipmentCache === "function") {
-    window.nukeShipmentCache(shipmentNo);
-  }
 
-  // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
-  for (let i = localStorage.length - 1; i >= 0; i--) {
-    const key = localStorage.key(i);
-    if (
-      key &&
-      (key.startsWith(`draft_box_${shipmentNo}_`) ||
-        key.startsWith(`status_box_${shipmentNo}_`) ||
-        key.startsWith(`wrapped_box_${shipmentNo}_`))
-    ) {
-      localStorage.removeItem(key);
-    }
-  }
+
+
+if (data.status === "success" || data.success) {
+        
+        // 🚨 [HOT FIX FIREBASE]: สั่งปิดหูฟังดักฟังทันที เพื่อลด Error แดงใน Console
+        if (typeof window.fbStopListening === "function") window.fbStopListening();
+
+        // 🚨 TATTOO: บันทึกลง Hard Disk ว่าคันนี้ส่งออกแล้วเด็ดขาด!
+        let exportedList = JSON.parse(localStorage.getItem("ghost_exported_list") || "[]");
+        if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
+        localStorage.setItem("ghost_exported_list", JSON.stringify(exportedList));
+
+        // 🚨 NUKE: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที! (ดักผีรหัสซ้ำ)
+        if (typeof window.nukeShipmentCache === "function") window.nukeShipmentCache(shipmentNo);
+        
+        // 💣🚨 [HOT FIX FIREBASE NUKE]: ระเบิดข้อมูลออนไลน์ทิ้ง ป้องกันมันกลับมาหลอกหลอน
+        if (typeof window.fbNukeShipment === "function") window.fbNukeShipment(shipmentNo);
+
+        // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            (key.startsWith(`draft_box_${shipmentNo}_`) ||
+              key.startsWith(`status_box_${shipmentNo}_`) ||
+              key.startsWith(`wrapped_box_${shipmentNo}_`))
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+// ... โค้ดที่เหลือคงเดิม
+
+
+
+
+
+
 
   // เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป
   colElement.style.opacity = "0";
