@@ -203,7 +203,7 @@ function createShipmentChildBox(baseBoxNo, suffixOrFullId, isRestore = false) {
   // 🌟 [NEW] ฝัง ${displayStyle} ไปที่ checkbox และ ถังขยะ
   childDiv.innerHTML = `<div style="display: flex; align-items: center; gap: 15px; flex: 1; min-width: 200px;"><input type="checkbox" class="child-checkbox" disabled style="width: 18px; height: 18px; border-radius: 4px; cursor: not-allowed; ${displayStyle}" onclick="event.stopPropagation();"><i class="fas fa-box-open box-status-icon" style="color: #28a745; font-size: 18px;"></i><span style="font-weight: bold; font-size: 14px; color: #333;">${childBoxNo}</span></div><div style="display: flex; align-items: center; justify-content: flex-end; gap: 18px; font-size: 13px; font-weight: bold; color: #555;"><span><i class="fas fa-barcode" style="color: #666;"></i> (<span class="child-scan-qty">0</span>)</span><span><i class="fas fa-hand-paper" style="color: #8d6e63;"></i> (<span class="child-manual-qty">0</span>)</span><i class="fas fa-trash-alt child-btn-delete hide" style="color: #dc3545; font-size: 18px; cursor: pointer; padding-left: 5px; ${displayStyle}" onclick="event.stopPropagation();"></i></div>`;
 
-  if (!isRestore && !isPending) {
+  if (!isRestore && !isReadOnly) {
     setTimeout(() => {
       const parentCol = childDiv.closest(".shipment-column");
       const shipmentNo = parentCol
@@ -227,82 +227,77 @@ function createShipmentChildBox(baseBoxNo, suffixOrFullId, isRestore = false) {
       : baseBoxNo;
 
     // 🌟 [NEW] ถ้าเป็น Pending ให้ส่งสถานะว่า "ปิดแล้ว" (Read-only) เข้าไปเสมอ
-    const isClosed = childDiv.dataset.status === "Closed" || isPending;
+    const isClosed = childDiv.dataset.status === "Closed" || isReadOnly;
     if (typeof window.openBoxDetails === "function")
       window.openBoxDetails(shipmentNo, childBoxNo, childDiv, isClosed);
   });
 
-  const btnDeleteChild = childDiv.querySelector(".child-btn-delete");
-  btnDeleteChild.addEventListener("click", async (e) => {
-    if (isPending) return; // ห้ามลบเด็ดขาด
-    e.stopPropagation();
-    const parentCol = childDiv.closest(".shipment-column");
-    const shipmentNo = parentCol
-      ? parentCol.getAttribute("data-shipment")
-      : baseBoxNo;
-    const isClosed = childDiv.dataset.status === "Closed";
-    const isConfirm = await window.safeConfirm(
-      "ยืนยันลบกล่อง?",
-      `ลบกล่อง ${childBoxNo} ทิ้งใช่หรือไม่?`,
-      "error",
-    );
+    const btnDeleteChild = childDiv.querySelector(".child-btn-delete");
+btnDeleteChild.addEventListener("click", async (e) => {
+  if (isReadOnly) return; // ห้ามลบเด็ดขาด
 
-    if (isConfirm) {
-      if (isClosed) {
-        const loadingOverlay = document.createElement("div");
-        loadingOverlay.style.cssText =
-          "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white;";
-        loadingOverlay.innerHTML =
-          "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบ...";
-        document.body.appendChild(loadingOverlay);
+  e.stopPropagation();
+  const parentCol = childDiv.closest(".shipment-column");
+  const shipmentNo = parentCol
+    ? parentCol.getAttribute("data-shipment")
+    : baseBoxNo;
+  const isClosed = childDiv.dataset.status === "Closed";
+  const isConfirm = await window.safeConfirm(
+    "ยืนยันลบกล่อง?",
+    `ลบกล่อง ${childBoxNo} ทิ้งใช่หรือไม่?`,
+    "error",
+  );
 
-        fetch(CONFIG.API_URL + "?action=delete_box", {
-          method: "POST",
-          body: JSON.stringify({
-            shipmentId: shipmentNo,
-            boxNo: childBoxNo,
-            branch: localStorage.getItem("pattcha_branch").toUpperCase(),
-          }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            document.body.removeChild(loadingOverlay);
-            if (data.status === "success" || data.success) {
-              const savedItemsStr = childDiv.getAttribute("data-saved-items");
-              if (savedItemsStr)
-                JSON.parse(savedItemsStr).forEach((item) => {
-                  if (window.updateLocalStockMemory)
-                    window.updateLocalStockMemory(
-                      item.sku,
-                      item.totalQty,
-                      false,
-                    );
-                });
+  if (isConfirm) {
+    if (isClosed) {
+      const loadingOverlay = document.createElement("div");
+      loadingOverlay.style.cssText =
+        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white;";
+      loadingOverlay.innerHTML =
+        "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบ...";
+      document.body.appendChild(loadingOverlay);
 
-              childDiv.remove();
-              localStorage.removeItem(
-                `wrapped_box_${shipmentNo}_${childBoxNo}`,
-              );
-              if (typeof window.fbDeleteBox === "function")
-                window.fbDeleteBox(shipmentNo, childBoxNo);
+      fetch(CONFIG.API_URL + "?action=delete_box", {
+        method: "POST",
+        body: JSON.stringify({
+          shipmentId: shipmentNo,
+          boxNo: childBoxNo,
+          branch: localStorage.getItem("pattcha_branch").toUpperCase(),
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          document.body.removeChild(loadingOverlay);
+          if (data.status === "success" || data.success) {
+            const savedItemsStr = childDiv.getAttribute("data-saved-items");
+            if (savedItemsStr)
+              JSON.parse(savedItemsStr).forEach((item) => {
+                if (window.updateLocalStockMemory)
+                  window.updateLocalStockMemory(item.sku, item.totalQty, false);
+              });
 
-              if (parentCol)
-                parentCol.querySelector(".master-truck-count").textContent =
-                  parentCol.querySelectorAll(".shipment-child-box").length;
-              window.safeAlert("SUCCESS", `ลบกล่องสำเร็จ!`, "success");
-            } else window.safeAlert("ERROR", "เกิดข้อผิดพลาด", "error");
-          });
-      } else {
-        childDiv.remove();
-        localStorage.removeItem(`draft_box_${shipmentNo}_${childBoxNo}`);
-        if (typeof window.fbDeleteBox === "function")
-          window.fbDeleteBox(shipmentNo, childBoxNo);
-        if (parentCol)
-          parentCol.querySelector(".master-truck-count").textContent =
-            parentCol.querySelectorAll(".shipment-child-box").length;
-      }
+            childDiv.remove();
+            localStorage.removeItem(`wrapped_box_${shipmentNo}_${childBoxNo}`);
+            if (typeof window.fbDeleteBox === "function")
+              window.fbDeleteBox(shipmentNo, childBoxNo);
+
+            if (parentCol)
+              parentCol.querySelector(".master-truck-count").textContent =
+                parentCol.querySelectorAll(".shipment-child-box").length;
+            window.safeAlert("SUCCESS", `ลบกล่องสำเร็จ!`, "success");
+          } else window.safeAlert("ERROR", "เกิดข้อผิดพลาด", "error");
+        });
+    } else {
+      childDiv.remove();
+      localStorage.removeItem(`draft_box_${shipmentNo}_${childBoxNo}`);
+      if (typeof window.fbDeleteBox === "function")
+        window.fbDeleteBox(shipmentNo, childBoxNo);
+      if (parentCol)
+        parentCol.querySelector(".master-truck-count").textContent =
+          parentCol.querySelectorAll(".shipment-child-box").length;
     }
-  });
+  }
+});
   return childDiv;
 }
 
@@ -351,7 +346,7 @@ function createShipmentColumn(
   if (statusText === "PENDING") badgeColor = "#e0a800"; // เหลือง
   if (statusText === "COMPLETE") badgeColor = "#198754"; // เขียว
   col.innerHTML = `
-  
+
     <!-- 🟢 Header แม่ -->
     <div class="shipment-column-header" style="
       background: ${headerGradient};
