@@ -2887,6 +2887,13 @@ window.processExport = async function() {
         btnExport.style.opacity = "0.7";
     }
 
+    // 🚨 [HOT FIX Safety]: กางม่านพลังป้องกันการกดรัวๆ (Overlay) บล็อกทั้งหน้าจอจนกว่าจะย้ายการ์ดเสร็จ
+    const exportOverlay = document.createElement("div");
+    exportOverlay.id = "exportSpinnerOverlay";
+    exportOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
+    exportOverlay.innerHTML = "<i class='fas fa-truck-loading' style='margin-right: 10px; font-size: 24px;'></i> กำลังแพ็กข้อมูลลงกล่องและย้ายสถานะ...";
+    document.body.appendChild(exportOverlay);
+
     const payload = {
         shipmentId: shipmentNo,
         branch: String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase(),
@@ -2902,7 +2909,7 @@ window.processExport = async function() {
     .then((data) => {
         if (data.status === "success" || data.success) {
             
-            // 🚨 [HOT FIX 1]: ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
+            // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
             for (let i = localStorage.length - 1; i >= 0; i--) {
                 const key = localStorage.key(i);
                 if (
@@ -2915,13 +2922,15 @@ window.processExport = async function() {
                 }
             }
 
-            // 🌟 เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป
+            // เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป
             colElement.style.opacity = "0";
+            
+            // 🚨 เพิ่มเวลาหน่วง (Delay) เล็กน้อยให้ระบบเคลียร์ตัวเอง ก่อนวาร์ปออกไป
             setTimeout(() => {
                 colElement.remove();
                 window.updateExportButtonState();
 
-                // 🚨 [HOT FIX 2]: เปลี่ยนสถานะในสมอง (Cache) ให้เป็น PENDING ทันที
+                // เปลี่ยนสถานะในสมอง (Cache) ให้เป็น PENDING ทันที
                 if (window.cachedTransferTasks) {
                     const exportedTask = window.cachedTransferTasks.find(
                         (t) => t.Shipment_No === shipmentNo,
@@ -2931,7 +2940,11 @@ window.processExport = async function() {
                     }
                 }
 
-                // 🌟 แจ้งเตือนเมื่อกระบวนการเสร็จสมบูรณ์
+                // 🚨 ถอดม่านพลังออกเมื่อเคลียร์ทุกอย่างเสร็จสิ้น
+                const spinner = document.getElementById("exportSpinnerOverlay");
+                if (spinner) spinner.remove();
+
+                // แจ้งเตือนเมื่อกระบวนการเสร็จสมบูรณ์
                 if (typeof window.safeAlert === "function") {
                     window.safeAlert(
                         "SUCCESS",
@@ -2940,17 +2953,25 @@ window.processExport = async function() {
                     );
                 }
 
-                // 🌟 เด้งกลับหน้าหลักถ้ารถชิปเมนต์ใน Lobby ถูกส่งออกหมดแล้ว
+                // เด้งกลับหน้าหลักถ้ารถชิปเมนต์ใน Lobby ถูกส่งออกหมดแล้ว
                 if (document.querySelectorAll(".shipment-column").length === 0) {
                     const btnBack =
                         document.getElementById("btnCancelFromLobby") ||
                         document.getElementById("btnBackToTaskHub");
                     if (btnBack) btnBack.click();
+                    
+                    // 🚨 Force Render Task Hub ทันที เพื่อป้องกันการกดการ์ดผิดจังหวะ
+                    if (typeof window.renderTaskHubAssignPending === "function") {
+                         window.renderTaskHubAssignPending();
+                    }
                 }
-            }, 500);
+            }, 800); // หน่วงไว้ 0.8 วินาทีให้หน้าจอเคลียร์ตัวเองปลอดภัยที่สุด
             
         } else {
-            // กรณี API แจ้งเตือน Error คืนค่าปุ่มให้กลับมาทำงานใหม่
+            // กรณี API แจ้งเตือน Error
+            const spinner = document.getElementById("exportSpinnerOverlay");
+            if (spinner) spinner.remove();
+            
             if (btnExport) { 
                 btnExport.innerHTML = originalBtnHtml; 
                 btnExport.style.pointerEvents = "auto"; 
@@ -2960,7 +2981,10 @@ window.processExport = async function() {
         }
     })
     .catch((error) => {
-        // กรณีเชื่อมต่อเซิร์ฟเวอร์ไม่ได้ คืนค่าปุ่มให้กลับมาทำงานใหม่
+        // กรณีเชื่อมต่อเซิร์ฟเวอร์ไม่ได้
+        const spinner = document.getElementById("exportSpinnerOverlay");
+        if (spinner) spinner.remove();
+
         if (btnExport) { 
             btnExport.innerHTML = originalBtnHtml; 
             btnExport.style.pointerEvents = "auto"; 
@@ -2969,7 +2993,6 @@ window.processExport = async function() {
         if (typeof window.safeAlert === "function") window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
-
 
 
 
