@@ -1418,255 +1418,208 @@ function createTransferOutTaskCard(
       });
 
 
+// ======================================================
+// [MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว]
+// ======================================================
+//===============
+// [Main DOMContentLoaded Wrapper] START
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. ประกาศตัวแปรหน้าจอ (View Containers)
+  const productMovementView = document.getElementById("productMovementView");
+  const viewTaskHub = document.getElementById("transferOutTaskHubView");
+  const viewDest = document.getElementById("transferOutDestView");
+  const viewLobby = document.getElementById("transferOutLobbyView");
+
+  // 2. โหลดข้อมูลเริ่มต้น (กลุ่ม 1, 5, 6)
+  loadExistingTasks();
+  loadBranchesIntoDropdown();
+  loadTransferTypesIntoDropdown();
+
+  // ==========================================
+  // 3. ผูก Event ปุ่ม นำทาง (Navigation) ของ Transfer Out
+  // ==========================================
+
+  // เข้า-ออก ระบบ Transfer Out (Main Menu <-> Task Hub)
+  document.getElementById("btnTransferOut")?.addEventListener("click", () => navigationTo(productMovementView, viewTaskHub));
+  document.getElementById("btnBackToMovement")?.addEventListener("click", () => navigationTo(viewTaskHub, productMovementView));
+  document.getElementById("btnBackFromTaskHub")?.addEventListener("click", () => navigationTo(viewTaskHub, productMovementView));
+
+  // ปุ่ม + สร้างงานใหม่ (ไปหน้าเลือกสาขา)
+  const btnCreateNewTask = document.getElementById("btnCreateNewTask") || document.getElementById("btnNewTask");
+  if (btnCreateNewTask) {
+    btnCreateNewTask.addEventListener("click", () => {
+      const selectDest = document.getElementById("selectDestination");
+      if (selectDest) selectDest.selectedIndex = 0; // เคลียร์ค่าเดิม
+      navigationTo(viewTaskHub, viewDest);
+    });
+  }
+
+  // ปุ่ม Cancel กลับจากหน้าเลือกสาขา
+  document.getElementById("btnCancelDest")?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+  document.getElementById("btnBackFromDest")?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+  document.getElementById("btnBackToDest")?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+
+  // 🟢 พระเอกของงาน 1: กด Cancel จากหน้า Lobby ต้องกลับไป Task Hub และ "รีเฟรชข้อมูล"
+  document.getElementById("btnCancelFromLobby")?.addEventListener("click", () => {
+    navigationTo(viewLobby, viewTaskHub);
+    // รีเฟรชกระดานงานเพื่อให้เห็น Card ใหม่ที่เพิ่งสร้าง
+    if (typeof loadExistingTasks === "function") {
+      loadExistingTasks();
+    }
+  });
+
+  // ==========================================
+  // 4. ลอจิกปุ่ม Next (เลือกสาขา -> ไป Lobby)
+  // ==========================================
+  const btnSubmitDest = document.getElementById("btnSubmitDest") || document.getElementById("btnNextDest");
+  if (btnSubmitDest) {
+    btnSubmitDest.addEventListener("click", async () => {
+      const destDropdown = document.getElementById("selectDestination");
+
+      // เช็กการเลือกข้อมูล
+      if (!destDropdown || !destDropdown.value) {
+        if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ", "warning");
+        else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
+        return;
+      }
+
+      const branchID = destDropdown.value;
+
+      // บันทึก SessionStorage
+      sessionStorage.setItem("selectedBranchID", branchID);
+
+      // 🚨 [HOT FIX]: ล้างสมอง! บังคับให้เป็นโหมด ASSIGN (สีแดง) เสมอเมื่อสร้างงานใหม่!
+      sessionStorage.setItem("lobbyMode", "ASSIGN");
+      if (typeof window.applyLobbyTheme === "function") {
+        window.applyLobbyTheme();
+      }
+
+      // วาร์ปไปหน้า Lobby แบบ Smooth Animation
+      navigationTo(viewDest, viewLobby);
+
+      // โหลด Header และ "ดึงข้อมูล Lobby" ของสาขานั้นมาแสดง
+      if (typeof loadLobbyHeader === "function") loadLobbyHeader();
+      if (typeof renderLobbyTasks === "function") {
+        await renderLobbyTasks(branchID);
+      }
+    });
+  }
+
+  // ==========================================
+  // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
+  // ==========================================
+  const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+  const shipmentBoxModal = document.getElementById("shipmentBoxModal");
+  const selectType = document.getElementById("selectTransferType");
+  const inputBoxNumber = document.getElementById("inputBoxNumber");
+  const btnConfirm = document.getElementById("btnConfirmBox");
+  const container = document.getElementById("lobbyContentContainer");
+  const emptyState = document.getElementById("lobbyEmptyState");
+
+  // 🎯 1. ดักจับการเปิดหน้าต่าง (Fresh Start)
+  if (btnAddShipmentTruck && shipmentBoxModal) {
+    btnAddShipmentTruck.addEventListener("click", () => {
+      if (selectType) selectType.selectedIndex = 0;
+      if (inputBoxNumber) inputBoxNumber.value = "กรุณาเลือกประเภท...";
+      shipmentBoxModal.classList.remove("hide");
+    });
+  }
+
+  // 🎯 2. ดักจับตอนเลือก Dropdown (Auto-Preview)
+  if (selectType && inputBoxNumber) {
+    selectType.addEventListener("change", () => {
+      if (!selectType.value) {
+        inputBoxNumber.value = "กรุณาเลือกประเภท...";
+        return;
+      }
+      const selectedBranchID = sessionStorage.getItem("selectedBranchID") || "KKN02";
+      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
+      const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+      let previewNum = parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
+      if (previewNum > 9999) previewNum = 1;
+      const previewRunning = previewNum.toString().padStart(4, "0");
+
+      inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
+    });
+  }
+
+  // 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
+  if (btnConfirm) {
+    btnConfirm.addEventListener("click", () => {
+      if (!selectType || !selectType.value) {
+        if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
+        else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+        return;
+      }
+
+      const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
+      const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
+      const actualBranchID = typeof getRealBranchCode === "function" ? getRealBranchCode(rawSelected) : rawSelected;
+      const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
+      const dateStr = new Date().toLocaleDateString("en-GB");
+      const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
+
+      // 💣🚨 [PRE-EMPTIVE NUKE] ล้างบางข้อมูลผีทั้งในเครื่องและบน Firebase ก่อนสร้างงานใหม่
+      if (typeof window.nukeShipmentCache === "function") window.nukeShipmentCache(finalShipmentNo);
+      if (typeof window.fbNukeShipment === "function") window.fbNukeShipment(finalShipmentNo);
+
+      const payload = { Date: dateStr, Shipment_No: finalShipmentNo, Origin_Branch: myBranch, Destination: targetDestination, Branch: actualBranchID, Origin_Type: "Store", Status: "Assign" };
+
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+      fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
+        .then((res) => res.json())
+        .then((res) => {
+          if (res.status === "success") {
+            if (container && typeof createShipmentColumn === "function") {
+              container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+            }
+            
+            // 🚨 [HOT FIX]: ยัดงานใหม่ลงในสมอง (Cache) ด้วย 
+            if (window.cachedTransferTasks) {
+                window.cachedTransferTasks.push({ Date: dateStr, Shipment_No: finalShipmentNo, Origin_Branch: myBranch, Destination: targetDestination, Branch: actualBranchID, Origin_Type: "Store", Status: "Assign" });
+            }
+
+            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+            if (emptyState) emptyState.style.display = "none";
+
+            const taskHubAssignContainer = document.getElementById("assignContainer");
+            if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
+              const newCard = createTransferOutTaskCard(dateStr, finalShipmentNo, "Store", targetDestination, 0, 0, "Assign");
+              taskHubAssignContainer.appendChild(newCard);
+
+              const assignCountEl = document.getElementById("assignTaskCount");
+              if (assignCountEl) {
+                const currentCount = taskHubAssignContainer.querySelectorAll(".task-card").length;
+                assignCountEl.innerHTML = `Task (${currentCount}) <i class="fas fa-chevron-down"></i>`;
+              }
+            }
+          }
+        })
+        .finally(() => {
+          btnConfirm.disabled = false;
+          btnConfirm.innerHTML = "ยืนยันสร้าง";
+        });
+    });
+  }
+
+  // ==========================================
+  // 6. ระบบวาร์ปหน้าจอ (เมื่อกดมาจากการ์ด Task Hub)
+  // ==========================================
+  const pendingJump = sessionStorage.getItem("jump_to_shipment");
+  if (pendingJump) {
+    setTimeout(() => {
+      focusShipmentInLobby(pendingJump);
+      sessionStorage.removeItem("jump_to_shipment");
+    }, 500);
+  }
+  
+}); 
+// [Main DOMContentLoaded Wrapper] END
+//===============
 
       // ======================================================
-// MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
-// ======================================================
-
-      document.addEventListener("DOMContentLoaded", () => {
-        // 1. ประกาศตัวแปรหน้าจอ (View Containers)
-        const productMovementView = document.getElementById(
-          "productMovementView",
-        );
-        const viewTaskHub = document.getElementById("transferOutTaskHubView");
-        const viewDest = document.getElementById("transferOutDestView");
-        const viewLobby = document.getElementById("transferOutLobbyView");
-
-        // 2. โหลดข้อมูลเริ่มต้น (กลุ่ม 1, 5, 6)
-        loadExistingTasks();
-        loadBranchesIntoDropdown();
-        loadTransferTypesIntoDropdown();
-
-        // ==========================================
-        // 3. ผูก Event ปุ่ม นำทาง (Navigation) ของ Transfer Out
-        // ==========================================
-
-        // เข้า-ออก ระบบ Transfer Out (Main Menu <-> Task Hub)
-        document
-          .getElementById("btnTransferOut")
-          ?.addEventListener("click", () =>
-            navigationTo(productMovementView, viewTaskHub),
-          );
-        document
-          .getElementById("btnBackToMovement")
-          ?.addEventListener("click", () =>
-            navigationTo(viewTaskHub, productMovementView),
-          );
-        document
-          .getElementById("btnBackFromTaskHub")
-          ?.addEventListener("click", () =>
-            navigationTo(viewTaskHub, productMovementView),
-          );
-
-        // ปุ่ม + สร้างงานใหม่ (ไปหน้าเลือกสาขา)
-        const btnCreateNewTask =
-          document.getElementById("btnCreateNewTask") ||
-          document.getElementById("btnNewTask");
-        if (btnCreateNewTask) {
-          btnCreateNewTask.addEventListener("click", () => {
-            const selectDest = document.getElementById("selectDestination");
-            if (selectDest) selectDest.selectedIndex = 0; // เคลียร์ค่าเดิม
-            navigationTo(viewTaskHub, viewDest);
-          });
-        }
-
-        // ปุ่ม Cancel กลับจากหน้าเลือกสาขา
-        document
-          .getElementById("btnCancelDest")
-          ?.addEventListener("click", () =>
-            navigationTo(viewDest, viewTaskHub),
-          );
-        document
-          .getElementById("btnBackFromDest")
-          ?.addEventListener("click", () =>
-            navigationTo(viewDest, viewTaskHub),
-          );
-        document
-          .getElementById("btnBackToDest")
-          ?.addEventListener("click", () =>
-            navigationTo(viewLobby, viewTaskHub),
-          );
-
-        // 🟢 พระเอกของงาน 1: กด Cancel จากหน้า Lobby ต้องกลับไป Task Hub และ "รีเฟรชข้อมูล"
-        document
-          .getElementById("btnCancelFromLobby")
-          ?.addEventListener("click", () => {
-            navigationTo(viewLobby, viewTaskHub);
-            // รีเฟรชกระดานงานเพื่อให้เห็น Card ใหม่ที่เพิ่งสร้าง
-            if (typeof loadExistingTasks === "function") {
-              loadExistingTasks();
-            }
-          });
-
-        // ==========================================
-        // 4. ลอจิกปุ่ม Next (เลือกสาขา -> ไป Lobby)
-        // ==========================================
-        const btnSubmitDest =
-          document.getElementById("btnSubmitDest") ||
-          document.getElementById("btnNextDest");
-        if (btnSubmitDest) {
-          btnSubmitDest.addEventListener("click", async () => {
-            const destDropdown = document.getElementById("selectDestination");
-
-            // เช็กการเลือกข้อมูล
-            if (!destDropdown || !destDropdown.value) {
-              if (typeof safeAlert === "function")
-                safeAlert(
-                  "ข้อมูลไม่ครบถ้วน",
-                  "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ",
-                  "warning",
-                );
-              else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
-              return;
-            }
-
-            const branchID = destDropdown.value;
-
-            // บันทึก SessionStorage
-            sessionStorage.setItem("selectedBranchID", branchID);
-
-            // 🚨 [HOT FIX]: ล้างสมอง! บังคับให้เป็นโหมด ASSIGN (สีแดง) เสมอเมื่อสร้างงานใหม่!
-            sessionStorage.setItem("lobbyMode", "ASSIGN");
-            if (typeof window.applyLobbyTheme === "function") {
-              window.applyLobbyTheme();
-            }
-
-            // วาร์ปไปหน้า Lobby แบบ Smooth Animation
-            navigationTo(viewDest, viewLobby);
-
-            // โหลด Header และ "ดึงข้อมูล Lobby" ของสาขานั้นมาแสดง
-            if (typeof loadLobbyHeader === "function") loadLobbyHeader();
-            if (typeof renderLobbyTasks === "function") {
-              await renderLobbyTasks(branchID);
-            }
-          });
-        }
-
-        // ==========================================
-        // 🚀5 ร่างทอง: ระบบหน้าต่าง Modal สร้างงาน (รถบรรทุก + ยืนยัน)
-        // ==========================================
-        const btnAddShipmentTruck = document.getElementById(
-          "btnAddShipmentTruck",
-        );
-        const shipmentBoxModal = document.getElementById("shipmentBoxModal");
-        const selectType = document.getElementById("selectTransferType");
-        const inputBoxNumber = document.getElementById("inputBoxNumber");
-        const btnConfirm = document.getElementById("btnConfirmBox");
-        const container = document.getElementById("lobbyContentContainer");
-        const emptyState = document.getElementById("lobbyEmptyState");
-
-        // 🎯 1. ดักจับการเปิดหน้าต่าง (Fresh Start)
-        if (btnAddShipmentTruck && shipmentBoxModal) {
-          btnAddShipmentTruck.addEventListener("click", () => {
-            if (selectType) selectType.selectedIndex = 0;
-            if (inputBoxNumber) inputBoxNumber.value = "กรุณาเลือกประเภท...";
-            shipmentBoxModal.classList.remove("hide");
-          });
-        }
-
-        // 🎯 2. ดักจับตอนเลือก Dropdown (Auto-Preview)
-        if (selectType && inputBoxNumber) {
-          selectType.addEventListener("change", () => {
-            if (!selectType.value) {
-              inputBoxNumber.value = "กรุณาเลือกประเภท...";
-              return;
-            }
-            const selectedBranchID =
-              sessionStorage.getItem("selectedBranchID") || "KKN02";
-            const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
-            const dateStr = new Date()
-              .toLocaleDateString("en-GB")
-              .replace(/\//g, "");
-            let previewNum =
-              parseInt(
-                localStorage.getItem("shipment_running_counter") || "0",
-              ) + 1;
-            if (previewNum > 9999) previewNum = 1;
-            const previewRunning = previewNum.toString().padStart(4, "0");
-
-            inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
-          });
-        }
-//===============
-// [Create New Task Validation & Loading] START
-// ---🔍 ตรวจสอบสาขา สร้างรหัสใหม่ และกวาดล้างข้อมูลผีเก่าก่อนสร้างงาน
-        if (btnConfirm) {
-          btnConfirm.addEventListener("click", () => {
-            if (!selectType || !selectType.value) {
-              if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
-              else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
-              return;
-            }
-
-            const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
-            const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
-            const actualBranchID = typeof getRealBranchCode === "function" ? getRealBranchCode(rawSelected) : rawSelected;
-            const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
-            const dateStr = new Date().toLocaleDateString("en-GB");
-            const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
-
-            // 💣🚨 [PRE-EMPTIVE NUKE] ล้างบางข้อมูลผีทั้งในเครื่องและบน Firebase ก่อนสร้างงานใหม่
-            if (typeof window.nukeShipmentCache === "function") window.nukeShipmentCache(finalShipmentNo);
-            if (typeof window.fbNukeShipment === "function") window.fbNukeShipment(finalShipmentNo);
-
-            const payload = { Date: dateStr, Shipment_No: finalShipmentNo, Origin_Branch: myBranch, Destination: targetDestination, Branch: actualBranchID, Origin_Type: "Store", Status: "Assign" };
-
-            btnConfirm.disabled = true;
-            btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
-
-            fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
-              .then((res) => res.json())
-              .then((res) => {
-                if (res.status === "success") {
-                  if (container && typeof createShipmentColumn === "function") {
-                    container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
-                  }
-                  
-                  // 🚨 [HOT FIX]: ยัดงานใหม่ลงในสมอง (Cache) ด้วย 
-                  if (window.cachedTransferTasks) {
-                      window.cachedTransferTasks.push({ Date: dateStr, Shipment_No: finalShipmentNo, Origin_Branch: myBranch, Destination: targetDestination, Branch: actualBranchID, Origin_Type: "Store", Status: "Assign" });
-                  }
-
-                  if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-                  if (emptyState) emptyState.style.display = "none";
-
-                  const taskHubAssignContainer = document.getElementById("assignContainer");
-                  if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
-                    const newCard = createTransferOutTaskCard(dateStr, finalShipmentNo, "Store", targetDestination, 0, 0, "Assign");
-                    taskHubAssignContainer.appendChild(newCard);
-
-                    const assignCountEl = document.getElementById("assignTaskCount");
-                    if (assignCountEl) {
-                      const currentCount = taskHubAssignContainer.querySelectorAll(".task-card").length;
-                      assignCountEl.innerHTML = `Task (${currentCount}) <i class="fas fa-chevron-down"></i>`;
-                    }
-                  }
-                }
-              })
-              .finally(() => {
-                btnConfirm.disabled = false;
-                btnConfirm.innerHTML = "ยืนยันสร้าง";
-              });
-          });
-        }
-// [Create New Task Validation & Loading] END
-//===============
-
-
-
-        // ==========================================
-        // 6. ระบบวาร์ปหน้าจอ (เมื่อกดมาจากการ์ด Task Hub)
-        // ==========================================
-        const pendingJump = sessionStorage.getItem("jump_to_shipment");
-        if (pendingJump) {
-          setTimeout(() => {
-            focusShipmentInLobby(pendingJump);
-            sessionStorage.removeItem("jump_to_shipment");
-          }, 500);
-        }
-      };); // ✅ เปลี่ยนเป็น }); แค่นี้เลยครับ
-
-// ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
 // ======================================================
 
