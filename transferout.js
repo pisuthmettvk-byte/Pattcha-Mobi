@@ -1122,27 +1122,42 @@ function createTransferOutTaskCard(
             </div>
           `;
 
+  // ---🔍 กดคลิกซ้ายปกติเพื่อเปิดการ์ดเข้า Lobby (ฉบับแก้ UAT 3.1 - 3.3)
   card.addEventListener("click", async () => {
     sessionStorage.setItem("jump_to_shipment", shipmentNo);
     sessionStorage.setItem("selectedBranchID", destBranch);
 
-    // 🌟 [NEW] จำโหมดไว้! ถ้าการ์ดเป็น Pending ให้เปิด Lobby ในโหมด Pending
-    sessionStorage.setItem("lobbyMode", statusKey.toUpperCase());
+    const taskStatus = (
+      typeof statusKey !== "undefined" ? statusKey : status
+    ).toUpperCase();
+    sessionStorage.setItem("lobbyMode", taskStatus);
 
     if (!sessionStorage.getItem("selectedBranchName"))
       sessionStorage.setItem("selectedBranchName", "");
 
     try {
       const viewTaskHub = document.getElementById("transferOutTaskHubView");
-      const viewLobby = document.getElementById("transferOutLobbyView");
+      const viewLobby = document.getElementById("transferOutLobbyView"); // 📍 ใช้ Lobby ตัวเดิมเสมอ!
 
-      if (typeof navigationTo === "function" && viewTaskHub && viewLobby)
+      // 🚦 สับสวิตช์ความปลอดภัย: ถ้าเป็น PENDING หรือ COMPLETE ให้ล็อกเป็น Read-Only ทันที
+      window.isReadOnly = taskStatus === "PENDING" || taskStatus === "COMPLETE";
+
+      if (typeof navigationTo === "function" && viewTaskHub && viewLobby) {
         navigationTo(viewTaskHub, viewLobby);
-      else if (typeof showView === "function") showView("transferOutLobbyView");
+      } else if (typeof showView === "function") {
+        showView("transferOutLobbyView");
+      }
+
+      // 🎨 เรียก Theme Enforcer เพื่อซ่อนปุ่มรถบรรทุก, EXPORT และเปลี่ยนสีตามสถานะ
+      if (typeof window.applyLobbyTheme === "function")
+        window.applyLobbyTheme();
 
       if (typeof loadLobbyHeader === "function") loadLobbyHeader();
-      if (typeof renderLobbyTasks === "function")
+
+      // 📦 โหลดข้อมูลกล่องและสินค้าลงในคอนเทนเนอร์เดิมตามปกติ
+      if (typeof renderLobbyTasks === "function") {
         await renderLobbyTasks(destBranch);
+      }
 
       setTimeout(() => {
         if (typeof focusShipmentInLobby === "function")
@@ -2031,7 +2046,6 @@ window.checkCrossBoxStock = function(sku) {
 
 
 
-
 // ======================================================
 // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (อัปเดตให้กดดูสต็อกได้) START
 
@@ -2099,7 +2113,10 @@ window.checkCrossBoxStock = function(sku) {
 
         const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
 
-        const controlsHtml = isClosedBox
+        // 🚨 [HOT FIX]: ล็อกปุ่มอัตโนมัติหากปิดกล่องแล้ว หรือเป็นการเปิดจากการ์ด PENDING/COMPLETE
+        const isLocked = isClosedBox || window.isReadOnly;
+        
+        const controlsHtml = isLocked
             ? "" 
             : `
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -2112,6 +2129,29 @@ window.checkCrossBoxStock = function(sku) {
                         <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
                     </button>
                 </div>`;
+
+        // 🚨 [HOT FIX]: ป้องกันยอดสต๊อกกลายเป็น 0 หลังปิดกล่อง (แสดงผลตามบริบท)
+        let stockDisplayHtml = "";
+        if (isLocked) {
+            // ถ้าปิดกล่องแล้ว จะไม่คำนวณสต๊อกให้กลายเป็น 0 แต่จะโชว์ว่า "บรรจุแล้ว" แทน
+            stockDisplayHtml = `
+                <span style="color: #198754; font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-check-circle"></i> บรรจุแล้ว: ${totalQty} ชิ้น
+                </span>`;
+        } else {
+            // ถ้ายังเปิดกล่องอยู่ ให้ดึงยอดคงเหลือมาแสดงแบบ Real-time
+            let currentStock = Number(item.availableStock || 0);
+            if (typeof window.getRealTimeLiveStock === "function") {
+                const liveStock = window.getRealTimeLiveStock(item.sku);
+                currentStock = liveStock.avail + totalQty; // ยอดก่อนหักของในกล่องนี้
+            }
+            const remainingStock = Math.max(0, currentStock - totalQty);
+            
+            stockDisplayHtml = `
+                <span style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px;">
+                    คงเหลือ: <span style="color: ${remainingStock > 0 ? '#b02a37' : '#dc3545'}; font-weight: bold;">${remainingStock}</span>
+                </span>`;
+        }
 
         // 🚨 [HOT FIX]: ดึงรูปภาพผ่าน window.parseDriveImage
         const finalImageUrl = typeof window.parseDriveImage === "function" ? window.parseDriveImage(item.imageUrl) : item.imageUrl;
@@ -2127,10 +2167,13 @@ window.checkCrossBoxStock = function(sku) {
                         </div>
                         <div class="prod-price" style="margin-top: 0 !important; color: #b02a37;">฿${priceStr}</div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: auto !important; padding-top: 5px;">
-                        <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
-                            ${iconHtml} ยอดรวม: ${totalQty}
-                        </span>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: auto !important; padding-top: 5px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span style="font-weight: bold; display: flex; align-items: center; gap: 6px; font-size: 14px; color: #333;">
+                                ${iconHtml} ยอดในกล่อง: ${totalQty}
+                            </span>
+                            ${stockDisplayHtml}
+                        </div>
                         ${controlsHtml}
                     </div>
                 </div>
@@ -2139,6 +2182,9 @@ window.checkCrossBoxStock = function(sku) {
 
 // 📦 Phase 7.1: โครงสร้างการ์ดสินค้า (Box Details View) END
 // ======================================================
+
+
+
 
 
 
@@ -3224,11 +3270,17 @@ window.processExport = async function () {
         //📍 [เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป]
         colElement.style.opacity = "0";
 
-        // ---🔍 หน่วงเวลาเคลียร์ UI และเปลี่ยนสถานะในการ์ด
-        setTimeout(() => {
+        // 🚨 [จุดที่ 3 FIX: หน่วงเวลาเคลียร์ UI จัดระเบียบการเด้งออกแบบสมบูรณ์]
+        setTimeout(async () => {
+          // 1. ลบคอลัมน์ออกจากหน้าจอ Lobby ก่อน
           colElement.remove();
           window.updateExportButtonState();
 
+          // 2. ปิดม่านพลัง (Spinner Overlay)
+          const spinner = document.getElementById("exportSpinnerOverlay");
+          if (spinner) spinner.remove();
+
+          // 3. เปลี่ยนสถานะการ์ดใน Cache ของ Task Hub ให้เป็น Pending 
           if (window.cachedTransferTasks) {
             const exportedTask = window.cachedTransferTasks.find((t) => t.Shipment_No === shipmentNo);
             if (exportedTask) {
@@ -3236,20 +3288,28 @@ window.processExport = async function () {
             }
           }
 
-          const spinner = document.getElementById("exportSpinnerOverlay");
-          if (spinner) spinner.remove();
-
-          if (typeof window.safeAlert === "function") {
-            window.safeAlert("SUCCESS", `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`, "success");
+          // 4. บังคับโหลด Task Hub ใหม่หลังฉาก (เพื่อให้การ์ดย้ายไปลงช่อง PENDING แน่นอน 100%)
+          if (typeof loadExistingTasks === "function") {
+            await loadExistingTasks();
           }
 
-          if (document.querySelectorAll(".shipment-column").length === 0) {
-            const btnBack = document.getElementById("btnCancelFromLobby") || document.getElementById("btnBackToTaskHub");
-            if (btnBack) btnBack.click();
+          // 5. แจ้งเตือนความสำเร็จ
+          if (typeof window.safeAlert === "function") {
+            window.safeAlert("SUCCESS", `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`, "success");
+          } else {
+            alert(`EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`);
+          }
 
-            if (typeof window.renderTaskHubAssignPending === "function") {
-              window.renderTaskHubAssignPending();
-            }
+          // 6. ถ้ารถใน Lobby หมดแล้ว ให้สลับหน้าจอกลับไปที่ Task Hub
+          if (document.querySelectorAll(".shipment-column").length === 0) {
+             // 🚨 ใช้ navigationTo สลับหน้าจอตรงๆ ทันที ไม่กดปุ่มจำลอง เพื่อป้องกันระบบรันซ้อนกัน
+             const viewTaskHub = document.getElementById("transferOutTaskHubView");
+             const viewLobby = document.getElementById("transferOutLobbyView");
+             if (typeof navigationTo === "function" && viewTaskHub && viewLobby) {
+                 navigationTo(viewLobby, viewTaskHub);
+             } else if (typeof showView === "function") {
+                 showView("transferOutTaskHubView");
+             }
           }
         }, 800);
 
@@ -3288,7 +3348,6 @@ window.processExport = async function () {
 
 // [Process Export Function] END
 //===============
-
 
 
 
