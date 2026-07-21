@@ -1601,51 +1601,108 @@ function createTransferOutTaskCard(
           });
         }
 
-// 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
+        // 🎯 3 & 4. ดักจับตอนกดยืนยัน (Validation & Loading)
         if (btnConfirm) {
           btnConfirm.addEventListener("click", () => {
             if (!selectType || !selectType.value) {
-              if (typeof safeAlert === "function") safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
+              if (typeof safeAlert === "function")
+                safeAlert(
+                  "ข้อมูลไม่ครบ",
+                  "กรุณาเลือกประเภทการโอนก่อนครับ",
+                  "warning",
+                );
               else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
               return;
             }
 
-            const myBranch = String(localStorage.getItem("pattcha_branch") || "CK").trim().toUpperCase();
-            const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
-            const actualBranchID = typeof getRealBranchCode === "function" ? getRealBranchCode(rawSelected) : rawSelected;
+            const myBranch = String(
+              localStorage.getItem("pattcha_branch") || "CK",
+            )
+              .trim()
+              .toUpperCase();
+            const rawSelected =
+              sessionStorage.getItem("selectedBranchID") || "KKN02";
+            const actualBranchID =
+              typeof getRealBranchCode === "function"
+                ? getRealBranchCode(rawSelected)
+                : rawSelected;
             const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
             const dateStr = new Date().toLocaleDateString("en-GB");
             const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
 
-            const payload = { Date: dateStr, Shipment_No: finalShipmentNo, Origin_Branch: myBranch, Destination: targetDestination, Branch: actualBranchID, Origin_Type: "Store", Status: "Assign" };
+            // 💣🚨 [PRE-EMPTIVE NUKE] ล้างบางข้อมูลผีทั้งในเครื่องและบน Firebase ก่อนสร้างงานใหม่
+            if (typeof window.nukeShipmentCache === "function")
+              window.nukeShipmentCache(finalShipmentNo);
+            if (typeof window.fbNukeShipment === "function")
+              window.fbNukeShipment(finalShipmentNo);
+
+            const payload = {
+              Date: dateStr,
+              Shipment_No: finalShipmentNo,
+              Origin_Branch: myBranch,
+              Destination: targetDestination,
+              Branch: actualBranchID,
+              Origin_Type: "Store",
+              Status: "Assign",
+            };
 
             btnConfirm.disabled = true;
-            btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+            btnConfirm.innerHTML =
+              '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
 
-            fetch(CONFIG.API_URL + "?action=save_new_task", { method: "POST", body: JSON.stringify(payload) })
+            fetch(CONFIG.API_URL + "?action=save_new_task", {
+              method: "POST",
+              body: JSON.stringify(payload),
+            })
               .then((res) => res.json())
               .then((res) => {
                 if (res.status === "success") {
                   if (container && typeof createShipmentColumn === "function") {
-                    container.appendChild(createShipmentColumn(finalShipmentNo, "Store"));
+                    container.appendChild(
+                      createShipmentColumn(finalShipmentNo, "Store"),
+                    );
                   }
-                  
-                  // 🚨 [HOT FIX]: ยัดงานใหม่ลงในสมอง (Cache) ด้วย 
+
+                  // 🚨 [HOT FIX]: ยัดงานใหม่ลงในสมอง (Cache) ด้วย
                   if (window.cachedTransferTasks) {
-                      window.cachedTransferTasks.push({ Date: dateStr, Shipment_No: finalShipmentNo, Origin_Branch: myBranch, Destination: targetDestination, Branch: actualBranchID, Origin_Type: "Store", Status: "Assign" });
+                    window.cachedTransferTasks.push({
+                      Date: dateStr,
+                      Shipment_No: finalShipmentNo,
+                      Origin_Branch: myBranch,
+                      Destination: targetDestination,
+                      Branch: actualBranchID,
+                      Origin_Type: "Store",
+                      Status: "Assign",
+                    });
                   }
 
                   if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
                   if (emptyState) emptyState.style.display = "none";
 
-                  const taskHubAssignContainer = document.getElementById("assignContainer");
-                  if (taskHubAssignContainer && typeof createTransferOutTaskCard === "function") {
-                    const newCard = createTransferOutTaskCard(dateStr, finalShipmentNo, "Store", targetDestination, 0, 0, "Assign");
+                  const taskHubAssignContainer =
+                    document.getElementById("assignContainer");
+                  if (
+                    taskHubAssignContainer &&
+                    typeof createTransferOutTaskCard === "function"
+                  ) {
+                    const newCard = createTransferOutTaskCard(
+                      dateStr,
+                      finalShipmentNo,
+                      "Store",
+                      targetDestination,
+                      0,
+                      0,
+                      "Assign",
+                    );
                     taskHubAssignContainer.appendChild(newCard);
 
-                    const assignCountEl = document.getElementById("assignTaskCount");
+                    const assignCountEl =
+                      document.getElementById("assignTaskCount");
                     if (assignCountEl) {
-                      const currentCount = taskHubAssignContainer.querySelectorAll(".task-card").length;
+                      const currentCount =
+                        taskHubAssignContainer.querySelectorAll(
+                          ".task-card",
+                        ).length;
                       assignCountEl.innerHTML = `Task (${currentCount}) <i class="fas fa-chevron-down"></i>`;
                     }
                   }
@@ -1668,7 +1725,7 @@ function createTransferOutTaskCard(
             sessionStorage.removeItem("jump_to_shipment");
           }, 500);
         }
-      }); // ✅ เปลี่ยนเป็น }); แค่นี้เลยครับ
+      };); // ✅ เปลี่ยนเป็น }); แค่นี้เลยครับ
 
 // ======================================================
 // MASTER INITIALIZER: รวมร่างปุ่ม Navigation และ API ในที่เดียว
