@@ -341,7 +341,6 @@ btnDeleteChild.addEventListener("click", async (e) => {
 
     const safeShipmentNo = shipmentNo || "UNKNOWN-00000000-00XX-0000-00XX";
 
-
     col.setAttribute("data-shipment", safeShipmentNo);
 
     const parts = safeShipmentNo.split("-");
@@ -475,8 +474,25 @@ btnDeleteChild.addEventListener("click", async (e) => {
         )
           .trim()
           .toUpperCase();
+
+        // =================================================================
+        // 🚨 [HOT FIX FIREBASE NUKE]: ระเบิดข้อมูลกล่องลูกใน Firebase ทิ้งให้เกลี้ยงก่อน!
+        // ป้องกันปัญหา Ghost Data เมื่อรันเลข Shipment กลับมาเริ่มต้นใหม่ (0001)
+        // =================================================================
+        const childBoxesToKill = col.querySelectorAll(".shipment-child-box");
+        childBoxesToKill.forEach((box) => {
+          const bNo = box.getAttribute("data-box-no");
+          if (typeof window.fbDeleteBox === "function") {
+            window.fbDeleteBox(safeShipmentNo, bNo);
+          }
+        });
+        // =================================================================
+
+        // แนะนำให้ใช้ตัวแปร CONFIG.API_URL เพื่อความเสถียร หากในไฟล์มีประกาศไว้แล้ว
         const apiUrl =
-          "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+          typeof CONFIG !== "undefined"
+            ? CONFIG.API_URL
+            : "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
         fetch(`${apiUrl}?action=delete_shipment`, {
           method: "POST",
@@ -486,15 +502,21 @@ btnDeleteChild.addEventListener("click", async (e) => {
           }),
         })
           .then((response) => response.json())
+
           .then((data) => {
             const spinner = document.getElementById("masterDeleteSpinner");
             if (spinner) spinner.remove();
 
             if (data.success || data.status === "success") {
+              // 🚨 [HOT FIX FIREBASE]: สั่งปิดหูฟังดักฟังทันทีที่ลบคันนี้ทิ้ง!
+              if (typeof window.fbStopListening === "function")
+                window.fbStopListening();
+
               // 🚨 TATTOO 2: บันทึกลง Hard Disk ว่าลบแล้วเด็ดขาด!
               let deletedList = JSON.parse(
                 localStorage.getItem("ghost_deleted_list") || "[]",
               );
+              // ... โค้ดเดิม ...
               if (!deletedList.includes(safeShipmentNo))
                 deletedList.push(safeShipmentNo);
               localStorage.setItem(
@@ -571,7 +593,11 @@ btnDeleteChild.addEventListener("click", async (e) => {
               }
 
               if (typeof window.safeAlert === "function") {
-                window.safeAlert("SUCCESS", "ลบชิปเมนต์สำเร็จ!", "success");
+                window.safeAlert(
+                  "SUCCESS",
+                  "ลบชิปเมนต์และเคลียร์ Firebase สำเร็จ!",
+                  "success",
+                );
               }
             } else {
               if (typeof window.safeAlert === "function") {
@@ -1782,10 +1808,13 @@ window.checkCrossBoxStock = function(sku) {
               // 📍 [เพิ่มใหม่]: คืนค่ากล้องกลับไปโหมด Stock ทันทีที่ออกจากหน้ากล่อง
               window.currentScannerContext = "stock";
 
-              // เคลียร์ค่า
+              // เคลียร์ค่าตัวแปรควบคุม (ป้องกันผีสิงข้ามกล่อง)
               window.currentActiveShipment = null;
               window.currentActiveBoxNo = null;
               window.currentBoxElement = null;
+              
+              // 🚨 [HOT FIX ANTI-GHOST]: ระเบิดความจำสินค้าใน RAM ทิ้ง 100% ป้องกันมันโผล่ไปกล่องอื่น!
+              window.currentBoxItems = [];
             });
 
             // 2. ฟังก์ชันควบคุมสถานะปุ่ม WRAP (ใช้ Style ถอดแบบหน้า Lobby)
@@ -3090,96 +3119,98 @@ window.processExport = async function () {
   })
     .then((res) => res.json())
     .then((data) => {
-      if (data.status === "success" || data.success) {
-        // 🚨 TATTOO: บันทึกลง Hard Disk ว่าคันนี้ส่งออกแล้วเด็ดขาด!
-        let exportedList = JSON.parse(
-          localStorage.getItem("ghost_exported_list") || "[]",
-        );
-        if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
-        localStorage.setItem(
-          "ghost_exported_list",
-          JSON.stringify(exportedList),
-        );
+    if (data.status === "success" || data.success) {
+      // 🚨 [HOT FIX FIREBASE]: สั่งปิดหูฟังดักฟังทันที เพื่อไม่ให้กิน RAM และดักฟังขยะ
+      if (typeof window.fbStopListening === "function") window.fbStopListening();
 
-        // 🚨 NUKE: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที! (ดักผีรหัสซ้ำ)
-        if (typeof window.nukeShipmentCache === "function") {
-          window.nukeShipmentCache(shipmentNo);
-        }
+      // 🚨 TATTOO: บันทึกลง Hard Disk ว่าคันนี้ส่งออกแล้วเด็ดขาด!
+      let exportedList = JSON.parse(
+        localStorage.getItem("ghost_exported_list") || "[]",
+      );
+      // ... โค้ดเดิม ...
 
-        // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-          const key = localStorage.key(i);
-          if (
-            key &&
-            (key.startsWith(`draft_box_${shipmentNo}_`) ||
-              key.startsWith(`status_box_${shipmentNo}_`) ||
-              key.startsWith(`wrapped_box_${shipmentNo}_`))
-          ) {
-            localStorage.removeItem(key);
-          }
-        }
+  if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
+  localStorage.setItem("ghost_exported_list", JSON.stringify(exportedList));
 
-        // เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป
-        colElement.style.opacity = "0";
+  // 🚨 NUKE: จุดชนวนระเบิดล้าง Cache ของเก่าทิ้งทันที! (ดักผีรหัสซ้ำ)
+  if (typeof window.nukeShipmentCache === "function") {
+    window.nukeShipmentCache(shipmentNo);
+  }
 
-        // 🚨 เพิ่มเวลาหน่วง (Delay) เล็กน้อยให้ระบบเคลียร์ตัวเอง ก่อนวาร์ปออกไป
-        setTimeout(() => {
-          colElement.remove();
-          window.updateExportButtonState();
+  // ล้างความจำ Draft, Status และ Wrapped ทั้งหมด ป้องกันข้อมูลหลอน 100%
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (
+      key &&
+      (key.startsWith(`draft_box_${shipmentNo}_`) ||
+        key.startsWith(`status_box_${shipmentNo}_`) ||
+        key.startsWith(`wrapped_box_${shipmentNo}_`))
+    ) {
+      localStorage.removeItem(key);
+    }
+  }
 
-          // เปลี่ยนสถานะในสมอง (Cache) ให้เป็น PENDING ทันที
-          if (window.cachedTransferTasks) {
-            const exportedTask = window.cachedTransferTasks.find(
-              (t) => t.Shipment_No === shipmentNo,
-            );
-            if (exportedTask) {
-              exportedTask.Status = "Pending";
-            }
-          }
+  // เฟดหน้าจอให้คอลัมน์รถบรรทุกหายไป
+  colElement.style.opacity = "0";
 
-          // 🚨 ถอดม่านพลังออกเมื่อเคลียร์ทุกอย่างเสร็จสิ้น
-          const spinner = document.getElementById("exportSpinnerOverlay");
-          if (spinner) spinner.remove();
+  // 🚨 เพิ่มเวลาหน่วง (Delay) เล็กน้อยให้ระบบเคลียร์ตัวเอง ก่อนวาร์ปออกไป
+  setTimeout(() => {
+    colElement.remove();
+    window.updateExportButtonState();
 
-          // แจ้งเตือนเมื่อกระบวนการเสร็จสมบูรณ์
-          if (typeof window.safeAlert === "function") {
-            window.safeAlert(
-              "SUCCESS",
-              `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`,
-              "success",
-            );
-          }
-
-          // เด้งกลับหน้าหลักถ้ารถชิปเมนต์ใน Lobby ถูกส่งออกหมดแล้ว
-          if (document.querySelectorAll(".shipment-column").length === 0) {
-            const btnBack =
-              document.getElementById("btnCancelFromLobby") ||
-              document.getElementById("btnBackToTaskHub");
-            if (btnBack) btnBack.click();
-
-            // 🚨 Force Render Task Hub ทันที เพื่อป้องกันการกดการ์ดผิดจังหวะ
-            if (typeof window.renderTaskHubAssignPending === "function") {
-              window.renderTaskHubAssignPending();
-            }
-          }
-        }, 800); // หน่วงไว้ 0.8 วินาทีให้หน้าจอเคลียร์ตัวเองปลอดภัยที่สุด
-      } else {
-        // กรณี API แจ้งเตือน Error
-        const spinner = document.getElementById("exportSpinnerOverlay");
-        if (spinner) spinner.remove();
-
-        if (btnExport) {
-          btnExport.innerHTML = originalBtnHtml;
-          btnExport.style.pointerEvents = "auto";
-          btnExport.style.opacity = "1";
-        }
-        if (typeof window.safeAlert === "function")
-          window.safeAlert(
-            "ERROR",
-            "ข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"),
-            "error",
-          );
+    // เปลี่ยนสถานะในสมอง (Cache) ให้เป็น PENDING ทันที
+    if (window.cachedTransferTasks) {
+      const exportedTask = window.cachedTransferTasks.find(
+        (t) => t.Shipment_No === shipmentNo,
+      );
+      if (exportedTask) {
+        exportedTask.Status = "Pending";
       }
+    }
+
+    // 🚨 ถอดม่านพลังออกเมื่อเคลียร์ทุกอย่างเสร็จสิ้น
+    const spinner = document.getElementById("exportSpinnerOverlay");
+    if (spinner) spinner.remove();
+
+    // แจ้งเตือนเมื่อกระบวนการเสร็จสมบูรณ์
+    if (typeof window.safeAlert === "function") {
+      window.safeAlert(
+        "SUCCESS",
+        `EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`,
+        "success",
+      );
+    }
+
+    // เด้งกลับหน้าหลักถ้ารถชิปเมนต์ใน Lobby ถูกส่งออกหมดแล้ว
+    if (document.querySelectorAll(".shipment-column").length === 0) {
+      const btnBack =
+        document.getElementById("btnCancelFromLobby") ||
+        document.getElementById("btnBackToTaskHub");
+      if (btnBack) btnBack.click();
+
+      // 🚨 Force Render Task Hub ทันที เพื่อป้องกันการกดการ์ดผิดจังหวะ
+      if (typeof window.renderTaskHubAssignPending === "function") {
+        window.renderTaskHubAssignPending();
+      }
+    }
+  }, 800); // หน่วงไว้ 0.8 วินาทีให้หน้าจอเคลียร์ตัวเองปลอดภัยที่สุด
+} else {
+  // กรณี API แจ้งเตือน Error
+  const spinner = document.getElementById("exportSpinnerOverlay");
+  if (spinner) spinner.remove();
+
+  if (btnExport) {
+    btnExport.innerHTML = originalBtnHtml;
+    btnExport.style.pointerEvents = "auto";
+    btnExport.style.opacity = "1";
+  }
+  if (typeof window.safeAlert === "function")
+    window.safeAlert(
+      "ERROR",
+      "ข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"),
+      "error",
+    );
+}
     })
     .catch((error) => {
       // กรณีเชื่อมต่อเซิร์ฟเวอร์ไม่ได้

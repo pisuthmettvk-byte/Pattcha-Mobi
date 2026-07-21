@@ -135,15 +135,10 @@ function debounceSearch(func, wait) {
   };
 }
 
-function parseDriveImage(url) {
-  if (!url || url === "CellImage")
-    return "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg";
-  let match =
-    url.match(/id=([a-zA-Z0-9_-]+)/) || url.match(/d\/([a-zA-Z0-9_-]+)/);
-  if (match && match[1])
-    return "https://drive.google.com/thumbnail?id=" + match[1] + "&sz=w500";
-  return url;
-}
+
+
+
+
 
 function getCategoryIcon(catName) {
   const name = (catName || "").toLowerCase();
