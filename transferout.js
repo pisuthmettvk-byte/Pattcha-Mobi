@@ -192,10 +192,12 @@ function createShipmentChildBox(baseBoxNo, suffixOrFullId, isRestore = false) {
   childDiv.dataset.status = "open";
 
   // 🌟 [NEW] เช็กโหมดปัจจุบัน
-  const currentMode = sessionStorage.getItem("lobbyMode") || "ASSIGN";
-  const isPending = currentMode === "PENDING";
-  const displayStyle = isPending ? "display: none !important;" : "";
-
+  const currentMode = (
+    sessionStorage.getItem("lobbyMode") || "ASSIGN"
+  ).toUpperCase();
+  // 🚨 [FIX]: เปลี่ยนจาก isPending เป็น isReadOnly (ล็อกทั้ง Pending และ Complete)
+  const isReadOnly = currentMode === "PENDING" || currentMode === "COMPLETE";
+  const displayStyle = isReadOnly ? "display: none !important;" : "";
   childDiv.style.cssText = `display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: #ffffff; border: 1px solid #e0e0e0; border-left: 6px solid #28a745; padding: 16px 15px; width: 100%; box-sizing: border-box; cursor: pointer; transition: all 0.2s;`;
 
   // 🌟 [NEW] ฝัง ${displayStyle} ไปที่ checkbox และ ถังขยะ
@@ -334,19 +336,22 @@ function createShipmentColumn(
 
   // 🌟 [UPDATE] เช็กโหมดจาก Status ที่ถูกส่งเข้ามา (แม่นยำกว่าดึงจาก Session)
   const statusText = (status || "Assign").toUpperCase();
-  const isPending = statusText === "PENDING";
+  // 🚨 [FIX]: ล็อกทั้งสองโหมด
+  const isReadOnly = statusText === "PENDING" || statusText === "COMPLETE";
 
-  // 🚨 [FIX] คืนค่าแถบคอลัมน์แม่เป็นสีเงินลูกระนาดต้นฉบับ 100% ตลอดกาลตามคำสั่ง (ไม่ใช้สีเหลืองแล้ว)
+  // 🚨 [FIX] คืนค่าแถบคอลัมน์แม่เป็นสีเงินลูกระนาดต้นฉบับ 100% ตลอดกาลตามคำสั่ง
   const headerGradient =
     "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)";
 
-  // 🌟 [NEW] ซ่อนปุ่มต่างๆ และตั้งสี Tag ถ้าเป็นโหมด Pending
-  const displayStyle = isPending ? "display: none !important;" : "";
-  const badgeColor = isPending ? "#e0a800" : "#d93844";
+  // 🌟 [NEW] ซ่อนปุ่มต่างๆ และตั้งสี Tag
+  const displayStyle = isReadOnly ? "display: none !important;" : "";
 
-  col.style.cssText = `width: 100%; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;`;
-
+  // 🟢 [NEW]: เพิ่มสีป้าย Tag ของโหมด COMPLETE ให้เป็นสีเขียว
+  let badgeColor = "#d93844"; // แดง (ASSIGN)
+  if (statusText === "PENDING") badgeColor = "#e0a800"; // เหลือง
+  if (statusText === "COMPLETE") badgeColor = "#198754"; // เขียว
   col.innerHTML = `
+  
     <!-- 🟢 Header แม่ -->
     <div class="shipment-column-header" style="
       background: ${headerGradient};
@@ -425,77 +430,121 @@ function createShipmentColumn(
     }
   });
 
-    // 2. ปุ่มกดลบแม่ของจริง
-      btnParentDelete.addEventListener("click", async () => {
-        if (isPending) return;
-        const isConfirmed = await safeConfirm("ยืนยันการลบชิปเมนต์?", `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`);
-        if (isConfirmed) {
-          const loadingOverlay = document.createElement("div");
-          loadingOverlay.id = "masterDeleteSpinner";
-          loadingOverlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
-          loadingOverlay.innerHTML = "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบและคืนสต๊อก...";
-          document.body.appendChild(loadingOverlay);
+  // 2. ปุ่มกดลบแม่ของจริง
+  btnParentDelete.addEventListener("click", async () => {
+    if (isPending) return;
+    const isConfirmed = await safeConfirm(
+      "ยืนยันการลบชิปเมนต์?",
+      `คุณต้องการลบชิปเมนต์ ${safeShipmentNo} ทิ้งและคืนสต๊อกทั้งหมดใช่หรือไม่?`,
+    );
+    if (isConfirmed) {
+      const loadingOverlay = document.createElement("div");
+      loadingOverlay.id = "masterDeleteSpinner";
+      loadingOverlay.style.cssText =
+        "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; justify-content: center; align-items: center; color: white; font-size: 20px; font-weight: bold; backdrop-filter: blur(3px);";
+      loadingOverlay.innerHTML =
+        "<i class='fas fa-spinner fa-spin' style='margin-right: 10px;'></i> กำลังลบและคืนสต๊อก...";
+      document.body.appendChild(loadingOverlay);
 
-          const currentBranchCode = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
-          const apiUrl = "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+      const currentBranchCode = String(
+        localStorage.getItem("pattcha_branch") || "",
+      )
+        .trim()
+        .toUpperCase();
+      const apiUrl =
+        "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
-          fetch(`${apiUrl}?action=delete_shipment`, { method: "POST", body: JSON.stringify({ shipmentNo: safeShipmentNo, branch: currentBranchCode }) })
-            .then((response) => response.json())
-            .then((data) => {
-              const spinner = document.getElementById("masterDeleteSpinner");
-              if (spinner) spinner.remove();
+      fetch(`${apiUrl}?action=delete_shipment`, {
+        method: "POST",
+        body: JSON.stringify({
+          shipmentNo: safeShipmentNo,
+          branch: currentBranchCode,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          const spinner = document.getElementById("masterDeleteSpinner");
+          if (spinner) spinner.remove();
 
-              if (data.success || data.status === "success") {
-                const closedBoxes = col.querySelectorAll(".shipment-child-box[data-status='Closed']");
-                closedBoxes.forEach((box) => {
-                  const savedItemsStr = box.getAttribute("data-saved-items");
-                  if (savedItemsStr) {
-                    try {
-                      const savedItems = JSON.parse(savedItemsStr);
-                      savedItems.forEach((item) => {
-                        if (typeof window.updateLocalStockMemory === "function") window.updateLocalStockMemory(item.sku, item.totalQty, false);
-                      });
-                    } catch (e) {}
-                  }
-                });
-
-                col.remove();
-                const taskCards = document.querySelectorAll("#transferOutTaskHubView .task-card");
-                taskCards.forEach((card) => { if (card.innerHTML.includes(safeShipmentNo)) card.remove(); });
-
-                // 🚨 [HOT FIX]: ล้างข้อมูลขยะและ Cache
-                if (window.cachedTransferTasks) {
-                    window.cachedTransferTasks = window.cachedTransferTasks.filter(t => t.Shipment_No !== safeShipmentNo);
-                }
-                for (let i = localStorage.length - 1; i >= 0; i--) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith(`draft_box_${safeShipmentNo}_`) || key.startsWith(`status_box_${safeShipmentNo}_`) || key.startsWith(`wrapped_box_${safeShipmentNo}_`))) {
-                        localStorage.removeItem(key);
-                    }
-                }
-
-                window.isGlobalDeleteMode = false;
-                window.activeDeleteShipment = null;
-
-                const container = document.getElementById("lobbyContentContainer");
-                const emptyState = document.getElementById("lobbyEmptyState");
-                if (container && container.querySelectorAll(".shipment-column").length === 0 && emptyState) {
-                  emptyState.style.display = "block";
-                }
-                if (typeof window.safeAlert === "function") window.safeAlert("SUCCESS", "ลบชิปเมนต์สำเร็จ!", "success");
-              } else {
-                if (typeof window.safeAlert === "function") window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+          if (data.success || data.status === "success") {
+            const closedBoxes = col.querySelectorAll(
+              ".shipment-child-box[data-status='Closed']",
+            );
+            closedBoxes.forEach((box) => {
+              const savedItemsStr = box.getAttribute("data-saved-items");
+              if (savedItemsStr) {
+                try {
+                  const savedItems = JSON.parse(savedItemsStr);
+                  savedItems.forEach((item) => {
+                    if (typeof window.updateLocalStockMemory === "function")
+                      window.updateLocalStockMemory(
+                        item.sku,
+                        item.totalQty,
+                        false,
+                      );
+                  });
+                } catch (e) {}
               }
-            })
-            .catch((error) => {
-              const spinner = document.getElementById("masterDeleteSpinner");
-              if (spinner) spinner.remove();
-              if (typeof window.safeAlert === "function") window.safeAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลได้", "error");
             });
-        }
-      });
-  
-  
+
+            col.remove();
+            const taskCards = document.querySelectorAll(
+              "#transferOutTaskHubView .task-card",
+            );
+            taskCards.forEach((card) => {
+              if (card.innerHTML.includes(safeShipmentNo)) card.remove();
+            });
+
+            // 🚨 [HOT FIX]: ล้างข้อมูลขยะและ Cache
+            if (window.cachedTransferTasks) {
+              window.cachedTransferTasks = window.cachedTransferTasks.filter(
+                (t) => t.Shipment_No !== safeShipmentNo,
+              );
+            }
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+              const key = localStorage.key(i);
+              if (
+                key &&
+                (key.startsWith(`draft_box_${safeShipmentNo}_`) ||
+                  key.startsWith(`status_box_${safeShipmentNo}_`) ||
+                  key.startsWith(`wrapped_box_${safeShipmentNo}_`))
+              ) {
+                localStorage.removeItem(key);
+              }
+            }
+
+            window.isGlobalDeleteMode = false;
+            window.activeDeleteShipment = null;
+
+            const container = document.getElementById("lobbyContentContainer");
+            const emptyState = document.getElementById("lobbyEmptyState");
+            if (
+              container &&
+              container.querySelectorAll(".shipment-column").length === 0 &&
+              emptyState
+            ) {
+              emptyState.style.display = "block";
+            }
+            if (typeof window.safeAlert === "function")
+              window.safeAlert("SUCCESS", "ลบชิปเมนต์สำเร็จ!", "success");
+          } else {
+            if (typeof window.safeAlert === "function")
+              window.safeAlert("เกิดข้อผิดพลาด", data.message, "error");
+          }
+        })
+        .catch((error) => {
+          const spinner = document.getElementById("masterDeleteSpinner");
+          if (spinner) spinner.remove();
+          if (typeof window.safeAlert === "function")
+            window.safeAlert(
+              "ข้อผิดพลาด",
+              "ไม่สามารถติดต่อฐานข้อมูลได้",
+              "error",
+            );
+        });
+    }
+  });
+
   // 3. สร้างกล่องลูก (ปิดการทำงานถ้าเป็น Pending)
   let boxIdCounter = 0;
   btnAddChildBox.addEventListener("click", () => {
