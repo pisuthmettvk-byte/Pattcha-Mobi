@@ -3280,20 +3280,41 @@ document.getElementById("btnBackToTaskHub")?.addEventListener("click", hideLobby
   // ===============================================
     // ===============================================
 
-      window.mockComplete = function(shipmentNo) {
-          if (!window.cachedTransferTasks) {
-              console.error("❌ ไม่พบข้อมูลใน Cache");
-              return;
-          }
-          let task = window.cachedTransferTasks.find(t => t.Shipment_No === shipmentNo);
-          if (task) {
-              task.Status = "Complete"; // เสกสถานะเป็น Complete
-              console.log(`✅ [Simulator] เสกชิปเมนต์ ${shipmentNo} เป็น COMPLETE สำเร็จ!`);
-              console.log(`💡 กรุณากด F5 หรือกดกลับไปหน้า Task Hub เพื่อดูการ์ดย้ายคอลัมน์และเปลี่ยนเป็นสีเขียว!`);
-          } else {
-              console.error(`❌ ไม่พบชิปเมนต์หมายเลข ${shipmentNo} ในระบบ`);
-          }
-      };
+        window.mockComplete = function(shipmentNo) {
+            if (!window.cachedTransferTasks) return console.error("❌ ไม่พบข้อมูลใน Cache");
+            
+            let task = window.cachedTransferTasks.find(t => t.Shipment_No === shipmentNo);
+            if (task) {
+                task.Status = "Complete"; // เสกสถานะ
+                
+                // 🚨 บังคับย้ายการ์ดบนหน้าจอ (DOM) ไปที่ช่อง Complete ทันทีโดยไม่ต้องโหลดใหม่
+                const cards = document.querySelectorAll(".task-card");
+                cards.forEach(c => {
+                    if (c.innerHTML.includes(shipmentNo)) {
+                        document.getElementById("completeContainer").appendChild(c);
+                        c.style.borderLeft = "6px solid #28a745"; // เปลี่ยนขอบการ์ดเป็นสีเขียว
+                        const statusSpan = c.querySelector("span[style*='uppercase']");
+                        if(statusSpan) {
+                            statusSpan.textContent = "COMPLETE";
+                            statusSpan.style.background = "#28a745";
+                        }
+                    }
+                });
+                
+                // อัปเดตตัวเลขบนหัวคอลัมน์
+                ['assign', 'pending', 'complete'].forEach(key => {
+                    const el = document.getElementById(key + "TaskCount");
+                    const count = document.getElementById(key + "Container").querySelectorAll(".task-card").length;
+                    if (el) el.innerHTML = `Task (${count}) <i class="fas fa-chevron-down"></i>`;
+                });
+
+                console.log(`✅ [Simulator] เสกชิปเมนต์ ${shipmentNo} เป็น COMPLETE เรียบร้อย!`);
+                console.log(`💡 เลื่อนไปดูที่คอลัมน์ COMPLETE TASKS แล้วคลิกเข้าไปดูธีมร่างทองได้เลยครับ (ห้ามกด F5 นะ!)`);
+            } else {
+                console.error(`❌ ไม่พบชิปเมนต์หมายเลข ${shipmentNo}`);
+            }
+        };
+
 
     // ===============================================
   // ================================================
