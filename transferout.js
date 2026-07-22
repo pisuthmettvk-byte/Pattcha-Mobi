@@ -22,6 +22,9 @@ window.currentBoxElement = null;
 window.currentBoxItems = [];
 window.currentScannerContext = "stock";
 
+
+
+
 // ============================================================================
 // 🛡️ GROUP 2: SECURITY & GLOBAL INTERCEPTORS
 // ============================================================================
