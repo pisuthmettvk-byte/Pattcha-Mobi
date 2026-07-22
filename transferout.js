@@ -1390,7 +1390,6 @@ async function renderLobbyTasks(branchID) {
 }
 
 
-
 window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   window.currentActiveShipment = shipmentNo;
   window.currentActiveBoxNo = boxNo;
@@ -1440,10 +1439,10 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
     });
   }
 
-  // 📸 ปุ่มสแกนเนอร์สีเงิน + ไอคอนกล้องยักษ์ (ไม่มีตัวหนังสือ)
-  const silverGradient =
-    "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
-  const cameraIconHtml = `<i class="fas fa-camera" style="color: #333; font-size: 28px;"></i>`;
+  // 📸 คืนร่างปุ่มตำนาน: ลูกระนาดสีเงินนูน + กล้องเทาเข้ม (ไม่มีตัวหนังสือ)
+  const convexSilverBg =
+    "linear-gradient(to bottom, #ffffff 0%, #e6e6e6 40%, #cccccc 60%, #999999 100%)";
+  const cameraIconOnly = `<i class="fas fa-camera" style="color: #444; font-size: 32px; filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.8));"></i>`;
   const finalBtnScanner = document.getElementById("btnBoxScanner");
 
   if (forceClosed) {
@@ -1451,12 +1450,15 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
     if (finalBtnScanner) {
       finalBtnScanner.style.width = "100%";
       finalBtnScanner.style.pointerEvents = "auto";
-      finalBtnScanner.style.background = silverGradient;
-      finalBtnScanner.style.border = "1px solid #999";
+      finalBtnScanner.style.background = convexSilverBg;
+      finalBtnScanner.style.border = "1px solid #888";
+      finalBtnScanner.style.boxShadow =
+        "inset 0 3px 5px rgba(255,255,255,0.9), 0 4px 6px rgba(0,0,0,0.2)";
+      finalBtnScanner.style.borderRadius = "12px";
       finalBtnScanner.style.display = "flex";
       finalBtnScanner.style.justifyContent = "center";
       finalBtnScanner.style.alignItems = "center";
-      finalBtnScanner.innerHTML = cameraIconHtml;
+      finalBtnScanner.innerHTML = cameraIconOnly;
     }
     if (searchInput)
       searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่อง (Read Only)";
@@ -1465,12 +1467,15 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
     if (finalBtnScanner) {
       finalBtnScanner.style.width = "48%";
       finalBtnScanner.style.pointerEvents = "auto";
-      finalBtnScanner.style.background = silverGradient;
-      finalBtnScanner.style.border = "1px solid #999";
+      finalBtnScanner.style.background = convexSilverBg;
+      finalBtnScanner.style.border = "1px solid #888";
+      finalBtnScanner.style.boxShadow =
+        "inset 0 3px 5px rgba(255,255,255,0.9), 0 4px 6px rgba(0,0,0,0.2)";
+      finalBtnScanner.style.borderRadius = "12px";
       finalBtnScanner.style.display = "flex";
       finalBtnScanner.style.justifyContent = "center";
       finalBtnScanner.style.alignItems = "center";
-      finalBtnScanner.innerHTML = cameraIconHtml;
+      finalBtnScanner.innerHTML = cameraIconOnly;
     }
     if (searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
     if (typeof window.updateBoxWrapButtonState === "function")
@@ -1487,8 +1492,6 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   if (typeof window.renderBoxContentArea === "function")
     window.renderBoxContentArea();
 };
-
-
 window.renderBoxContentArea = function () {
   const container = document.getElementById("boxContentArea");
   if (!container) return;
