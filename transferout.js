@@ -2636,6 +2636,38 @@ window.dispatchShipment = async function (shipmentNo) {
 };
 
 
+
+// ============================================================================
+// 🚨 เครื่องยนต์คุม Database ป้องกันสต็อกเกินตอนลบกล่อง
+window.updateLocalStockMemory = function (sku, qty, isDeduct) {
+    if (typeof localProductDatabase === "undefined") return;
+    const skuStr = String(sku).trim().toUpperCase();
+    
+    let product = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
+    
+    if (product) {
+        let currentAvail = Number(product.availableStock || 0);
+        let currentHold = Number(product.holdQty || 0);
+        let qtyNum = Number(qty || 0);
+        
+        if (isDeduct) {
+            // 🔴 กด WRAP ปิดกล่อง (หักจาก Avail เอาไปโฮล)
+            product.availableStock = currentAvail - qtyNum;
+            product.holdQty = currentHold + qtyNum;
+        } else {
+            // 🟢 กดลบกล่อง (เอาของที่โฮลไว้ คืนกลับเข้า Avail)
+            product.availableStock = currentAvail + qtyNum;
+            product.holdQty = currentHold - qtyNum;
+        }
+    }
+};
+// 🚨 เครื่องยนต์คุม Database ป้องกันสต็อกเกินตอนลบกล่อง
+// ============================================================================
+
+
+
+
+
 // ============================================================================
 // 🌐 GROUP 8.5: API DATA LOADERS (ฟังก์ชันที่หล่นหายไป)
 // ============================================================================
