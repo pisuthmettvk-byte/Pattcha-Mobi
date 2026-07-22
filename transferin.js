@@ -146,10 +146,14 @@ window.simulateReceiveShipment = async function (shipmentNo, receivingBranch) {
         if (typeof window.nukeShipmentCache === "function")
           window.nukeShipmentCache(shipmentNo);
 
-        document
-          .getElementById("transferInSimulatorModal")
-          .classList.add("hide");
+        // คำสั่งปิดหน้าต่าง Modal
+        document.getElementById("transferInSimulatorModal").classList.add("hide");
 
+        // 👇👇👇 วางโค้ดกระตุ้นเสียงและกระดิ่งแจ้งเตือนตรงนี้ครับ 👇👇👇
+        if (typeof window.triggerShipmentCompleteAlert === "function") {
+          window.triggerShipmentCompleteAlert(shipmentNo);
+        }
+        
         if (typeof loadExistingTasks === "function") await loadExistingTasks();
       } else {
         if (typeof window.safeAlert === "function")
