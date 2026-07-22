@@ -2207,6 +2207,7 @@ window.submitWrapBox = async function () {
     });
 };
 
+
 window.processExport = async function () {
   const readyMasterCheckbox = document.querySelector(
     ".master-checkbox:checked",
@@ -2292,19 +2293,19 @@ window.processExport = async function () {
           JSON.stringify(exportedList),
         );
 
+        // 🚨 [แก้ไข]: ปิดการทำงานของปุ่มระเบิดทำลายล้าง (Nuke)
+        // เพื่อเก็บข้อมูลกล่องเอาไว้ไปแสดงในโหมด Pending และ Complete
+        /*
         if (typeof window.nukeShipmentCache === "function")
           window.nukeShipmentCache(shipmentNo);
         if (typeof window.fbNukeShipment === "function")
           window.fbNukeShipment(shipmentNo);
+        */
 
+        // 🚨 [แก้ไข]: เลือกลบเฉพาะกล่องที่ "ยังไม่ถูก Wrap (Draft)" เท่านั้น
         for (let i = localStorage.length - 1; i >= 0; i--) {
           const key = localStorage.key(i);
-          if (
-            key &&
-            (key.startsWith(`draft_box_${shipmentNo}_`) ||
-              key.startsWith(`status_box_${shipmentNo}_`) ||
-              key.startsWith(`wrapped_box_${shipmentNo}_`))
-          ) {
+          if (key && key.startsWith(`draft_box_${shipmentNo}_`)) {
             localStorage.removeItem(key);
           }
         }
@@ -2380,6 +2381,9 @@ window.processExport = async function () {
         window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
+
+
+
 
 window.dispatchShipment = async function (shipmentNo) {
   const colElement = document.querySelector(
@@ -2486,6 +2490,8 @@ window.dispatchShipment = async function (shipmentNo) {
         window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
+
+
 
 
 // ============================================================================
