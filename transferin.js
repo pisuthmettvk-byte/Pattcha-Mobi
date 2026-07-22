@@ -97,29 +97,27 @@ window.openTransferInSimulator = async function () {
   container.innerHTML = html;
 };
 
-// 3. ฟังก์ชันยิงสัญญาณจำลองเข้าหลังบ้าน
-window.simulateReceiveShipment = async function (shipmentNo, destBranch) {
+
+window.simulateReceiveShipment = async function (shipmentNo, receivingBranch) {
   const isConfirm = await window.safeConfirm(
-    "จำลองการรับของ?",
-    `ส่งสัญญาณว่าสาขา [${destBranch}] ได้รับชิปเมนต์\n${shipmentNo}\nเรียบร้อยแล้ว ใช่หรือไม่?`,
+    "ยืนยันรับสินค้าเข้าคลัง?",
+    `ชิปเมนต์หมายเลข:\n${shipmentNo}\n\nคุณกำลังกดยืนยันรับของเข้าสาขา [${receivingBranch}] ใช่หรือไม่?`,
     "question",
   );
 
   if (!isConfirm) return;
 
-  // เปิด Loading
   const loadingOverlay = document.createElement("div");
   loadingOverlay.style.cssText =
     "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100005; display: flex; justify-content: center; align-items: center; color: white; font-size: 18px; font-weight: bold; backdrop-filter: blur(3px);";
   loadingOverlay.innerHTML =
-    "<i class='fas fa-satellite-dish fa-spin' style='margin-right: 10px;'></i> กำลังส่งสัญญาณ...";
+    "<i class='fas fa-satellite-dish fa-spin' style='margin-right: 10px;'></i> กำลังส่งสัญญาณรับของ...";
   document.body.appendChild(loadingOverlay);
 
-  // 💡 [จุดเชื่อม API]: แก้ไข action ให้ตรงกับที่ทีมหลังบ้านเขียนไว้ได้เลย (สมมติใช้ update_shipment_status)
   const payload = {
     shipmentNo: shipmentNo,
     status: "Complete",
-    branch: destBranch, // สาขาปลายทางที่กดรับ
+    branch: receivingBranch,
   };
 
   fetch(CONFIG.API_URL + "?action=update_shipment_status", {
@@ -134,11 +132,10 @@ window.simulateReceiveShipment = async function (shipmentNo, destBranch) {
         if (typeof window.safeAlert === "function")
           window.safeAlert(
             "SUCCESS",
-            `เปลี่ยนสถานะชิปเมนต์ ${shipmentNo} เป็น COMPLETE สำเร็จ!`,
+            `รับชิปเมนต์ ${shipmentNo} สำเร็จ! สถานะเปลี่ยนเป็น COMPLETE`,
             "success",
           );
 
-        // 1. อัปเดต Cache ในเครื่องให้เป็น Complete
         if (window.cachedTransferTasks) {
           const targetTask = window.cachedTransferTasks.find(
             (t) => t.Shipment_No === shipmentNo,
@@ -146,16 +143,13 @@ window.simulateReceiveShipment = async function (shipmentNo, destBranch) {
           if (targetTask) targetTask.Status = "Complete";
         }
 
-        // 2. เคลียร์ข้อมูลขยะ (Draft) ของชิปเมนต์นี้ทิ้ง เพื่อคืนพื้นที่มือถือ
         if (typeof window.nukeShipmentCache === "function")
           window.nukeShipmentCache(shipmentNo);
 
-        // 3. ปิดหน้าต่าง Modal
         document
           .getElementById("transferInSimulatorModal")
           .classList.add("hide");
 
-        // 4. รีเฟรชหน้ารวมงาน (Task Hub) ให้การ์ดย้ายไปสีเขียว
         if (typeof loadExistingTasks === "function") await loadExistingTasks();
       } else {
         if (typeof window.safeAlert === "function")
