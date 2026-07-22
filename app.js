@@ -462,63 +462,38 @@ function clearSearch() {
 }
 
 // ==============================================================
-// 🧠 เครื่องยนต์คำนวณสต๊อกศูนย์กลาง (Single Source of Truth) - V.4 (Real-Time Everywhere)
+// 🚨 เครื่องยนต์ Real-Time (แก้ไขบั๊กคำนวณเป็น NaN/0) - วางใน app.js
 // ==============================================================
 window.getRealTimeLiveStock = function(sku) {
-    const skuStr = String(sku).trim().toUpperCase();
-    let baseAvail = 0;
-    let baseHold = 0;
+    let baseAvail = 0; let baseHold = 0;
     
-    // 1. ดึงยอดตั้งต้นจากฐานข้อมูลหลัก
     if (typeof localProductDatabase !== "undefined") {
-        const item = localProductDatabase.find(p => String(p.sku || "").trim().toUpperCase() === skuStr);
-        if (item) {
-            baseAvail = Number(item.availableStock || item.Available_Stock || 0);
-            baseHold = Number(item.holdQty || item.Hold_Qty || 0);
+        const product = localProductDatabase.find(p => (p.sku || p.SKU || "").toString().toUpperCase() === sku.toUpperCase());
+        if (product) {
+            baseAvail = Number(product.availableStock || 0);
+            baseHold = Number(product.holdQty || 0);
         }
     }
 
-    // 2. 🔍 สร้างเรดาร์กวาดหายอดค้างในกล่อง Draft ทั้งหมด
-    let pendingQty = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith("draft_box_")) {
-            const parts = key.replace("draft_box_", "").split("_");
-            if (parts.length >= 2) {
-                const shipNo = parts[0];
-                const boxNo = parts.slice(1).join("_");
-                // ไม่นับกล่องที่ถูก WRAP ไปแล้ว เพราะยอดถูกย้ายไป Hold แล้วตอนกด Export
-                const isClosed = localStorage.getItem(`status_box_${shipNo}_${boxNo}`) === "Closed";
-
-                if (!isClosed) {
-                    try {
-                        const boxData = JSON.parse(localStorage.getItem(key)) || [];
-                        const found = boxData.find(b => String(b.sku || "").trim().toUpperCase() === skuStr);
-                        if (found) {
-                            pendingQty += (Number(found.scanQty) || 0) + (Number(found.manualQty) || 0);
-                        }
-                    } catch(e) {}
-                }
-            }
-        }
+    let currentBoxQty = 0;
+    window.currentBoxItems = window.currentBoxItems || [];
+    const currItem = window.currentBoxItems.find(p => (p.sku || "").toString().toUpperCase() === sku.toUpperCase());
+    if (currItem) {
+        currentBoxQty = (currItem.scanQty || 0) + (currItem.manualQty || 0);
     }
 
-    // 🚨 บวกยอดจากกล่องที่กำลังเปิดอยู่หน้าจอ ณ วินาทีนี้ (ป้องกันดีเลย์จากการยังไม่เซฟลง LocalStorage)
-    if (typeof window.currentBoxItems !== "undefined" && window.currentBoxItems.length > 0) {
-       const foundActive = window.currentBoxItems.find(i => String(i.sku || "").trim().toUpperCase() === skuStr);
-       if(foundActive) {
-           // เช็กก่อนว่ายอดนี้บันทึกลง LocalStorage ไปแล้วหรือยัง ถ้ายังให้บวกเพิ่ม
-           pendingQty += 0; // ในสถาปัตยกรรมปัจจุบัน เราเซฟลง Local ทันทีที่กด + ดังนั้นใช้ตัวเลขจาก Local ปลอดภัยสุด
-       }
+    let otherBoxesQty = 0;
+    if (typeof window.checkCrossBoxStock === "function") {
+        const crossCheck = window.checkCrossBoxStock(sku);
+        otherBoxesQty = crossCheck.totalUsedInOtherBoxes || 0;
     }
 
-    // 3. หักลบยอดสุทธิ
-    let displayAvail = baseAvail - pendingQty;
-    let displayHold = baseHold + pendingQty;
-    if (displayAvail < 0) displayAvail = 0; // กันยอดติดลบ
+    const liveAvail = Math.max(0, baseAvail - currentBoxQty - otherBoxesQty);
+    const liveHold = baseHold + currentBoxQty + otherBoxesQty;
 
-    return { avail: displayAvail, hold: displayHold };
+    return { avail: liveAvail, hold: liveHold };
 };
+
 
 // 📍 คำสั่งอัปเดตหน้าจอทันทีเมื่อมีการกดบวก/ลบ สินค้า
 window.triggerRealTimeUIRefresh = function() {
