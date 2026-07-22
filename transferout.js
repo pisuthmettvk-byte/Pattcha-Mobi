@@ -301,6 +301,7 @@ window.clearBoxDraft = function (shipmentId, boxNo) {
   localStorage.removeItem(`draft_box_${shipmentId}_${boxNo}`);
 };
 
+
 window.restoreDraftBoxesForShipment = function (shipmentNo, colElement) {
   if (!colElement) return 0;
   const childrenContainer = colElement.querySelector(
@@ -318,14 +319,16 @@ window.restoreDraftBoxesForShipment = function (shipmentNo, colElement) {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (
-      key.startsWith(`draft_box_${shipmentNo}_`) ||
-      key.startsWith(`wrapped_box_${shipmentNo}_`)
+      key &&
+      (key.startsWith(`draft_box_${shipmentNo}_`) ||
+        key.startsWith(`wrapped_box_${shipmentNo}_`))
     ) {
       hasDrafts = true;
       let draftData = [];
       try {
         draftData = JSON.parse(localStorage.getItem(key)) || [];
       } catch (e) {}
+
       const exactBoxNo = key.startsWith(`wrapped_box_`)
         ? key.replace(`wrapped_box_${shipmentNo}_`, "")
         : key.replace(`draft_box_${shipmentNo}_`, "");
@@ -373,17 +376,28 @@ window.restoreDraftBoxesForShipment = function (shipmentNo, colElement) {
 
   if (hasDrafts) {
     childrenContainer.classList.remove("hide");
-    colElement.querySelector(".master-truck-count").textContent =
-      childrenContainer.querySelectorAll(".shipment-child-box").length;
+    const truckCountEl = colElement.querySelector(".master-truck-count");
+    if (truckCountEl)
+      truckCountEl.textContent = childrenContainer.querySelectorAll(
+        ".shipment-child-box",
+      ).length;
   }
 
-  if (typeof window.fbListenToShipment === "function")
-    window.fbListenToShipment(shipmentNo, colElement);
+  // 🚨 [HOTFIX ภูตผีกล่อง]: อนุญาตให้ Firebase ทำงานเฉพาะโหมด ASSIGN เท่านั้น
+  const currentMode = (
+    sessionStorage.getItem("lobbyMode") || "ASSIGN"
+  ).toUpperCase();
+  if (currentMode === "ASSIGN") {
+    if (typeof window.fbListenToShipment === "function")
+      window.fbListenToShipment(shipmentNo, colElement);
+  }
+
   if (typeof window.updateMasterShipmentTotals === "function")
     window.updateMasterShipmentTotals(shipmentNo);
 
   return maxBoxIndex;
 };
+
 
 // ============================================================================
 // 📡 GROUP 4: FIREBASE UI RECEIVERS
@@ -1296,6 +1310,9 @@ async function renderLobbyTasks(branchID) {
   const emptyState = document.getElementById("lobbyEmptyState");
   if (!container) return;
 
+  // 🚨 [HOTFIX วิญญาณหลอน]: ปิดเรดาร์การดักฟังของเก่าทั้งหมดก่อนวาดหน้าใหม่ ป้องกัน Layout พัง
+  if (typeof window.fbStopListening === "function") window.fbStopListening();
+
   const currentMode = (
     sessionStorage.getItem("lobbyMode") || "ASSIGN"
   ).toUpperCase();
@@ -1372,13 +1389,14 @@ async function renderLobbyTasks(branchID) {
   }
 }
 
+
+
 window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   window.currentActiveShipment = shipmentNo;
   window.currentActiveBoxNo = boxNo;
   window.currentBoxElement = boxElement;
 
   const currentMode = sessionStorage.getItem("lobbyMode") || "ASSIGN";
-  // 🚨 ดักสถานะ ถ้าเป็น Pending, Complete หรือปิดกล่องแล้ว ให้เป็น Read-Only
   const forceClosed =
     currentMode === "PENDING" || currentMode === "COMPLETE" || isClosed;
 
@@ -1422,42 +1440,42 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
     });
   }
 
-  // ---------------------------------------------------------
-  // 📸 คืนร่างปุ่มสแกนเนอร์ เป็น "กล้องสีเงินเมทัลลิก" ในทุกสถานะ
-  // ---------------------------------------------------------
+  // 📸 ปุ่มสแกนเนอร์สีเงิน + ไอคอนกล้องยักษ์ (ไม่มีตัวหนังสือ)
   const silverGradient =
     "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
-  const cameraIconHtml = `<i class="fas fa-camera" style="color: #333; font-size: 16px;"></i> <span style="color: #333; font-weight: bold;">SCANNER</span>`;
+  const cameraIconHtml = `<i class="fas fa-camera" style="color: #333; font-size: 28px;"></i>`;
+  const finalBtnScanner = document.getElementById("btnBoxScanner");
 
   if (forceClosed) {
-    // 🟡 โหมด Pending/Complete (ปิดกล่องแล้ว)
     if (btnWrap) btnWrap.style.display = "none";
-    const finalBtnScanner = document.getElementById("btnBoxScanner");
     if (finalBtnScanner) {
-      finalBtnScanner.style.width = "100%"; // ขยายเต็มจอเพราะไม่มีปุ่ม WRAP
+      finalBtnScanner.style.width = "100%";
       finalBtnScanner.style.pointerEvents = "auto";
       finalBtnScanner.style.background = silverGradient;
       finalBtnScanner.style.border = "1px solid #999";
+      finalBtnScanner.style.display = "flex";
+      finalBtnScanner.style.justifyContent = "center";
+      finalBtnScanner.style.alignItems = "center";
       finalBtnScanner.innerHTML = cameraIconHtml;
     }
     if (searchInput)
       searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่อง (Read Only)";
   } else {
-    // 🔴 โหมด Assign (ยังไม่ปิดกล่อง)
     if (btnWrap) btnWrap.style.display = "flex";
-    const finalBtnScanner = document.getElementById("btnBoxScanner");
     if (finalBtnScanner) {
-      finalBtnScanner.style.width = "48%"; // ครึ่งจอคู่กับปุ่ม WRAP
+      finalBtnScanner.style.width = "48%";
       finalBtnScanner.style.pointerEvents = "auto";
       finalBtnScanner.style.background = silverGradient;
       finalBtnScanner.style.border = "1px solid #999";
+      finalBtnScanner.style.display = "flex";
+      finalBtnScanner.style.justifyContent = "center";
+      finalBtnScanner.style.alignItems = "center";
       finalBtnScanner.innerHTML = cameraIconHtml;
     }
     if (searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
     if (typeof window.updateBoxWrapButtonState === "function")
       window.updateBoxWrapButtonState(window.currentBoxItems.length);
   }
-  // ---------------------------------------------------------
 
   const lobbyView =
     document.getElementById("transferOutLobbyView") ||
@@ -1469,6 +1487,7 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   if (typeof window.renderBoxContentArea === "function")
     window.renderBoxContentArea();
 };
+
 
 window.renderBoxContentArea = function () {
   const container = document.getElementById("boxContentArea");
