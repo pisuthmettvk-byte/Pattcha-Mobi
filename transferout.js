@@ -301,17 +301,20 @@ window.clearBoxDraft = function (shipmentId, boxNo) {
   localStorage.removeItem(`draft_box_${shipmentId}_${boxNo}`);
 };
 
-
 window.restoreDraftBoxesForShipment = function (shipmentNo, colElement) {
   if (!colElement) return 0;
   const childrenContainer = colElement.querySelector(
     ".shipment-children-container",
   );
   if (!childrenContainer) return 0;
-  const baseBoxNo =
-    colElement.getAttribute("data-shipment").split("-").length >= 5
-      ? colElement.getAttribute("data-shipment").split("-").slice(2).join("-")
-      : colElement.getAttribute("data-shipment");
+
+  let baseBoxNo = shipmentNo;
+  try {
+    baseBoxNo =
+      shipmentNo.split("-").length >= 5
+        ? shipmentNo.split("-").slice(2).join("-")
+        : shipmentNo;
+  } catch (e) {}
 
   let maxBoxIndex = 0;
   let hasDrafts = false;
@@ -383,20 +386,15 @@ window.restoreDraftBoxesForShipment = function (shipmentNo, colElement) {
       ).length;
   }
 
-  // 🚨 [HOTFIX ภูตผีกล่อง]: อนุญาตให้ Firebase ทำงานเฉพาะโหมด ASSIGN เท่านั้น
-  const currentMode = (
-    sessionStorage.getItem("lobbyMode") || "ASSIGN"
-  ).toUpperCase();
-  if (currentMode === "ASSIGN") {
-    if (typeof window.fbListenToShipment === "function")
-      window.fbListenToShipment(shipmentNo, colElement);
-  }
-
+  // 🚨 [สำคัญสุด]: เปิดให้ Firebase ดึงข้อมูลกล่องลูกมาแสดงเสมอ ไม่ว่าจะ Assign หรือ Pending
+  if (typeof window.fbListenToShipment === "function")
+    window.fbListenToShipment(shipmentNo, colElement);
   if (typeof window.updateMasterShipmentTotals === "function")
     window.updateMasterShipmentTotals(shipmentNo);
 
   return maxBoxIndex;
 };
+
 
 
 // ============================================================================
@@ -645,9 +643,9 @@ function createShipmentColumn(
   const col = document.createElement("div");
   col.className = "shipment-column";
 
-  // 🚨 [HOT FIX UI]: เพิ่ม flex-shrink: 0; และ height: auto; ล็อกโครงสร้างไม่ให้เกยกันเด็ดขาด!
+  // 🚨 [HOT FIX]: คืนค่า Layout มาตรฐานให้กล่องแม่แบบเดียวกับต้นฉบับเป๊ะ
   col.style.cssText =
-    "display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; width: 100%; position: relative; z-index: 1; flex-shrink: 0; height: auto; box-sizing: border-box;";
+    "display: block; width: 100%; margin-bottom: 30px; box-sizing: border-box;";
 
   const safeShipmentNo = shipmentNo || "UNKNOWN-00000000-00XX-0000-00XX";
   col.setAttribute("data-shipment", safeShipmentNo);
@@ -665,6 +663,8 @@ function createShipmentColumn(
   const isReadOnly = statusText === "PENDING" || statusText === "COMPLETE";
   const headerGradient =
     "linear-gradient(to bottom, #d4d4d4 0%, #ffffff 50%, #a09f9f 100%)";
+
+  // 💡 ซ่อนปุ่มต่างๆ อัตโนมัติถ้าเป็น PENDING ตามแนวคิดเจเลอร์
   const displayStyle = isReadOnly ? "display: none !important;" : "";
 
   let badgeColor = "#d93844";
@@ -759,7 +759,6 @@ function createShipmentColumn(
         .toUpperCase();
       if (typeof window.fbNukeShipment === "function")
         window.fbNukeShipment(safeShipmentNo);
-
       const apiUrl = typeof CONFIG !== "undefined" ? CONFIG.API_URL : webAppUrl;
 
       fetch(`${apiUrl}?action=delete_shipment`, {
@@ -886,6 +885,8 @@ function createShipmentColumn(
 
   return col;
 }
+
+
 
 function createShipmentChildBox(baseBoxNo, suffixOrFullId, isRestore = false) {
   const childBoxNo = isRestore
@@ -1305,17 +1306,21 @@ async function loadExistingTasks() {
   }
 }
 
+
 async function renderLobbyTasks(branchID) {
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
   if (!container) return;
 
-  // 🚨 [HOTFIX วิญญาณหลอน]: ปิดเรดาร์การดักฟังของเก่าทั้งหมดก่อนวาดหน้าใหม่ ป้องกัน Layout พัง
   if (typeof window.fbStopListening === "function") window.fbStopListening();
 
   const currentMode = (
     sessionStorage.getItem("lobbyMode") || "ASSIGN"
   ).toUpperCase();
+
+  // 🧹 คืนค่าโครงสร้างเดิมที่เรียงสวยงาม ยกเลิก Flex ที่ทำให้มันขี่กัน
+  container.style.display = "block";
+  container.style.width = "100%";
 
   try {
     let tasks = window.cachedTransferTasks;
@@ -1364,10 +1369,9 @@ async function renderLobbyTasks(branchID) {
     if (branchTasks.length > 0) {
       if (emptyState) emptyState.style.display = "none";
       const renderedShipments = new Set();
-
       branchTasks.forEach((task) => {
         if (typeof createShipmentColumn === "function") {
-          const safeNo = String(task.Shipment_No || "");
+          const safeNo = String(task.Shipment_No || "").trim();
           if (!renderedShipments.has(safeNo)) {
             renderedShipments.add(safeNo);
             container.appendChild(
