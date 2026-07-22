@@ -1320,13 +1320,16 @@ async function renderLobbyTasks(branchID) {
   }
 }
 
+
 window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   window.currentActiveShipment = shipmentNo;
   window.currentActiveBoxNo = boxNo;
   window.currentBoxElement = boxElement;
 
   const currentMode = sessionStorage.getItem("lobbyMode") || "ASSIGN";
-  const forceClosed = currentMode === "PENDING" || isClosed;
+  // 🚨 ดักสถานะ ถ้าเป็น Pending, Complete หรือปิดกล่องแล้ว ให้เป็น Read-Only
+  const forceClosed =
+    currentMode === "PENDING" || currentMode === "COMPLETE" || isClosed;
 
   const savedItems = boxElement
     ? boxElement.getAttribute("data-saved-items")
@@ -1369,22 +1372,30 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   }
 
   if (forceClosed) {
+    // 🟡 โหมด Pending/Complete (ปิดกล่องแล้ว)
     if (btnWrap) btnWrap.style.display = "none";
     const finalBtnScanner = document.getElementById("btnBoxScanner");
     if (finalBtnScanner) {
       finalBtnScanner.style.width = "100%";
+      // 🚨 ปลดล็อกให้ปุ่มสแกนเนอร์ "กดได้" 100%
+      finalBtnScanner.style.pointerEvents = "auto";
       finalBtnScanner.style.background =
         "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
+      finalBtnScanner.style.color = "#333";
+      finalBtnScanner.innerHTML = `<i class="fas fa-search"></i> SCAN TO FIND`;
     }
     if (searchInput)
-      searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่องที่ปิดแล้ว...";
+      searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่อง (Read Only)";
   } else {
+    // 🔴 โหมด Assign (ยังไม่ปิดกล่อง)
     if (btnWrap) btnWrap.style.display = "flex";
     const finalBtnScanner = document.getElementById("btnBoxScanner");
     if (finalBtnScanner) {
       finalBtnScanner.style.width = "48%";
+      finalBtnScanner.style.pointerEvents = "auto";
       finalBtnScanner.style.background =
         "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
+      finalBtnScanner.innerHTML = `<i class="fas fa-barcode"></i> SCANNER`;
     }
     if (searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
     if (typeof window.updateBoxWrapButtonState === "function")
@@ -2207,7 +2218,6 @@ window.submitWrapBox = async function () {
     });
 };
 
-
 window.processExport = async function () {
   const readyMasterCheckbox = document.querySelector(
     ".master-checkbox:checked",
@@ -2293,16 +2303,11 @@ window.processExport = async function () {
           JSON.stringify(exportedList),
         );
 
-        // 🚨 [แก้ไข]: ปิดการทำงานของปุ่มระเบิดทำลายล้าง (Nuke)
-        // เพื่อเก็บข้อมูลกล่องเอาไว้ไปแสดงในโหมด Pending และ Complete
-        /*
-        if (typeof window.nukeShipmentCache === "function")
-          window.nukeShipmentCache(shipmentNo);
-        if (typeof window.fbNukeShipment === "function")
-          window.fbNukeShipment(shipmentNo);
-        */
+        // 🚨 ปิดการทำลายข้อมูล! เก็บข้อมูลกล่องไว้ดูในโหมด PENDING (บรรทัดนี้ลบทิ้งไปแล้ว)
+        // if (typeof window.nukeShipmentCache === "function") window.nukeShipmentCache(shipmentNo);
+        // if (typeof window.fbNukeShipment === "function") window.fbNukeShipment(shipmentNo);
 
-        // 🚨 [แก้ไข]: เลือกลบเฉพาะกล่องที่ "ยังไม่ถูก Wrap (Draft)" เท่านั้น
+        // 🚨 ลบเฉพาะกระดาษทด (Draft) เท่านั้น! ห้ามลบกล่องที่ WRAP แล้วเด็ดขาด
         for (let i = localStorage.length - 1; i >= 0; i--) {
           const key = localStorage.key(i);
           if (key && key.startsWith(`draft_box_${shipmentNo}_`)) {
@@ -2381,8 +2386,6 @@ window.processExport = async function () {
         window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
-
-
 
 
 window.dispatchShipment = async function (shipmentNo) {
