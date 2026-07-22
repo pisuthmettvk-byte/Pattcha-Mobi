@@ -461,38 +461,52 @@ function clearSearch() {
   handleMagicSearch();
 }
 
-// ==============================================================
-// 🚨 เครื่องยนต์ Real-Time (แก้ไขบั๊กคำนวณเป็น NaN/0) - วางใน app.js
-// ==============================================================
-window.getRealTimeLiveStock = function(sku) {
-    let baseAvail = 0; let baseHold = 0;
-    
-    if (typeof localProductDatabase !== "undefined") {
-        const product = localProductDatabase.find(p => (p.sku || p.SKU || "").toString().toUpperCase() === sku.toUpperCase());
-        if (product) {
-            baseAvail = Number(product.availableStock || 0);
-            baseHold = Number(product.holdQty || 0);
-        }
-    }
+window.getRealTimeLiveStock = function (sku) {
+  let baseAvail = 0;
+  let baseHold = 0;
 
-    let currentBoxQty = 0;
+  if (typeof localProductDatabase !== "undefined") {
+    const product = localProductDatabase.find(
+      (p) =>
+        (p.sku || p.SKU || "").toString().toUpperCase() === sku.toUpperCase(),
+    );
+    if (product) {
+      baseAvail = Number(product.availableStock || 0);
+      baseHold = Number(product.holdQty || 0);
+    }
+  }
+
+  let currentBoxQty = 0;
+  // 🚨 เช็คว่ากล่องปิดไปแล้วหรือยัง ถ้าปิดไปแล้ว "ห้ามหักลบซ้ำ" เด็ดขาด! เพราะโดนหักไปตอน Wrap แล้ว
+  let isClosedBox = false;
+  if (window.currentBoxElement) {
+    isClosedBox =
+      window.currentBoxElement.getAttribute("data-status") === "Closed";
+  }
+
+  // หักเฉพาะตอนที่กล่องยังเปิด (Draft) เท่านั้น
+  if (!isClosedBox) {
     window.currentBoxItems = window.currentBoxItems || [];
-    const currItem = window.currentBoxItems.find(p => (p.sku || "").toString().toUpperCase() === sku.toUpperCase());
+    const currItem = window.currentBoxItems.find(
+      (p) => (p.sku || "").toString().toUpperCase() === sku.toUpperCase(),
+    );
     if (currItem) {
-        currentBoxQty = (currItem.scanQty || 0) + (currItem.manualQty || 0);
+      currentBoxQty = (currItem.scanQty || 0) + (currItem.manualQty || 0);
     }
+  }
 
-    let otherBoxesQty = 0;
-    if (typeof window.checkCrossBoxStock === "function") {
-        const crossCheck = window.checkCrossBoxStock(sku);
-        otherBoxesQty = crossCheck.totalUsedInOtherBoxes || 0;
-    }
+  let otherBoxesQty = 0;
+  if (typeof window.checkCrossBoxStock === "function") {
+    const crossCheck = window.checkCrossBoxStock(sku);
+    otherBoxesQty = crossCheck.totalUsedInOtherBoxes || 0;
+  }
 
-    const liveAvail = Math.max(0, baseAvail - currentBoxQty - otherBoxesQty);
-    const liveHold = baseHold + currentBoxQty + otherBoxesQty;
+  const liveAvail = Math.max(0, baseAvail - currentBoxQty - otherBoxesQty);
+  const liveHold = baseHold + currentBoxQty + otherBoxesQty;
 
-    return { avail: liveAvail, hold: liveHold };
+  return { avail: liveAvail, hold: liveHold };
 };
+
 
 
 // 📍 คำสั่งอัปเดตหน้าจอทันทีเมื่อมีการกดบวก/ลบ สินค้า

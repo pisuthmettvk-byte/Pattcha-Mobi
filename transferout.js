@@ -1057,6 +1057,7 @@ window.renderBoxModeACard = function (item) {
         </div>`;
 };
 
+
 window.renderBoxModeBCard = function (item, isClosedBox) {
   const safeSku = escapeHTML(item.sku || "-");
   const safeName = escapeHTML(item.name || "-");
@@ -1068,21 +1069,27 @@ window.renderBoxModeBCard = function (item, isClosedBox) {
     : '<i class="fas fa-barcode" style="color: #000000;" title="สแกนผ่านกล้อง"></i>';
 
   const totalQty = (item.scanQty || 0) + (item.manualQty || 0);
-  const isLocked = isClosedBox || window.isReadOnly;
+
+  // 🚨 แก้บั๊กปุ่มหาย: ดึงโหมดปัจจุบันมาเช็กสดๆ ห้ามใช้ window.isReadOnly ที่ชอบค้าง
+  const currentMode = (
+    sessionStorage.getItem("lobbyMode") || "ASSIGN"
+  ).toUpperCase();
+  const isLocked =
+    isClosedBox || currentMode === "PENDING" || currentMode === "COMPLETE";
 
   const controlsHtml = isLocked
     ? ""
     : `
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
-                    <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
-                    <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
-                    <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
-                </div>
-                <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
-                    <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
-                </button>
-            </div>`;
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; border: 1px solid #ddd;">
+                <button onclick="decreaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-minus" style="font-size: 10px;"></i></button>
+                <span style="font-weight: bold; font-size: 14px; min-width: 20px; text-align: center;">${totalQty}</span>
+                <button onclick="increaseBoxItemQty('${safeSku}')" style="background: none; border: none; padding: 4px 10px; cursor: pointer;"><i class="fas fa-plus" style="font-size: 10px;"></i></button>
+            </div>
+            <button onclick="removeBoxItem('${safeSku}')" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center;">
+                <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+            </button>
+        </div>`;
 
   const finalImageUrl =
     typeof window.parseDriveImage === "function"
