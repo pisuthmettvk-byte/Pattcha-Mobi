@@ -633,8 +633,10 @@ function createShipmentColumn(
 ) {
   const col = document.createElement("div");
   col.className = "shipment-column";
+
+  // 🚨 [HOT FIX UI]: เพิ่ม flex-shrink: 0; และ height: auto; ล็อกโครงสร้างไม่ให้เกยกันเด็ดขาด!
   col.style.cssText =
-    "display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; width: 100%; position: relative; z-index: 1;";
+    "display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; width: 100%; position: relative; z-index: 1; flex-shrink: 0; height: auto; box-sizing: border-box;";
 
   const safeShipmentNo = shipmentNo || "UNKNOWN-00000000-00XX-0000-00XX";
   col.setAttribute("data-shipment", safeShipmentNo);
@@ -873,6 +875,7 @@ function createShipmentColumn(
 
   return col;
 }
+
 
 function createShipmentChildBox(baseBoxNo, suffixOrFullId, isRestore = false) {
   const childBoxNo = isRestore
@@ -1371,36 +1374,38 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
     });
   }
 
-  if (forceClosed) {
-    // 🟡 โหมด Pending/Complete (ปิดกล่องแล้ว)
-    if (btnWrap) btnWrap.style.display = "none";
-    const finalBtnScanner = document.getElementById("btnBoxScanner");
-    if (finalBtnScanner) {
-      finalBtnScanner.style.width = "100%";
-      // 🚨 ปลดล็อกให้ปุ่มสแกนเนอร์ "กดได้" 100%
-      finalBtnScanner.style.pointerEvents = "auto";
-      finalBtnScanner.style.background =
-        "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
-      finalBtnScanner.style.color = "#333";
-      finalBtnScanner.innerHTML = `<i class="fas fa-search"></i> SCAN TO FIND`;
-    }
-    if (searchInput)
-      searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่อง (Read Only)";
-  } else {
-    // 🔴 โหมด Assign (ยังไม่ปิดกล่อง)
-    if (btnWrap) btnWrap.style.display = "flex";
-    const finalBtnScanner = document.getElementById("btnBoxScanner");
-    if (finalBtnScanner) {
-      finalBtnScanner.style.width = "48%";
-      finalBtnScanner.style.pointerEvents = "auto";
-      finalBtnScanner.style.background =
-        "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
-      finalBtnScanner.innerHTML = `<i class="fas fa-barcode"></i> SCANNER`;
-    }
-    if (searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
-    if (typeof window.updateBoxWrapButtonState === "function")
-      window.updateBoxWrapButtonState(window.currentBoxItems.length);
+
+if (forceClosed) {
+  // 🟡 โหมด Pending/Complete (ปิดกล่องแล้ว)
+  if (btnWrap) btnWrap.style.display = "none";
+  const finalBtnScanner = document.getElementById("btnBoxScanner");
+  if (finalBtnScanner) {
+    finalBtnScanner.style.width = "100%";
+    finalBtnScanner.style.pointerEvents = "auto";
+
+    // 🚨 คืนร่างเป็นสีเทาเข้ม และใช้ไอคอน "รูปกล้อง" เหมือนเดิมเป๊ะๆ
+    finalBtnScanner.style.background = "#4b5563"; // สีเทาเข้ม
+    finalBtnScanner.style.color = "#ffffff";
+    finalBtnScanner.style.border = "none";
+    finalBtnScanner.innerHTML = `<i class="fas fa-camera"></i> SCANNER`;
   }
+  if (searchInput)
+    searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่อง (Read Only)";
+} else {
+  // 🔴 โหมด Assign (ยังไม่ปิดกล่อง)
+  if (btnWrap) btnWrap.style.display = "flex";
+  const finalBtnScanner = document.getElementById("btnBoxScanner");
+  if (finalBtnScanner) {
+    finalBtnScanner.style.width = "48%";
+    finalBtnScanner.style.pointerEvents = "auto";
+    finalBtnScanner.style.background =
+      "linear-gradient(to bottom, #9e9e9e 0%, #e0e0e0 30%, #ffffff 50%, #e0e0e0 70%, #9e9e9e 100%)";
+    finalBtnScanner.innerHTML = `<i class="fas fa-barcode"></i> SCANNER`;
+  }
+  if (searchInput) searchInput.placeholder = "ค้นหาสินค้าในกล่อง (SKU...)";
+  if (typeof window.updateBoxWrapButtonState === "function")
+    window.updateBoxWrapButtonState(window.currentBoxItems.length);
+}
 
   const lobbyView =
     document.getElementById("transferOutLobbyView") ||
