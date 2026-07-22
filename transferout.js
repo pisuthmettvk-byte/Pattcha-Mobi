@@ -1439,21 +1439,23 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
     });
   }
 
-  // 📸 คืนร่างปุ่มตำนาน: ลูกระนาดสีเงินนูน + กล้องเทาเข้ม (ไม่มีตัวหนังสือ)
+  // 📸 คืนร่างปุ่มลูกระนาดสีเงิน + ไอคอนกล้องสีเทาเข้ม (ไม่มีตัวอักษร)
   const convexSilverBg =
-    "linear-gradient(to bottom, #ffffff 0%, #e6e6e6 40%, #cccccc 60%, #999999 100%)";
-  const cameraIconOnly = `<i class="fas fa-camera" style="color: #444; font-size: 32px; filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.8));"></i>`;
+    "linear-gradient(to bottom, #f8f9fa 0%, #d6d8db 40%, #adb5bd 100%)";
+  const convexSilverShadow =
+    "inset 0 2px 4px rgba(255,255,255,0.8), 0 3px 6px rgba(0,0,0,0.3)";
+  const cameraIconOnly = `<i class="fas fa-camera" style="color: #495057; font-size: 30px; filter: drop-shadow(1px 1px 0px rgba(255,255,255,0.7));"></i>`;
   const finalBtnScanner = document.getElementById("btnBoxScanner");
 
   if (forceClosed) {
+    // 🟡 โหมด Pending/Complete (ปิดกล่องแล้ว)
     if (btnWrap) btnWrap.style.display = "none";
     if (finalBtnScanner) {
       finalBtnScanner.style.width = "100%";
       finalBtnScanner.style.pointerEvents = "auto";
       finalBtnScanner.style.background = convexSilverBg;
+      finalBtnScanner.style.boxShadow = convexSilverShadow;
       finalBtnScanner.style.border = "1px solid #888";
-      finalBtnScanner.style.boxShadow =
-        "inset 0 3px 5px rgba(255,255,255,0.9), 0 4px 6px rgba(0,0,0,0.2)";
       finalBtnScanner.style.borderRadius = "12px";
       finalBtnScanner.style.display = "flex";
       finalBtnScanner.style.justifyContent = "center";
@@ -1463,14 +1465,14 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
     if (searchInput)
       searchInput.placeholder = "สแกน/ค้นหาสินค้าในกล่อง (Read Only)";
   } else {
+    // 🔴 โหมด Assign (ยังไม่ปิดกล่อง)
     if (btnWrap) btnWrap.style.display = "flex";
     if (finalBtnScanner) {
       finalBtnScanner.style.width = "48%";
       finalBtnScanner.style.pointerEvents = "auto";
       finalBtnScanner.style.background = convexSilverBg;
+      finalBtnScanner.style.boxShadow = convexSilverShadow;
       finalBtnScanner.style.border = "1px solid #888";
-      finalBtnScanner.style.boxShadow =
-        "inset 0 3px 5px rgba(255,255,255,0.9), 0 4px 6px rgba(0,0,0,0.2)";
       finalBtnScanner.style.borderRadius = "12px";
       finalBtnScanner.style.display = "flex";
       finalBtnScanner.style.justifyContent = "center";
@@ -1491,7 +1493,12 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
 
   if (typeof window.renderBoxContentArea === "function")
     window.renderBoxContentArea();
-};
+};;
+
+
+
+
+
 window.renderBoxContentArea = function () {
   const container = document.getElementById("boxContentArea");
   if (!container) return;
@@ -2525,47 +2532,98 @@ window.dispatchShipment = async function (shipmentNo) {
     .then((res) => res.json())
     .then((data) => {
       if (data.status === "success" || data.success) {
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-          const key = localStorage.key(i);
-          if (
-            key &&
-            (key.startsWith(`draft_box_${shipmentNo}_`) ||
-              key.startsWith(`status_box_${shipmentNo}_`))
-          ) {
-            localStorage.removeItem(key);
-          }
+        // 🚨 1. ปิด Firebase Radar ทิ้งไปเลย ป้องกันมันมารีโหลดหน้าจอและลบกล่องทิ้ง
+        if (typeof window.fbStopListening === "function")
+          window.fbStopListening();
+
+        let exportedList = JSON.parse(
+          localStorage.getItem("ghost_exported_list") || "[]",
+        );
+        if (!exportedList.includes(shipmentNo)) exportedList.push(shipmentNo);
+        localStorage.setItem(
+          "ghost_exported_list",
+          JSON.stringify(exportedList),
+        );
+
+        // 🚨 2. ถอดปุ่มและ Checkbox ที่ไม่เกี่ยวข้องออกให้หมด (ยึดอาวุธ)
+        const elementsToRemove = colElement.querySelectorAll(
+          ".master-checkbox, .child-checkbox, .fa-trash-alt, .btn-delete-box",
+        );
+        elementsToRemove.forEach((el) => el.remove());
+
+        // 🚨 3. เปลี่ยนคำที่หัวคอลัมน์จาก ASSIGN เป็น PENDING
+        const headerTitle = colElement.querySelector(
+          ".shipment-column-header span",
+        );
+        if (headerTitle && headerTitle.textContent.includes("ASSIGN")) {
+          headerTitle.textContent = "PENDING TASKS";
         }
-        colElement.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-        colElement.style.opacity = "0";
-        colElement.style.transform = "scale(0.9)";
-        setTimeout(() => {
-          colElement.remove();
-          if (typeof window.safeAlert === "function")
-            window.safeAlert(
-              "SUCCESS",
-              `ปล่อยรถชิปเมนต์ ${shipmentNo} สำเร็จ!`,
-              "success",
-            );
-          const remainingCols = document.querySelectorAll(".shipment-column");
-          if (remainingCols.length === 0) {
-            const btnBack = document.getElementById("btnBackToTaskHub");
-            if (btnBack) btnBack.click();
-          }
-        }, 500);
+
+        // 🚨 4. เปลี่ยนสีแถบหัวคอลัมน์ให้เป็นสีเหลือง (Pending)
+        const headerDiv = colElement.querySelector(".shipment-column-header");
+        if (headerDiv) {
+          headerDiv.style.background =
+            "linear-gradient(to bottom, #ffeb99 0%, #ffc107 50%, #d39e00 100%)";
+          headerDiv.style.color = "#333";
+        }
+
+        // 🚨 5. พากล่องแม่และลูกทั้งหมด ย้ายไปอยู่หน้า Pending ตรงๆ ทันที! (ไม่โหลดใหม่ ไม่พังแน่นอน)
+        const pendingContainer = document.getElementById("pendingContainer");
+        if (pendingContainer) {
+          colElement.style.opacity = "1";
+          pendingContainer.appendChild(colElement);
+        }
+
+        // อัปเดตสถานะในหน่วยความจำ
+        if (window.cachedTransferTasks) {
+          const exportedTask = window.cachedTransferTasks.find(
+            (t) => t.Shipment_No === shipmentNo,
+          );
+          if (exportedTask) exportedTask.Status = "Pending";
+        }
+
+        // เอาฉากโหลดออก
+        const spinner = document.getElementById("exportSpinnerOverlay");
+        if (spinner) spinner.remove();
+
+        window.updateExportButtonState();
+
+        if (typeof window.safeAlert === "function")
+          window.safeAlert(
+            "SUCCESS",
+            `EXPORT ชิปเมนต์ ${shipmentNo} ย้ายไป Pending แล้ว!`,
+            "success",
+          );
+        else alert(`EXPORT ชิปเมนต์ ${shipmentNo} สำเร็จ!`);
       } else {
+        const spinner = document.getElementById("exportSpinnerOverlay");
+        if (spinner) spinner.remove();
+        if (btnExport) {
+          btnExport.innerHTML = originalBtnHtml;
+          btnExport.style.pointerEvents = "auto";
+          btnExport.style.opacity = "1";
+        }
         if (typeof window.safeAlert === "function")
           window.safeAlert(
             "ERROR",
-            "เกิดข้อผิดพลาด: " + (data.message || "ไม่สามารถจัดส่งได้"),
+            "ข้อผิดพลาด: " + (data.message || "ไม่สามารถ Export ได้"),
             "error",
           );
       }
     })
     .catch((error) => {
+      const spinner = document.getElementById("exportSpinnerOverlay");
+      if (spinner) spinner.remove();
+      if (btnExport) {
+        btnExport.innerHTML = originalBtnHtml;
+        btnExport.style.pointerEvents = "auto";
+        btnExport.style.opacity = "1";
+      }
       if (typeof window.safeAlert === "function")
         window.safeAlert("ERROR", "ไม่สามารถติดต่อเซิร์ฟเวอร์ได้", "error");
     });
 };
+
 
 // ============================================================================
 // 🌐 GROUP 8.5: API DATA LOADERS (ฟังก์ชันที่หล่นหายไป)
