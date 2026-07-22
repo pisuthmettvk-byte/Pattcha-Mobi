@@ -2578,7 +2578,9 @@ window.dispatchShipment = async function (shipmentNo) {
 // ============================================================================
 
       document.addEventListener("DOMContentLoaded", () => {
-        const productMovementView = document.getElementById("productMovementView");
+        const productMovementView = document.getElementById(
+          "productMovementView",
+        );
         const viewTaskHub = document.getElementById("transferOutTaskHubView");
         const viewDest = document.getElementById("transferOutDestView");
         const viewLobby = document.getElementById("transferOutLobbyView");
@@ -2618,13 +2620,19 @@ window.dispatchShipment = async function (shipmentNo) {
 
         document
           .getElementById("btnCancelDest")
-          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+          ?.addEventListener("click", () =>
+            navigationTo(viewDest, viewTaskHub),
+          );
         document
           .getElementById("btnBackFromDest")
-          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+          ?.addEventListener("click", () =>
+            navigationTo(viewDest, viewTaskHub),
+          );
         document
           .getElementById("btnBackToDest")
-          ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
+          ?.addEventListener("click", () =>
+            navigationTo(viewLobby, viewTaskHub),
+          );
 
         document
           .getElementById("btnCancelFromLobby")
@@ -2673,7 +2681,9 @@ window.dispatchShipment = async function (shipmentNo) {
           });
         }
 
-        const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+        const btnAddShipmentTruck = document.getElementById(
+          "btnAddShipmentTruck",
+        );
         const shipmentBoxModal = document.getElementById("shipmentBoxModal");
         const selectType = document.getElementById("selectTransferType");
         const inputBoxNumber = document.getElementById("inputBoxNumber");
@@ -2698,9 +2708,13 @@ window.dispatchShipment = async function (shipmentNo) {
             const selectedBranchID =
               sessionStorage.getItem("selectedBranchID") || "KKN02";
             const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
-            const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+            const dateStr = new Date()
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "");
             let previewNum =
-              parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
+              parseInt(
+                localStorage.getItem("shipment_running_counter") || "0",
+              ) + 1;
             if (previewNum > 9999) previewNum = 1;
             const previewRunning = previewNum.toString().padStart(4, "0");
             inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
@@ -2719,10 +2733,13 @@ window.dispatchShipment = async function (shipmentNo) {
               else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
               return;
             }
-            const myBranch = String(localStorage.getItem("pattcha_branch") || "CK")
+            const myBranch = String(
+              localStorage.getItem("pattcha_branch") || "CK",
+            )
               .trim()
               .toUpperCase();
-            const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
+            const rawSelected =
+              sessionStorage.getItem("selectedBranchID") || "KKN02";
             const actualBranchID =
               typeof getRealBranchCode === "function"
                 ? getRealBranchCode(rawSelected)
@@ -2781,7 +2798,8 @@ window.dispatchShipment = async function (shipmentNo) {
                       "Assign",
                     );
                     taskHubAssignContainer.appendChild(newCard);
-                    const assignCountEl = document.getElementById("assignTaskCount");
+                    const assignCountEl =
+                      document.getElementById("assignTaskCount");
                     if (assignCountEl)
                       assignCountEl.innerHTML = `Task (${taskHubAssignContainer.querySelectorAll(".task-card").length}) <i class="fas fa-chevron-down"></i>`;
                   }
@@ -2804,8 +2822,10 @@ window.dispatchShipment = async function (shipmentNo) {
                 `.shipment-child-box[data-box-no="${window.currentActiveBoxNo}"]`,
               );
               if (childBoxEl) {
-                const isClosed = childBoxEl.getAttribute("data-status") === "Closed";
-                const currentItemsLength = (window.currentBoxItems || []).length;
+                const isClosed =
+                  childBoxEl.getAttribute("data-status") === "Closed";
+                const currentItemsLength = (window.currentBoxItems || [])
+                  .length;
 
                 if (!isClosed && currentItemsLength === 0) {
                   localStorage.removeItem(
@@ -2820,7 +2840,8 @@ window.dispatchShipment = async function (shipmentNo) {
                     totalManual += item.manualQty || 0;
                   });
                   const scanEl = childBoxEl.querySelector(".child-scan-qty");
-                  const manualEl = childBoxEl.querySelector(".child-manual-qty");
+                  const manualEl =
+                    childBoxEl.querySelector(".child-manual-qty");
                   if (scanEl) scanEl.textContent = totalScan;
                   if (manualEl) manualEl.textContent = totalManual;
                   localStorage.setItem(
@@ -2852,7 +2873,9 @@ window.dispatchShipment = async function (shipmentNo) {
           if (!colElement) return;
 
           if (e.target.classList.contains("master-checkbox")) {
-            const childBoxes = colElement.querySelectorAll(".shipment-child-box");
+            const childBoxes = colElement.querySelectorAll(
+              ".shipment-child-box",
+            );
             let hasUnfinishedBoxes = false;
             childBoxes.forEach((box) => {
               if (box.getAttribute("data-status") !== "Closed")
@@ -2891,7 +2914,8 @@ window.dispatchShipment = async function (shipmentNo) {
           const targetBtn = e.target.closest("#btnSubmitLobby");
           if (targetBtn) {
             if (targetBtn.disabled) return;
-            if (typeof window.processExport === "function") window.processExport();
+            if (typeof window.processExport === "function")
+              window.processExport();
           }
         });
 
@@ -2913,14 +2937,23 @@ window.dispatchShipment = async function (shipmentNo) {
           `;
         document.head.appendChild(style);
 
+        // 🔄 ระบบ Auto-Refresh (แก้ปัญหาปุ่ม WRAP ล็อก) พร้อมตัวหน่วงเวลา (Debounce) กันแอปกระตุก
         const boxView = document.getElementById("boxDetailsView");
         if (boxView) {
+          let refreshTimeout; // ตัวแปรสำหรับหน่วงเวลา
           const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
               if (mutation.attributeName === "class") {
                 const isHidden = boxView.classList.contains("hide");
-                if (!isHidden && typeof window.renderBoxContentArea === "function") {
-                  window.renderBoxContentArea();
+                if (
+                  !isHidden &&
+                  typeof window.renderBoxContentArea === "function"
+                ) {
+                  // 🛑 ถ้าสั่งงานซ้ำซ้อนกันใน 100ms ให้ยกเลิกคำสั่งเก่า แล้วทำแค่อันใหม่สุดอันเดียว
+                  clearTimeout(refreshTimeout);
+                  refreshTimeout = setTimeout(() => {
+                    window.renderBoxContentArea();
+                  }, 100);
                 }
               }
             });
