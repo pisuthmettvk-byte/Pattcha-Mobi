@@ -38,7 +38,7 @@ function injectTransferInSimulatorModal() {
   });
 }
 
-// 2. ฟังก์ชันดึงข้อมูลมาแสดงใน Modal
+
 window.openTransferInSimulator = async function () {
   const modal = document.getElementById("transferInSimulatorModal");
   const container = document.getElementById("simulatorListContainer");
@@ -46,9 +46,8 @@ window.openTransferInSimulator = async function () {
 
   modal.classList.remove("hide");
   container.innerHTML =
-    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังค้นหาชิปเมนต์ PENDING...</p></div>';
+    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังค้นหาสินค้าที่ส่งมาถึงคุณ...</p></div>';
 
-  // ตรวจสอบข้อมูล Cached
   if (!window.cachedTransferTasks) {
     if (typeof loadExistingTasks === "function") await loadExistingTasks();
   }
@@ -58,11 +57,11 @@ window.openTransferInSimulator = async function () {
     .trim()
     .toUpperCase();
 
-  // กรองเอาเฉพาะ PENDING ที่สาขาเราเป็นคนส่ง
+  // 🚨 ลอจิกใหม่: ดึงมาเฉพาะชิปเมนต์ที่ "สาขาเราเป็นปลายทาง (Destination)" เท่านั้น
   const pendingTasks = tasks.filter(
     (task) =>
       (task.Status || "").toUpperCase() === "PENDING" &&
-      String(task.Origin_Branch || "")
+      String(task.Destination || "")
         .trim()
         .toUpperCase() === myBranch,
   );
@@ -70,27 +69,27 @@ window.openTransferInSimulator = async function () {
   if (pendingTasks.length === 0) {
     container.innerHTML = `
             <div style="text-align:center; padding: 40px 10px; color: #888;">
-                <i class="fas fa-check-circle" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
-                <p style="margin:0; font-weight: bold;">ไม่มีชิปเมนต์ค้างส่ง</p>
-                <p style="font-size: 12px;">(ทุกรายการรับของเสร็จสิ้นหมดแล้ว)</p>
+                <i class="fas fa-box-open" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
+                <p style="margin:0; font-weight: bold;">ไม่มีชิปเมนต์ส่งมาถึงสาขาคุณ</p>
+                <p style="font-size: 12px; margin-top: 5px; color: #dc3545;">*หากคุณเป็นผู้ส่ง จะไม่สามารถกดรับของตัวเองได้</p>
             </div>`;
     return;
   }
 
-  // วาดการ์ดรายการชิปเมนต์
   let html = "";
   pendingTasks.forEach((task) => {
-    const destBranch = task.Destination || "-";
+    const originBranch = task.Origin_Branch || "-";
     html += `
-            <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #ffc107; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <div style="font-weight: bold; font-size: 14px; color: #0044ff;">${task.Shipment_No}</div>
                     <div style="font-size: 12px; color: #555; margin-top: 4px;">
-                        <i class="fas fa-truck" style="color: #dc3545;"></i> ปลายทาง: <b>${destBranch}</b>
+                        <i class="fas fa-store-alt" style="color: #666;"></i> ส่งมาจาก: <b>${originBranch}</b>
                     </div>
                 </div>
-                <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${destBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
-                    <i class="fas fa-bolt"></i> รับของ
+                <!-- ส่งตัวแปร myBranch ไปเป็นตัวยืนยันว่าสาขานี้คือคนกดรับจริง -->
+                <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
+                    <i class="fas fa-check-circle"></i> รับของ
                 </button>
             </div>
         `;
