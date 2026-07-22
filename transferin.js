@@ -38,7 +38,6 @@ function injectTransferInSimulatorModal() {
   });
 }
 
-
 window.openTransferInSimulator = async function () {
   const modal = document.getElementById("transferInSimulatorModal");
   const container = document.getElementById("simulatorListContainer");
@@ -46,10 +45,11 @@ window.openTransferInSimulator = async function () {
 
   modal.classList.remove("hide");
   container.innerHTML =
-    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังค้นหาสินค้าที่ส่งมาถึงคุณ...</p></div>';
+    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังค้นหาข้อมูลล่าสุดจากเซิร์ฟเวอร์...</p></div>';
 
-  if (!window.cachedTransferTasks) {
-    if (typeof loadExistingTasks === "function") await loadExistingTasks();
+  // 🛠️ แก้จุดที่ 1: บังคับโหลดข้อมูลใหม่จากเซิร์ฟเวอร์ทุกครั้งที่กดเปิด (ข้าม Cache)
+  if (typeof loadExistingTasks === "function") {
+    await loadExistingTasks();
   }
 
   const tasks = window.cachedTransferTasks || [];
@@ -57,14 +57,19 @@ window.openTransferInSimulator = async function () {
     .trim()
     .toUpperCase();
 
-  // 🚨 ลอจิกใหม่: ดึงมาเฉพาะชิปเมนต์ที่ "สาขาเราเป็นปลายทาง (Destination)" เท่านั้น
-  const pendingTasks = tasks.filter(
-    (task) =>
-      (task.Status || "").toUpperCase() === "PENDING" &&
-      String(task.Destination || "")
-        .trim()
-        .toUpperCase() === myBranch,
-  );
+  // 🛠️ แก้จุดที่ 2: ปรับลอจิกการจับคู่ชื่อสาขาให้ยืดหยุ่นขึ้น
+  const pendingTasks = tasks.filter((task) => {
+    const status = (task.Status || "").toUpperCase();
+    const dest = String(task.Destination || "")
+      .trim()
+      .toUpperCase();
+
+    // เช็กว่า 'ชื่อที่เราล็อกอิน' ตรงกับ 'ปลายทางที่ส่งมา' หรือเป็นส่วนหนึ่งของกันและกันหรือไม่
+    const isMatchBranch =
+      dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
+
+    return status === "PENDING" && isMatchBranch;
+  });
 
   if (pendingTasks.length === 0) {
     container.innerHTML = `
@@ -87,7 +92,6 @@ window.openTransferInSimulator = async function () {
                         <i class="fas fa-store-alt" style="color: #666;"></i> ส่งมาจาก: <b>${originBranch}</b>
                     </div>
                 </div>
-                <!-- ส่งตัวแปร myBranch ไปเป็นตัวยืนยันว่าสาขานี้คือคนกดรับจริง -->
                 <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
                     <i class="fas fa-check-circle"></i> รับของ
                 </button>
@@ -96,7 +100,6 @@ window.openTransferInSimulator = async function () {
   });
   container.innerHTML = html;
 };
-
 
 window.simulateReceiveShipment = async function (shipmentNo, receivingBranch) {
   const isConfirm = await window.safeConfirm(
@@ -153,7 +156,7 @@ window.simulateReceiveShipment = async function (shipmentNo, receivingBranch) {
         if (typeof window.triggerShipmentCompleteAlert === "function") {
           window.triggerShipmentCompleteAlert(shipmentNo);
         }
-        
+
         if (typeof loadExistingTasks === "function") await loadExistingTasks();
       } else {
         if (typeof window.safeAlert === "function")
