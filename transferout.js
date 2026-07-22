@@ -2484,397 +2484,470 @@ window.dispatchShipment = async function (shipmentNo) {
     });
 };
 
+
+// ============================================================================
+// 🌐 GROUP 8.5: API DATA LOADERS (ฟังก์ชันที่หล่นหายไป)
+// ============================================================================
+      async function loadBranchesIntoDropdown() {
+        const select = document.getElementById("selectDestination");
+        if (!select) return;
+        select.innerHTML = '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
+
+        try {
+          const response = await fetch(CONFIG.API_URL + "?action=get_branches");
+          const rawText = await response.text();
+          let branches;
+          try {
+            branches = JSON.parse(rawText);
+          } catch (e) {
+            console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
+            select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+            return;
+          }
+
+          if (Array.isArray(branches)) {
+            window.appBranches = branches;
+          }
+
+          const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
+          select.innerHTML = '<option value="" disabled selected>-- SELECT BRANCH --</option>';
+
+          if (Array.isArray(branches)) {
+            branches.forEach((branch) => {
+              const branchId = String(branch.id || branch.Branch_ID || branch.BranchID || "").trim().toUpperCase();
+              const branchName = branch.name || branch.Branch_Name || branch.BranchName || "";
+
+              if (branchId !== myBranch && branchId !== "") {
+                const option = document.createElement("option");
+                option.value = branchId;
+                option.textContent = `${branchId} - ${branchName}`;
+                select.appendChild(option);
+              }
+            });
+          }
+        } catch (error) {
+          console.error("🚨 Error fetch branches:", error);
+          if (select) select.innerHTML = '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+        }
+      }
+
+      function loadTransferTypesIntoDropdown() {
+        const selectType = document.getElementById("selectTransferType");
+        if (!selectType) return;
+        selectType.innerHTML = '<option value="">กำลังโหลดประเภท...</option>';
+
+        fetch(CONFIG.API_URL + "?action=get_transfer_types")
+          .then((res) => res.json())
+          .then((data) => {
+            selectType.innerHTML = '<option value="">กรุณาเลือกประเภท...</option>';
+            if (Array.isArray(data)) {
+              data.forEach((item) => {
+                const key = item.Type_Key || item.type_key || item.id || item.Key || "";
+                const desc = item.Description || item.description || item.name || item.Desc || "";
+                const option = document.createElement("option");
+                option.value = key;
+                option.textContent = `[${key}] ${desc}`;
+                selectType.appendChild(option);
+              });
+            }
+          })
+          .catch((err) => console.error("Dropdown Load Error:", err));
+      }
+
+
+
 // ============================================================================
 // 🎬 GROUP 9: MASTER INITIALIZER (EVENT LISTENERS)
 // ============================================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  const productMovementView = document.getElementById("productMovementView");
-  const viewTaskHub = document.getElementById("transferOutTaskHubView");
-  const viewDest = document.getElementById("transferOutDestView");
-  const viewLobby = document.getElementById("transferOutLobbyView");
+      document.addEventListener("DOMContentLoaded", () => {
+        const productMovementView = document.getElementById("productMovementView");
+        const viewTaskHub = document.getElementById("transferOutTaskHubView");
+        const viewDest = document.getElementById("transferOutDestView");
+        const viewLobby = document.getElementById("transferOutLobbyView");
 
-  loadExistingTasks();
-  loadBranchesIntoDropdown();
-  loadTransferTypesIntoDropdown();
+        loadExistingTasks();
+        loadBranchesIntoDropdown();
+        loadTransferTypesIntoDropdown();
 
-  document
-    .getElementById("btnTransferOut")
-    ?.addEventListener("click", () =>
-      navigationTo(productMovementView, viewTaskHub),
-    );
-  document
-    .getElementById("btnBackToMovement")
-    ?.addEventListener("click", () => {
-      if (typeof window.fbStopListening === "function")
-        window.fbStopListening();
-      navigationTo(viewTaskHub, productMovementView);
-    });
-  document
-    .getElementById("btnBackFromTaskHub")
-    ?.addEventListener("click", () =>
-      navigationTo(viewTaskHub, productMovementView),
-    );
-
-  const btnCreateNewTask =
-    document.getElementById("btnCreateNewTask") ||
-    document.getElementById("btnNewTask");
-  if (btnCreateNewTask) {
-    btnCreateNewTask.addEventListener("click", () => {
-      const selectDest = document.getElementById("selectDestination");
-      if (selectDest) selectDest.selectedIndex = 0;
-      navigationTo(viewTaskHub, viewDest);
-    });
-  }
-
-  document
-    .getElementById("btnCancelDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnBackFromDest")
-    ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
-  document
-    .getElementById("btnBackToDest")
-    ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
-
-  document
-    .getElementById("btnCancelFromLobby")
-    ?.addEventListener("click", () => {
-      if (typeof window.fbStopListening === "function")
-        window.fbStopListening();
-      hideLobbyView();
-      navigationTo(viewLobby, viewTaskHub);
-      if (typeof loadExistingTasks === "function") loadExistingTasks();
-    });
-
-  document
-    .getElementById("btnBackToTaskHub")
-    ?.addEventListener("click", hideLobbyView);
-
-  function hideLobbyView() {
-    const btnAddTruck = document.getElementById("btnAddShipmentTruck");
-    if (btnAddTruck) btnAddTruck.style.display = "none";
-  }
-
-  const btnSubmitDest =
-    document.getElementById("btnSubmitDest") ||
-    document.getElementById("btnNextDest");
-  if (btnSubmitDest) {
-    btnSubmitDest.addEventListener("click", async () => {
-      const destDropdown = document.getElementById("selectDestination");
-      if (!destDropdown || !destDropdown.value) {
-        if (typeof safeAlert === "function")
-          safeAlert(
-            "ข้อมูลไม่ครบถ้วน",
-            "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ",
-            "warning",
+        document
+          .getElementById("btnTransferOut")
+          ?.addEventListener("click", () =>
+            navigationTo(productMovementView, viewTaskHub),
           );
-        else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
-        return;
-      }
-      const branchID = destDropdown.value;
-      sessionStorage.setItem("selectedBranchID", branchID);
-      sessionStorage.setItem("lobbyMode", "ASSIGN");
-      if (typeof window.applyLobbyTheme === "function")
-        window.applyLobbyTheme();
-      navigationTo(viewDest, viewLobby);
-      if (typeof loadLobbyHeader === "function") loadLobbyHeader();
-      if (typeof renderLobbyTasks === "function")
-        await renderLobbyTasks(branchID);
-    });
-  }
-
-  const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
-  const shipmentBoxModal = document.getElementById("shipmentBoxModal");
-  const selectType = document.getElementById("selectTransferType");
-  const inputBoxNumber = document.getElementById("inputBoxNumber");
-  const btnConfirm = document.getElementById("btnConfirmBox");
-  const container = document.getElementById("lobbyContentContainer");
-  const emptyState = document.getElementById("lobbyEmptyState");
-
-  if (btnAddShipmentTruck && shipmentBoxModal) {
-    btnAddShipmentTruck.addEventListener("click", () => {
-      if (selectType) selectType.selectedIndex = 0;
-      if (inputBoxNumber) inputBoxNumber.value = "กรุณาเลือกประเภท...";
-      shipmentBoxModal.classList.remove("hide");
-    });
-  }
-
-  if (selectType && inputBoxNumber) {
-    selectType.addEventListener("change", () => {
-      if (!selectType.value) {
-        inputBoxNumber.value = "กรุณาเลือกประเภท...";
-        return;
-      }
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
-      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
-      const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
-      let previewNum =
-        parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
-      if (previewNum > 9999) previewNum = 1;
-      const previewRunning = previewNum.toString().padStart(4, "0");
-      inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
-    });
-  }
-
-  if (btnConfirm) {
-    btnConfirm.addEventListener("click", () => {
-      if (!selectType || !selectType.value) {
-        if (typeof safeAlert === "function")
-          safeAlert(
-            "ข้อมูลไม่ครบ",
-            "กรุณาเลือกประเภทการโอนก่อนครับ",
-            "warning",
+        document
+          .getElementById("btnBackToMovement")
+          ?.addEventListener("click", () => {
+            if (typeof window.fbStopListening === "function")
+              window.fbStopListening();
+            navigationTo(viewTaskHub, productMovementView);
+          });
+        document
+          .getElementById("btnBackFromTaskHub")
+          ?.addEventListener("click", () =>
+            navigationTo(viewTaskHub, productMovementView),
           );
-        else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
-        return;
-      }
-      const myBranch = String(localStorage.getItem("pattcha_branch") || "CK")
-        .trim()
-        .toUpperCase();
-      const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
-      const actualBranchID =
-        typeof getRealBranchCode === "function"
-          ? getRealBranchCode(rawSelected)
-          : rawSelected;
-      const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
-      const dateStr = new Date().toLocaleDateString("en-GB");
-      const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
 
-      if (typeof window.nukeShipmentCache === "function")
-        window.nukeShipmentCache(finalShipmentNo);
-      if (typeof window.fbNukeShipment === "function")
-        window.fbNukeShipment(finalShipmentNo);
+        const btnCreateNewTask =
+          document.getElementById("btnCreateNewTask") ||
+          document.getElementById("btnNewTask");
+        if (btnCreateNewTask) {
+          btnCreateNewTask.addEventListener("click", () => {
+            const selectDest = document.getElementById("selectDestination");
+            if (selectDest) selectDest.selectedIndex = 0;
+            navigationTo(viewTaskHub, viewDest);
+          });
+        }
 
-      const payload = {
-        Date: dateStr,
-        Shipment_No: finalShipmentNo,
-        Origin_Branch: myBranch,
-        Destination: targetDestination,
-        Branch: actualBranchID,
-        Origin_Type: "Store",
-        Status: "Assign",
-      };
-      btnConfirm.disabled = true;
-      btnConfirm.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+        document
+          .getElementById("btnCancelDest")
+          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+        document
+          .getElementById("btnBackFromDest")
+          ?.addEventListener("click", () => navigationTo(viewDest, viewTaskHub));
+        document
+          .getElementById("btnBackToDest")
+          ?.addEventListener("click", () => navigationTo(viewLobby, viewTaskHub));
 
-      fetch(CONFIG.API_URL + "?action=save_new_task", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      })
-        .then((res) => res.json())
-        .then((res) => {
-          if (res.status === "success") {
-            if (container && typeof createShipmentColumn === "function")
-              container.appendChild(
-                createShipmentColumn(finalShipmentNo, "Store"),
-              );
-            if (window.cachedTransferTasks)
-              window.cachedTransferTasks.push(payload);
-            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-            if (emptyState) emptyState.style.display = "none";
+        document
+          .getElementById("btnCancelFromLobby")
+          ?.addEventListener("click", () => {
+            if (typeof window.fbStopListening === "function")
+              window.fbStopListening();
+            hideLobbyView();
+            navigationTo(viewLobby, viewTaskHub);
+            if (typeof loadExistingTasks === "function") loadExistingTasks();
+          });
 
-            const taskHubAssignContainer =
-              document.getElementById("assignContainer");
-            if (
-              taskHubAssignContainer &&
-              typeof createTransferOutTaskCard === "function"
-            ) {
-              const newCard = createTransferOutTaskCard(
-                dateStr,
-                finalShipmentNo,
-                "Store",
-                targetDestination,
-                0,
-                0,
-                "Assign",
-              );
-              taskHubAssignContainer.appendChild(newCard);
-              const assignCountEl = document.getElementById("assignTaskCount");
-              if (assignCountEl)
-                assignCountEl.innerHTML = `Task (${taskHubAssignContainer.querySelectorAll(".task-card").length}) <i class="fas fa-chevron-down"></i>`;
+        document
+          .getElementById("btnBackToTaskHub")
+          ?.addEventListener("click", hideLobbyView);
+
+        function hideLobbyView() {
+          const btnAddTruck = document.getElementById("btnAddShipmentTruck");
+          if (btnAddTruck) btnAddTruck.style.display = "none";
+        }
+
+        const btnSubmitDest =
+          document.getElementById("btnSubmitDest") ||
+          document.getElementById("btnNextDest");
+        if (btnSubmitDest) {
+          btnSubmitDest.addEventListener("click", async () => {
+            const destDropdown = document.getElementById("selectDestination");
+            if (!destDropdown || !destDropdown.value) {
+              if (typeof safeAlert === "function")
+                safeAlert(
+                  "ข้อมูลไม่ครบถ้วน",
+                  "กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ",
+                  "warning",
+                );
+              else alert("กรุณาเลือกสาขาที่ต้องการสร้างงานก่อนครับ");
+              return;
             }
-          }
-        })
-        .finally(() => {
-          btnConfirm.disabled = false;
-          btnConfirm.innerHTML = "ยืนยันสร้าง";
-        });
-    });
-  }
+            const branchID = destDropdown.value;
+            sessionStorage.setItem("selectedBranchID", branchID);
+            sessionStorage.setItem("lobbyMode", "ASSIGN");
+            if (typeof window.applyLobbyTheme === "function")
+              window.applyLobbyTheme();
+            navigationTo(viewDest, viewLobby);
+            if (typeof loadLobbyHeader === "function") loadLobbyHeader();
+            if (typeof renderLobbyTasks === "function")
+              await renderLobbyTasks(branchID);
+          });
+        }
 
-  const btnBackFromBox = document.getElementById("btnBackFromBox");
-  if (btnBackFromBox) {
-    const newBtnBack = btnBackFromBox.cloneNode(true);
-    btnBackFromBox.parentNode.replaceChild(newBtnBack, btnBackFromBox);
-    newBtnBack.addEventListener("click", () => {
-      if (window.currentActiveShipment && window.currentActiveBoxNo) {
-        const childBoxEl = document.querySelector(
-          `.shipment-child-box[data-box-no="${window.currentActiveBoxNo}"]`,
-        );
-        if (childBoxEl) {
-          const isClosed = childBoxEl.getAttribute("data-status") === "Closed";
-          const currentItemsLength = (window.currentBoxItems || []).length;
+        const btnAddShipmentTruck = document.getElementById("btnAddShipmentTruck");
+        const shipmentBoxModal = document.getElementById("shipmentBoxModal");
+        const selectType = document.getElementById("selectTransferType");
+        const inputBoxNumber = document.getElementById("inputBoxNumber");
+        const btnConfirm = document.getElementById("btnConfirmBox");
+        const container = document.getElementById("lobbyContentContainer");
+        const emptyState = document.getElementById("lobbyEmptyState");
 
-          if (!isClosed && currentItemsLength === 0) {
-            localStorage.removeItem(
-              `draft_box_${window.currentActiveShipment}_${window.currentActiveBoxNo}`,
-            );
-            childBoxEl.remove();
-          } else if (!isClosed && currentItemsLength > 0) {
-            let totalScan = 0,
-              totalManual = 0;
-            window.currentBoxItems.forEach((item) => {
-              totalScan += item.scanQty || 0;
-              totalManual += item.manualQty || 0;
+        if (btnAddShipmentTruck && shipmentBoxModal) {
+          btnAddShipmentTruck.addEventListener("click", () => {
+            if (selectType) selectType.selectedIndex = 0;
+            if (inputBoxNumber) inputBoxNumber.value = "กรุณาเลือกประเภท...";
+            shipmentBoxModal.classList.remove("hide");
+          });
+        }
+
+        if (selectType && inputBoxNumber) {
+          selectType.addEventListener("change", () => {
+            if (!selectType.value) {
+              inputBoxNumber.value = "กรุณาเลือกประเภท...";
+              return;
+            }
+            const selectedBranchID =
+              sessionStorage.getItem("selectedBranchID") || "KKN02";
+            const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
+            const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+            let previewNum =
+              parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
+            if (previewNum > 9999) previewNum = 1;
+            const previewRunning = previewNum.toString().padStart(4, "0");
+            inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
+          });
+        }
+
+        if (btnConfirm) {
+          btnConfirm.addEventListener("click", () => {
+            if (!selectType || !selectType.value) {
+              if (typeof safeAlert === "function")
+                safeAlert(
+                  "ข้อมูลไม่ครบ",
+                  "กรุณาเลือกประเภทการโอนก่อนครับ",
+                  "warning",
+                );
+              else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+              return;
+            }
+            const myBranch = String(localStorage.getItem("pattcha_branch") || "CK")
+              .trim()
+              .toUpperCase();
+            const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
+            const actualBranchID =
+              typeof getRealBranchCode === "function"
+                ? getRealBranchCode(rawSelected)
+                : rawSelected;
+            const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
+            const dateStr = new Date().toLocaleDateString("en-GB");
+            const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
+
+            if (typeof window.nukeShipmentCache === "function")
+              window.nukeShipmentCache(finalShipmentNo);
+            if (typeof window.fbNukeShipment === "function")
+              window.fbNukeShipment(finalShipmentNo);
+
+            const payload = {
+              Date: dateStr,
+              Shipment_No: finalShipmentNo,
+              Origin_Branch: myBranch,
+              Destination: targetDestination,
+              Branch: actualBranchID,
+              Origin_Type: "Store",
+              Status: "Assign",
+            };
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML =
+              '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+            fetch(CONFIG.API_URL + "?action=save_new_task", {
+              method: "POST",
+              body: JSON.stringify(payload),
+            })
+              .then((res) => res.json())
+              .then((res) => {
+                if (res.status === "success") {
+                  if (container && typeof createShipmentColumn === "function")
+                    container.appendChild(
+                      createShipmentColumn(finalShipmentNo, "Store"),
+                    );
+                  if (window.cachedTransferTasks)
+                    window.cachedTransferTasks.push(payload);
+                  if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+                  if (emptyState) emptyState.style.display = "none";
+
+                  const taskHubAssignContainer =
+                    document.getElementById("assignContainer");
+                  if (
+                    taskHubAssignContainer &&
+                    typeof createTransferOutTaskCard === "function"
+                  ) {
+                    const newCard = createTransferOutTaskCard(
+                      dateStr,
+                      finalShipmentNo,
+                      "Store",
+                      targetDestination,
+                      0,
+                      0,
+                      "Assign",
+                    );
+                    taskHubAssignContainer.appendChild(newCard);
+                    const assignCountEl = document.getElementById("assignTaskCount");
+                    if (assignCountEl)
+                      assignCountEl.innerHTML = `Task (${taskHubAssignContainer.querySelectorAll(".task-card").length}) <i class="fas fa-chevron-down"></i>`;
+                  }
+                }
+              })
+              .finally(() => {
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = "ยืนยันสร้าง";
+              });
+          });
+        }
+
+        const btnBackFromBox = document.getElementById("btnBackFromBox");
+        if (btnBackFromBox) {
+          const newBtnBack = btnBackFromBox.cloneNode(true);
+          btnBackFromBox.parentNode.replaceChild(newBtnBack, btnBackFromBox);
+          newBtnBack.addEventListener("click", () => {
+            if (window.currentActiveShipment && window.currentActiveBoxNo) {
+              const childBoxEl = document.querySelector(
+                `.shipment-child-box[data-box-no="${window.currentActiveBoxNo}"]`,
+              );
+              if (childBoxEl) {
+                const isClosed = childBoxEl.getAttribute("data-status") === "Closed";
+                const currentItemsLength = (window.currentBoxItems || []).length;
+
+                if (!isClosed && currentItemsLength === 0) {
+                  localStorage.removeItem(
+                    `draft_box_${window.currentActiveShipment}_${window.currentActiveBoxNo}`,
+                  );
+                  childBoxEl.remove();
+                } else if (!isClosed && currentItemsLength > 0) {
+                  let totalScan = 0,
+                    totalManual = 0;
+                  window.currentBoxItems.forEach((item) => {
+                    totalScan += item.scanQty || 0;
+                    totalManual += item.manualQty || 0;
+                  });
+                  const scanEl = childBoxEl.querySelector(".child-scan-qty");
+                  const manualEl = childBoxEl.querySelector(".child-manual-qty");
+                  if (scanEl) scanEl.textContent = totalScan;
+                  if (manualEl) manualEl.textContent = totalManual;
+                  localStorage.setItem(
+                    `draft_box_${window.currentActiveShipment}_${window.currentActiveBoxNo}`,
+                    JSON.stringify(window.currentBoxItems),
+                  );
+                }
+              }
+              if (typeof window.updateMasterShipmentTotals === "function")
+                window.updateMasterShipmentTotals(window.currentActiveShipment);
+            }
+
+            document.getElementById("boxDetailsView").classList.add("hide");
+            const lobbyView =
+              document.getElementById("transferOutLobbyView") ||
+              document.getElementById("lobbyView");
+            if (lobbyView) lobbyView.classList.remove("hide");
+
+            window.currentScannerContext = "stock";
+            window.currentActiveShipment = null;
+            window.currentActiveBoxNo = null;
+            window.currentBoxElement = null;
+            window.currentBoxItems = [];
+          });
+        }
+
+        document.addEventListener("change", function (e) {
+          const colElement = e.target.closest(".shipment-column");
+          if (!colElement) return;
+
+          if (e.target.classList.contains("master-checkbox")) {
+            const childBoxes = colElement.querySelectorAll(".shipment-child-box");
+            let hasUnfinishedBoxes = false;
+            childBoxes.forEach((box) => {
+              if (box.getAttribute("data-status") !== "Closed")
+                hasUnfinishedBoxes = true;
             });
-            const scanEl = childBoxEl.querySelector(".child-scan-qty");
-            const manualEl = childBoxEl.querySelector(".child-manual-qty");
-            if (scanEl) scanEl.textContent = totalScan;
-            if (manualEl) manualEl.textContent = totalManual;
-            localStorage.setItem(
-              `draft_box_${window.currentActiveShipment}_${window.currentActiveBoxNo}`,
-              JSON.stringify(window.currentBoxItems),
-            );
+
+            if (hasUnfinishedBoxes || childBoxes.length === 0) {
+              e.target.checked = false;
+              if (typeof window.safeAlert === "function")
+                window.safeAlert(
+                  "UNFINISHED BOXES",
+                  "มีกล่องที่ยังไม่ได้ปิด หรือยังไม่มีกล่อง กรุณาจัดการให้เรียบร้อยก่อนครับ",
+                  "error",
+                );
+              return;
+            }
+            const isMasterChecked = e.target.checked;
+            colElement.querySelectorAll(".child-checkbox").forEach((cb) => {
+              if (!cb.disabled) cb.checked = isMasterChecked;
+            });
           }
-        }
-        if (typeof window.updateMasterShipmentTotals === "function")
-          window.updateMasterShipmentTotals(window.currentActiveShipment);
-      }
 
-      document.getElementById("boxDetailsView").classList.add("hide");
-      const lobbyView =
-        document.getElementById("transferOutLobbyView") ||
-        document.getElementById("lobbyView");
-      if (lobbyView) lobbyView.classList.remove("hide");
+          if (e.target.classList.contains("child-checkbox")) {
+            const masterCheckbox = colElement.querySelector(".master-checkbox");
+            let allChecked = true;
+            colElement.querySelectorAll(".child-checkbox").forEach((cb) => {
+              if (!cb.checked) allChecked = false;
+            });
+            if (masterCheckbox) masterCheckbox.checked = allChecked;
+          }
+          if (typeof window.updateExportButtonState === "function")
+            window.updateExportButtonState();
+        });
 
-      window.currentScannerContext = "stock";
-      window.currentActiveShipment = null;
-      window.currentActiveBoxNo = null;
-      window.currentBoxElement = null;
-      window.currentBoxItems = [];
-    });
-  }
+        document.addEventListener("click", function (e) {
+          const targetBtn = e.target.closest("#btnSubmitLobby");
+          if (targetBtn) {
+            if (targetBtn.disabled) return;
+            if (typeof window.processExport === "function") window.processExport();
+          }
+        });
 
-  document.addEventListener("change", function (e) {
-    const colElement = e.target.closest(".shipment-column");
-    if (!colElement) return;
-
-    if (e.target.classList.contains("master-checkbox")) {
-      const childBoxes = colElement.querySelectorAll(".shipment-child-box");
-      let hasUnfinishedBoxes = false;
-      childBoxes.forEach((box) => {
-        if (box.getAttribute("data-status") !== "Closed")
-          hasUnfinishedBoxes = true;
-      });
-
-      if (hasUnfinishedBoxes || childBoxes.length === 0) {
-        e.target.checked = false;
-        if (typeof window.safeAlert === "function")
-          window.safeAlert(
-            "UNFINISHED BOXES",
-            "มีกล่องที่ยังไม่ได้ปิด หรือยังไม่มีกล่อง กรุณาจัดการให้เรียบร้อยก่อนครับ",
-            "error",
+        const boxSearchInputElem = document.getElementById("boxSearchInput");
+        if (boxSearchInputElem) {
+          boxSearchInputElem.addEventListener(
+            "input",
+            debounceSearch((e) => {
+              if (typeof window.handleBoxSearch === "function")
+                window.handleBoxSearch();
+            }, 250),
           );
-        return;
-      }
-      const isMasterChecked = e.target.checked;
-      colElement.querySelectorAll(".child-checkbox").forEach((cb) => {
-        if (!cb.disabled) cb.checked = isMasterChecked;
-      });
-    }
+        }
 
-    if (e.target.classList.contains("child-checkbox")) {
-      const masterCheckbox = colElement.querySelector(".master-checkbox");
-      let allChecked = true;
-      colElement.querySelectorAll(".child-checkbox").forEach((cb) => {
-        if (!cb.checked) allChecked = false;
-      });
-      if (masterCheckbox) masterCheckbox.checked = allChecked;
-    }
-    if (typeof window.updateExportButtonState === "function")
-      window.updateExportButtonState();
-  });
+        const style = document.createElement("style");
+        style.innerHTML = `
+              #productDetailModal { z-index: 100005 !important; }
+              #customAlertOverlay { z-index: 100010 !important; }
+          `;
+        document.head.appendChild(style);
 
-  document.addEventListener("click", function (e) {
-    const targetBtn = e.target.closest("#btnSubmitLobby");
-    if (targetBtn) {
-      if (targetBtn.disabled) return;
-      if (typeof window.processExport === "function") window.processExport();
-    }
-  });
-
-  const boxSearchInputElem = document.getElementById("boxSearchInput");
-  if (boxSearchInputElem) {
-    boxSearchInputElem.addEventListener(
-      "input",
-      debounceSearch((e) => {
-        if (typeof window.handleBoxSearch === "function")
-          window.handleBoxSearch();
-      }, 250),
-    );
-  }
-
-  const style = document.createElement("style");
-  style.innerHTML = `
-        #productDetailModal { z-index: 100005 !important; }
-        #customAlertOverlay { z-index: 100010 !important; }
-    `;
-  document.head.appendChild(style);
-
-  const boxView = document.getElementById("boxDetailsView");
-  if (boxView) {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === "class") {
-          const isHidden = boxView.classList.contains("hide");
-          if (!isHidden && typeof window.renderBoxContentArea === "function") {
-            window.renderBoxContentArea();
-          }
+        const boxView = document.getElementById("boxDetailsView");
+        if (boxView) {
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.attributeName === "class") {
+                const isHidden = boxView.classList.contains("hide");
+                if (!isHidden && typeof window.renderBoxContentArea === "function") {
+                  window.renderBoxContentArea();
+                }
+              }
+            });
+          });
+          observer.observe(boxView, { attributes: true });
         }
       });
-    });
-    observer.observe(boxView, { attributes: true });
-  }
-});
+
 
 // ============================================================================
 // 🧪 GROUP 10: DEVELOPER TOOLS
 // ============================================================================
-window.mockComplete = function (shipmentNo) {
-  if (!window.cachedTransferTasks)
-    return console.error("❌ ไม่พบข้อมูลใน Cache");
-  let task = window.cachedTransferTasks.find(
-    (t) => t.Shipment_No === shipmentNo,
-  );
-  if (task) {
-    task.Status = "Complete";
-    const cards = document.querySelectorAll(".task-card");
-    cards.forEach((c) => {
-      if (c.innerHTML.includes(shipmentNo)) {
-        document.getElementById("completeContainer").appendChild(c);
-        c.style.borderLeft = "6px solid #28a745";
-        const statusSpan = c.querySelector("span[style*='uppercase']");
-        if (statusSpan) {
-          statusSpan.textContent = "COMPLETE";
-          statusSpan.style.background = "#28a745";
+      window.mockComplete = function (shipmentNo) {
+        if (!window.cachedTransferTasks)
+          return console.error("❌ ไม่พบข้อมูลใน Cache");
+        let task = window.cachedTransferTasks.find(
+          (t) => t.Shipment_No === shipmentNo,
+        );
+        if (task) {
+          task.Status = "Complete";
+          const cards = document.querySelectorAll(".task-card");
+          cards.forEach((c) => {
+            if (c.innerHTML.includes(shipmentNo)) {
+              document.getElementById("completeContainer").appendChild(c);
+              c.style.borderLeft = "6px solid #28a745";
+              const statusSpan = c.querySelector("span[style*='uppercase']");
+              if (statusSpan) {
+                statusSpan.textContent = "COMPLETE";
+                statusSpan.style.background = "#28a745";
+              }
+            }
+          });
+          ["assign", "pending", "complete"].forEach((key) => {
+            const el = document.getElementById(key + "TaskCount");
+            const count = document
+              .getElementById(key + "Container")
+              .querySelectorAll(".task-card").length;
+            if (el)
+              el.innerHTML = `Task (${count}) <i class="fas fa-chevron-down"></i>`;
+          });
+          console.log(
+            `✅ [Simulator] เสกชิปเมนต์ ${shipmentNo} เป็น COMPLETE เรียบร้อย!`,
+          );
+        } else {
+          console.error(`❌ ไม่พบชิปเมนต์หมายเลข ${shipmentNo}`);
         }
-      }
-    });
-    ["assign", "pending", "complete"].forEach((key) => {
-      const el = document.getElementById(key + "TaskCount");
-      const count = document
-        .getElementById(key + "Container")
-        .querySelectorAll(".task-card").length;
-      if (el)
-        el.innerHTML = `Task (${count}) <i class="fas fa-chevron-down"></i>`;
-    });
-    console.log(
-      `✅ [Simulator] เสกชิปเมนต์ ${shipmentNo} เป็น COMPLETE เรียบร้อย!`,
-    );
-  } else {
-    console.error(`❌ ไม่พบชิปเมนต์หมายเลข ${shipmentNo}`);
-  }
-};
+      };
