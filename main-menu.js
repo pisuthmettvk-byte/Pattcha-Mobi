@@ -202,14 +202,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // แอนิเมชันตอนกดย้อนกลับหน้าหลัก
+// แอนิเมชันตอนกดย้อนกลับหน้าหลัก (แทนที่ด้วยอันนี้ครับ)
   if (btnBackToMain) {
     btnBackToMain.addEventListener("click", () => {
       productMovementView?.classList.add("hide");
-      mainMenuView?.classList.remove("hide");
-      sharedHeader?.classList.remove("hide");
+
+      if (sharedHeader) {
+        sharedHeader.classList.remove("hide", "header-center", "anim-shrink-fade");
+        sharedHeader.classList.add("header-top");
+        sharedHeader.style.opacity = "1";
+      }
+
       document.getElementById("btnMenuStock")?.classList.remove("anim-shrink-fade");
       btnMenuMovement?.classList.remove("anim-move-up");
+
+      if (mainMenuView) {
+        mainMenuView.classList.remove("hide", "fade-out");
+        mainMenuView.style.opacity = "0";
+        setTimeout(() => {
+          mainMenuView.style.transition = "opacity 0.3s ease-in-out";
+          mainMenuView.style.opacity = "1";
+          mainMenuView.classList.add("fade-in");
+        }, 10);
+      }
     });
   }
-});
