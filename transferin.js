@@ -52,10 +52,23 @@ window.openTransferInSimulator = async function () {
     .toUpperCase();
 
   try {
-    // 🚀 ยิงขอข้อมูลสดจากหลังบ้านโดยตรง (Bypass Cache)
-    const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
+    const url = CONFIG.API_URL + "?action=get_tasks";
+
+    // 🚀 ยิงขอข้อมูลสดแบบมี Header ป้องกันการบล็อก
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const tasks = await response.json();
 
+    // 🟢 กรองชิปเมนต์
     const pendingTasks = tasks.filter((task) => {
       const status = (task.Status || "").trim().toUpperCase();
       const dest = String(task.Destination || "")
@@ -65,16 +78,25 @@ window.openTransferInSimulator = async function () {
       if (!dest || !myBranch) return false;
       const isMatchBranch =
         dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
-
       return status === "PENDING" && isMatchBranch;
     });
 
     if (pendingTasks.length === 0) {
+      // หน้าจอ X-Ray ถ้ายังไม่เจอ
+      let debugHtml = "";
+      if (tasks.length > 0) {
+        debugHtml = `<div style="text-align:left; font-size:11px; background:#f8f9fa; padding:10px; margin-top:15px; border-radius:5px; border: 1px dashed #ccc; overflow-x:auto;">
+            <b>🔍 [โหมดตรวจสอบ] ข้อมูลทั้งหมดที่มีในชีตตอนนี้:</b><br>
+            ${tasks.map((t) => `<span style="color:#0044ff">Shipment:</span> ${t.Shipment_No} | <span style="color:#e83e8c">Dest:</span> ${t.Destination} | <span style="color:#28a745">Status:</span> ${t.Status}`).join("<br>")}
+         </div>`;
+      }
+
       container.innerHTML = `
           <div style="text-align:center; padding: 40px 10px; color: #888;">
               <i class="fas fa-box-open" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
               <p style="margin:0; font-weight: bold;">ไม่มีชิปเมนต์ส่งมาถึงสาขาคุณ</p>
               <p style="font-size: 12px; margin-top: 5px; color: #dc3545;">*แน่ใจนะว่าปลายทางคือ ${myBranch}</p>
+              ${debugHtml}
           </div>`;
       return;
     }
@@ -104,6 +126,7 @@ window.openTransferInSimulator = async function () {
      </div>`;
   }
 };
+
 
 window.simulateReceiveShipment = async function (shipmentNo, receivingBranch) {
   const isConfirm = await window.safeConfirm(
