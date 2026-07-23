@@ -2677,52 +2677,60 @@ async function loadBranchesIntoDropdown() {
   select.innerHTML =
     '<option value="" disabled selected>-- กำลังโหลดสาขา... --</option>';
 
+  let branches;
   try {
     const response = await fetch(CONFIG.API_URL + "?action=get_branches");
     const rawText = await response.text();
-    let branches;
+    
     try {
       branches = JSON.parse(rawText);
     } catch (e) {
       console.error("🚨 API ดรอปดาวน์สาขาพัง! (ไม่ใช่ JSON):", rawText);
-      select.innerHTML =
-        '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
-      return;
-    }
-
-    if (Array.isArray(branches)) {
-      window.appBranches = branches;
-    }
-
-    const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-      .trim()
-      .toUpperCase();
-    select.innerHTML =
-      '<option value="" disabled selected>-- SELECT BRANCH --</option>';
-
-    if (Array.isArray(branches)) {
-      branches.forEach((branch) => {
-        const branchId = String(
-          branch.id || branch.Branch_ID || branch.BranchID || "",
-        )
-          .trim()
-          .toUpperCase();
-        const branchName =
-          branch.name || branch.Branch_Name || branch.BranchName || "";
-
-        if (branchId !== myBranch && branchId !== "") {
-          const option = document.createElement("option");
-          option.value = branchId;
-          option.textContent = `${branchId} - ${branchName}`;
-          select.appendChild(option);
-        }
-      });
+      // 🌟 [Fallback 1]: ถ้า API ตอบกลับมาไม่ใช่ JSON ให้ใช้ข้อมูลสำรองฉุกเฉิน
+      branches = [
+        { Branch_ID: "CKC01", Branch_Name: "Central Korat" },
+        { Branch_ID: "KKN02", Branch_Name: "Khon Kaen" },
+        { Branch_ID: "ICS03", Branch_Name: "ICS Mall" }
+      ];
     }
   } catch (error) {
     console.error("🚨 Error fetch branches:", error);
-    if (select)
-      select.innerHTML =
-        '<option value="" disabled selected>-- โหลดล้มเหลว --</option>';
+    // 🌟 [Fallback 2]: ถ้าเน็ตหลุดหรือเรียก Fetch ไม่ผ่านเลย ให้ใช้ข้อมูลสำรองฉุกเฉินเช่นกัน
+    branches = [
+      { Branch_ID: "CKC01", Branch_Name: "Central Korat" },
+      { Branch_ID: "KKN02", Branch_Name: "Khon Kaen" },
+      { Branch_ID: "ICS03", Branch_Name: "ICS Mall" }
+    ];
+  }
+
+  // 🔄 กระบวนการเรนเดอร์ลง Dropdown (ใช้โครงสร้างเดิมของเจเลอร์เป๊ะๆ)
+  if (Array.isArray(branches)) {
+    window.appBranches = branches;
+  }
+
+  const myBranch = String(localStorage.getItem("pattcha_branch") || "")
+    .trim()
+    .toUpperCase();
+  select.innerHTML =
+    '<option value="" disabled selected>-- SELECT BRANCH --</option>';
+
+  if (Array.isArray(branches)) {
+    branches.forEach((branch) => {
+      const branchId = String(
+        branch.id || branch.Branch_ID || branch.BranchID || "",
+      )
+        .trim()
+        .toUpperCase();
+      const branchName =
+        branch.name || branch.Branch_Name || branch.BranchName || "";
+
+      if (branchId !== myBranch && branchId !== "") {
+        const option = document.createElement("option");
+        option.value = branchId;
+        option.textContent = `${branchId} - ${branchName}`;
+        select.appendChild(option);
+      }
+    });
   }
 }
 
@@ -2752,8 +2760,16 @@ function loadTransferTypesIntoDropdown() {
         });
       }
     })
-    .catch((err) => console.error("Dropdown Load Error:", err));
+    .catch((err) => {
+      console.error("Dropdown Load Error:", err);
+      // 🌟 เพิ่มตัวช่วยกันตายให้ Dropdown ประเภทการโอนด้วยเช่นกัน
+      selectType.innerHTML = `
+        <option value="">กรุณาเลือกประเภท...</option>
+        <option value="TS">[TS] โอนสินค้าระหว่างสาขา</option>
+      `;
+    });
 }
+
 
 // ============================================================================
 // 🎬 GROUP 9: MASTER INITIALIZER (EVENT LISTENERS)
