@@ -143,7 +143,7 @@ window.obfuscateBranchCode = function (code) {
 //===============
 // [System Navigation Controller] START
 
-//📍 [ลอจิกซ่อน-แสดงหน้าจอพร้อม Animation]
+//📍 [ลอจิกซ่อน-แสดงหน้าจอพร้อม Animation + อัปเกรดคืนชีพ Header/โลโก้/กระดิ่งอัตโนมัติ]
 window.navigationTo = function (hideView, showView) {
   if (hideView) {
     hideView.style.opacity = "0";
@@ -156,14 +156,28 @@ window.navigationTo = function (hideView, showView) {
           showView.style.transition = "opacity 0.15s ease-in-out";
           showView.style.opacity = "1";
         }, 10);
+
+        // 🌟 [จุดอัปเกรด]: ตรวจสอบอัตโนมัติว่า ถ้ากำลังจะกลับมาหน้า Main Menu หรือ Task Hub
+        // ให้บังคับเปิด Header (โลโก้ + กระดิ่ง 🔔) กลับมาแสดงผลเหมือนเดิมทันทีทุกครั้ง!
+        const sharedHeader = document.getElementById("sharedHeader");
+        const mainMenuView = document.getElementById("mainMenuView");
+        
+        if (sharedHeader) {
+            // ถ้าหน้าจอเป้าหมายคือหน้า Main Menu ให้ดัน Header ไปไว้ข้างบนสุด
+            if (showView === mainMenuView || showView.id === "mainMenuView") {
+                sharedHeader.classList.remove("hide");
+                sharedHeader.classList.remove("header-center");
+                sharedHeader.classList.add("header-top");
+            } 
+            // ถ้าเป็นหน้าจอเมนูย่อยอื่นๆ ที่ไม่ใช่หน้า Login ให้โชว์ Header ไว้ตามปกติ
+            else if (showView.id !== "loginView") {
+                sharedHeader.classList.remove("hide");
+            }
+        }
       }
     }, 150);
   }
 };
-
-
-
-
 
 // ไปวางในไฟล์ เมนูกลาง (menu.js หรือ app.js)
 document.addEventListener("DOMContentLoaded", () => {
