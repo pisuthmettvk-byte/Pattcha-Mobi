@@ -52,24 +52,28 @@ window.openTransferInSimulator = async function () {
     await loadExistingTasks();
   }
 
-  const tasks = window.cachedTransferTasks || [];
-  const myBranch = String(localStorage.getItem("pattcha_branch") || "")
+const tasks = window.cachedTransferTasks || [];
+const myBranch = String(localStorage.getItem("pattcha_branch") || "")
+  .trim()
+  .toUpperCase();
+
+// 🛠️ ลอจิกคัดกรองที่ปรับปรุงใหม่ (ปลอดภัยและรัดกุมขั้นสุด)
+const pendingTasks = tasks.filter((task) => {
+  const status = (task.Status || "").trim().toUpperCase();
+  const dest = String(task.Destination || "")
     .trim()
     .toUpperCase();
 
-  // 🛠️ แก้จุดที่ 2: ปรับลอจิกการจับคู่ชื่อสาขาให้ยืดหยุ่นขึ้น
-  const pendingTasks = tasks.filter((task) => {
-    const status = (task.Status || "").toUpperCase();
-    const dest = String(task.Destination || "")
-      .trim()
-      .toUpperCase();
+  // 1. ป้องกันบั๊กกรณีสาขาปลายทางหรือสาขาต้นทางไม่มีข้อมูล (ค่าว่าง)
+  if (!dest || !myBranch) return false;
 
-    // เช็กว่า 'ชื่อที่เราล็อกอิน' ตรงกับ 'ปลายทางที่ส่งมา' หรือเป็นส่วนหนึ่งของกันและกันหรือไม่
-    const isMatchBranch =
-      dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
+  // 2. เช็กว่า 'ชื่อที่เราล็อกอิน' ตรงกับ 'ปลายทางที่ส่งมา' แบบยืดหยุ่น
+  const isMatchBranch =
+    dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
 
-    return status === "PENDING" && isMatchBranch;
-  });
+  // 3. คืนค่าเฉพาะงานที่ PENDING และชื่อสาขาแมตช์กันเท่านั้น
+  return status === "PENDING" && isMatchBranch;
+});
 
   if (pendingTasks.length === 0) {
     container.innerHTML = `
