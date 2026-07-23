@@ -179,32 +179,31 @@ window.navigationTo = function (hideView, showView) {
   }
 };
 
-// ไปวางในไฟล์ เมนูกลาง (menu.js หรือ app.js)
 document.addEventListener("DOMContentLoaded", () => {
   const mainMenuView = document.getElementById("mainMenuView");
   const productMovementView = document.getElementById("productMovementView");
   const sharedHeader = document.getElementById("sharedHeader");
 
-  const btnMenuMovement = document.getElementById("btnMenuMovement");
-  const btnBackToMain = document.getElementById("btnBackToMain");
+  // 🌟 ใช้ Event Delegation ดักคลิกจากเอกสาร ป้องกันปุ่มหลุดหรือกดไม่ติดหลังสลับหน้าจอ
+  document.addEventListener("click", (e) => {
+    const btnMovement = e.target.closest("#btnMenuMovement");
+    const btnBack = e.target.closest("#btnBackToMain");
 
-  // แอนิเมชันตอนกดเข้าเมนู Movement
-  if (btnMenuMovement) {
-    btnMenuMovement.addEventListener("click", () => {
+    // 1. เมื่องกดปุ่ม PRODUCT MOVEMENT
+    if (btnMovement) {
       document.getElementById("btnMenuStock")?.classList.add("anim-shrink-fade");
       sharedHeader?.classList.add("anim-shrink-fade");
-      btnMenuMovement.classList.add("anim-move-up");
+      btnMovement.classList.add("anim-move-up");
+      
       setTimeout(() => {
         mainMenuView?.classList.add("hide");
         sharedHeader?.classList.add("hide");
         productMovementView?.classList.remove("hide");
       }, 400);
-    });
-  }
+    }
 
-// แอนิเมชันตอนกดย้อนกลับหน้าหลัก (แทนที่ด้วยอันนี้ครับ)
-  if (btnBackToMain) {
-    btnBackToMain.addEventListener("click", () => {
+    // 2. เมื่องกดปุ่มย้อนกลับ (BACK TO MAIN MENU) พร้อมแอนิเมชันเปิดตัวสุดสมูท
+    if (btnBack) {
       productMovementView?.classList.add("hide");
 
       if (sharedHeader) {
@@ -214,7 +213,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       document.getElementById("btnMenuStock")?.classList.remove("anim-shrink-fade");
-      btnMenuMovement?.classList.remove("anim-move-up");
+      const btnMenuMovementEl = document.getElementById("btnMenuMovement");
+      if (btnMenuMovementEl) btnMenuMovementEl.classList.remove("anim-move-up");
 
       if (mainMenuView) {
         mainMenuView.classList.remove("hide", "fade-out");
@@ -225,5 +225,6 @@ document.addEventListener("DOMContentLoaded", () => {
           mainMenuView.classList.add("fade-in");
         }, 10);
       }
-    });
-  }
+    }
+  });
+});
