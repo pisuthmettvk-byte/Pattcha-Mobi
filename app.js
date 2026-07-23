@@ -257,7 +257,6 @@ function initEventListeners() {
 // ==========================================
 // MAIN FUNCTIONALITIES
 // ==========================================
-
 async function submitLogin() {
   const inputLogin = document.getElementById("branchCodeInput");
   if (!inputLogin) return;
@@ -279,6 +278,11 @@ async function submitLogin() {
       localStorage.setItem("pattcha_branch", code);
       localProductDatabase = res.products || [];
       currentBranch = res.branch;
+
+      // 📡 [โค้ดใหม่]: เปิดหูรับสัญญาณ Firebase ทันทีที่ล็อกอินเสร็จ
+      if (typeof window.startFirebaseListener === "function") {
+        window.startFirebaseListener();
+      }
 
       const sharedHeader = document.getElementById("sharedHeader");
       const loginView = document.getElementById("loginView");
@@ -313,6 +317,7 @@ async function submitLogin() {
     btn.disabled = false;
   }
 }
+
 
 async function logoutBranch() {
   const isConfirm = await customConfirm(
@@ -829,3 +834,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
+
+

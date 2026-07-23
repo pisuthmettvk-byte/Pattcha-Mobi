@@ -38,51 +38,38 @@ function injectTransferInSimulatorModal() {
   });
 }
 
+
+// ==========================================
+// 📦 1. ฟังก์ชันวาดหน้าจอแสดงงานให้สาขาปลายทาง
+// ==========================================
 window.openTransferInSimulator = async function () {
   const modal = document.getElementById("transferInSimulatorModal");
   const container = document.getElementById("simulatorListContainer");
   if (!modal || !container) return;
 
   modal.classList.remove("hide");
-  container.innerHTML =
-    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังดึงข้อมูล...</p></div>';
+  container.innerHTML = '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังดึงข้อมูล...</p></div>';
 
   if (typeof loadExistingTasks === "function") {
     await loadExistingTasks();
   }
 
   const tasks = window.cachedTransferTasks || [];
-
-  // ดึงชื่อสาขา KKN02
-  let myBranch = String(localStorage.getItem("pattcha_branch") || "")
-    .trim()
-    .toUpperCase();
+  let myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
 
   const pendingTasks = tasks.filter((task) => {
-    const status = String(task.Status || "")
-      .trim()
-      .toUpperCase();
-    const dest = String(task.Destination || "")
-      .trim()
-      .toUpperCase();
-    const branchCol = String(task.Branch || "")
-      .trim()
-      .toUpperCase(); // 💡 สั่งให้อ่านคอลัมน์ Branch ด้วย!
+    const status = String(task.Status || "").trim().toUpperCase();
+    const dest = String(task.Destination || "").trim().toUpperCase();
+    const branchCol = String(task.Branch || "").trim().toUpperCase(); // 💡 อ่านคอลัมน์ Branch (แก้ตาบอด)
 
     if (!myBranch) return false;
-
-    // 💡 เช็คว่าตรงกับ Destination "หรือ" ตรงกับคอลัมน์ Branch อย่างใดอย่างหนึ่ง
-    const isMatchBranch =
-      dest === myBranch ||
-      branchCol === myBranch ||
-      myBranch.includes(dest) ||
-      dest.includes(myBranch) ||
-      myBranch.includes(branchCol);
-
+    
+    // เช็คว่าตรงกับคอลัมน์ Destination หรือคอลัมน์ Branch ก็ให้ดึงมาแสดงหมด
+    const isMatchBranch = dest === myBranch || branchCol === myBranch || myBranch.includes(dest) || dest.includes(myBranch) || myBranch.includes(branchCol);
+    
     return status === "PENDING" && isMatchBranch;
   });
 
-  // ถ้าไม่มีงานของสาขานี้เลย
   if (pendingTasks.length === 0) {
     container.innerHTML = `
         <div style="text-align:center; padding: 40px 10px; color: #888;">
@@ -93,19 +80,20 @@ window.openTransferInSimulator = async function () {
     return;
   }
 
-  // 🟢 วาดการ์ดและปุ่ม "รับของ" ให้เฉพาะสาขา KKN02
+  // 🟢 วาดการ์ดและปุ่ม "รับของ"
   let html = "";
   pendingTasks.forEach((task) => {
     const originBranch = task.Origin_Branch || "-";
     html += `
-        <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div id="transfer-card-${task.Shipment_No}" style="background: white; border: 1px solid #ddd; border-left: 5px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <div style="font-weight: bold; font-size: 14px; color: #0044ff;">${task.Shipment_No}</div>
                 <div style="font-size: 12px; color: #555; margin-top: 4px;">
                     <i class="fas fa-store-alt" style="color: #666;"></i> ส่งมาจาก: <b>${originBranch}</b>
                 </div>
             </div>
-            <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
+            <!-- ปุ่มกดส่งรหัสคนส่ง (originBranch) เข้าไปในฟังก์ชันด้วย -->
+            <button id="btn-receive-${task.Shipment_No}" onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}', '${originBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
                 <i class="fas fa-check-circle"></i> รับของ
             </button>
         </div>
@@ -114,83 +102,59 @@ window.openTransferInSimulator = async function () {
   container.innerHTML = html;
 };
 
+// ==========================================
+// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์
+// ==========================================
+window.simulateReceiveShipment = async function(shipmentNo, myBranch, originBranch) {
+    const btn = document.getElementById(`btn-receive-${shipmentNo}`);
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> รอสักครู่...';
+    }
 
-window.simulateReceiveShipment = async function (shipmentNo, receivingBranch) {
-  const isConfirm = await window.safeConfirm(
-    "ยืนยันรับสินค้าเข้าคลัง?",
-    `ชิปเมนต์หมายเลข:\n${shipmentNo}\n\nคุณกำลังกดยืนยันรับของเข้าสาขา [${receivingBranch}] ใช่หรือไม่?`,
-    "question",
-  );
+    try {
+        // (1) ยิง API ไปหา Google Workspace เพื่อแจ้งว่ารับของแล้ว + ตัดสต๊อก
+        const response = await fetch(`${CONFIG.API_URL}?action=receive_shipment`, {
+            method: 'POST',
+            body: JSON.stringify({
+                shipmentNo: shipmentNo,
+                branch: myBranch
+            })
+        });
+        const data = await response.json();
 
-  if (!isConfirm) return;
-
-  const loadingOverlay = document.createElement("div");
-  loadingOverlay.style.cssText =
-    "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100005; display: flex; justify-content: center; align-items: center; color: white; font-size: 18px; font-weight: bold; backdrop-filter: blur(3px);";
-  loadingOverlay.innerHTML =
-    "<i class='fas fa-satellite-dish fa-spin' style='margin-right: 10px;'></i> กำลังส่งสัญญาณรับของ...";
-  document.body.appendChild(loadingOverlay);
-
-  const payload = {
-    shipmentNo: shipmentNo,
-    status: "Complete",
-    branch: receivingBranch,
-  };
-
-  fetch(CONFIG.API_URL + "?action=update_shipment_status", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  })
-    .then((res) => res.json())
-    .then(async (data) => {
-      document.body.removeChild(loadingOverlay);
-
-      if (data.status === "success" || data.success) {
-        if (typeof window.safeAlert === "function")
-          window.safeAlert(
-            "SUCCESS",
-            `รับชิปเมนต์ ${shipmentNo} สำเร็จ! สถานะเปลี่ยนเป็น COMPLETE`,
-            "success",
-          );
-
-        if (window.cachedTransferTasks) {
-          const targetTask = window.cachedTransferTasks.find(
-            (t) => t.Shipment_No === shipmentNo,
-          );
-          if (targetTask) targetTask.Status = "Complete";
+        // 🌟 (2) [นางเอกของงาน]: ยิงสัญญาณกลับไปสะกิด "สาขาต้นทาง (ผู้ส่ง)"
+        if (typeof window.triggerFirebaseNotification === "function") {
+            window.triggerFirebaseNotification(originBranch, shipmentNo);
         }
 
-        if (typeof window.nukeShipmentCache === "function")
-          window.nukeShipmentCache(shipmentNo);
-
-        // คำสั่งปิดหน้าต่าง Modal
-        document.getElementById("transferInSimulatorModal").classList.add("hide");
-
-        // 👇👇👇 วางโค้ดกระตุ้นเสียงและกระดิ่งแจ้งเตือนตรงนี้ครับ 👇👇👇
-        if (typeof window.triggerShipmentCompleteAlert === "function") {
-          window.triggerShipmentCompleteAlert(shipmentNo);
+        // (3) ลบการ์ดออกจากหน้าจอ
+        const card = document.getElementById(`transfer-card-${shipmentNo}`);
+        if(card) {
+            card.style.background = "#d1e7dd";
+            card.innerHTML = `<div style="padding: 10px; width: 100%; text-align: center; color: #0f5132; font-weight: bold;"><i class="fas fa-check-circle"></i> รับชิปเมนต์ ${shipmentNo} สำเร็จ!</div>`;
+            setTimeout(() => card.remove(), 2000); 
+        }
+        
+        if (typeof customAlert === "function") {
+            customAlert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`, "SUCCESS");
+        } else {
+            alert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`);
         }
 
-        if (typeof loadExistingTasks === "function") await loadExistingTasks();
-      } else {
-        if (typeof window.safeAlert === "function")
-          window.safeAlert(
-            "ERROR",
-            "หลังบ้านแจ้งเตือน: " + (data.message || "ไม่สามารถอัปเดตได้"),
-            "error",
-          );
-      }
-    })
-    .catch((error) => {
-      document.body.removeChild(loadingOverlay);
-      if (typeof window.safeAlert === "function")
-        window.safeAlert(
-          "ERROR",
-          "ไม่สามารถเชื่อมต่อ Server หลังบ้านได้",
-          "error",
-        );
-    });
+        if(typeof loadExistingTasks === "function") await loadExistingTasks();
+
+    } catch(e) {
+        console.error("Error receiving shipment:", e);
+        if(btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> ลองรับของใหม่';
+        }
+    }
 };
+
+
+
 
 // 4. ฝัง Modal และผูกสวิตช์เข้ากับปุ่ม Transfer In เดิม
 document.addEventListener("DOMContentLoaded", () => {

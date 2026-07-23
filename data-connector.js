@@ -179,3 +179,62 @@ export async function testSendData() {
 }
 // [Dispatcher Tests] END
 //===============
+
+
+// ==================================================================
+// 📡 1. เปิดเรดาร์ Firebase (รอฟังเสียงตี๊ด) - สำหรับเครื่องที่รอรับแจ้งเตือน
+// ==================================================================
+window.startFirebaseListener = function() {
+  const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
+  if (!myBranch) return;
+
+  // เช็คว่ามี Firebase โหลดไว้หรือยัง
+  const db = window.db || (typeof firebase !== 'undefined' ? firebase.firestore() : null);
+  if(!db) return;
+  
+  const q = db.collection("Pattcha_Notifications")
+              .where("Destination", "==", myBranch)
+              .where("Status", "==", "UNREAD");
+  
+  const alertSound = document.getElementById("alertSound") || new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+
+  q.onSnapshot((snapshot) => {
+    let hasNew = false;
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === "added") hasNew = true; // มีคนยิงสัญญาณใหม่เข้ามา
+    });
+
+    const badge = document.getElementById("notifBadge"); // 💡 อย่าลืมเช็ค id แจ้งเตือนกระดิ่งให้ตรงกับ HTML เจเลอร์นะครับ
+    
+    if (!snapshot.empty) {
+      if (badge) {
+          badge.classList.remove("hide");
+          badge.innerText = snapshot.docs.length;
+      }
+      // ร้อง ตี๊ด! ทันที
+      if (hasNew) alertSound.play().catch(()=>{}); 
+    } else {
+      if (badge) badge.classList.add("hide");
+    }
+  });
+};
+
+// ==================================================================
+// 🚀 2. ยิงสัญญาณกระตุ้น Firebase - สำหรับคนกดรับของ
+// ==================================================================
+window.triggerFirebaseNotification = async function(destBranch, shipmentNo) {
+  try {
+    const db = window.db || (typeof firebase !== 'undefined' ? firebase.firestore() : null);
+    if(!db) return;
+
+    await db.collection("Pattcha_Notifications").add({
+      Destination: destBranch, // ส่งไปให้สาขาไหนดัง (ในที่นี้คือส่งกลับไปให้ ต้นทาง)
+      Shipment_No: shipmentNo,
+      Status: "UNREAD",
+      Timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    console.log(`ส่งสัญญาณ Firebase สะกิดสาขา ${destBranch} สำเร็จ!`);
+  } catch (error) {
+    console.error("ยิง Firebase ไม่ผ่าน:", error);
+  }
+};
