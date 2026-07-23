@@ -38,6 +38,7 @@ function injectTransferInSimulatorModal() {
   });
 }
 
+
 window.openTransferInSimulator = async function () {
   const modal = document.getElementById("transferInSimulatorModal");
   const container = document.getElementById("simulatorListContainer");
@@ -45,86 +46,77 @@ window.openTransferInSimulator = async function () {
 
   modal.classList.remove("hide");
   container.innerHTML =
-    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังดึงข้อมูลสดจากฐานข้อมูล...</p></div>';
+    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังดึงข้อมูล...</p></div>';
 
-  const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-    .trim()
-    .toUpperCase();
-
-  try {
-    const url = CONFIG.API_URL + "?action=get_tasks";
-
-    // 🚀 ยิงขอข้อมูลสดแบบมี Header ป้องกันการบล็อก
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const tasks = await response.json();
-
-    // 🟢 กรองชิปเมนต์
-    const pendingTasks = tasks.filter((task) => {
-      const status = (task.Status || "").trim().toUpperCase();
-      const dest = String(task.Destination || "")
-        .trim()
-        .toUpperCase();
-
-      if (!dest || !myBranch) return false;
-      const isMatchBranch =
-        dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
-      return status === "PENDING" && isMatchBranch;
-    });
-
-    if (pendingTasks.length === 0) {
-      // หน้าจอ X-Ray ถ้ายังไม่เจอ
-      let debugHtml = "";
-      if (tasks.length > 0) {
-        debugHtml = `<div style="text-align:left; font-size:11px; background:#f8f9fa; padding:10px; margin-top:15px; border-radius:5px; border: 1px dashed #ccc; overflow-x:auto;">
-            <b>🔍 [โหมดตรวจสอบ] ข้อมูลทั้งหมดที่มีในชีตตอนนี้:</b><br>
-            ${tasks.map((t) => `<span style="color:#0044ff">Shipment:</span> ${t.Shipment_No} | <span style="color:#e83e8c">Dest:</span> ${t.Destination} | <span style="color:#28a745">Status:</span> ${t.Status}`).join("<br>")}
-         </div>`;
-      }
-
-      container.innerHTML = `
-          <div style="text-align:center; padding: 40px 10px; color: #888;">
-              <i class="fas fa-box-open" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
-              <p style="margin:0; font-weight: bold;">ไม่มีชิปเมนต์ส่งมาถึงสาขาคุณ</p>
-              <p style="font-size: 12px; margin-top: 5px; color: #dc3545;">*แน่ใจนะว่าปลายทางคือ ${myBranch}</p>
-              ${debugHtml}
-          </div>`;
-      return;
-    }
-
-    let html = "";
-    pendingTasks.forEach((task) => {
-      const originBranch = task.Origin_Branch || "-";
-      html += `
-          <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                  <div style="font-weight: bold; font-size: 14px; color: #0044ff;">${task.Shipment_No}</div>
-                  <div style="font-size: 12px; color: #555; margin-top: 4px;">
-                      <i class="fas fa-store-alt" style="color: #666;"></i> ส่งมาจาก: <b>${originBranch}</b>
-                  </div>
-              </div>
-              <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
-                  <i class="fas fa-check-circle"></i> รับของ
-              </button>
-          </div>
-      `;
-    });
-    container.innerHTML = html;
-  } catch (error) {
-    container.innerHTML = `<div style="text-align:center; padding: 30px; color: red;">
-        <i class="fas fa-exclamation-triangle fa-2x"></i>
-        <p>ดึงข้อมูลล้มเหลว: ${error.message}</p>
-     </div>`;
+  if (typeof loadExistingTasks === "function") {
+    await loadExistingTasks();
   }
+
+  const tasks = window.cachedTransferTasks || [];
+
+  // 🛠️ จุดที่แก้ปัญหา: ดึงรหัสสาขาจากหน้าจอ (ดึงจากคำว่า [KKN02] - ...)
+  let myBranch = "";
+  const branchLabelEl = document.getElementById("branchLabel");
+  if (branchLabelEl && branchLabelEl.innerText) {
+    myBranch = branchLabelEl.innerText
+      .split("-")[0]
+      .replace(/\[|\]/g, "")
+      .trim()
+      .toUpperCase();
+  }
+  if (!myBranch) {
+    myBranch = String(localStorage.getItem("branch") || "")
+      .trim()
+      .toUpperCase();
+  }
+
+  const pendingTasks = tasks.filter((task) => {
+    const status = String(task.Status || "")
+      .trim()
+      .toUpperCase();
+    const dest = String(task.Destination || "")
+      .trim()
+      .toUpperCase();
+
+    if (!dest || !myBranch) return false;
+
+    // ตรวจสอบว่าสาขาตรงกันหรือไม่
+    const isMatchBranch =
+      dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
+
+    return status === "PENDING" && isMatchBranch;
+  });
+
+  // ถ้าไม่มีงานของสาขานี้เลย
+  if (pendingTasks.length === 0) {
+    container.innerHTML = `
+        <div style="text-align:center; padding: 40px 10px; color: #888;">
+            <i class="fas fa-box-open" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
+            <p style="margin:0; font-weight: bold;">ไม่มีชิปเมนต์ส่งมาถึงสาขาคุณ</p>
+            <p style="font-size: 12px; margin-top: 5px; color: #dc3545;">*แน่ใจนะว่าปลายทางคือ ${myBranch}</p>
+        </div>`;
+    return;
+  }
+
+  // 🟢 วาดการ์ดและปุ่ม "รับของ" ให้เฉพาะสาขาปลายทาง
+  let html = "";
+  pendingTasks.forEach((task) => {
+    const originBranch = task.Origin_Branch || "-";
+    html += `
+        <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: bold; font-size: 14px; color: #0044ff;">${task.Shipment_No}</div>
+                <div style="font-size: 12px; color: #555; margin-top: 4px;">
+                    <i class="fas fa-store-alt" style="color: #666;"></i> ส่งมาจาก: <b>${originBranch}</b>
+                </div>
+            </div>
+            <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
+                <i class="fas fa-check-circle"></i> รับของ
+            </button>
+        </div>
+    `;
+  });
+  container.innerHTML = html;
 };
 
 
