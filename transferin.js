@@ -45,64 +45,64 @@ window.openTransferInSimulator = async function () {
 
   modal.classList.remove("hide");
   container.innerHTML =
-    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังค้นหาข้อมูลล่าสุดจากเซิร์ฟเวอร์...</p></div>';
+    '<div style="text-align:center; padding: 30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color: #198754;"></i><p>กำลังดึงข้อมูลสดจากฐานข้อมูล...</p></div>';
 
-  // 🛠️ แก้จุดที่ 1: บังคับโหลดข้อมูลใหม่จากเซิร์ฟเวอร์ทุกครั้งที่กดเปิด (ข้าม Cache)
-  if (typeof loadExistingTasks === "function") {
-    await loadExistingTasks();
-  }
-
-const tasks = window.cachedTransferTasks || [];
-const myBranch = String(localStorage.getItem("pattcha_branch") || "")
-  .trim()
-  .toUpperCase();
-
-// 🛠️ ลอจิกคัดกรองที่ปรับปรุงใหม่ (ปลอดภัยและรัดกุมขั้นสุด)
-const pendingTasks = tasks.filter((task) => {
-  const status = (task.Status || "").trim().toUpperCase();
-  const dest = String(task.Destination || "")
+  const myBranch = String(localStorage.getItem("pattcha_branch") || "")
     .trim()
     .toUpperCase();
 
-  // 1. ป้องกันบั๊กกรณีสาขาปลายทางหรือสาขาต้นทางไม่มีข้อมูล (ค่าว่าง)
-  if (!dest || !myBranch) return false;
+  try {
+    // 🚀 ยิงขอข้อมูลสดจากหลังบ้านโดยตรง (Bypass Cache)
+    const response = await fetch(CONFIG.API_URL + "?action=get_tasks");
+    const tasks = await response.json();
 
-  // 2. เช็กว่า 'ชื่อที่เราล็อกอิน' ตรงกับ 'ปลายทางที่ส่งมา' แบบยืดหยุ่น
-  const isMatchBranch =
-    dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
+    const pendingTasks = tasks.filter((task) => {
+      const status = (task.Status || "").trim().toUpperCase();
+      const dest = String(task.Destination || "")
+        .trim()
+        .toUpperCase();
 
-  // 3. คืนค่าเฉพาะงานที่ PENDING และชื่อสาขาแมตช์กันเท่านั้น
-  return status === "PENDING" && isMatchBranch;
-});
+      if (!dest || !myBranch) return false;
+      const isMatchBranch =
+        dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
 
-  if (pendingTasks.length === 0) {
-    container.innerHTML = `
-            <div style="text-align:center; padding: 40px 10px; color: #888;">
-                <i class="fas fa-box-open" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
-                <p style="margin:0; font-weight: bold;">ไม่มีชิปเมนต์ส่งมาถึงสาขาคุณ</p>
-                <p style="font-size: 12px; margin-top: 5px; color: #dc3545;">*หากคุณเป็นผู้ส่ง จะไม่สามารถกดรับของตัวเองได้</p>
-            </div>`;
-    return;
+      return status === "PENDING" && isMatchBranch;
+    });
+
+    if (pendingTasks.length === 0) {
+      container.innerHTML = `
+          <div style="text-align:center; padding: 40px 10px; color: #888;">
+              <i class="fas fa-box-open" style="font-size: 40px; color: #ccc; margin-bottom: 10px;"></i>
+              <p style="margin:0; font-weight: bold;">ไม่มีชิปเมนต์ส่งมาถึงสาขาคุณ</p>
+              <p style="font-size: 12px; margin-top: 5px; color: #dc3545;">*แน่ใจนะว่าปลายทางคือ ${myBranch}</p>
+          </div>`;
+      return;
+    }
+
+    let html = "";
+    pendingTasks.forEach((task) => {
+      const originBranch = task.Origin_Branch || "-";
+      html += `
+          <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                  <div style="font-weight: bold; font-size: 14px; color: #0044ff;">${task.Shipment_No}</div>
+                  <div style="font-size: 12px; color: #555; margin-top: 4px;">
+                      <i class="fas fa-store-alt" style="color: #666;"></i> ส่งมาจาก: <b>${originBranch}</b>
+                  </div>
+              </div>
+              <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
+                  <i class="fas fa-check-circle"></i> รับของ
+              </button>
+          </div>
+      `;
+    });
+    container.innerHTML = html;
+  } catch (error) {
+    container.innerHTML = `<div style="text-align:center; padding: 30px; color: red;">
+        <i class="fas fa-exclamation-triangle fa-2x"></i>
+        <p>ดึงข้อมูลล้มเหลว: ${error.message}</p>
+     </div>`;
   }
-
-  let html = "";
-  pendingTasks.forEach((task) => {
-    const originBranch = task.Origin_Branch || "-";
-    html += `
-            <div style="background: white; border: 1px solid #ddd; border-left: 5px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-weight: bold; font-size: 14px; color: #0044ff;">${task.Shipment_No}</div>
-                    <div style="font-size: 12px; color: #555; margin-top: 4px;">
-                        <i class="fas fa-store-alt" style="color: #666;"></i> ส่งมาจาก: <b>${originBranch}</b>
-                    </div>
-                </div>
-                <button onclick="simulateReceiveShipment('${task.Shipment_No}', '${myBranch}')" style="background: #198754; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
-                    <i class="fas fa-check-circle"></i> รับของ
-                </button>
-            </div>
-        `;
-  });
-  container.innerHTML = html;
 };
 
 window.simulateReceiveShipment = async function (shipmentNo, receivingBranch) {
