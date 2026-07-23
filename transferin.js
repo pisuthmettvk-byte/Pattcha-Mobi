@@ -222,3 +222,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+
+// ฟังก์ชันส่งสัญญาณเมื่อกดปุ่มรับของ
+async function simulateReceiveShipment(shipmentNo, myBranch) {
+    if (!confirm(`ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`)) return;
+
+    // เปลี่ยนหน้าตาปุ่มเพื่อบอกว่ากำลังทำงาน
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผล...';
+    btn.disabled = true;
+
+    try {
+        const payload = {
+            action: 'receive_shipment',
+            shipmentNo: shipmentNo,
+            destBranch: myBranch
+        };
+
+        const response = await fetch(CONFIG.API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
+            window.openTransferInSimulator(); // รีเฟรชหน้าจอ
+        } else {
+            alert(`❌ เกิดข้อผิดพลาด: ${result.message}`);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    } catch (error) {
+        alert(`❌ การเชื่อมต่อล้มเหลว: ${error.message}`);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
