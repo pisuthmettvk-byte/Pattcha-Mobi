@@ -181,60 +181,91 @@ export async function testSendData() {
 //===============
 
 
-// ==================================================================
-// 📡 1. เปิดเรดาร์ Firebase (รอฟังเสียงตี๊ด) - สำหรับเครื่องที่รอรับแจ้งเตือน
-// ==================================================================
-window.startFirebaseListener = function() {
-  const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
-  if (!myBranch) return;
 
-  // เช็คว่ามี Firebase โหลดไว้หรือยัง
-  const db = window.db || (typeof firebase !== 'undefined' ? firebase.firestore() : null);
-  if(!db) return;
-  
-  const q = db.collection("Pattcha_Notifications")
-              .where("Destination", "==", myBranch)
-              .where("Status", "==", "UNREAD");
-  
-  const alertSound = document.getElementById("alertSound") || new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+// ==========================================
+// 🔔 FIREBASE NOTIFICATION ENGINE (100% COMPLETE)
+// ==========================================
 
-  q.onSnapshot((snapshot) => {
-    let hasNew = false;
-    snapshot.docChanges().forEach((change) => {
-      if (change.type === "added") hasNew = true; // มีคนยิงสัญญาณใหม่เข้ามา
-    });
-
-    const badge = document.getElementById("notifBadge"); // 💡 อย่าลืมเช็ค id แจ้งเตือนกระดิ่งให้ตรงกับ HTML เจเลอร์นะครับ
-    
-    if (!snapshot.empty) {
-      if (badge) {
-          badge.classList.remove("hide");
-          badge.innerText = snapshot.docs.length;
-      }
-      // ร้อง ตี๊ด! ทันที
-      if (hasNew) alertSound.play().catch(()=>{}); 
-    } else {
-      if (badge) badge.classList.add("hide");
-    }
-  });
+// 1. ตัวถอดรหัสสาขากลับ (01CK -> CKC01)
+window.decodeBranch = function(obfCode) {
+    const map = { "01CK": "CKC01", "02KK": "KKN02", "03IC": "ICS03" };
+    return map[obfCode] || obfCode;
 };
 
-// ==================================================================
-// 🚀 2. ยิงสัญญาณกระตุ้น Firebase - สำหรับคนกดรับของ
-// ==================================================================
-window.triggerFirebaseNotification = async function(destBranch, shipmentNo) {
-  try {
-    const db = window.db || (typeof firebase !== 'undefined' ? firebase.firestore() : null);
-    if(!db) return;
+// 2. ฟังก์ชันยิงสัญญาณ (เมื่อปลายทางกด "รับของ")
+window.triggerFirebaseNotification = async function(docNo) {
+    try {
+        if (!window.db) return console.error("Firebase DB is not initialized");
+        
+        // แยกสาขาต้นทางออกจากเลขที่เอกสาร (เช่น TS-23072026-01CK-0005-02KK)
+        const parts = docNo.split("-");
+        if (parts.length < 4) return;
+        const sourceObf = parts[2]; // ได้ "01CK"
+        const destinationBranch = window.decodeBranch(sourceObf); // แปลงเป็น "CKC01"
+        const myBranch = localStorage.getItem("pattcha_branch") || "UNKN";
 
-    await db.collection("Pattcha_Notifications").add({
-      Destination: destBranch, // ส่งไปให้สาขาไหนดัง (ในที่นี้คือส่งกลับไปให้ ต้นทาง)
-      Shipment_No: shipmentNo,
-      Status: "UNREAD",
-      Timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        await window.addDoc(window.collection(window.db, "Pattcha_Notifications"), {
+            Destination: destinationBranch, // ส่งไปหา CKC01
+            From: myBranch, // จาก KKN02
+            DocNo: docNo,
+            Message: `สาขา ${myBranch} ได้รับเอกสาร ${docNo} เรียบร้อยแล้ว`,
+            Timestamp: window.serverTimestamp(),
+            isRead: false
+        });
+        console.log("✅ ยิงสัญญาณแจ้งเตือนไปที่", destinationBranch, "สำเร็จ!");
+    } catch (error) {
+        console.error("🚨 ยิงสัญญาณล้มเหลว:", error);
+    }
+};
+
+// 3. ฟังก์ชันดักฟังเสียงและจุดแดง (ทำงานฝั่งต้นทางที่รอรับ)
+window.startFirebaseListener = function() {
+    const myBranch = localStorage.getItem("pattcha_branch");
+    if (!myBranch || !window.db) return;
+
+    const q = window.query(
+        window.collection(window.db, "Pattcha_Notifications"),
+        window.where("Destination", "==", myBranch),
+        window.where("isRead", "==", false)
+    );
+
+    // ปิดตัวเก่าก่อนเปิดตัวใหม่ ป้องกันการฟังซ้ำซ้อน
+    if (window.fbUnsubscribe) window.fbUnsubscribe();
+
+    window.fbUnsubscribe = window.onSnapshot(q, (snapshot) => {
+        const notifBadge = document.getElementById("notifBadge");
+        
+        if (snapshot.empty) {
+            if (notifBadge) notifBadge.classList.add("hide");
+            return;
+        }
+
+        // นับจำนวนข้อความที่ยังไม่ได้อ่าน
+        if (notifBadge) {
+            notifBadge.innerText = snapshot.size;
+            notifBadge.classList.remove("hide");
+        }
+
+        // ตรวจสอบว่ามีข้อความ "เข้ามาใหม่สดๆ" หรือไม่ ถ้ามีให้ร้องเตือน!
+        let hasNew = false;
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") hasNew = true;
+        });
+
+        if (hasNew) window.playAlertSound();
     });
-    console.log(`ส่งสัญญาณ Firebase สะกิดสาขา ${destBranch} สำเร็จ!`);
-  } catch (error) {
-    console.error("ยิง Firebase ไม่ผ่าน:", error);
-  }
+};
+
+// 4. ฟังก์ชันเล่นเสียงเตือน 
+window.playAlertSound = function() {
+    const audio = document.getElementById("alertSound");
+    if (audio) {
+        audio.currentTime = 0;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.warn("เบราว์เซอร์บล็อกเสียง ต้องคลิกหน้าเว็บก่อน 1 ครั้ง:", error);
+            });
+        }
+    }
 };

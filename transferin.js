@@ -102,59 +102,6 @@ window.openTransferInSimulator = async function () {
   container.innerHTML = html;
 };
 
-// ==========================================
-// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์
-// ==========================================
-window.simulateReceiveShipment = async function(shipmentNo, myBranch, originBranch) {
-    const btn = document.getElementById(`btn-receive-${shipmentNo}`);
-    if(btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> รอสักครู่...';
-    }
-
-    try {
-        // (1) ยิง API ไปหา Google Workspace เพื่อแจ้งว่ารับของแล้ว + ตัดสต๊อก
-        const response = await fetch(`${CONFIG.API_URL}?action=receive_shipment`, {
-            method: 'POST',
-            body: JSON.stringify({
-                shipmentNo: shipmentNo,
-                branch: myBranch
-            })
-        });
-        const data = await response.json();
-
-        // 🌟 (2) [นางเอกของงาน]: ยิงสัญญาณกลับไปสะกิด "สาขาต้นทาง (ผู้ส่ง)"
-        if (typeof window.triggerFirebaseNotification === "function") {
-            window.triggerFirebaseNotification(originBranch, shipmentNo);
-        }
-
-        // (3) ลบการ์ดออกจากหน้าจอ
-        const card = document.getElementById(`transfer-card-${shipmentNo}`);
-        if(card) {
-            card.style.background = "#d1e7dd";
-            card.innerHTML = `<div style="padding: 10px; width: 100%; text-align: center; color: #0f5132; font-weight: bold;"><i class="fas fa-check-circle"></i> รับชิปเมนต์ ${shipmentNo} สำเร็จ!</div>`;
-            setTimeout(() => card.remove(), 2000); 
-        }
-        
-        if (typeof customAlert === "function") {
-            customAlert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`, "SUCCESS");
-        } else {
-            alert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`);
-        }
-
-        if(typeof loadExistingTasks === "function") await loadExistingTasks();
-
-    } catch(e) {
-        console.error("Error receiving shipment:", e);
-        if(btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-check-circle"></i> ลองรับของใหม่';
-        }
-    }
-};
-
-
-
 
 // 4. ฝัง Modal และผูกสวิตช์เข้ากับปุ่ม Transfer In เดิม
 document.addEventListener("DOMContentLoaded", () => {
@@ -188,17 +135,24 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// ฟังก์ชันส่งสัญญาณเมื่อกดปุ่มรับของ
-async function simulateReceiveShipment(shipmentNo, myBranch) {
+
+// ==========================================
+// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (อัปเดตแบบ Dynamic สมบูรณ์ 100%)
+// ==========================================
+window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
+    // 1. ถามยืนยันก่อนรับของ (ป้องกันการกดพลาด)
     if (!confirm(`ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`)) return;
 
-    // เปลี่ยนหน้าตาปุ่มเพื่อบอกว่ากำลังทำงาน
-    const btn = event.currentTarget;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผล...';
-    btn.disabled = true;
+    const btn = document.getElementById(`btn-receive-${shipmentNo}`);
+    const originalText = btn ? btn.innerHTML : "";
+    
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผล...';
+    }
 
     try {
+        // 2. เตรียมข้อมูลส่งไปที่ Google Workspace API
         const payload = {
             action: 'receive_shipment',
             shipmentNo: shipmentNo,
@@ -209,20 +163,46 @@ async function simulateReceiveShipment(shipmentNo, myBranch) {
             method: 'POST',
             body: JSON.stringify(payload)
         });
-
         const result = await response.json();
 
-        if (result.status === 'success') {
-            alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
-            window.openTransferInSimulator(); // รีเฟรชหน้าจอ
+        // 3. ถ้าระบบหลังบ้านตอบกลับมาว่าตัดสต๊อก/รับของสำเร็จ
+        if (result.status === 'success' || result.success) {
+            
+            // 🌟 4. [นางเอกของงาน - DYNAMIC TRIGGER] 
+            // โยนตัวแปร 'shipmentNo' (เช่น TS-23072026-01CK-0005-02KK) เข้าเครื่องยนต์ Firebase
+            // Firebase จะถอดรหัสรหัสสาขา 01CK เป็น CKC01 และวิ่งไปสะกิดสาขาต้นทางให้เองอัตโนมัติ!
+            if (typeof window.triggerFirebaseNotification === "function") {
+                window.triggerFirebaseNotification(shipmentNo);
+            }
+
+            // 5. ปรับเปลี่ยนหน้าตา UI การ์ดบนหน้าจอให้สวยงามเมื่อรับสำเร็จ
+            const card = document.getElementById(`transfer-card-${shipmentNo}`);
+            if(card) {
+                card.style.background = "#d1e7dd";
+                card.innerHTML = `<div style="padding: 10px; width: 100%; text-align: center; color: #0f5132; font-weight: bold;"><i class="fas fa-check-circle"></i> รับชิปเมนต์ ${shipmentNo} สำเร็จ!</div>`;
+                setTimeout(() => card.remove(), 2000); 
+            }
+            
+            // 6. แจ้งเตือนว่ารับของสำเร็จ
+            if (typeof customAlert === "function") {
+                customAlert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`, "SUCCESS");
+            } else {
+                alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
+            }
+
+            // 7. รีเฟรชข้อมูลรายการรับของใหม่
+            if(typeof loadExistingTasks === "function") await loadExistingTasks();
+
         } else {
-            alert(`❌ เกิดข้อผิดพลาด: ${result.message}`);
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            // กรณี API แจ้งเตือนข้อผิดพลาด
+            alert(`❌ เกิดข้อผิดพลาด: ${result.message || 'ไม่สามารถรับของได้'}`);
+            if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
         }
-    } catch (error) {
-        alert(`❌ การเชื่อมต่อล้มเหลว: ${error.message}`);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+
+    } catch(e) {
+        // กรณีเน็ตหลุดหรือยิง API ไม่เข้า
+        console.error("Error receiving shipment:", e);
+        alert(`❌ การเชื่อมต่อล้มเหลว: ${e.message}`);
+        if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
     }
-}
+};
