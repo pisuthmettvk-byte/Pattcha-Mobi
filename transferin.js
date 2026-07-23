@@ -38,7 +38,6 @@ function injectTransferInSimulatorModal() {
   });
 }
 
-
 window.openTransferInSimulator = async function () {
   const modal = document.getElementById("transferInSimulatorModal");
   const container = document.getElementById("simulatorListContainer");
@@ -54,21 +53,10 @@ window.openTransferInSimulator = async function () {
 
   const tasks = window.cachedTransferTasks || [];
 
-  // 🛠️ จุดที่แก้ปัญหา: ดึงรหัสสาขาจากหน้าจอ (ดึงจากคำว่า [KKN02] - ...)
-  let myBranch = "";
-  const branchLabelEl = document.getElementById("branchLabel");
-  if (branchLabelEl && branchLabelEl.innerText) {
-    myBranch = branchLabelEl.innerText
-      .split("-")[0]
-      .replace(/\[|\]/g, "")
-      .trim()
-      .toUpperCase();
-  }
-  if (!myBranch) {
-    myBranch = String(localStorage.getItem("branch") || "")
-      .trim()
-      .toUpperCase();
-  }
+  // ดึงชื่อสาขา KKN02
+  let myBranch = String(localStorage.getItem("pattcha_branch") || "")
+    .trim()
+    .toUpperCase();
 
   const pendingTasks = tasks.filter((task) => {
     const status = String(task.Status || "")
@@ -77,12 +65,19 @@ window.openTransferInSimulator = async function () {
     const dest = String(task.Destination || "")
       .trim()
       .toUpperCase();
+    const branchCol = String(task.Branch || "")
+      .trim()
+      .toUpperCase(); // 💡 สั่งให้อ่านคอลัมน์ Branch ด้วย!
 
-    if (!dest || !myBranch) return false;
+    if (!myBranch) return false;
 
-    // ตรวจสอบว่าสาขาตรงกันหรือไม่
+    // 💡 เช็คว่าตรงกับ Destination "หรือ" ตรงกับคอลัมน์ Branch อย่างใดอย่างหนึ่ง
     const isMatchBranch =
-      dest === myBranch || myBranch.includes(dest) || dest.includes(myBranch);
+      dest === myBranch ||
+      branchCol === myBranch ||
+      myBranch.includes(dest) ||
+      dest.includes(myBranch) ||
+      myBranch.includes(branchCol);
 
     return status === "PENDING" && isMatchBranch;
   });
@@ -98,7 +93,7 @@ window.openTransferInSimulator = async function () {
     return;
   }
 
-  // 🟢 วาดการ์ดและปุ่ม "รับของ" ให้เฉพาะสาขาปลายทาง
+  // 🟢 วาดการ์ดและปุ่ม "รับของ" ให้เฉพาะสาขา KKN02
   let html = "";
   pendingTasks.forEach((task) => {
     const originBranch = task.Origin_Branch || "-";
