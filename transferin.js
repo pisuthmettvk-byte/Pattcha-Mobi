@@ -137,10 +137,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ==========================================
-// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (อัปเดตแบบ Dynamic สมบูรณ์ 100%)
+// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (Dynamic สมบูรณ์ 100%)
 // ==========================================
 window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
-    // 1. ถามยืนยันก่อนรับของ (ป้องกันการกดพลาด)
     if (!confirm(`ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`)) return;
 
     const btn = document.getElementById(`btn-receive-${shipmentNo}`);
@@ -152,30 +151,25 @@ window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
     }
 
     try {
-        // 2. เตรียมข้อมูลส่งไปที่ Google Workspace API
         const payload = {
-            action: 'receive_shipment',
             shipmentNo: shipmentNo,
             destBranch: myBranch
         };
 
-        const response = await fetch(CONFIG.API_URL, {
+        // 🌟 [ไม้ตายกันตาย]: แนบ ?action=receive_shipment ต่อท้าย URL ตรงๆ 
+        const response = await fetch(`${CONFIG.API_URL}?action=receive_shipment`, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
         const result = await response.json();
 
-        // 3. ถ้าระบบหลังบ้านตอบกลับมาว่าตัดสต๊อก/รับของสำเร็จ
         if (result.status === 'success' || result.success) {
             
-            // 🌟 4. [นางเอกของงาน - DYNAMIC TRIGGER] 
-            // โยนตัวแปร 'shipmentNo' (เช่น TS-23072026-01CK-0005-02KK) เข้าเครื่องยนต์ Firebase
-            // Firebase จะถอดรหัสรหัสสาขา 01CK เป็น CKC01 และวิ่งไปสะกิดสาขาต้นทางให้เองอัตโนมัติ!
+            // 🌟 ยิงสัญญาณแจ้งเตือน
             if (typeof window.triggerFirebaseNotification === "function") {
                 window.triggerFirebaseNotification(shipmentNo);
             }
 
-            // 5. ปรับเปลี่ยนหน้าตา UI การ์ดบนหน้าจอให้สวยงามเมื่อรับสำเร็จ
             const card = document.getElementById(`transfer-card-${shipmentNo}`);
             if(card) {
                 card.style.background = "#d1e7dd";
@@ -183,24 +177,20 @@ window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
                 setTimeout(() => card.remove(), 2000); 
             }
             
-            // 6. แจ้งเตือนว่ารับของสำเร็จ
             if (typeof customAlert === "function") {
                 customAlert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`, "SUCCESS");
             } else {
                 alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
             }
 
-            // 7. รีเฟรชข้อมูลรายการรับของใหม่
             if(typeof loadExistingTasks === "function") await loadExistingTasks();
 
         } else {
-            // กรณี API แจ้งเตือนข้อผิดพลาด
             alert(`❌ เกิดข้อผิดพลาด: ${result.message || 'ไม่สามารถรับของได้'}`);
             if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
     } catch(e) {
-        // กรณีเน็ตหลุดหรือยิง API ไม่เข้า
         console.error("Error receiving shipment:", e);
         alert(`❌ การเชื่อมต่อล้มเหลว: ${e.message}`);
         if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
