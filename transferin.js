@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ==========================================
-// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (Dynamic สมบูรณ์ 100%)
+// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (กันตาย 100%)
 // ==========================================
 window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
     if (!confirm(`ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`)) return;
@@ -151,13 +151,19 @@ window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
     }
 
     try {
+        // 🌟 [ปรับปรุง]: ยัดคำสั่ง action เข้าไปใน Body ให้ชัดเจนที่สุด
         const payload = {
+            action: 'receive_shipment', 
             shipmentNo: shipmentNo,
             destBranch: myBranch
         };
 
-        // 🌟 [ไม้ตายกันตาย]: แนบ ?action=receive_shipment ต่อท้าย URL ตรงๆ 
-        const response = await fetch(`${CONFIG.API_URL}?action=receive_shipment`, {
+        // 🌟 [ปรับปรุง]: กันตายชั้นที่ 2 ใส่ action ลงใน URL ด้วย เผื่อหลังบ้านอ่าน JSON ไม่แตก
+        const fetchUrl = CONFIG.API_URL.includes("?") 
+            ? `${CONFIG.API_URL}&action=receive_shipment` 
+            : `${CONFIG.API_URL}?action=receive_shipment`;
+
+        const response = await fetch(fetchUrl, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
@@ -165,7 +171,7 @@ window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
 
         if (result.status === 'success' || result.success) {
             
-            // 🌟 ยิงสัญญาณแจ้งเตือน
+            // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ
             if (typeof window.triggerFirebaseNotification === "function") {
                 window.triggerFirebaseNotification(shipmentNo);
             }
@@ -186,7 +192,8 @@ window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
             if(typeof loadExistingTasks === "function") await loadExistingTasks();
 
         } else {
-            alert(`❌ เกิดข้อผิดพลาด: ${result.message || 'ไม่สามารถรับของได้'}`);
+            // แจ้งเตือนข้อผิดพลาดพร้อมบอกด้วยว่าหลังบ้านอ่าน action ได้ว่าอะไร
+            alert(`❌ เกิดข้อผิดพลาด: ${result.message || 'ไม่สามารถรับของได้'}\n(Action ที่อ่านได้: ${result.receivedAction || 'ไม่มี'})`);
             if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
