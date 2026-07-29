@@ -2901,6 +2901,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+
+
 if (selectType && inputBoxNumber) {
   selectType.addEventListener("change", () => {
     if (!selectType.value) {
@@ -2908,25 +2910,29 @@ if (selectType && inputBoxNumber) {
       return;
     }
 
-    // 🌟 [เพิ่มกลไก Dynamic Origin] ดึงสาขาที่ล็อกอินแล้วสลับตำแหน่ง
+    // 🌟 ดึงรหัสต้นทาง: 01 + 2 ตัวอักษรหน้าของสาขาที่ล็อกอิน (เช่น 01CK, 01KK)
     const myBranch = String(localStorage.getItem("pattcha_branch") || "CKC01")
       .trim()
       .toUpperCase();
-    const originCode = myBranch.slice(-2) + myBranch.slice(0, 2); // จะได้เช่น "01CK" หรือ "02KK"
+    const originCode = "01" + myBranch.substring(0, 2);
 
+    // 🌟 ดึงรหัสปลายทาง: 02 + 2 ตัวอักษรหน้าของสาขาปลายทาง (เช่น 02KK, 02CT)
     const selectedBranchID =
       sessionStorage.getItem("selectedBranchID") || "KKN02";
-    const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
+    const targetDestination =
+      "02" + selectedBranchID.substring(0, 2).toUpperCase();
+
     const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
     let previewNum =
       parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
     if (previewNum > 9999) previewNum = 1;
     const previewRunning = previewNum.toString().padStart(4, "0");
 
-    // 🌟 นำ originCode มาใช้แทน "01CK"
+    // ประกอบร่าง
     inputBoxNumber.value = `${selectType.value}-${dateStr}-${originCode}-${previewRunning}-${targetDestination}`;
   });
 }
+
 
 
 if (btnConfirm) {
@@ -2938,21 +2944,24 @@ if (btnConfirm) {
       return;
     }
 
-    // 🌟 [เพิ่มกลไก Dynamic Origin]
+    // 🌟 ดึงรหัสต้นทาง: 01 + 2 ตัวอักษรหน้าของสาขาที่ล็อกอิน
     const myBranch = String(localStorage.getItem("pattcha_branch") || "CKC01")
       .trim()
       .toUpperCase();
-    const originCode = myBranch.slice(-2) + myBranch.slice(0, 2); // จะได้เช่น "01CK" หรือ "02KK"
+    const originCode = "01" + myBranch.substring(0, 2);
 
+    // 🌟 ดึงรหัสปลายทาง: 02 + 2 ตัวอักษรหน้าของสาขาปลายทาง
     const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
     const actualBranchID =
       typeof getRealBranchCode === "function"
         ? getRealBranchCode(rawSelected)
         : rawSelected;
-    const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
+    const targetDestination =
+      "02" + actualBranchID.substring(0, 2).toUpperCase();
+
     const dateStr = new Date().toLocaleDateString("en-GB");
 
-    // 🌟 นำ originCode มาใช้แทน "01CK" ตอนสร้างเลขจริงส่งเข้า Database
+    // ประกอบร่างเลขจริง
     const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-${originCode}-${getNextRunningNumber()}-${targetDestination}`;
 
     if (typeof window.nukeShipmentCache === "function")
@@ -2963,7 +2972,7 @@ if (btnConfirm) {
     const payload = {
       Date: dateStr,
       Shipment_No: finalShipmentNo,
-      Origin_Branch: myBranch, // ส่งค่าเช่น "KKN02"
+      Origin_Branch: myBranch,
       Destination: targetDestination,
       Branch: actualBranchID,
       Origin_Type: "Store",
@@ -3018,8 +3027,6 @@ if (btnConfirm) {
       });
   });
 }
-
-
 
 
 
