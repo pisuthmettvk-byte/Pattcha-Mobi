@@ -2901,110 +2901,127 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (selectType && inputBoxNumber) {
-    selectType.addEventListener("change", () => {
-      if (!selectType.value) {
-        inputBoxNumber.value = "กรุณาเลือกประเภท...";
-        return;
-      }
-      const selectedBranchID =
-        sessionStorage.getItem("selectedBranchID") || "KKN02";
-      const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
-      const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
-      let previewNum =
-        parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
-      if (previewNum > 9999) previewNum = 1;
-      const previewRunning = previewNum.toString().padStart(4, "0");
-      inputBoxNumber.value = `${selectType.value}-${dateStr}-01CK-${previewRunning}-${targetDestination}`;
-    });
-  }
+if (selectType && inputBoxNumber) {
+  selectType.addEventListener("change", () => {
+    if (!selectType.value) {
+      inputBoxNumber.value = "กรุณาเลือกประเภท...";
+      return;
+    }
 
-  if (btnConfirm) {
-    btnConfirm.addEventListener("click", () => {
-      if (!selectType || !selectType.value) {
-        if (typeof safeAlert === "function")
-          safeAlert(
-            "ข้อมูลไม่ครบ",
-            "กรุณาเลือกประเภทการโอนก่อนครับ",
-            "warning",
-          );
-        else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
-        return;
-      }
-      const myBranch = String(localStorage.getItem("pattcha_branch") || "CK")
-        .trim()
-        .toUpperCase();
-      const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
-      const actualBranchID =
-        typeof getRealBranchCode === "function"
-          ? getRealBranchCode(rawSelected)
-          : rawSelected;
-      const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
-      const dateStr = new Date().toLocaleDateString("en-GB");
-      const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-01CK-${getNextRunningNumber()}-${targetDestination}`;
+    // 🌟 [เพิ่มกลไก Dynamic Origin] ดึงสาขาที่ล็อกอินแล้วสลับตำแหน่ง
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "CKC01")
+      .trim()
+      .toUpperCase();
+    const originCode = myBranch.slice(-2) + myBranch.slice(0, 2); // จะได้เช่น "01CK" หรือ "02KK"
 
-      if (typeof window.nukeShipmentCache === "function")
-        window.nukeShipmentCache(finalShipmentNo);
-      if (typeof window.fbNukeShipment === "function")
-        window.fbNukeShipment(finalShipmentNo);
+    const selectedBranchID =
+      sessionStorage.getItem("selectedBranchID") || "KKN02";
+    const targetDestination = `02${selectedBranchID.substring(0, 2).toUpperCase()}`;
+    const dateStr = new Date().toLocaleDateString("en-GB").replace(/\//g, "");
+    let previewNum =
+      parseInt(localStorage.getItem("shipment_running_counter") || "0") + 1;
+    if (previewNum > 9999) previewNum = 1;
+    const previewRunning = previewNum.toString().padStart(4, "0");
 
-      const payload = {
-        Date: dateStr,
-        Shipment_No: finalShipmentNo,
-        Origin_Branch: myBranch,
-        Destination: targetDestination,
-        Branch: actualBranchID,
-        Origin_Type: "Store",
-        Status: "Assign",
-      };
-      btnConfirm.disabled = true;
-      btnConfirm.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+    // 🌟 นำ originCode มาใช้แทน "01CK"
+    inputBoxNumber.value = `${selectType.value}-${dateStr}-${originCode}-${previewRunning}-${targetDestination}`;
+  });
+}
 
-      fetch(CONFIG.API_URL + "?action=save_new_task", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      })
-        .then((res) => res.json())
-        .then((res) => {
-          if (res.status === "success") {
-            if (container && typeof createShipmentColumn === "function")
-              container.appendChild(
-                createShipmentColumn(finalShipmentNo, "Store"),
-              );
-            if (window.cachedTransferTasks)
-              window.cachedTransferTasks.push(payload);
-            if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
-            if (emptyState) emptyState.style.display = "none";
 
-            const taskHubAssignContainer =
-              document.getElementById("assignContainer");
-            if (
-              taskHubAssignContainer &&
-              typeof createTransferOutTaskCard === "function"
-            ) {
-              const newCard = createTransferOutTaskCard(
-                dateStr,
-                finalShipmentNo,
-                "Store",
-                targetDestination,
-                0,
-                0,
-                "Assign",
-              );
-              taskHubAssignContainer.appendChild(newCard);
-              const assignCountEl = document.getElementById("assignTaskCount");
-              if (assignCountEl)
-                assignCountEl.innerHTML = `Task (${taskHubAssignContainer.querySelectorAll(".task-card").length}) <i class="fas fa-chevron-down"></i>`;
-            }
+if (btnConfirm) {
+  btnConfirm.addEventListener("click", () => {
+    if (!selectType || !selectType.value) {
+      if (typeof safeAlert === "function")
+        safeAlert("ข้อมูลไม่ครบ", "กรุณาเลือกประเภทการโอนก่อนครับ", "warning");
+      else alert("กรุณาเลือกประเภทการโอนก่อนครับ!");
+      return;
+    }
+
+    // 🌟 [เพิ่มกลไก Dynamic Origin]
+    const myBranch = String(localStorage.getItem("pattcha_branch") || "CKC01")
+      .trim()
+      .toUpperCase();
+    const originCode = myBranch.slice(-2) + myBranch.slice(0, 2); // จะได้เช่น "01CK" หรือ "02KK"
+
+    const rawSelected = sessionStorage.getItem("selectedBranchID") || "KKN02";
+    const actualBranchID =
+      typeof getRealBranchCode === "function"
+        ? getRealBranchCode(rawSelected)
+        : rawSelected;
+    const targetDestination = `02${actualBranchID.substring(0, 2).toUpperCase()}`;
+    const dateStr = new Date().toLocaleDateString("en-GB");
+
+    // 🌟 นำ originCode มาใช้แทน "01CK" ตอนสร้างเลขจริงส่งเข้า Database
+    const finalShipmentNo = `${selectType.value}-${dateStr.replace(/\//g, "")}-${originCode}-${getNextRunningNumber()}-${targetDestination}`;
+
+    if (typeof window.nukeShipmentCache === "function")
+      window.nukeShipmentCache(finalShipmentNo);
+    if (typeof window.fbNukeShipment === "function")
+      window.fbNukeShipment(finalShipmentNo);
+
+    const payload = {
+      Date: dateStr,
+      Shipment_No: finalShipmentNo,
+      Origin_Branch: myBranch, // ส่งค่าเช่น "KKN02"
+      Destination: targetDestination,
+      Branch: actualBranchID,
+      Origin_Type: "Store",
+      Status: "Assign",
+    };
+
+    btnConfirm.disabled = true;
+    btnConfirm.innerHTML =
+      '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+    fetch(CONFIG.API_URL + "?action=save_new_task", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === "success") {
+          if (container && typeof createShipmentColumn === "function")
+            container.appendChild(
+              createShipmentColumn(finalShipmentNo, "Store"),
+            );
+          if (window.cachedTransferTasks)
+            window.cachedTransferTasks.push(payload);
+          if (shipmentBoxModal) shipmentBoxModal.classList.add("hide");
+          if (emptyState) emptyState.style.display = "none";
+
+          const taskHubAssignContainer =
+            document.getElementById("assignContainer");
+          if (
+            taskHubAssignContainer &&
+            typeof createTransferOutTaskCard === "function"
+          ) {
+            const newCard = createTransferOutTaskCard(
+              dateStr,
+              finalShipmentNo,
+              "Store",
+              targetDestination,
+              0,
+              0,
+              "Assign",
+            );
+            taskHubAssignContainer.appendChild(newCard);
+            const assignCountEl = document.getElementById("assignTaskCount");
+            if (assignCountEl)
+              assignCountEl.innerHTML = `Task (${taskHubAssignContainer.querySelectorAll(".task-card").length}) <i class="fas fa-chevron-down"></i>`;
           }
-        })
-        .finally(() => {
-          btnConfirm.disabled = false;
-          btnConfirm.innerHTML = "ยืนยันสร้าง";
-        });
-    });
-  }
+        }
+      })
+      .finally(() => {
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = "ยืนยันสร้าง";
+      });
+  });
+}
+
+
+
+
 
   const btnBackFromBox = document.getElementById("btnBackFromBox");
   if (btnBackFromBox) {
