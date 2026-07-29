@@ -139,6 +139,9 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 // 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (อัปเดต Header กันบล็อก 100%)
 // ==========================================
+// ==========================================
+// 📦 ฟังก์ชันกด "รับของ" (อัปเกรดกันข้อมูลหายตอน Redirect 100%)
+// ==========================================
 window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
   if (
     !confirm(
@@ -150,7 +153,7 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
   const btn = document.getElementById(`btn-receive-${shipmentNo}`);
   const originalText = btn ? btn.innerHTML : "";
 
-  // 🛡️ ป้องกันการกดซ้ำ: ปิดปุ่มทันที
+  // 🛡️ ป้องกันการกดซ้ำ: ปิดปุ่มทันทีและแสดงสถานะ
   if (btn) {
     btn.disabled = true;
     btn.style.pointerEvents = "none";
@@ -158,23 +161,33 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
   }
 
   try {
-    // 📦 1. แปลงข้อมูลเป็น Form Data (URLSearchParams) ทะลุเกราะ Google ได้ 100% ไม่มีตกหล่น
-    const formData = new URLSearchParams();
-    formData.append("action", "receive_shipment");
-    formData.append("shipmentNo", shipmentNo);
-    formData.append("destBranch", myBranch);
+    // 🚀 1. ฝังข้อมูลลงใน URL โดยตรง (URL Parameters) 
+    // วิธีนี้ต่อให้ Google ทำการ Redirect ข้อมูลก็จะไม่หล่นหายแน่นอน 100%
+    const queryParams = new URLSearchParams({
+      action: "receive_shipment",
+      shipmentNo: shipmentNo,
+      destBranch: myBranch
+    }).toString();
 
-    // 🚀 2. ยิงข้อมูลไปหลังบ้าน (ไม่ต้องใส่ Header Content-Type เพราะเบราว์เซอร์จะจัดการให้ถูกต้องอัตโนมัติ)
-    const response = await fetch(CONFIG.API_URL, {
+    // 🔗 2. ประกอบร่าง URL แบบฝังข้อมูล
+    const fetchUrl = CONFIG.API_URL.includes("?")
+      ? `${CONFIG.API_URL}&${queryParams}`
+      : `${CONFIG.API_URL}?${queryParams}`;
+
+    // 🚀 3. ยิงข้อมูลไปหลังบ้าน (ไม่ต้องใส่ Body แล้ว เพราะข้อมูลอยู่ใน URL ครบแล้ว)
+    const response = await fetch(fetchUrl, {
       method: "POST",
-      body: formData,
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      }
     });
 
     const result = await response.json();
 
-    // ✅ 3. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
+    // ✅ 4. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
     if (result.status === "success" || result.success) {
-      // 📡 ยิงสัญญาณ Firebase
+      
+      // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ
       if (typeof window.triggerFirebaseNotification === "function") {
         window.triggerFirebaseNotification(shipmentNo);
       }
@@ -194,9 +207,12 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
 
       if (typeof loadExistingTasks === "function") await loadExistingTasks();
     } else {
+      // ❌ กรณี Backend ฟ้องว่ามีข้อผิดพลาด
       alert(
-        `❌ เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถรับของได้"}\n(Action ที่อ่านได้: ${result.receivedAction || "ไม่มี"})`,
+        `❌ เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถรับของได้"}\n(Action ที่ส่งไปคือ: ${result.receivedAction || "ไม่มี"})`,
       );
+
+      // คืนค่าปุ่มให้กลับมากดใหม่ได้
       if (btn) {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -206,6 +222,8 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
   } catch (e) {
     console.error("Error receiving shipment:", e);
     alert(`❌ การเชื่อมต่อล้มเหลว: ${e.message}`);
+
+    // คืนค่าปุ่มเมื่อเกิด Error จาก Network
     if (btn) {
       btn.innerHTML = originalText;
       btn.disabled = false;
