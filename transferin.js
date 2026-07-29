@@ -139,72 +139,92 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 // 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (อัปเดต Header กันบล็อก 100%)
 // ==========================================
-window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
-    if (!confirm(`ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`)) return;
 
-    const btn = document.getElementById(`btn-receive-${shipmentNo}`);
-    const originalText = btn ? btn.innerHTML : "";
-    
-    if(btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผล...';
+window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
+  if (
+    !confirm(
+      `ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`,
+    )
+  )
+    return;
+
+  const btn = document.getElementById(`btn-receive-${shipmentNo}`);
+  const originalText = btn ? btn.innerHTML : "";
+
+  // 🛡️ ป้องกันการกดซ้ำ: ปิดปุ่มทันทีและแสดงสถานะ
+  if (btn) {
+    btn.disabled = true;
+    btn.style.pointerEvents = "none"; // ป้องกันการคลิกซ้อนทับผ่าน CSS
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผล...';
+  }
+
+  try {
+    // 📦 1. เตรียมพัสดุ (Payload)
+    const payload = {
+      action: "receive_shipment",
+      shipmentNo: shipmentNo,
+      destBranch: myBranch,
+    };
+
+    // 🔗 2. เตรียม URL
+    const fetchUrl = CONFIG.API_URL.includes("?")
+      ? `${CONFIG.API_URL}&action=receive_shipment`
+      : `${CONFIG.API_URL}?action=receive_shipment`;
+
+    // 🚀 3. ยิงข้อมูลไปหลังบ้าน
+    const response = await fetch(fetchUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    // ✅ 4. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
+    if (result.status === "success" || result.success) {
+      // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ
+      if (typeof window.triggerFirebaseNotification === "function") {
+        window.triggerFirebaseNotification(shipmentNo);
+      }
+
+      const card = document.getElementById(`transfer-card-${shipmentNo}`);
+      if (card) {
+        card.style.background = "#d1e7dd";
+        card.innerHTML = `<div style="padding: 10px; width: 100%; text-align: center; color: #0f5132; font-weight: bold;"><i class="fas fa-check-circle"></i> รับชิปเมนต์ ${shipmentNo} สำเร็จ!</div>`;
+        setTimeout(() => card.remove(), 2000);
+      }
+
+      if (typeof customAlert === "function") {
+        customAlert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`, "SUCCESS");
+      } else {
+        alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
+      }
+
+      if (typeof loadExistingTasks === "function") await loadExistingTasks();
+    } else {
+      // ❌ กรณี Backend ฟ้องว่ามีข้อผิดพลาด (เช่น รับไปแล้ว)
+      alert(
+        `❌ เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถรับของได้"}\n(Action ที่อ่านได้: ${result.receivedAction || "ไม่มี"})`,
+      );
+
+      // คืนค่าปุ่มให้กลับมากดใหม่ได้
+      if (btn) {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        btn.style.pointerEvents = "auto";
+      }
     }
+  } catch (e) {
+    console.error("Error receiving shipment:", e);
+    alert(`❌ การเชื่อมต่อล้มเหลว: ${e.message}`);
 
-    try {
-        // 📦 1. เตรียมพัสดุ (Payload)
-        const payload = {
-            action: 'receive_shipment', 
-            shipmentNo: shipmentNo,
-            destBranch: myBranch
-        };
-
-        // 🔗 2. เตรียม URL
-        const fetchUrl = CONFIG.API_URL.includes("?") 
-            ? `${CONFIG.API_URL}&action=receive_shipment` 
-            : `${CONFIG.API_URL}?action=receive_shipment`;
-
-        // 🚀 3. ยิงข้อมูลไปหลังบ้าน (ใส่ Header text/plain ทะลวงด่าน Google)
-        const response = await fetch(fetchUrl, {
-            method: 'POST',
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8" // 🔑 กุญแจสำคัญอยู่ตรงนี้!
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await response.json();
-
-        // ✅ 4. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
-        if (result.status === 'success' || result.success) {
-            
-            // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ (จุดแดง+เสียง)
-            if (typeof window.triggerFirebaseNotification === "function") {
-                window.triggerFirebaseNotification(shipmentNo);
-            }
-
-            const card = document.getElementById(`transfer-card-${shipmentNo}`);
-            if(card) {
-                card.style.background = "#d1e7dd";
-                card.innerHTML = `<div style="padding: 10px; width: 100%; text-align: center; color: #0f5132; font-weight: bold;"><i class="fas fa-check-circle"></i> รับชิปเมนต์ ${shipmentNo} สำเร็จ!</div>`;
-                setTimeout(() => card.remove(), 2000); 
-            }
-            
-            if (typeof customAlert === "function") {
-                customAlert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`, "SUCCESS");
-            } else {
-                alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
-            }
-
-            if(typeof loadExistingTasks === "function") await loadExistingTasks();
-
-        } else {
-            alert(`❌ เกิดข้อผิดพลาด: ${result.message || 'ไม่สามารถรับของได้'}\n(Action ที่อ่านได้: ${result.receivedAction || 'ไม่มี'})`);
-            if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
-        }
-
-    } catch(e) {
-        console.error("Error receiving shipment:", e);
-        alert(`❌ การเชื่อมต่อล้มเหลว: ${e.message}`);
-        if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
+    // คืนค่าปุ่มเมื่อเกิด Error จาก Network
+    if (btn) {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      btn.style.pointerEvents = "auto";
     }
+  }
 };
