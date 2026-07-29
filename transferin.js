@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ==========================================
-// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (กันตาย 100%)
+// 📦 2. ฟังก์ชันกด "รับของ" และยิงเรดาร์ (อัปเดต Header กันบล็อก 100%)
 // ==========================================
 window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
     if (!confirm(`ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`)) return;
@@ -151,27 +151,33 @@ window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
     }
 
     try {
-        // 🌟 [ปรับปรุง]: ยัดคำสั่ง action เข้าไปใน Body ให้ชัดเจนที่สุด
+        // 📦 1. เตรียมพัสดุ (Payload)
         const payload = {
             action: 'receive_shipment', 
             shipmentNo: shipmentNo,
             destBranch: myBranch
         };
 
-        // 🌟 [ปรับปรุง]: กันตายชั้นที่ 2 ใส่ action ลงใน URL ด้วย เผื่อหลังบ้านอ่าน JSON ไม่แตก
+        // 🔗 2. เตรียม URL
         const fetchUrl = CONFIG.API_URL.includes("?") 
             ? `${CONFIG.API_URL}&action=receive_shipment` 
             : `${CONFIG.API_URL}?action=receive_shipment`;
 
+        // 🚀 3. ยิงข้อมูลไปหลังบ้าน (ใส่ Header text/plain ทะลวงด่าน Google)
         const response = await fetch(fetchUrl, {
             method: 'POST',
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8" // 🔑 กุญแจสำคัญอยู่ตรงนี้!
+            },
             body: JSON.stringify(payload)
         });
+        
         const result = await response.json();
 
+        // ✅ 4. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
         if (result.status === 'success' || result.success) {
             
-            // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ
+            // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ (จุดแดง+เสียง)
             if (typeof window.triggerFirebaseNotification === "function") {
                 window.triggerFirebaseNotification(shipmentNo);
             }
@@ -192,7 +198,6 @@ window.simulateReceiveShipment = async function(shipmentNo, myBranch) {
             if(typeof loadExistingTasks === "function") await loadExistingTasks();
 
         } else {
-            // แจ้งเตือนข้อผิดพลาดพร้อมบอกด้วยว่าหลังบ้านอ่าน action ได้ว่าอะไร
             alert(`❌ เกิดข้อผิดพลาด: ${result.message || 'ไม่สามารถรับของได้'}\n(Action ที่อ่านได้: ${result.receivedAction || 'ไม่มี'})`);
             if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
         }
