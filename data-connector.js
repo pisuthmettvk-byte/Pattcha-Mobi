@@ -181,18 +181,36 @@ export async function testSendData() {
 //===============
 
 
-
 // ==========================================
-// 🔔 FIREBASE NOTIFICATION ENGINE (100% COMPLETE)
+// 🔔 FIREBASE NOTIFICATION ENGINE (Dynamic Version)
 // ==========================================
 
-// 1. ตัวถอดรหัสสาขากลับ (01CK -> CKC01)
+// 1. ตัวถอดรหัสสาขากลับแบบ Dynamic 100% (ดึงจากฐานข้อมูลสาขาอัตโนมัติ)
 window.decodeBranch = function(obfCode) {
-    const map = { "01CK": "CKC01", "02KK": "KKN02", "03IC": "ICS03" };
-    return map[obfCode] || obfCode;
+    if (!obfCode) return obfCode;
+    
+    // 💡 1. ตัดตัวเลขทิ้งให้เหลือแค่ตัวอักษร (เช่น "01KK" -> "KK", "01CK" -> "CK")
+    const lettersOnly = obfCode.replace(/[0-9]/g, '').toUpperCase();
+    
+    // 💡 2. วิ่งไปค้นหาในตัวแปร window.appBranches ที่ระบบโหลดมาจาก Google Sheets ตั้งแต่ตอนเปิดแอป
+    if (window.appBranches && Array.isArray(window.appBranches)) {
+        const matchedBranch = window.appBranches.find(b => {
+            const bId = String(b.id || b.Branch_ID || b.BranchID || "").trim().toUpperCase();
+            // ตรวจสอบว่า 2 ตัวอักษรแรกของรหัสสาขาตรงกันหรือไม่ (เช่น "CK" ตรงกับ "CKC01")
+            return bId.substring(0, 2) === lettersOnly;
+        });
+
+        // ถ้าค้นเจอ ให้ส่งรหัสสาขาเต็มๆ กลับไป (เช่น "CKC01")
+        if (matchedBranch) {
+            return String(matchedBranch.id || matchedBranch.Branch_ID || matchedBranch.BranchID || "").trim().toUpperCase();
+        }
+    }
+    
+    // 💡 3. Fallback ป้องกันระบบพัง กรณีที่เน็ตหลุดหรือหาข้อมูลสาขาไม่เจอ จะส่งรหัสเดิมกลับไป
+    return obfCode;
 };
 
-// 2. ฟังก์ชันยิงสัญญาณ (เมื่อปลายทางกด "รับของ")
+// 2. ฟังก์ชันยิงสัญญาณ (เหมือนเดิม)
 window.triggerFirebaseNotification = async function(docNo) {
     try {
         if (!window.db) return console.error("Firebase DB is not initialized");
@@ -200,23 +218,26 @@ window.triggerFirebaseNotification = async function(docNo) {
         // แยกสาขาต้นทางออกจากเลขที่เอกสาร (เช่น TS-23072026-01CK-0005-02KK)
         const parts = docNo.split("-");
         if (parts.length < 4) return;
-        const sourceObf = parts[2]; // ได้ "01CK"
-        const destinationBranch = window.decodeBranch(sourceObf); // แปลงเป็น "CKC01"
+        
+        const sourceObf = parts[2]; // ดึงรหัสต้นทาง เช่น "01CK" หรือ "01KK"
+        const destinationBranch = window.decodeBranch(sourceObf); // แปลงกลับเป็น "CKC01" หรือ "KKN02" อัตโนมัติ
         const myBranch = localStorage.getItem("pattcha_branch") || "UNKN";
 
+        // ยิงข้อมูลขึ้น Firebase Firestore
         await window.addDoc(window.collection(window.db, "Pattcha_Notifications"), {
-            Destination: destinationBranch, // ส่งไปหา CKC01
-            From: myBranch, // จาก KKN02
+            Destination: destinationBranch, 
+            From: myBranch, 
             DocNo: docNo,
-            Message: `สาขา ${myBranch} ได้รับเอกสาร ${docNo} เรียบร้อยแล้ว`,
+            Message: `สาขา ${myBranch} ได้รับชิปเมนต์ ${docNo} เข้าสต๊อกเรียบร้อยแล้ว`,
             Timestamp: window.serverTimestamp(),
             isRead: false
         });
-        console.log("✅ ยิงสัญญาณแจ้งเตือนไปที่", destinationBranch, "สำเร็จ!");
+        console.log(`✅ [Radar] ยิงสัญญาณแจ้งเตือนกลับไปที่ ${destinationBranch} สำเร็จ!`);
     } catch (error) {
-        console.error("🚨 ยิงสัญญาณล้มเหลว:", error);
+        console.error("🚨 [Radar Error] ยิงสัญญาณล้มเหลว:", error);
     }
 };
+
 
 // 3. ฟังก์ชันดักฟังเสียงและจุดแดง (ทำงานฝั่งต้นทางที่รอรับ)
 window.startFirebaseListener = function() {
