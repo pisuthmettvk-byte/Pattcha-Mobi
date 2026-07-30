@@ -1251,11 +1251,16 @@ async function loadExistingTasks() {
 
     if (deletedList.length > 0)
       tasks = tasks.filter((t) => !deletedList.includes(t.Shipment_No));
+    
     if (exportedList.length > 0) {
       tasks.forEach((t) => {
-        if (exportedList.includes(t.Shipment_No)) t.Status = "Pending";
+        // 🚨 [HOT FIX]: ถ้าระบบหลังบ้านส่ง COMPLETE มาแล้ว ห้ามให้ความจำเครื่องบังคับกลับไปเป็น PENDING เด็ดขาด
+        if (exportedList.includes(t.Shipment_No) && (t.Status || "").toUpperCase() !== "COMPLETE") {
+            t.Status = "Pending";
+        }
       });
     }
+    
     window.cachedTransferTasks = tasks;
 
     containers.forEach((id) => {
@@ -1313,7 +1318,6 @@ async function loadExistingTasks() {
   }
 }
 
-
 async function renderLobbyTasks(branchID) {
   const container = document.getElementById("lobbyContentContainer");
   const emptyState = document.getElementById("lobbyEmptyState");
@@ -1345,12 +1349,18 @@ async function renderLobbyTasks(branchID) {
       const exportedList = JSON.parse(
         localStorage.getItem("ghost_exported_list") || "[]",
       );
+      
       if (deletedList.length > 0)
         tasks = tasks.filter((t) => !deletedList.includes(t.Shipment_No));
-      if (exportedList.length > 0)
+        
+      if (exportedList.length > 0) {
         tasks.forEach((t) => {
-          if (exportedList.includes(t.Shipment_No)) t.Status = "Pending";
+          // 🚨 [HOT FIX]: ป้องกันบักในหน้า Lobby ด้วยเช่นกัน
+          if (exportedList.includes(t.Shipment_No) && (t.Status || "").toUpperCase() !== "COMPLETE") {
+              t.Status = "Pending";
+          }
         });
+      }
       window.cachedTransferTasks = tasks;
     }
 
@@ -1399,7 +1409,6 @@ async function renderLobbyTasks(branchID) {
       '<div style="text-align:center; color:#dc3545; padding: 20px;"><i class="fas fa-wifi"></i><br>เกิดข้อผิดพลาด กรุณารีเฟรช</div>';
   }
 }
-
 
 window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   window.currentActiveShipment = shipmentNo;
@@ -1504,11 +1513,7 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
 
   if (typeof window.renderBoxContentArea === "function")
     window.renderBoxContentArea();
-};;
-
-
-
-
+};
 
 window.renderBoxContentArea = function () {
   const container = document.getElementById("boxContentArea");
@@ -1676,6 +1681,8 @@ window.applyLobbyTheme = function () {
   }
   if (scanIcon) scanIcon.style.color = "#333";
 };
+
+
 
 // ============================================================================
 // 🎯 GROUP 7: ACTIONS & HANDLERS (SCAN, ADD, REMOVE, SEARCH)
