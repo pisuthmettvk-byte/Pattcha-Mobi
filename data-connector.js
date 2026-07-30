@@ -4,6 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import {
   getFirestore,
+  initializeFirestore, // 🚨 <--- 1. เพิ่มคำนี้เข้ามาเพื่อใช้ตั้งค่า Long Polling
   collection,
   addDoc,
   doc,
@@ -13,12 +14,8 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp, // 🚨 <--- เพิ่มคำนี้เข้าไป
+  serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-
-
-
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyDoYWx6mMkU-WvaXyQcpWBhmpNNQToQqcE",
@@ -30,7 +27,14 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// 🛠️ 2. อัปเกรดการเชื่อมต่อ Firestore ให้บังคับใช้ Long Polling เพื่อแก้ปัญหา WebChannel 400/404
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+});
+window.db = db; // 🛡️ ผูกติด window ไว้เพื่อให้ฟังก์ชันอื่นเรียกใช้ได้อย่างปลอดภัย 100%
+
 // [Firebase Setup] END
 //===============
 
@@ -183,137 +187,161 @@ export async function testSendData() {
 // [Dispatcher Tests] END
 //===============
 
-
 // ==========================================
 // 🔔 FIREBASE NOTIFICATION ENGINE (Dynamic Version)
 // ==========================================
 
 // 1. ตัวถอดรหัสสาขากลับแบบ Dynamic 100% (ดึงจากฐานข้อมูลสาขาอัตโนมัติ)
-window.decodeBranch = function(obfCode) {
-    if (!obfCode) return obfCode;
-    
-    const lettersOnly = obfCode.replace(/[0-9]/g, '').toUpperCase();
-    
-    if (window.appBranches && Array.isArray(window.appBranches)) {
-        const matchedBranch = window.appBranches.find(b => {
-            const bId = String(b.id || b.Branch_ID || b.BranchID || "").trim().toUpperCase();
-            return bId.substring(0, 2) === lettersOnly;
-        });
+window.decodeBranch = function (obfCode) {
+  if (!obfCode) return obfCode;
 
-        if (matchedBranch) {
-            return String(matchedBranch.id || matchedBranch.Branch_ID || matchedBranch.BranchID || "").trim().toUpperCase();
-        }
+  const lettersOnly = obfCode.replace(/[0-9]/g, "").toUpperCase();
+
+  if (window.appBranches && Array.isArray(window.appBranches)) {
+    const matchedBranch = window.appBranches.find((b) => {
+      const bId = String(b.id || b.Branch_ID || b.BranchID || "")
+        .trim()
+        .toUpperCase();
+      return bId.substring(0, 2) === lettersOnly;
+    });
+
+    if (matchedBranch) {
+      return String(
+        matchedBranch.id ||
+          matchedBranch.Branch_ID ||
+          matchedBranch.BranchID ||
+          "",
+      )
+        .trim()
+        .toUpperCase();
     }
-    return obfCode;
+  }
+  return obfCode;
 };
 
 // 2. ฟังก์ชันยิงสัญญาณแจ้งเตือนกลับไปยังสาขาต้นทาง
-window.triggerFirebaseNotification = async function(docNo, targetOriginBranch) {
-    try {
-        if (!db) return console.error("Firebase DB is not initialized"); 
-        
-        const myBranch = localStorage.getItem("pattcha_branch") || "UNKN"; // สาขาปลายทาง (ผู้กดรับของ)
+window.triggerFirebaseNotification = async function (
+  docNo,
+  targetOriginBranch,
+) {
+  try {
+    if (!db) return console.error("Firebase DB is not initialized");
 
-        // 🚨 ยิงข้อมูลขึ้น Firebase โดยล็อกเป้าหมาย (Destination) ไปที่สาขาต้นทาง!
-        await addDoc(collection(db, "Pattcha_Notifications"), {
-            Destination: targetOriginBranch, // 🎯 ชี้เป้าไปที่เครื่องของสาขาต้นทาง
-            From: myBranch, // บอกให้รู้ว่าใครเป็นคนกดรับ
-            DocNo: docNo,
-            Message: `สาขา ${myBranch} ได้รับชิปเมนต์ ${docNo} เข้าสต๊อกเรียบร้อยแล้ว`,
-            Timestamp: serverTimestamp(), 
-            isRead: false
-        });
-        console.log(`✅ [Radar] ยิงสัญญาณแจ้งเตือนกลับไปที่ ${targetOriginBranch} สำเร็จ!`);
-    } catch (error) {
-        console.error("🚨 [Radar Error] ยิงสัญญาณล้มเหลว:", error);
-    }
+    const myBranch = localStorage.getItem("pattcha_branch") || "UNKN"; // สาขาปลายทาง (ผู้กดรับของ)
+
+    // 🚨 ยิงข้อมูลขึ้น Firebase โดยล็อกเป้าหมาย (Destination) ไปที่สาขาต้นทาง!
+    await addDoc(collection(db, "Pattcha_Notifications"), {
+      Destination: targetOriginBranch, // 🎯 ชี้เป้าไปที่เครื่องของสาขาต้นทาง
+      From: myBranch, // บอกให้รู้ว่าใครเป็นคนกดรับ
+      DocNo: docNo,
+      Message: `สาขา ${myBranch} ได้รับชิปเมนต์ ${docNo} เข้าสต๊อกเรียบร้อยแล้ว`,
+      Timestamp: serverTimestamp(),
+      isRead: false,
+    });
+    console.log(
+      `✅ [Radar] ยิงสัญญาณแจ้งเตือนกลับไปที่ ${targetOriginBranch} สำเร็จ!`,
+    );
+  } catch (error) {
+    console.error("🚨 [Radar Error] ยิงสัญญาณล้มเหลว:", error);
+  }
 };
-
 
 // ==========================================
 // 🔔 FIREBASE NOTIFICATION ENGINE (แก้บั๊ก WebChannel & Index 100%)
 // ==========================================
-window.startFirebaseListener = function() {
-    const myBranch = localStorage.getItem("pattcha_branch");
-    if (!myBranch || !window.db) {
-        console.warn("🚨 Firebase หรือ Branch ยังไม่พร้อมทำงาน");
-        return;
-    }
+window.startFirebaseListener = function () {
+  const myBranch = localStorage.getItem("pattcha_branch");
+  if (!myBranch || !window.db) {
+    console.warn("🚨 Firebase หรือ Branch ยังไม่พร้อมทำงาน");
+    return;
+  }
 
-    try {
-        // 🛠️ แก้ปัญหาที่ 1: ลบเงื่อนไข where("isRead", "==", false) ออก เพื่อหลบเลี่ยงการโดนบังคับสร้าง Index 
-        const q = window.query(
-            window.collection(window.db, "Pattcha_Notifications"),
-            window.where("Destination", "==", myBranch)
+  try {
+    // 🛠️ แก้ปัญหาที่ 1: ลบเงื่อนไข where("isRead", "==", false) ออก เพื่อหลบเลี่ยงการโดนบังคับสร้าง Index
+    const q = window.query(
+      window.collection(window.db, "Pattcha_Notifications"),
+      window.where("Destination", "==", myBranch),
+    );
+
+    if (window.fbUnsubscribe) window.fbUnsubscribe();
+
+    window.fbUnsubscribe = window.onSnapshot(
+      q,
+      (snapshot) => {
+        const notifBadge = document.getElementById("notifBadge");
+
+        // 🛠️ มาใช้ Javascript คัดกรองข้อความที่ยังไม่ได้อ่านแทน
+        const unreadDocs = snapshot.docs.filter(
+          (doc) => doc.data().isRead === false,
         );
 
-        if (window.fbUnsubscribe) window.fbUnsubscribe();
+        if (unreadDocs.length === 0) {
+          if (notifBadge) notifBadge.classList.add("hide");
+          return;
+        }
 
-        window.fbUnsubscribe = window.onSnapshot(q, (snapshot) => {
-            const notifBadge = document.getElementById("notifBadge");
-            
-            // 🛠️ มาใช้ Javascript คัดกรองข้อความที่ยังไม่ได้อ่านแทน
-            const unreadDocs = snapshot.docs.filter(doc => doc.data().isRead === false);
+        // นับจำนวนข้อความที่ยังไม่ได้อ่าน
+        if (notifBadge) {
+          notifBadge.innerText = unreadDocs.length;
+          notifBadge.classList.remove("hide");
+        }
 
-            if (unreadDocs.length === 0) {
-                if (notifBadge) notifBadge.classList.add("hide");
-                return;
+        let hasNew = false;
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const data = change.doc.data();
+
+            // เช็กว่าเป็นข้อความที่ยังไม่ได้อ่านเท่านั้น
+            if (data && data.DocNo && data.isRead === false) {
+              hasNew = true;
+
+              // 🎯 ปลุกระบบให้แจ้งเตือนและย้ายการ์ด
+              if (typeof window.handleIncomingSignal === "function") {
+                window.handleIncomingSignal(data.DocNo, "COMPLETE");
+              }
             }
-
-            // นับจำนวนข้อความที่ยังไม่ได้อ่าน
-            if (notifBadge) {
-                notifBadge.innerText = unreadDocs.length;
-                notifBadge.classList.remove("hide");
-            }
-
-            let hasNew = false;
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const data = change.doc.data();
-                    
-                    // เช็กว่าเป็นข้อความที่ยังไม่ได้อ่านเท่านั้น
-                    if (data && data.DocNo && data.isRead === false) {
-                        hasNew = true;
-                        
-                        // 🎯 ปลุกระบบให้แจ้งเตือนและย้ายการ์ด
-                        if (typeof window.handleIncomingSignal === "function") {
-                            window.handleIncomingSignal(data.DocNo, 'COMPLETE');
-                        }
-                    }
-                }
-            });
-
-            if (hasNew && typeof window.playAlertSound === "function") {
-                window.playAlertSound();
-            }
-            
-        }, (error) => {
-            // 🛠️ แก้ปัญหาที่ 2: ดักจับ Error ลึกๆ แล้วเด้งแจ้งเตือนเจเลอร์ตรงๆ
-            console.error("🚨 Firebase Snapshot Error:", error);
-            if (error.message.includes("permission") || error.message.includes("Missing")) {
-                alert("❌ ฐานข้อมูลติดล็อก (Permission)! กรุณาไปเปิดสิทธิ์ Rules ใน Firebase ครับ");
-            } else if (error.message.includes("index")) {
-                alert("❌ ขาด Index! กรุณากดลิงก์สีน้ำเงินในหน้าต่าง Console (F12) เพื่อสร้างครับ");
-            }
+          }
         });
 
-    } catch (error) {
-        console.error("🚨 Setup Listener Error:", error);
-    }
+        if (hasNew && typeof window.playAlertSound === "function") {
+          window.playAlertSound();
+        }
+      },
+      (error) => {
+        // 🛠️ แก้ปัญหาที่ 2: ดักจับ Error ลึกๆ แล้วเด้งแจ้งเตือนเจเลอร์ตรงๆ
+        console.error("🚨 Firebase Snapshot Error:", error);
+        if (
+          error.message.includes("permission") ||
+          error.message.includes("Missing")
+        ) {
+          alert(
+            "❌ ฐานข้อมูลติดล็อก (Permission)! กรุณาไปเปิดสิทธิ์ Rules ใน Firebase ครับ",
+          );
+        } else if (error.message.includes("index")) {
+          alert(
+            "❌ ขาด Index! กรุณากดลิงก์สีน้ำเงินในหน้าต่าง Console (F12) เพื่อสร้างครับ",
+          );
+        }
+      },
+    );
+  } catch (error) {
+    console.error("🚨 Setup Listener Error:", error);
+  }
 };
 
-
-
-// 4. ฟังก์ชันเล่นเสียงเตือน 
-window.playAlertSound = function() {
-    const audio = document.getElementById("alertSound");
-    if (audio) {
-        audio.currentTime = 0;
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.warn("เบราว์เซอร์บล็อกเสียง ต้องคลิกหน้าเว็บก่อน 1 ครั้ง:", error);
-            });
-        }
+// 4. ฟังก์ชันเล่นเสียงเตือน
+window.playAlertSound = function () {
+  const audio = document.getElementById("alertSound");
+  if (audio) {
+    audio.currentTime = 0;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((error) => {
+        console.warn(
+          "เบราว์เซอร์บล็อกเสียง ต้องคลิกหน้าเว็บก่อน 1 ครั้ง:",
+          error,
+        );
+      });
     }
+  }
 };
