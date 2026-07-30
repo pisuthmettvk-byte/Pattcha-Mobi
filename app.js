@@ -837,3 +837,83 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+// ==========================================
+// 📡 REAL-TIME NOTIFICATION SYSTEM (TOAST)
+// ==========================================
+
+// 1. สร้าง Container สำหรับ Toast
+document.addEventListener("DOMContentLoaded", () => {
+  if (!document.getElementById('toast-container')) {
+    const toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    // รองรับการซ้อนทับ, เรียงต่อกันลงมา, ไม่บังการคลิกด้านหลัง
+    toastContainer.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;';
+    document.body.appendChild(toastContainer);
+  }
+
+  // สร้าง Style สำหรับ Animation
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+});
+
+// 2. ฟังก์ชันแสดงแจ้งเตือน (Append ต่อกัน)
+window.showOverlayNotification = function(title, message) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.style.cssText = 'background: white; border-left: 6px solid #28a745; box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; width: 280px; display: flex; flex-direction: column; pointer-events: auto; animation: slideInRight 0.3s forwards;';
+  
+  toast.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+      <strong style="color: #333; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+        <i class="fas fa-check-circle" style="color:#28a745; font-size: 16px;"></i> ${title}
+      </strong>
+      <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; cursor: pointer; color: #aaa; font-size: 20px; line-height: 1; padding: 0;">&times;</button>
+    </div>
+    <div style="color: #666; font-size: 13px; margin-bottom: 12px; line-height: 1.4;">${message}</div>
+    <button onclick="this.parentElement.remove()" style="align-self: flex-end; background: #28a745; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(40,167,69,0.3);">รับทราบ</button>
+  `;
+  
+  container.appendChild(toast);
+
+  // 3. จัดการแจ้งเตือนจุดแดง (Red Dot) ที่กระดิ่ง
+  const badge = document.getElementById('notifBadge');
+  if (badge) {
+    badge.classList.remove('hide');
+    let currentCount = parseInt(badge.innerText || '0');
+    badge.innerText = currentCount + 1;
+  }
+
+  // 4. เล่นเสียงแจ้งเตือน
+  const audio = document.getElementById('alertSound');
+  if (audio) {
+    audio.currentTime = 0;
+    audio.play().catch(e => console.warn("Browser blocked audio play"));
+  }
+};
+
+// ==========================================
+// 🔗 SIGNAL LISTENER (สะพานเชื่อม Event)
+// ==========================================
+// ฟังก์ชันนี้จะถูกเรียกจาก data-connector.js เมื่อ Firebase มีการเปลี่ยนแปลง
+window.handleIncomingSignal = async function(shipmentNo, status) {
+  if (status === 'COMPLETE') {
+    // 1. เด้ง Toast
+    window.showOverlayNotification(
+      "ปลายทางรับของแล้ว", 
+      `ชิปเมนต์ <b>${shipmentNo}</b> ถูกรับเข้าสต๊อกสาขาปลายทางสมบูรณ์แล้ว`
+    );
+    
+    // 2. ปลุกระบบให้โหลดข้อมูลงานใหม่ทันที (ดึงการ์ดย้ายฝั่ง)
+    if (typeof loadExistingTasks === "function") {
+      await loadExistingTasks();
+    }
+  }
+};
