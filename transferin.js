@@ -137,15 +137,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ==========================================
-// 📦 ฟังก์ชันกด "รับของ" (อัปเกรดกันข้อมูลหายตอน Redirect 100%)
+// 📦 ฟังก์ชันกด "รับของ" (อัปเกรดส่งข้อมูลผ่าน Body + แนบเป้าหมายกระตุ้นต้นทาง 100%)
 // ==========================================
-window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
+window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBranch) {
+  // 1. หยุดการทำงานซ้ำซ้อน (ป้องกันการกดรัวๆ)
+  if (window.isReceivingTask) return;
+  
   if (
     !confirm(
       `ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`,
     )
   )
     return;
+
+  // เปิดสถานะกำลังประมวลผล
+  window.isReceivingTask = true;
 
   const btn = document.getElementById(`btn-receive-${shipmentNo}`);
   const originalText = btn ? btn.innerHTML : "";
@@ -158,35 +164,31 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
   }
 
   try {
-    // 🚀 1. ฝังข้อมูลลงใน URL โดยตรง (URL Parameters) 
-    // วิธีนี้ต่อให้ Google ทำการ Redirect ข้อมูลก็จะไม่หล่นหายแน่นอน 100%
-    const queryParams = new URLSearchParams({
+    // 📦 1. สร้างก้อนข้อมูล Payload ยัดใส่ Body แทนการแปะ URL
+    const payload = {
       action: "receive_shipment",
       shipmentNo: shipmentNo,
-      destBranch: myBranch
-    }).toString();
+      destBranch: myBranch,
+      originBranch: originBranch // ส่งเผื่อไว้ใช้ดึงข้อมูล
+    };
 
-    // 🔗 2. ประกอบร่าง URL แบบฝังข้อมูล
-    const fetchUrl = CONFIG.API_URL.includes("?")
-      ? `${CONFIG.API_URL}&${queryParams}`
-      : `${CONFIG.API_URL}?${queryParams}`;
-
-    // 🚀 3. ยิงข้อมูลไปหลังบ้าน (ไม่ต้องใส่ Body แล้ว เพราะข้อมูลอยู่ใน URL ครบแล้ว)
-    const response = await fetch(fetchUrl, {
+    // 🚀 2. ยิง POST ไปโดยตรง และเอา Payload ใส่ไว้ใน body
+    const response = await fetch(CONFIG.API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "text/plain;charset=utf-8",
-      }
+      },
+      body: JSON.stringify(payload) // ยัดกล่องลงไปตรงนี้ ป้องกันข้อมูลหาย
     });
 
     const result = await response.json();
 
-    // ✅ 4. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
+    // ✅ 3. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
     if (result.status === "success" || result.success) {
       
-      // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ
+      // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ พร้อมส่ง Origin_Branch กลับไปกระตุ้น!
       if (typeof window.triggerFirebaseNotification === "function") {
-        window.triggerFirebaseNotification(shipmentNo);
+        window.triggerFirebaseNotification(shipmentNo, originBranch); // 🎯 แนบต้นทางไปตรงนี้!
       }
 
       const card = document.getElementById(`transfer-card-${shipmentNo}`);
@@ -202,7 +204,11 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
         alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
       }
 
-      if (typeof loadExistingTasks === "function") await loadExistingTasks();
+      // รีโหลดข้อมูลงานใหม่ทันที
+      if (typeof loadExistingTasks === "function") {
+          setTimeout(loadExistingTasks, 1500); 
+      }
+      
     } else {
       // ❌ กรณี Backend ฟ้องว่ามีข้อผิดพลาด
       alert(
@@ -226,5 +232,8 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch) {
       btn.disabled = false;
       btn.style.pointerEvents = "auto";
     }
+  } finally {
+      // ปิดสถานะประมวลผล เพื่อให้กดปุ่มอื่นต่อได้
+      window.isReceivingTask = false;
   }
 };

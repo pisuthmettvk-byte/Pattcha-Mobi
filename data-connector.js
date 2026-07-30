@@ -207,32 +207,28 @@ window.decodeBranch = function(obfCode) {
     return obfCode;
 };
 
-// 2. ฟังก์ชันยิงสัญญาณแจ้งเตือน
-window.triggerFirebaseNotification = async function(docNo) {
+// 2. ฟังก์ชันยิงสัญญาณแจ้งเตือนกลับไปยังสาขาต้นทาง
+window.triggerFirebaseNotification = async function(docNo, targetOriginBranch) {
     try {
-        if (!db) return console.error("Firebase DB is not initialized"); // 🚨 ลบ window. ทิ้ง
+        if (!db) return console.error("Firebase DB is not initialized"); 
         
-        const parts = docNo.split("-");
-        if (parts.length < 4) return;
-        
-        const sourceObf = parts[2]; 
-        const destinationBranch = window.decodeBranch(sourceObf); 
-        const myBranch = localStorage.getItem("pattcha_branch") || "UNKN";
+        const myBranch = localStorage.getItem("pattcha_branch") || "UNKN"; // สาขาปลายทาง (ผู้กดรับของ)
 
-        // 🚨 ยิงข้อมูลขึ้น Firebase Firestore ด้วยไวยากรณ์ V10 ที่ถูกต้อง
+        // 🚨 ยิงข้อมูลขึ้น Firebase โดยล็อกเป้าหมาย (Destination) ไปที่สาขาต้นทาง!
         await addDoc(collection(db, "Pattcha_Notifications"), {
-            Destination: destinationBranch, 
-            From: myBranch, 
+            Destination: targetOriginBranch, // 🎯 ชี้เป้าไปที่เครื่องของสาขาต้นทาง
+            From: myBranch, // บอกให้รู้ว่าใครเป็นคนกดรับ
             DocNo: docNo,
             Message: `สาขา ${myBranch} ได้รับชิปเมนต์ ${docNo} เข้าสต๊อกเรียบร้อยแล้ว`,
-            Timestamp: serverTimestamp(), // 🚨 ลบ window. ทิ้งและใช้คำสั่งตรงๆ
+            Timestamp: serverTimestamp(), 
             isRead: false
         });
-        console.log(`✅ [Radar] ยิงสัญญาณแจ้งเตือนกลับไปที่ ${destinationBranch} สำเร็จ!`);
+        console.log(`✅ [Radar] ยิงสัญญาณแจ้งเตือนกลับไปที่ ${targetOriginBranch} สำเร็จ!`);
     } catch (error) {
         console.error("🚨 [Radar Error] ยิงสัญญาณล้มเหลว:", error);
     }
 };
+
 
 // 3. ฟังก์ชันดักฟังเสียงและจุดแดง (อัปเดตเชื่อมโยง Real-Time UI)
 window.startFirebaseListener = function() {
