@@ -172,8 +172,14 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
       originBranch: originBranch // ส่งเผื่อไว้ใช้ดึงข้อมูล
     };
 
-    // 🚀 2. ยิง POST ไปโดยตรง และเอา Payload ใส่ไว้ใน body
-    const response = await fetch(CONFIG.API_URL, {
+    // 🛠️ [เทย์เลอร์แก้ไขจุดนี้]: เติม action เข้าไปใน URL ด้วย เพื่อให้ Google App Script รับรู้เส้นทาง
+    // เช็กว่า CONFIG.API_URL มีเครื่องหมาย ? อยู่แล้วหรือยัง เพื่อต่อ String ให้ถูกต้อง
+    const fetchUrl = CONFIG.API_URL.includes("?") 
+        ? `${CONFIG.API_URL}&action=receive_shipment` 
+        : `${CONFIG.API_URL}?action=receive_shipment`;
+
+    // 🚀 2. ยิง POST ไปโดยตรง (ใช้ fetchUrl ที่มี action แล้ว) และเอา Payload ใส่ไว้ใน body
+    const response = await fetch(fetchUrl, {
       method: "POST",
       headers: {
         "Content-Type": "text/plain;charset=utf-8",
