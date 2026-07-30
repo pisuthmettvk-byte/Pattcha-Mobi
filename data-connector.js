@@ -230,53 +230,79 @@ window.triggerFirebaseNotification = async function(docNo, targetOriginBranch) {
 };
 
 
-// 3. ฟังก์ชันดักฟังเสียงและจุดแดง (อัปเดตเชื่อมโยง Real-Time UI)
+// ==========================================
+// 🔔 FIREBASE NOTIFICATION ENGINE (แก้บั๊ก WebChannel & Index 100%)
+// ==========================================
 window.startFirebaseListener = function() {
     const myBranch = localStorage.getItem("pattcha_branch");
-    if (!myBranch || !db) return; // 🚨 ลบ window. ออก
+    if (!myBranch || !window.db) {
+        console.warn("🚨 Firebase หรือ Branch ยังไม่พร้อมทำงาน");
+        return;
+    }
 
-    // 🚨 ใช้ query, collection, where ตามหลัก V10 ตรงๆ
-    const q = query(
-        collection(db, "Pattcha_Notifications"),
-        where("Destination", "==", myBranch),
-        where("isRead", "==", false)
-    );
+    try {
+        // 🛠️ แก้ปัญหาที่ 1: ลบเงื่อนไข where("isRead", "==", false) ออก เพื่อหลบเลี่ยงการโดนบังคับสร้าง Index 
+        const q = window.query(
+            window.collection(window.db, "Pattcha_Notifications"),
+            window.where("Destination", "==", myBranch)
+        );
 
-    if (window.fbUnsubscribe) window.fbUnsubscribe();
+        if (window.fbUnsubscribe) window.fbUnsubscribe();
 
-    window.fbUnsubscribe = onSnapshot(q, (snapshot) => {
-        const notifBadge = document.getElementById("notifBadge");
-        
-        if (snapshot.empty) {
-            if (notifBadge) notifBadge.classList.add("hide");
-            return;
-        }
+        window.fbUnsubscribe = window.onSnapshot(q, (snapshot) => {
+            const notifBadge = document.getElementById("notifBadge");
+            
+            // 🛠️ มาใช้ Javascript คัดกรองข้อความที่ยังไม่ได้อ่านแทน
+            const unreadDocs = snapshot.docs.filter(doc => doc.data().isRead === false);
 
-        if (notifBadge) {
-            notifBadge.innerText = snapshot.size;
-            notifBadge.classList.remove("hide");
-        }
+            if (unreadDocs.length === 0) {
+                if (notifBadge) notifBadge.classList.add("hide");
+                return;
+            }
 
-        let hasNew = false;
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                hasNew = true;
-                const data = change.doc.data();
-                
-                // 🚨 ส่งรหัสชิปเมนต์ไปกระตุ้นให้เกิด Alert Toast และย้ายการ์ด
-                if (data && data.DocNo) {
-                    if (typeof window.handleIncomingSignal === "function") {
-                        window.handleIncomingSignal(data.DocNo, 'COMPLETE');
+            // นับจำนวนข้อความที่ยังไม่ได้อ่าน
+            if (notifBadge) {
+                notifBadge.innerText = unreadDocs.length;
+                notifBadge.classList.remove("hide");
+            }
+
+            let hasNew = false;
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const data = change.doc.data();
+                    
+                    // เช็กว่าเป็นข้อความที่ยังไม่ได้อ่านเท่านั้น
+                    if (data && data.DocNo && data.isRead === false) {
+                        hasNew = true;
+                        
+                        // 🎯 ปลุกระบบให้แจ้งเตือนและย้ายการ์ด
+                        if (typeof window.handleIncomingSignal === "function") {
+                            window.handleIncomingSignal(data.DocNo, 'COMPLETE');
+                        }
                     }
                 }
+            });
+
+            if (hasNew && typeof window.playAlertSound === "function") {
+                window.playAlertSound();
+            }
+            
+        }, (error) => {
+            // 🛠️ แก้ปัญหาที่ 2: ดักจับ Error ลึกๆ แล้วเด้งแจ้งเตือนเจเลอร์ตรงๆ
+            console.error("🚨 Firebase Snapshot Error:", error);
+            if (error.message.includes("permission") || error.message.includes("Missing")) {
+                alert("❌ ฐานข้อมูลติดล็อก (Permission)! กรุณาไปเปิดสิทธิ์ Rules ใน Firebase ครับ");
+            } else if (error.message.includes("index")) {
+                alert("❌ ขาด Index! กรุณากดลิงก์สีน้ำเงินในหน้าต่าง Console (F12) เพื่อสร้างครับ");
             }
         });
 
-        if (hasNew && typeof window.playAlertSound === "function") {
-            window.playAlertSound();
-        }
-    });
+    } catch (error) {
+        console.error("🚨 Setup Listener Error:", error);
+    }
 };
+
+
 
 // 4. ฟังก์ชันเล่นเสียงเตือน 
 window.playAlertSound = function() {
