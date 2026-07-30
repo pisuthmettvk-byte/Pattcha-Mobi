@@ -1,8 +1,6 @@
 // ==========================================
 // [Firebase Configuration & Initialization]
 // ==========================================
-//===============
-// [Firebase Setup] START
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import {
   getFirestore,
@@ -14,8 +12,13 @@ import {
   onSnapshot,
   query,
   where,
-  getDocs, // 🚨 [เพิ่มใหม่]: สั่งนำเข้าคำสั่งดึงข้อมูลชุดใหญ่
+  getDocs,
+  serverTimestamp, // 🚨 <--- เพิ่มคำนี้เข้าไป
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+
+
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyDoYWx6mMkU-WvaXyQcpWBhmpNNQToQqcE",
@@ -189,47 +192,40 @@ export async function testSendData() {
 window.decodeBranch = function(obfCode) {
     if (!obfCode) return obfCode;
     
-    // 💡 1. ตัดตัวเลขทิ้งให้เหลือแค่ตัวอักษร (เช่น "01KK" -> "KK", "01CK" -> "CK")
     const lettersOnly = obfCode.replace(/[0-9]/g, '').toUpperCase();
     
-    // 💡 2. วิ่งไปค้นหาในตัวแปร window.appBranches ที่ระบบโหลดมาจาก Google Sheets ตั้งแต่ตอนเปิดแอป
     if (window.appBranches && Array.isArray(window.appBranches)) {
         const matchedBranch = window.appBranches.find(b => {
             const bId = String(b.id || b.Branch_ID || b.BranchID || "").trim().toUpperCase();
-            // ตรวจสอบว่า 2 ตัวอักษรแรกของรหัสสาขาตรงกันหรือไม่ (เช่น "CK" ตรงกับ "CKC01")
             return bId.substring(0, 2) === lettersOnly;
         });
 
-        // ถ้าค้นเจอ ให้ส่งรหัสสาขาเต็มๆ กลับไป (เช่น "CKC01")
         if (matchedBranch) {
             return String(matchedBranch.id || matchedBranch.Branch_ID || matchedBranch.BranchID || "").trim().toUpperCase();
         }
     }
-    
-    // 💡 3. Fallback ป้องกันระบบพัง กรณีที่เน็ตหลุดหรือหาข้อมูลสาขาไม่เจอ จะส่งรหัสเดิมกลับไป
     return obfCode;
 };
 
-// 2. ฟังก์ชันยิงสัญญาณ (เหมือนเดิม)
+// 2. ฟังก์ชันยิงสัญญาณแจ้งเตือน
 window.triggerFirebaseNotification = async function(docNo) {
     try {
-        if (!window.db) return console.error("Firebase DB is not initialized");
+        if (!db) return console.error("Firebase DB is not initialized"); // 🚨 ลบ window. ทิ้ง
         
-        // แยกสาขาต้นทางออกจากเลขที่เอกสาร (เช่น TS-23072026-01CK-0005-02KK)
         const parts = docNo.split("-");
         if (parts.length < 4) return;
         
-        const sourceObf = parts[2]; // ดึงรหัสต้นทาง เช่น "01CK" หรือ "01KK"
-        const destinationBranch = window.decodeBranch(sourceObf); // แปลงกลับเป็น "CKC01" หรือ "KKN02" อัตโนมัติ
+        const sourceObf = parts[2]; 
+        const destinationBranch = window.decodeBranch(sourceObf); 
         const myBranch = localStorage.getItem("pattcha_branch") || "UNKN";
 
-        // ยิงข้อมูลขึ้น Firebase Firestore
-        await window.addDoc(window.collection(window.db, "Pattcha_Notifications"), {
+        // 🚨 ยิงข้อมูลขึ้น Firebase Firestore ด้วยไวยากรณ์ V10 ที่ถูกต้อง
+        await addDoc(collection(db, "Pattcha_Notifications"), {
             Destination: destinationBranch, 
             From: myBranch, 
             DocNo: docNo,
             Message: `สาขา ${myBranch} ได้รับชิปเมนต์ ${docNo} เข้าสต๊อกเรียบร้อยแล้ว`,
-            Timestamp: window.serverTimestamp(),
+            Timestamp: serverTimestamp(), // 🚨 ลบ window. ทิ้งและใช้คำสั่งตรงๆ
             isRead: false
         });
         console.log(`✅ [Radar] ยิงสัญญาณแจ้งเตือนกลับไปที่ ${destinationBranch} สำเร็จ!`);
@@ -237,23 +233,22 @@ window.triggerFirebaseNotification = async function(docNo) {
         console.error("🚨 [Radar Error] ยิงสัญญาณล้มเหลว:", error);
     }
 };
-// ==========================================
-// 🔔 FIREBASE NOTIFICATION ENGINE (อัปเดตเชื่อมโยง Real-Time UI)
-// ==========================================
+
+// 3. ฟังก์ชันดักฟังเสียงและจุดแดง (อัปเดตเชื่อมโยง Real-Time UI)
 window.startFirebaseListener = function() {
     const myBranch = localStorage.getItem("pattcha_branch");
-    if (!myBranch || !window.db) return;
+    if (!myBranch || !db) return; // 🚨 ลบ window. ออก
 
-    const q = window.query(
-        window.collection(window.db, "Pattcha_Notifications"),
-        window.where("Destination", "==", myBranch),
-        window.where("isRead", "==", false)
+    // 🚨 ใช้ query, collection, where ตามหลัก V10 ตรงๆ
+    const q = query(
+        collection(db, "Pattcha_Notifications"),
+        where("Destination", "==", myBranch),
+        where("isRead", "==", false)
     );
 
-    // ปิดตัวเก่าก่อนเปิดตัวใหม่ ป้องกันการฟังซ้ำซ้อน
     if (window.fbUnsubscribe) window.fbUnsubscribe();
 
-    window.fbUnsubscribe = window.onSnapshot(q, (snapshot) => {
+    window.fbUnsubscribe = onSnapshot(q, (snapshot) => {
         const notifBadge = document.getElementById("notifBadge");
         
         if (snapshot.empty) {
@@ -261,7 +256,6 @@ window.startFirebaseListener = function() {
             return;
         }
 
-        // นับจำนวนข้อความที่ยังไม่ได้อ่านและแสดงจุดแดง
         if (notifBadge) {
             notifBadge.innerText = snapshot.size;
             notifBadge.classList.remove("hide");
@@ -273,7 +267,7 @@ window.startFirebaseListener = function() {
                 hasNew = true;
                 const data = change.doc.data();
                 
-                // 🚨 [จุดเชื่อมโยงระบบ]: ส่งรหัสชิปเมนต์ไปกระตุ้นให้เกิด Alert Toast และย้ายการ์ด
+                // 🚨 ส่งรหัสชิปเมนต์ไปกระตุ้นให้เกิด Alert Toast และย้ายการ์ด
                 if (data && data.DocNo) {
                     if (typeof window.handleIncomingSignal === "function") {
                         window.handleIncomingSignal(data.DocNo, 'COMPLETE');
@@ -287,6 +281,7 @@ window.startFirebaseListener = function() {
         }
     });
 };
+
 // 4. ฟังก์ชันเล่นเสียงเตือน 
 window.playAlertSound = function() {
     const audio = document.getElementById("alertSound");
