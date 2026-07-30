@@ -237,32 +237,56 @@ window.triggerFirebaseNotification = async function(docNo) {
         console.error("🚨 [Radar Error] ยิงสัญญาณล้มเหลว:", error);
     }
 };
+// ==========================================
+// 🔔 FIREBASE NOTIFICATION ENGINE (อัปเดตเชื่อมโยง Real-Time UI)
+// ==========================================
+window.startFirebaseListener = function() {
+    const myBranch = localStorage.getItem("pattcha_branch");
+    if (!myBranch || !window.db) return;
 
-window.startFirebaseListener = function () {
-  // สมมติว่าใช้ Firebase Realtime Database อ้างอิงตาม branch ปัจจุบัน
-  const branch = localStorage.getItem("pattcha_branch");
-  if (!branch) return;
+    const q = window.query(
+        window.collection(window.db, "Pattcha_Notifications"),
+        window.where("Destination", "==", myBranch),
+        window.where("isRead", "==", false)
+    );
 
-  const dbRef = firebase.database().ref(`notifications/${branch}`);
+    // ปิดตัวเก่าก่อนเปิดตัวใหม่ ป้องกันการฟังซ้ำซ้อน
+    if (window.fbUnsubscribe) window.fbUnsubscribe();
 
-  // ดักจับข้อมูลที่ถูกเพิ่มเข้ามาใหม่
-  dbRef.on("child_added", (snapshot) => {
-    const data = snapshot.val();
+    window.fbUnsubscribe = window.onSnapshot(q, (snapshot) => {
+        const notifBadge = document.getElementById("notifBadge");
+        
+        if (snapshot.empty) {
+            if (notifBadge) notifBadge.classList.add("hide");
+            return;
+        }
 
-    // ถ้าเป็นการแจ้งเตือนแบบ COMPLETE
-    if (data.status === "COMPLETE" && !data.isRead) {
-      // 1. เรียกใช้งาน Alert & Reload แบบ Real-Time
-      if (typeof window.handleIncomingSignal === "function") {
-        window.handleIncomingSignal(data.shipmentNo, data.status);
-      }
+        // นับจำนวนข้อความที่ยังไม่ได้อ่านและแสดงจุดแดง
+        if (notifBadge) {
+            notifBadge.innerText = snapshot.size;
+            notifBadge.classList.remove("hide");
+        }
 
-      // 2. มาร์คว่าอ่านแล้วในฐานข้อมูล (ป้องกันแจ้งเตือนซ้ำเวลาโหลดหน้าใหม่)
-      snapshot.ref.update({ isRead: true });
-    }
-  });
+        let hasNew = false;
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                hasNew = true;
+                const data = change.doc.data();
+                
+                // 🚨 [จุดเชื่อมโยงระบบ]: ส่งรหัสชิปเมนต์ไปกระตุ้นให้เกิด Alert Toast และย้ายการ์ด
+                if (data && data.DocNo) {
+                    if (typeof window.handleIncomingSignal === "function") {
+                        window.handleIncomingSignal(data.DocNo, 'COMPLETE');
+                    }
+                }
+            }
+        });
+
+        if (hasNew && typeof window.playAlertSound === "function") {
+            window.playAlertSound();
+        }
+    });
 };
-
-
 // 4. ฟังก์ชันเล่นเสียงเตือน 
 window.playAlertSound = function() {
     const audio = document.getElementById("alertSound");
