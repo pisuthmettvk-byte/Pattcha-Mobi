@@ -135,9 +135,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-
 // ==========================================
-// 📦 ฟังก์ชันกด "รับของ" (อัปเกรดส่งข้อมูลผ่าน Body + แนบเป้าหมายกระตุ้นต้นทาง 100%)
+// 📦 ฟังก์ชันกด "รับของ" (อัปเกรดส่งข้อมูลแบบ Form Data ทะลวงหลังบ้าน 100%)
 // ==========================================
 window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBranch) {
   // 1. หยุดการทำงานซ้ำซ้อน (ป้องกันการกดรัวๆ)
@@ -164,27 +163,18 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
   }
 
   try {
-    // 📦 1. สร้างก้อนข้อมูล Payload ยัดใส่ Body แทนการแปะ URL
-    const payload = {
-      action: "receive_shipment",
-      shipmentNo: shipmentNo,
-      destBranch: myBranch,
-      originBranch: originBranch // ส่งเผื่อไว้ใช้ดึงข้อมูล
-    };
+    // 📦 1. [จุดเปลี่ยนสำคัญ]: เปลี่ยนมาแพ็กข้อมูลแบบ Form Data (URLSearchParams)
+    // วิธีนี้ Google Apps Script (e.parameter) จะอ่านออกทันทีโดยไม่ต้องแก้โค้ดหลังบ้าน
+    const formData = new URLSearchParams();
+    formData.append("action", "receive_shipment");
+    formData.append("shipmentNo", shipmentNo);
+    formData.append("destBranch", myBranch);
+    formData.append("originBranch", originBranch);
 
-    // 🛠️ [เทย์เลอร์แก้ไขจุดนี้]: เติม action เข้าไปใน URL ด้วย เพื่อให้ Google App Script รับรู้เส้นทาง
-    // เช็กว่า CONFIG.API_URL มีเครื่องหมาย ? อยู่แล้วหรือยัง เพื่อต่อ String ให้ถูกต้อง
-    const fetchUrl = CONFIG.API_URL.includes("?") 
-        ? `${CONFIG.API_URL}&action=receive_shipment` 
-        : `${CONFIG.API_URL}?action=receive_shipment`;
-
-    // 🚀 2. ยิง POST ไปโดยตรง (ใช้ fetchUrl ที่มี action แล้ว) และเอา Payload ใส่ไว้ใน body
-    const response = await fetch(fetchUrl, {
+    // 🚀 2. ยิง POST ไปโดยตรงด้วย Form Data
+    const response = await fetch(CONFIG.API_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payload) // ยัดกล่องลงไปตรงนี้ ป้องกันข้อมูลหาย
+      body: formData // ส่งแบบฟอร์มปกติ (GAS ชอบวิธีนี้ที่สุด)
     });
 
     const result = await response.json();
