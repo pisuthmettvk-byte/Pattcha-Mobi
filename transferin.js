@@ -134,9 +134,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-
 // ==========================================
-// 📦 ฟังก์ชันกด "รับของ" (อัปเกรดส่งข้อมูลแบบ Form Data ทะลวงหลังบ้าน 100%)
+// 📦 ฟังก์ชันกด "รับของ" (แบบธรรมดา ตัดระบบ Real-time ออกเพื่อปิดจบ Flow)
 // ==========================================
 window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBranch) {
   // 1. หยุดการทำงานซ้ำซ้อน (ป้องกันการกดรัวๆ)
@@ -163,18 +162,17 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
   }
 
   try {
-    // 📦 1. [จุดเปลี่ยนสำคัญ]: เปลี่ยนมาแพ็กข้อมูลแบบ Form Data (URLSearchParams)
-    // วิธีนี้ Google Apps Script (e.parameter) จะอ่านออกทันทีโดยไม่ต้องแก้โค้ดหลังบ้าน
+    // 📦 1. แพ็กข้อมูลแบบ Form Data ธรรมดา เพื่อให้หลังบ้าน (Google Workspace) อ่านออก
     const formData = new URLSearchParams();
-    formData.append("action", "receive_shipment");
+    formData.append("action", "receive_shipment"); // ส่งคำสั่งรับของ / อัปเดตสถานะเป็น Complete
     formData.append("shipmentNo", shipmentNo);
     formData.append("destBranch", myBranch);
-    formData.append("originBranch", originBranch);
+    formData.append("originBranch", originBranch); 
 
-    // 🚀 2. ยิง POST ไปโดยตรงด้วย Form Data
+    // 🚀 2. ยิง POST ไปที่ App Script ตรงๆ 
     const response = await fetch(CONFIG.API_URL, {
       method: "POST",
-      body: formData // ส่งแบบฟอร์มปกติ (GAS ชอบวิธีนี้ที่สุด)
+      body: formData 
     });
 
     const result = await response.json();
@@ -182,25 +180,23 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
     // ✅ 3. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
     if (result.status === "success" || result.success) {
       
-      // 📡 ยิงสัญญาณ Firebase ทันทีที่รับของสำเร็จ พร้อมส่ง Origin_Branch กลับไปกระตุ้น!
-      if (typeof window.triggerFirebaseNotification === "function") {
-        window.triggerFirebaseNotification(shipmentNo, originBranch); // 🎯 แนบต้นทางไปตรงนี้!
-      }
+      // ❌ (ตัดฟังก์ชัน triggerFirebaseNotification ทิ้งไปตามคำสั่ง) ❌
 
+      // อัปเดตหน้าจอแอปฝั่งคนรับให้รู้ว่ารับเสร็จแล้ว
       const card = document.getElementById(`transfer-card-${shipmentNo}`);
       if (card) {
         card.style.background = "#d1e7dd";
-        card.innerHTML = `<div style="padding: 10px; width: 100%; text-align: center; color: #0f5132; font-weight: bold;"><i class="fas fa-check-circle"></i> รับชิปเมนต์ ${shipmentNo} สำเร็จ!</div>`;
+        card.innerHTML = `<div style="padding: 10px; width: 100%; text-align: center; color: #0f5132; font-weight: bold;"><i class="fas fa-check-circle"></i> รับชิปเมนต์ ${shipmentNo} สำเร็จ! (สถานะ: COMPLETE)</div>`;
         setTimeout(() => card.remove(), 2000);
       }
 
       if (typeof customAlert === "function") {
         customAlert(`รับชิปเมนต์ ${shipmentNo} เข้าสต๊อกเรียบร้อย!`, "SUCCESS");
       } else {
-        alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สต๊อกอัปเดตเรียบร้อยครับ`);
+        alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สถานะเปลี่ยนเป็น COMPLETE เรียบร้อยครับ`);
       }
 
-      // รีโหลดข้อมูลงานใหม่ทันที
+      // รีโหลดข้อมูลงานใหม่ทันที 
       if (typeof loadExistingTasks === "function") {
           setTimeout(loadExistingTasks, 1500); 
       }
