@@ -135,18 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// 📦 ฟังก์ชันกด "รับของ" (แบบธรรมดา ตัดระบบ Real-time ออกเพื่อปิดจบ Flow)
+// 📦 ฟังก์ชันกด "รับของ" (เปลี่ยนสถานะจาก Pending -> Complete)
 // ==========================================
 window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBranch) {
-  // 1. หยุดการทำงานซ้ำซ้อน (ป้องกันการกดรัวๆ)
+  // 1. ป้องกันการกดปุ่มซ้ำซ้อน
   if (window.isReceivingTask) return;
   
-  if (
-    !confirm(
-      `ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`,
-    )
-  )
-    return;
+  if (!confirm(`ยืนยันการรับชิปเมนต์ ${shipmentNo} เข้าสต๊อกสาขา ${myBranch} ใช่หรือไม่?`)) return;
 
   // เปิดสถานะกำลังประมวลผล
   window.isReceivingTask = true;
@@ -154,7 +149,7 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
   const btn = document.getElementById(`btn-receive-${shipmentNo}`);
   const originalText = btn ? btn.innerHTML : "";
 
-  // 🛡️ ป้องกันการกดซ้ำ: ปิดปุ่มทันทีและแสดงสถานะ
+  // 🛡️ ปิดปุ่มทันทีเพื่อป้องกันการส่งข้อมูลเบิ้ล
   if (btn) {
     btn.disabled = true;
     btn.style.pointerEvents = "none";
@@ -162,14 +157,14 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
   }
 
   try {
-    // 📦 1. แพ็กข้อมูลแบบ Form Data ธรรมดา เพื่อให้หลังบ้าน (Google Workspace) อ่านออก
+    // 📦 2. แพ็กข้อมูลแบบ Form Data ทะลวงหลังบ้านให้ Apps Script อ่านออกทันที
     const formData = new URLSearchParams();
-    formData.append("action", "receive_shipment"); // ส่งคำสั่งรับของ / อัปเดตสถานะเป็น Complete
+    formData.append("action", "receive_shipment"); // สั่งให้ Apps Script ทำการปิดจบงาน
     formData.append("shipmentNo", shipmentNo);
     formData.append("destBranch", myBranch);
-    formData.append("originBranch", originBranch); 
+    formData.append("originBranch", originBranch);
 
-    // 🚀 2. ยิง POST ไปที่ App Script ตรงๆ 
+    // 🚀 3. ยิง POST ไปยัง Google Apps Script
     const response = await fetch(CONFIG.API_URL, {
       method: "POST",
       body: formData 
@@ -177,12 +172,9 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
 
     const result = await response.json();
 
-    // ✅ 3. ถ้าระบบหลังบ้านตอบกลับมาว่าสำเร็จ
+    // ✅ 4. จัดการหน้าจอเมื่อ Google Apps Script ตอบกลับว่า "สำเร็จ"
     if (result.status === "success" || result.success) {
       
-      // ❌ (ตัดฟังก์ชัน triggerFirebaseNotification ทิ้งไปตามคำสั่ง) ❌
-
-      // อัปเดตหน้าจอแอปฝั่งคนรับให้รู้ว่ารับเสร็จแล้ว
       const card = document.getElementById(`transfer-card-${shipmentNo}`);
       if (card) {
         card.style.background = "#d1e7dd";
@@ -196,18 +188,14 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
         alert(`✅ รับชิปเมนต์ ${shipmentNo} สำเร็จ! สถานะเปลี่ยนเป็น COMPLETE เรียบร้อยครับ`);
       }
 
-      // รีโหลดข้อมูลงานใหม่ทันที 
+      // โหลดข้อมูลบนหน้าจอใหม่เพื่อเคลียร์รายการที่รับแล้วออก
       if (typeof loadExistingTasks === "function") {
           setTimeout(loadExistingTasks, 1500); 
       }
       
     } else {
-      // ❌ กรณี Backend ฟ้องว่ามีข้อผิดพลาด
-      alert(
-        `❌ เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถรับของได้"}\n(Action ที่ส่งไปคือ: ${result.receivedAction || "ไม่มี"})`,
-      );
-
-      // คืนค่าปุ่มให้กลับมากดใหม่ได้
+      // ❌ กรณี Apps Script แจ้ง Error กลับมา
+      alert(`❌ เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถรับของได้"}`);
       if (btn) {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -217,15 +205,12 @@ window.simulateReceiveShipment = async function (shipmentNo, myBranch, originBra
   } catch (e) {
     console.error("Error receiving shipment:", e);
     alert(`❌ การเชื่อมต่อล้มเหลว: ${e.message}`);
-
-    // คืนค่าปุ่มเมื่อเกิด Error จาก Network
     if (btn) {
       btn.innerHTML = originalText;
       btn.disabled = false;
       btn.style.pointerEvents = "auto";
     }
   } finally {
-      // ปิดสถานะประมวลผล เพื่อให้กดปุ่มอื่นต่อได้
       window.isReceivingTask = false;
   }
 };
