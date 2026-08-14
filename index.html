@@ -30,7 +30,9 @@
       src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
       defer
     ></script>
-    <style>
+
+<style>
+      /* 📷 โค้ดเดิมของ Scanner (จำเป็นต้องเก็บไว้ครับ) */
       #scannerView {
         display: none;
         position: fixed;
@@ -47,7 +49,14 @@
       #scannerView.active {
         display: flex !important;
       }
+
+      /* 🛠️ ส่วนที่เพิ่มเข้าไปใหม่ เพื่อดันหน้าต่างเช็คสต๊อกให้ลอยมาข้างหน้าสุด */
+      #productDetailModal { z-index: 100005 !important; }
+      #crossBranchModal { z-index: 100006 !important; } 
+      #customAlertOverlay { z-index: 100010 !important; }
     </style>
+
+
 </head>
 <body>
 
@@ -66,9 +75,6 @@
       </div>
       <!-- ===================================== -->
       
-  </div>
-
-
   </div>
 
   <div id="loginView" class="view-screen">
@@ -705,13 +711,6 @@
                     </button>
                   </div>
           </div>
-
-          
-
-
-
-
-
 
 
                   <div id="transferOutTaskHubView" class="view-screen hide master-layout">
