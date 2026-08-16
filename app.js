@@ -919,7 +919,6 @@ window.handleIncomingSignal = async function(shipmentNo, status) {
 };
 
 
-
 // ==========================================
 // 🔔 DYNAMIC TRANSFER OUT COUNTER
 // ==========================================
@@ -928,26 +927,34 @@ window.updateMovementCounters = function() {
     const tasks = window.cachedTransferTasks || [];
     const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
 
-    // 2. คัดกรองงาน Transfer Out (ส่งออก) ที่สถานะเป็น ASSIGN
+    // 2. คัดกรองเฉพาะงาน Transfer Out (ส่งออก) ที่สถานะเป็น "ASSIGN" และมาจากสาขาตัวเอง
     const assignTasks = tasks.filter(task => {
         const isMyOrigin = String(task.Origin_Branch || "").trim().toUpperCase() === myBranch;
         const isAssign = (task.Status || "").toUpperCase() === "ASSIGN";
         return isMyOrigin && isAssign;
     });
 
-    // 3. พุ่งเป้าไปที่ปุ่ม Transfer Out (แทนปุ่ม Product Movement)
+    // 3. พุ่งเป้าไปที่ปุ่ม Transfer Out (ใช้ Selector ที่เจเลอร์ชี้เป้ามาเป๊ะๆ)
     const btnTransferOut = document.getElementById("btnTransferOut");
     if (btnTransferOut) {
-        // ค้นหาตัวเลขสีแดงในปุ่ม Transfer Out (ใช้ Selector เจาะจงสีแดง #dc3545)
+        // หา Wrapper ที่ครอบไอคอนและตัวเลขเอาไว้
+        const badgeWrapper = btnTransferOut.querySelector("div:nth-child(2) > div");
+        // หา span ที่แสดงตัวเลขสีแดง
         const countSpan = btnTransferOut.querySelector("span[style*='color: #dc3545']");
-        if (countSpan) {
-            countSpan.innerText = assignTasks.length; // อัปเดตตัวเลขตามงานจริง
+
+        if (badgeWrapper && countSpan) {
+            if (assignTasks.length > 0) {
+                // ✅ ถ้ามีงาน ASSIGN: ให้อัปเดตตัวเลข และโชว์ไอคอนขึ้นมา
+                countSpan.innerText = assignTasks.length;
+                badgeWrapper.style.display = "flex"; 
+            } else {
+                // ❌ ถ้าไม่มีงาน: ให้ซ่อนกลุ่มไอคอนนั้นทิ้งไปเลย หน้าจอจะดูสะอาดตา
+                badgeWrapper.style.display = "none"; 
+            }
         }
     }
 
-    // 4. (เก็บกวาด) ปิดไอคอนรถบรรทุกบนปุ่ม Product Movement ให้กลับไปเป็นปกติ
+    // 4. (เก็บกวาด) ปิดไอคอนรถบรรทุกหน้า Main Menu อันเก่าทิ้ง ป้องกันมันโผล่ซ้อนกัน
     const iconOut = document.getElementById("iconOut");
-    if (iconOut) {
-        iconOut.classList.add("hide");
-    }
+    if (iconOut) iconOut.classList.add("hide");
 };
