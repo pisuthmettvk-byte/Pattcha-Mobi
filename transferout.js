@@ -1419,6 +1419,7 @@ async function renderLobbyTasks(branchID) {
   }
 }
 
+
 window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   window.currentActiveShipment = shipmentNo;
   window.currentActiveBoxNo = boxNo;
@@ -1428,18 +1429,33 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   const forceClosed =
     currentMode === "PENDING" || currentMode === "COMPLETE" || isClosed;
 
-  const savedItems = boxElement
-    ? boxElement.getAttribute("data-saved-items")
-    : null;
-  if (savedItems) window.currentBoxItems = JSON.parse(savedItems);
-  else window.currentBoxItems = [];
+  // 🚨 [จุดที่ปรับปรุง]: ล้างกระดานและแยกการโหลดข้อมูลให้ชัดเจน (แก้บั๊กของหายตอนยังไม่ WRAP)
+  window.currentBoxItems = [];
 
-  if (!forceClosed && typeof window.loadCurrentBoxDraft === "function") {
-    const draftItems = window.loadCurrentBoxDraft(shipmentNo, boxNo);
-    if (draftItems && draftItems.length > 0)
-      window.currentBoxItems = draftItems;
+  if (forceClosed) {
+    // 🟢 กรณีกล่องปิดแล้ว (Read Only): ดึงข้อมูลที่แพ็กเสร็จแล้วมาแสดง
+    const savedItems = boxElement
+      ? boxElement.getAttribute("data-saved-items")
+      : null;
+    if (savedItems) {
+      try {
+        window.currentBoxItems = JSON.parse(savedItems);
+      } catch (e) {
+        window.currentBoxItems = [];
+      }
+    }
+  } else {
+    // 🔴 กรณีกล่องยังเปิดอยู่ (ASSIGN): บังคับดึงข้อมูลจาก Draft เสมอ
+    if (typeof window.loadCurrentBoxDraft === "function") {
+      const draftItems = window.loadCurrentBoxDraft(shipmentNo, boxNo);
+      // ไม่ต้องเช็ค length > 0 บังคับโหลด draft มาเลยเพื่อความชัวร์
+      if (draftItems) {
+        window.currentBoxItems = draftItems;
+      }
+    }
   }
 
+  // --- (คงโค้ดเดิมด้านล่างไว้ทั้งหมด ป้องกันโดมิโน่) ---
   const shipmentTextEl = document.getElementById("boxDetailsShipmentText");
   const boxTextEl = document.getElementById("boxDetailsBoxText");
   if (shipmentTextEl)
@@ -1523,6 +1539,7 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   if (typeof window.renderBoxContentArea === "function")
     window.renderBoxContentArea();
 };
+
 
 window.renderBoxContentArea = function () {
   const container = document.getElementById("boxContentArea");
