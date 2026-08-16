@@ -1420,6 +1420,7 @@ async function renderLobbyTasks(branchID) {
 }
 
 
+
 window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   window.currentActiveShipment = shipmentNo;
   window.currentActiveBoxNo = boxNo;
@@ -1429,7 +1430,7 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   const forceClosed =
     currentMode === "PENDING" || currentMode === "COMPLETE" || isClosed;
 
-  // 🚨 [จุดที่ปรับปรุง]: ล้างกระดานและแยกการโหลดข้อมูลให้ชัดเจน (แก้บั๊กของหายตอนยังไม่ WRAP)
+  // 🚨 [จุดที่ปรับปรุง 1]: ล้างค่าให้เป็นอาร์เรย์ว่างเสมอ ป้องกันของเก่าติดมา
   window.currentBoxItems = [];
 
   if (forceClosed) {
@@ -1439,23 +1440,23 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
       : null;
     if (savedItems) {
       try {
-        window.currentBoxItems = JSON.parse(savedItems);
+        window.currentBoxItems = JSON.parse(savedItems) || [];
       } catch (e) {
         window.currentBoxItems = [];
       }
     }
   } else {
-    // 🔴 กรณีกล่องยังเปิดอยู่ (ASSIGN): บังคับดึงข้อมูลจาก Draft เสมอ
+    // 🔴 [จุดที่ปรับปรุง 2]: บังคับโหลด Draft 100% ถ้ากล่องยังเป็น ASSIGN
     if (typeof window.loadCurrentBoxDraft === "function") {
       const draftItems = window.loadCurrentBoxDraft(shipmentNo, boxNo);
-      // ไม่ต้องเช็ค length > 0 บังคับโหลด draft มาเลยเพื่อความชัวร์
-      if (draftItems) {
+      // แค่เช็คว่าเป็น Array ก็พอ ไม่ต้องสนใจ length เพื่อให้มันจำค่าล่าสุดเสมอ
+      if (Array.isArray(draftItems)) {
         window.currentBoxItems = draftItems;
       }
     }
   }
 
-  // --- (คงโค้ดเดิมด้านล่างไว้ทั้งหมด ป้องกันโดมิโน่) ---
+  // --- โค้ดด้านล่างคงไว้ 100% ไม่เปลี่ยนแปลง เพื่อป้องกันโดมิโน่ ---
   const shipmentTextEl = document.getElementById("boxDetailsShipmentText");
   const boxTextEl = document.getElementById("boxDetailsBoxText");
   if (shipmentTextEl)
@@ -1539,6 +1540,7 @@ window.openBoxDetails = function (shipmentNo, boxNo, boxElement, isClosed) {
   if (typeof window.renderBoxContentArea === "function")
     window.renderBoxContentArea();
 };
+
 
 
 window.renderBoxContentArea = function () {
