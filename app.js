@@ -921,14 +921,9 @@ window.handleIncomingSignal = async function(shipmentNo, status) {
 
 
 // ==========================================
-// 🔔 DYNAMIC PRODUCT MOVEMENT COUNTERS
+// 🔔 DYNAMIC TRANSFER OUT COUNTER
 // ==========================================
 window.updateMovementCounters = function() {
-    const iconOut = document.getElementById("iconOut");
-    const iconPending = document.getElementById("iconPending"); // เผื่ออนาคตเจเลอร์อยากโชว์ Pending ด้วย
-
-    if (!iconOut) return;
-
     // 1. ดึงข้อมูลงานที่แคชไว้ (ถ้าไม่มี ให้เริ่มจาก 0)
     const tasks = window.cachedTransferTasks || [];
     const myBranch = String(localStorage.getItem("pattcha_branch") || "").trim().toUpperCase();
@@ -940,32 +935,19 @@ window.updateMovementCounters = function() {
         return isMyOrigin && isAssign;
     });
 
-    // 3. อัปเดตตัวเลขบนหน้าจอ (และซ่อนไอคอนถ้าไม่มีงาน)
-    if (assignTasks.length > 0) {
-        iconOut.classList.remove("hide");
-        // อัปเดตตัวเลขข้างในไอคอน (ดึง span ตัวที่ 2 ซึ่งเป็นตัวเลข)
-        const countSpan = iconOut.parentElement.querySelector("span[style*='color: #dc3545']");
-        if (countSpan) countSpan.innerText = assignTasks.length;
-    } else {
-        // ถ้าไม่มีงาน ASSIGN เลย ให้ซ่อนสัญลักษณ์รูปรถบรรทุกสีแดง
-        iconOut.classList.add("hide");
-        const countSpan = iconOut.parentElement.querySelector("span[style*='color: #dc3545']");
-        if (countSpan) countSpan.innerText = "0";
+    // 3. พุ่งเป้าไปที่ปุ่ม Transfer Out (แทนปุ่ม Product Movement)
+    const btnTransferOut = document.getElementById("btnTransferOut");
+    if (btnTransferOut) {
+        // ค้นหาตัวเลขสีแดงในปุ่ม Transfer Out (ใช้ Selector เจาะจงสีแดง #dc3545)
+        const countSpan = btnTransferOut.querySelector("span[style*='color: #dc3545']");
+        if (countSpan) {
+            countSpan.innerText = assignTasks.length; // อัปเดตตัวเลขตามงานจริง
+        }
     }
-    
-    // (Optional) โชว์เลข Pending
-    const pendingTasks = tasks.filter(task => {
-        const isMyOrigin = String(task.Origin_Branch || "").trim().toUpperCase() === myBranch;
-        const isPending = (task.Status || "").toUpperCase() === "PENDING";
-        return isMyOrigin && isPending;
-    });
-    
-    if (iconPending && pendingTasks.length > 0) {
-        iconPending.classList.remove("hide");
-    } else if (iconPending) {
-        iconPending.classList.add("hide");
+
+    // 4. (เก็บกวาด) ปิดไอคอนรถบรรทุกบนปุ่ม Product Movement ให้กลับไปเป็นปกติ
+    const iconOut = document.getElementById("iconOut");
+    if (iconOut) {
+        iconOut.classList.add("hide");
     }
 };
-
-
-
