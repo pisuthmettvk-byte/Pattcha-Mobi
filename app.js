@@ -918,6 +918,11 @@ window.handleIncomingSignal = async function(shipmentNo, status) {
   }
 };
 
+
+
+
+
+
 // ==========================================
 // 🔔 DYNAMIC TRANSFER OUT & MOVEMENT COUNTER
 // ==========================================
@@ -933,12 +938,25 @@ window.updateMovementCounters = function() {
         return isMyOrigin && isAssign;
     });
 
-    // 3. 🎯 เป้าหมายที่ 1: อัปเดตตัวเลขหน้าปุ่ม Transfer Out (เมนูด้านใน)
+    // 3. 🎯 เป้าหมายที่ 1: อัปเดตตัวเลขและซ่อน/โชว์ไอคอนในปุ่ม Transfer Out
     const btnTransferOut = document.getElementById("btnTransferOut");
     if (btnTransferOut) {
+        // หา span ตัวเลขสีแดง
         const countSpan = btnTransferOut.querySelector("span[style*='color: #dc3545']");
-        if (countSpan) {
-            countSpan.innerText = assignTasks.length; 
+        // หากลุ่มที่คลุมทั้งไอคอนรถสีแดงและตัวเลขเอาไว้ (ใช้ .icon-red เป็นจุดเล็งเป้า)
+        const redIcon = btnTransferOut.querySelector(".icon-red");
+        const badgeWrapper = redIcon ? redIcon.closest("div[style*='gap: 6px']") : null;
+
+        if (countSpan && badgeWrapper) {
+            if (assignTasks.length > 0) {
+                // ✅ ถ้ามีงาน: ให้อัปเดตตัวเลข และโชว์กล่องไอคอนขึ้นมา
+                countSpan.innerText = assignTasks.length; 
+                badgeWrapper.style.display = "flex";      
+            } else {
+                // ❌ ถ้าไม่มีงาน (ยอดเป็น 0): ให้ซ่อนกล่องไอคอนนี้ทิ้งไปเลย
+                countSpan.innerText = "0";
+                badgeWrapper.style.display = "none";      
+            }
         }
     }
 
@@ -959,7 +977,7 @@ window.updateMovementCounters = function() {
                 iconGroup.style.display = "flex";
             }
         } else {
-            // ❌ ถ้าไม่มีงาน: ล้างไอคอนทิ้งและซ่อนให้เนียนกริบ
+            // ❌ ถ้าไม่มีงาน: ล้างไอคอนทิ้งและซ่อน
             if (iconGroup) {
                 iconGroup.innerHTML = "";
                 iconGroup.style.display = "none";
