@@ -918,9 +918,8 @@ window.handleIncomingSignal = async function(shipmentNo, status) {
   }
 };
 
-
 // ==========================================
-// 🔔 DYNAMIC TRANSFER OUT COUNTER
+// 🔔 DYNAMIC TRANSFER OUT & MOVEMENT COUNTER
 // ==========================================
 window.updateMovementCounters = function() {
     // 1. ดึงข้อมูลงานที่แคชไว้ (ถ้าไม่มี ให้เริ่มจาก 0)
@@ -934,27 +933,37 @@ window.updateMovementCounters = function() {
         return isMyOrigin && isAssign;
     });
 
-    // 3. พุ่งเป้าไปที่ปุ่ม Transfer Out (ใช้ Selector ที่เจเลอร์ชี้เป้ามาเป๊ะๆ)
+    // 3. 🎯 เป้าหมายที่ 1: อัปเดตตัวเลขหน้าปุ่ม Transfer Out (เมนูด้านใน)
     const btnTransferOut = document.getElementById("btnTransferOut");
     if (btnTransferOut) {
-        // หา Wrapper ที่ครอบไอคอนและตัวเลขเอาไว้
-        const badgeWrapper = btnTransferOut.querySelector("div:nth-child(2) > div");
-        // หา span ที่แสดงตัวเลขสีแดง
         const countSpan = btnTransferOut.querySelector("span[style*='color: #dc3545']");
-
-        if (badgeWrapper && countSpan) {
-            if (assignTasks.length > 0) {
-                // ✅ ถ้ามีงาน ASSIGN: ให้อัปเดตตัวเลข และโชว์ไอคอนขึ้นมา
-                countSpan.innerText = assignTasks.length;
-                badgeWrapper.style.display = "flex"; 
-            } else {
-                // ❌ ถ้าไม่มีงาน: ให้ซ่อนกลุ่มไอคอนนั้นทิ้งไปเลย หน้าจอจะดูสะอาดตา
-                badgeWrapper.style.display = "none"; 
-            }
+        if (countSpan) {
+            countSpan.innerText = assignTasks.length; 
         }
     }
 
-    // 4. (เก็บกวาด) ปิดไอคอนรถบรรทุกหน้า Main Menu อันเก่าทิ้ง ป้องกันมันโผล่ซ้อนกัน
-    const iconOut = document.getElementById("iconOut");
-    if (iconOut) iconOut.classList.add("hide");
+    // 4. 🎯 เป้าหมายที่ 2: โชว์ไอคอน "สามเหลี่ยมแดง" หน้าปุ่ม PRODUCT MOVEMENT (เมนูหลัก)
+    const btnMovement = document.getElementById("btnMenuMovement");
+    if (btnMovement) {
+        let iconGroup = btnMovement.querySelector(".movement-icons-group");
+        
+        if (assignTasks.length > 0) {
+            // ✅ ถ้ามีงาน: ฝังไอคอนสามเหลี่ยมสีแดง (!) และโชว์ขึ้นมา
+            if (iconGroup) {
+                iconGroup.innerHTML = `
+                    <span style="color: #dc3545; font-size: 18px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.15));">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </span>
+                `;
+                iconGroup.classList.remove("hide");
+                iconGroup.style.display = "flex";
+            }
+        } else {
+            // ❌ ถ้าไม่มีงาน: ล้างไอคอนทิ้งและซ่อนให้เนียนกริบ
+            if (iconGroup) {
+                iconGroup.innerHTML = "";
+                iconGroup.style.display = "none";
+            }
+        }
+    }
 };
