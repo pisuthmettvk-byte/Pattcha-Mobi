@@ -1225,6 +1225,7 @@ function loadLobbyHeader() {
   headerEl.textContent = `[${displayId}] - ${branchName}`;
 }
 
+
 async function loadExistingTasks() {
   const containers = [
     "assignContainer",
@@ -1251,16 +1252,19 @@ async function loadExistingTasks() {
 
     if (deletedList.length > 0)
       tasks = tasks.filter((t) => !deletedList.includes(t.Shipment_No));
-    
+
     if (exportedList.length > 0) {
       tasks.forEach((t) => {
         // 🚨 [HOT FIX]: ถ้าระบบหลังบ้านส่ง COMPLETE มาแล้ว ห้ามให้ความจำเครื่องบังคับกลับไปเป็น PENDING เด็ดขาด
-        if (exportedList.includes(t.Shipment_No) && (t.Status || "").toUpperCase() !== "COMPLETE") {
-            t.Status = "Pending";
+        if (
+          exportedList.includes(t.Shipment_No) &&
+          (t.Status || "").toUpperCase() !== "COMPLETE"
+        ) {
+          t.Status = "Pending";
         }
       });
     }
-    
+
     window.cachedTransferTasks = tasks;
 
     containers.forEach((id) => {
@@ -1313,10 +1317,15 @@ async function loadExistingTasks() {
       if (el)
         el.innerHTML = `Task (${counts[key]}) <i class="fas fa-chevron-down"></i>`;
     });
+
+    // 🚀 [เพิ่มโค้ดบรรทัดนี้ลงไป]: อัปเดตตัวเลขแจ้งเตือนหน้า Main Menu
+    if (typeof window.updateMovementCounters === "function")
+      window.updateMovementCounters();
   } catch (error) {
     console.error("Error loading tasks:", error);
   }
 }
+
 
 async function renderLobbyTasks(branchID) {
   const container = document.getElementById("lobbyContentContainer");
