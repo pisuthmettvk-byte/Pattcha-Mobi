@@ -5,14 +5,18 @@
 // ============================================================================
 // ⚙️ GROUP 1: CONFIG, STATE & GLOBAL VARIABLES
 // ============================================================================
-const webAppUrl =
-  "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+
+// 🚨 ดึงลิงก์หลักจาก app.js (CONFIG) เสมอ เพื่อให้แก้ลิงก์ที่เดียวแล้วเปลี่ยนทั้งระบบ
+const MAIN_API_URL = typeof CONFIG !== "undefined" 
+    ? CONFIG.API_URL 
+    : "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
 
 const STATUS_CONFIG = {
   NEW: "Assign",
   PENDING: "Pending",
   COMPLETE: "Complete",
 };
+
 
 window.isGlobalDeleteMode = false;
 window.activeDeleteShipment = null;
@@ -21,6 +25,8 @@ window.currentActiveBoxNo = null;
 window.currentBoxElement = null;
 window.currentBoxItems = [];
 window.currentScannerContext = "stock";
+
+
 
 // ============================================================================
 // 🛡️ GROUP 2: SECURITY & GLOBAL INTERCEPTORS
