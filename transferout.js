@@ -6,10 +6,14 @@
 // ⚙️ GROUP 1: CONFIG, STATE & GLOBAL VARIABLES
 // ============================================================================
 
+
+
 // 🚨 ดึงลิงก์หลักจาก app.js (CONFIG) เสมอ เพื่อให้แก้ลิงก์ที่เดียวแล้วเปลี่ยนทั้งระบบ
+
 const MAIN_API_URL = typeof CONFIG !== "undefined" 
     ? CONFIG.API_URL 
     : "https://script.google.com/macros/s/AKfycbxl3g-8afxNG-q4UhOxVsffv-qO7Dum2koHWAKEbr98086bvPq-RwNQrEwGvzMZ5Jm7zQ/exec";
+
 
 const STATUS_CONFIG = {
   NEW: "Assign",
